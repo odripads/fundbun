@@ -27,6 +27,14 @@ export type Intent =
   | 'cancel_sub'
   | 'dispute'
   | 'xray'
+  /** goal-driven multi-step request: "get me back on track", "how can I save faster for my Birkin" */
+  | 'plan_recovery'
+  /** "stop", "cancel that", "never mind" — interrupts a running plan / clarification */
+  | 'interrupt'
+  /** "no, the Chengdu one", "make it ¥200 instead" — corrects the last proposal or clarification */
+  | 'correction'
+  /** "yes", "do it", "approve" — confirms the last proposal (the UI still requires the tap/PIN) */
+  | 'affirm'
   | 'external_transfer'
   | 'add_payee'
   | 'invest'

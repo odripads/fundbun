@@ -1,4 +1,5 @@
 import type { AppApi } from './app-api'
+import type { AgentEngineFactory } from './agent/host'
 
 export interface StorageLike {
   getItem(key: string): string | null
@@ -15,6 +16,8 @@ export interface CreateAppOptions {
   now?: () => Date
   /** storage key */
   storageKey?: string
+  /** agent runtime factory (default: createAgentEngine from ./agent/runtime); tests inject fakes */
+  engineFactory?: AgentEngineFactory
 }
 
 /** Creates the FundBun controller. Implemented in wave 2. */

@@ -168,7 +168,8 @@ export interface AppApi {
   /** raising autonomy or caps requires the PIN; lowering never does */
   setAutonomy(autonomy: Autonomy, pin?: string): Result
   setCaps(caps: Partial<Pick<Mandate, 'perActionCap' | 'dailyCap' | 'monthlyCap'>>, pin?: string): Result
-  setToolEnabled(tool: ToolName, enabled: boolean): Result
+  /** disabling is instant; re-enabling a T2/T3 tool requires the PIN */
+  setToolEnabled(tool: ToolName, enabled: boolean, pin?: string): Result
   /** kill switch — instant, no PIN */
   freeze(): void
   unfreeze(pin: string): Result
@@ -177,6 +178,13 @@ export interface AppApi {
   /** full JSON export of local data (PIPL right of access/portability) */
   exportData(): string
   exportAuditJSONL(): string
+
+  // ── vault (at-rest encryption of local data with the PIN) ──
+  /** true when persisted data is encrypted and has not been unlocked in this session */
+  isLocked(): boolean
+  unlock(pin: string): Promise<Result>
+  enableVault(pin: string): Promise<Result>
+  disableVault(pin: string): Promise<Result>
 
   // ── profile & settings ──
   setProfile(patch: Partial<Pick<Profile, 'name' | 'monthlyIncome' | 'targetSpend' | 'payday' | 'workHoursPerMonth' | 'tone'>>): Result

@@ -721,7 +721,48 @@ export type ChatCard =
   | { type: 'budget'; plan: BudgetPlan }
   | { type: 'xray'; result: XrayResult }
   | { type: 'action'; pendingId: string }
+  | { type: 'plan'; planId: string }
+  | { type: 'clarify'; question: string; options: { label: string; value: string }[] }
   | { type: 'notice'; level: 'info' | 'warn' | 'block'; title: string; text: string }
+
+// ───────────────────────────── task plans (multi-step, DAG) ─────────────────────────────
+
+export type PlanStepStatus = 'waiting' | 'running' | 'done' | 'needs_approval' | 'skipped' | 'failed' | 'blocked'
+
+export interface PlanStep {
+  id: string
+  tool: ToolName
+  args: Record<string, unknown>
+  /** ids of steps that must finish first */
+  dependsOn: string[]
+  /** short human label: "Find what pushed you over" */
+  label: string
+  status: PlanStepStatus
+  resultSummary?: string
+  /** when the step produced a PendingAction */
+  pendingId?: string
+}
+
+/**
+ * A goal-driven multi-step plan (e.g. "get me back on track this month"): read steps run automatically,
+ * action steps become PendingActions gated by the policy engine. The user can interrupt at any time.
+ */
+export interface TaskPlan {
+  id: string
+  goal: string
+  createdAt: ISODateTime
+  status: 'running' | 'awaiting_user' | 'done' | 'cancelled' | 'failed'
+  steps: PlanStep[]
+}
+
+/** Dialogue state for clarification / correction across turns. */
+export interface DialogueState {
+  /** an intent waiting for a missing slot, e.g. which goal to move money to */
+  pendingClarification?: { intent: string; slots: Record<string, unknown>; missing: string; askedAt: ISODateTime }
+  /** the last proposed pending action id (so "make it ¥200 instead" can correct it) */
+  lastProposalId?: string
+  lastIntent?: string
+}
 
 export type TraceKind = 'intent' | 'tool_call' | 'tool_result' | 'policy' | 'grounding' | 'injection' | 'llm' | 'redaction' | 'error'
 
@@ -786,5 +827,7 @@ export interface AppState {
   categoryRules: Record<string, CategoryId>
   /** reminders the user/agent set on bills, keyed by bill id: days before due */
   billReminders: Record<string, number>
+  plans: TaskPlan[]
+  dialogue: DialogueState
   settings: AppSettings
 }

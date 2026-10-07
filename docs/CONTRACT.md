@@ -129,3 +129,14 @@ bob) that respects `prefers-reduced-motion`. Mobile-first (390×844), desktop sh
 * **AI labelling**: every agent message shows an "AI" badge + engine (on-device / LLM) (CN AI-content labelling rules,
   effective 2025-09-01). Offer a "Talk to a human" route in chat.
 * Loosening permissions needs the PIN; tightening is instant and never needs a PIN.
+
+## 8. Official judging details (docs/research/03) — added after wave 1 started
+
+* Task completion is judged on **scripted tasks in a simulated environment** (+ automated evaluation). The agent must
+  show *intent understanding, task planning, safe execution, user control and measurable value*.
+* Innovation & interaction explicitly scores **dialogue efficiency, clarification, correction and fallback**.
+* The brief asks for **task plans as a DAG** with **interrupt, rollback and human takeover**.
+  → `TaskPlan` / `PlanStep` / `DialogueState` types (types.ts) and NLU intents `plan_recovery`, `interrupt`,
+  `correction`, `affirm` (nlu.ts). NLU builders: add training utterances for these four intents.
+* Indirect injection can arrive through *any* user content (wishlist names, photo text, bill memos) — wrap all
+  user-authored free text as untrusted when sending to the LLM.
