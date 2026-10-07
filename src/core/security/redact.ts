@@ -1,16 +1,255 @@
 import type { RedactionReport } from '../types'
 
 /**
+ * Count keys used in RedactionReport.counts:
+ * email · iban · phone · cn_id (PRC resident ID) · nik (Indonesian NIK) · card · account (labelled account
+ * numbers, e.g. "户号: 0755 3318 0458") · passport · name
+ */
+export type RedactionKind = 'email' | 'iban' | 'phone' | 'cn_id' | 'nik' | 'card' | 'account' | 'passport' | 'name'
+
+interface Rule {
+  kind: RedactionKind
+  re: RegExp
+  /** replacement for a match, or null to leave it untouched (failed checksum / structure) */
+  replace: (match: string) => string | null
+}
+
+// Lookarounds use ASCII \w so CJK text right next to a number (卡号6222…) still matches.
+const NB = '(?<![\\w+])'
+const NA = '(?![\\w]|[.,]\\d)'
+
+const MASK = '••••'
+
+/** Already-redacted placeholders are skipped by every later rule (so digits in "[CARD ••••1234]" stay put). */
+const PLACEHOLDER = /(\[(?:EMAIL|PHONE|ID|NIK|PASSPORT|NAME|CARD ••••\d{4}|ACCOUNT ••••\d{4}|IBAN ••••[A-Z0-9]{4})\])/
+
+const RULES: Rule[] = [
+  {
+    kind: 'email',
+    re: /[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}/g,
+    replace: () => '[EMAIL]',
+  },
+  {
+    kind: 'iban',
+    re: /\b[A-Z]{2}\d{2}(?: ?[A-Z0-9]{4}){2,7}(?: ?[A-Z0-9]{1,3})?\b/g,
+    replace: (m) => {
+      const compact = m.replace(/ /g, '')
+      return isValidIban(compact) ? `[IBAN ${MASK}${compact.slice(-4)}]` : null
+    },
+  },
+  {
+    kind: 'phone',
+    // international format: +<country> then digit groups
+    re: new RegExp(`${NB}\\+\\(?\\d{1,4}\\)?(?:[ .-]?\\(?\\d{1,5}\\)?){1,6}(?!\\d)`, 'g'),
+    replace: redactInternationalPhone,
+  },
+  {
+    kind: 'phone',
+    // mainland mobile 1[3-9]x xxxx xxxx with optional 86 / 0086 / +86 — runs before cards because
+    // 0086 + mobile is 15 digits and can pass Luhn by chance
+    re: new RegExp(`${NB}(?:(?:\\+|00)?86[ -]?)?1[3-9]\\d(?:[ -]?\\d{4}){2}${NA}`, 'g'),
+    replace: () => '[PHONE]',
+  },
+  {
+    kind: 'cn_id',
+    re: new RegExp(`${NB}[1-9]\\d{5}(?:18|19|20)\\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\\d|3[01])\\d{3}[\\dXx]${NA}`, 'g'),
+    replace: () => '[ID]',
+  },
+  {
+    kind: 'card',
+    re: new RegExp(
+      `${NB}(?:\\d{13,19}|\\d{4}([ -])\\d{4}(?:\\1\\d{4}){1,2}(?:\\1\\d{1,4})?|\\d{4}[ -]\\d{6}[ -]\\d{5})${NA}`,
+      'g',
+    ),
+    replace: (m) => {
+      const digits = m.replace(/\D/g, '')
+      return digits.length >= 13 && digits.length <= 19 && luhnValid(digits) ? `[CARD ${MASK}${digits.slice(-4)}]` : null
+    },
+  },
+  {
+    kind: 'nik',
+    re: new RegExp(`${NB}(?:1[1-9]|[2-9]\\d)\\d{4}[0-7]\\d(?:0[1-9]|1[0-2])\\d{6}${NA}`, 'g'),
+    replace: (m) => {
+      const day = Number(m.slice(6, 8))
+      const realDay = day > 40 ? day - 40 : day
+      return realDay >= 1 && realDay <= 31 ? '[NIK]' : null
+    },
+  },
+  {
+    kind: 'account',
+    // any 8–30 digit number right after an account label (bank or utility account, customer number)
+    re: /(?:\b(?:account|acct|a\/c|customer)\s*(?:no\.?|number|num|#|id)?|户号|账号|帐号|卡号|账户|帐户|客户号|客户编号)\s*[:：#.]?\s*\d(?:[ -]?\d){7,29}(?![\w])/gi,
+    replace: (m) => {
+      const number = /\d(?:[ -]?\d){7,29}$/.exec(m)
+      if (!number) return null
+      const digits = number[0].replace(/\D/g, '')
+      return `${m.slice(0, number.index)}[ACCOUNT ${MASK}${digits.slice(-4)}]`
+    },
+  },
+  {
+    kind: 'phone',
+    // Indonesian mobile 08xx-xxxx-xxxx (or 62 8xx…)
+    re: new RegExp(`${NB}(?:62|0)8\\d{1,2}[ -]?\\d{3,4}[ -]?\\d{3,5}${NA}`, 'g'),
+    replace: (m) => (countDigits(m) >= 10 && countDigits(m) <= 14 ? '[PHONE]' : null),
+  },
+  {
+    kind: 'phone',
+    // mainland landline 0755-12345678
+    re: new RegExp(`${NB}0\\d{2,3}-\\d{7,8}${NA}`, 'g'),
+    replace: () => '[PHONE]',
+  },
+  {
+    kind: 'passport',
+    re: new RegExp(`${NB}[A-Z]{1,2}\\d{7,8}${NA}`, 'g'),
+    replace: () => '[PASSPORT]',
+  },
+]
+
+/**
  * Mask PII before anything leaves the device: emails, phone numbers (CN mobile 1[3-9]x{9}, +country
  * formats), PRC resident ID (18 chars), Indonesian NIK (16 digits), passport-like ids, bank card numbers
  * (13–19 digits, Luhn-valid; keep last 4), IBANs, and any `extraNames` (e.g. the user's name) → [NAME].
  * Amounts like "¥2,000" or "2000.50" must NOT be redacted.
+ * Long digit runs that fail every check (order numbers, timestamps) are left alone on purpose.
  */
 export function redactText(text: string, extraNames: string[] = []): RedactionReport {
-  throw new Error('TODO redactText ' + text.length + extraNames.length)
+  return makeRedactor(extraNames)(text)
 }
 
 /** Deep-redact all string values in a JSON-like value. */
 export function redactDeep<T>(value: T, extraNames: string[] = []): { value: T; counts: Record<string, number> } {
-  throw new Error('TODO redactDeep ' + typeof value + extraNames.length)
+  const redact = makeRedactor(extraNames)
+  const counts: Record<string, number> = {}
+  const seen = new WeakMap<object, unknown>()
+  const walk = (v: unknown): unknown => {
+    if (typeof v === 'string') {
+      const r = redact(v)
+      mergeCounts(counts, r.counts)
+      return r.text
+    }
+    if (v === null || typeof v !== 'object') return v
+    if (seen.has(v)) return seen.get(v)
+    if (Array.isArray(v)) {
+      const out: unknown[] = []
+      seen.set(v, out)
+      for (const item of v) out.push(walk(item))
+      return out
+    }
+    if (!isPlainObject(v)) return v
+    const out: Record<string, unknown> = {}
+    seen.set(v, out)
+    for (const [k, item] of Object.entries(v)) out[k] = walk(item)
+    return out
+  }
+  return { value: walk(value) as T, counts }
+}
+
+function makeRedactor(extraNames: string[]): (text: string) => RedactionReport {
+  const nameRules = buildNameRules(extraNames)
+  return (text) => {
+    const counts: Record<string, number> = {}
+    let out = typeof text === 'string' ? text : String(text ?? '')
+    for (const rule of [...RULES, ...nameRules]) out = applyRule(out, rule, counts)
+    return { text: out, counts }
+  }
+}
+
+function applyRule(text: string, rule: Rule, counts: Record<string, number>): string {
+  return text
+    .split(PLACEHOLDER)
+    .map((segment, i) => {
+      // odd indexes are captured placeholders
+      if (i % 2 === 1) return segment
+      return segment.replace(rule.re, (m: string) => {
+        const replacement = rule.replace(m)
+        if (replacement === null) return m
+        counts[rule.kind] = (counts[rule.kind] ?? 0) + 1
+        return replacement
+      })
+    })
+    .join('')
+}
+
+function buildNameRules(extraNames: string[]): Rule[] {
+  const names = new Set<string>()
+  for (const raw of extraNames ?? []) {
+    if (typeof raw !== 'string') continue
+    const full = raw.trim().replace(/\s+/g, ' ')
+    if ([...full].length < 2) continue
+    names.add(full)
+    // parts of Latin names ("Mei" of "Mei Lin"); CJK names are matched whole only
+    for (const part of full.split(' ')) if (part.length >= 3 && !hasHan(part)) names.add(part)
+  }
+  return [...names]
+    .sort((a, b) => b.length - a.length)
+    .map((name) => {
+      const body = escapeRegExp(name).replace(/ /g, '\\s+')
+      const pattern = hasHan(name) ? body : `(?<![\\p{L}\\p{N}_])${body}(?![\\p{L}\\p{N}_])`
+      return { kind: 'name' as const, re: new RegExp(pattern, 'giu'), replace: () => '[NAME]' }
+    })
+}
+
+export function luhnValid(digits: string): boolean {
+  if (!/^\d+$/.test(digits)) return false
+  let sum = 0
+  for (let i = 0; i < digits.length; i++) {
+    let d = digits.charCodeAt(digits.length - 1 - i) - 48
+    if (i % 2 === 1) {
+      d *= 2
+      if (d > 9) d -= 9
+    }
+    sum += d
+  }
+  return sum % 10 === 0
+}
+
+/** ISO 13616 mod-97 check. */
+export function isValidIban(iban: string): boolean {
+  if (!/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/.test(iban)) return false
+  const rearranged = iban.slice(4) + iban.slice(0, 4)
+  let rem = 0
+  for (const ch of rearranged) {
+    const v = /\d/.test(ch) ? ch : String(ch.charCodeAt(0) - 55)
+    for (const digit of v) rem = (rem * 10 + Number(digit)) % 97
+  }
+  return rem === 1
+}
+
+/**
+ * E.164 numbers have 8–15 digits. The pattern can over-run into a following number ("+62 812 3456 7890 2000"),
+ * so fall back to the longest group-aligned prefix that is a plausible phone number.
+ */
+function redactInternationalPhone(m: string): string | null {
+  for (let end = m.length; end > 0; end = lastSeparator(m, end)) {
+    const n = countDigits(m.slice(0, end))
+    if (n >= 8 && n <= 15) return `[PHONE]${m.slice(end)}`
+    if (n < 8) return null
+  }
+  return null
+}
+
+function lastSeparator(s: string, before: number): number {
+  for (let i = before - 1; i > 0; i--) if (s[i] === ' ' || s[i] === '.' || s[i] === '-') return i
+  return 0
+}
+
+function countDigits(s: string): number {
+  return s.replace(/\D/g, '').length
+}
+
+function hasHan(s: string): boolean {
+  return /\p{Script=Han}/u.test(s)
+}
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function isPlainObject(v: object): v is Record<string, unknown> {
+  const proto = Object.getPrototypeOf(v)
+  return proto === Object.prototype || proto === null
+}
+
+function mergeCounts(into: Record<string, number>, from: Record<string, number>): void {
+  for (const [k, n] of Object.entries(from)) into[k] = (into[k] ?? 0) + n
 }

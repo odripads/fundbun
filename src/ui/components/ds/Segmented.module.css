@@ -1,0 +1,81 @@
+.root {
+  --seg-h: 44px;
+  position: relative;
+  display: grid;
+  grid-auto-columns: 1fr;
+  grid-auto-flow: column;
+  padding: 4px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--text) 6%, var(--bg-sunken));
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--text) 8%, transparent);
+  isolation: isolate;
+}
+
+.sm {
+  --seg-h: 36px;
+}
+
+.thumb {
+  position: absolute;
+  z-index: -1;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc((100% - 8px) / var(--seg-n));
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  box-shadow: var(--shadow-1), inset 0 0 0 1px var(--border);
+  transform: translateX(calc(100% * var(--seg-i)));
+  transition: transform var(--dur-3) var(--ease-spring);
+}
+
+.option {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: var(--seg-h);
+  padding: 0 var(--s-3);
+  border: 0;
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 620;
+  white-space: nowrap;
+  transition: color var(--dur-2) var(--ease-out);
+}
+
+.sm .option::after {
+  content: '';
+  position: absolute;
+  inset: -4px 0;
+}
+
+.option:hover:not(:disabled) {
+  color: var(--text);
+}
+
+.option:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+.option:disabled {
+  opacity: 0.4;
+}
+
+.checked {
+  color: var(--text);
+}
+
+.icon {
+  display: inline-flex;
+}
+
+.icon svg {
+  width: 16px;
+  height: 16px;
+}

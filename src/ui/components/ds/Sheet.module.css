@@ -1,0 +1,89 @@
+.sheet {
+  overflow: hidden;
+  background:
+    radial-gradient(120% 60% at 50% 0%, var(--accent-soft) 0%, transparent 45%),
+    var(--surface);
+  transition: transform var(--dur-2) var(--ease-out);
+}
+
+.full {
+  height: calc(100% - var(--safe-top) - 24px);
+}
+
+.dragging {
+  transition: none;
+}
+
+.grab {
+  flex: none;
+  padding: 10px var(--s-5) var(--s-3);
+  touch-action: none;
+  cursor: grab;
+}
+
+.dragging .grab {
+  cursor: grabbing;
+}
+
+.handle {
+  display: block;
+  width: 40px;
+  height: 5px;
+  margin: 0 auto 12px;
+  border-radius: var(--r-pill);
+  background: var(--border-strong);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+}
+
+.media {
+  flex: none;
+}
+
+.titles {
+  flex: 1;
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.title {
+  font-size: var(--fs-xl);
+  font-weight: 640;
+  line-height: 1.2;
+}
+
+.description {
+  margin-top: var(--s-1);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+.close {
+  margin: -4px -6px 0 0;
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--s-2) var(--s-5) var(--s-5);
+}
+
+.footer {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-5) var(--s-4);
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.footer > * {
+  flex: 1 1 140px;
+}

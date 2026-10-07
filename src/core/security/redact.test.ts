@@ -1,0 +1,180 @@
+import { describe, expect, it } from 'vitest'
+import { isValidIban, luhnValid, redactDeep, redactText } from './redact'
+
+/** Append the Luhn check digit so test card numbers are valid by construction. */
+function withLuhn(partial: string): string {
+  for (let d = 0; d <= 9; d++) if (luhnValid(partial + d)) return partial + d
+  throw new Error('unreachable')
+}
+
+const VISA = '4111111111111111'
+const UNIONPAY_16 = withLuhn('622202123456789')
+const UNIONPAY_19 = withLuhn('621700123456789012')
+const AMEX = '378282246310005'
+
+describe('luhnValid / isValidIban', () => {
+  it('validates the Luhn checksum', () => {
+    expect(luhnValid(VISA)).toBe(true)
+    expect(luhnValid('4111111111111112')).toBe(false)
+    expect(luhnValid(AMEX)).toBe(true)
+    expect(luhnValid('')).toBe(false)
+    expect(luhnValid('12a4')).toBe(false)
+  })
+
+  it('validates IBAN mod-97', () => {
+    expect(isValidIban('DE89370400440532013000')).toBe(true)
+    expect(isValidIban('GB82WEST12345698765432')).toBe(true)
+    expect(isValidIban('DE89370400440532013001')).toBe(false)
+    expect(isValidIban('XX00')).toBe(false)
+  })
+})
+
+describe('redactText — what gets masked', () => {
+  it.each([
+    ['email', 'Reach me at mei.lin+bills@example.co.uk today', 'Reach me at [EMAIL] today'],
+    ['CN mobile', 'Call 13812345678 now', 'Call [PHONE] now'],
+    ['CN mobile with spaces', 'Call 138 1234 5678 now', 'Call [PHONE] now'],
+    ['CN mobile with dashes', 'Call 138-1234-5678 now', 'Call [PHONE] now'],
+    ['CN mobile +86', 'Call +86 138 1234 5678 now', 'Call [PHONE] now'],
+    ['CN mobile 0086', 'Call 008613812345678 now', 'Call [PHONE] now'],
+    ['international', 'US office +1 (415) 555-0132.', 'US office [PHONE].'],
+    ['UK', 'London +44 20 7946 0958', 'London [PHONE]'],
+    ['Indonesia +62', 'WhatsApp +62 812-3456-7890', 'WhatsApp [PHONE]'],
+    ['Indonesia compact', 'WA +628123456789', 'WA [PHONE]'],
+    ['Indonesia local', 'HP 0812-3456-7890', 'HP [PHONE]'],
+    ['CN landline', 'Hotline 0755-12345678', 'Hotline [PHONE]'],
+    ['PRC resident ID', 'ID 11010119900307123X ok', 'ID [ID] ok'],
+    ['PRC resident ID (digits)', 'ID 440305199512250021', 'ID [ID]'],
+    ['Indonesian NIK', 'NIK 3171044506990001', 'NIK [NIK]'],
+    ['passport', 'Passport E12345678 issued', 'Passport [PASSPORT] issued'],
+    ['visa card', `card ${VISA}`, 'card [CARD ••••1111]'],
+    ['grouped card', 'card 4111 1111 1111 1111.', 'card [CARD ••••1111].'],
+    ['dashed card', 'card 4111-1111-1111-1111', 'card [CARD ••••1111]'],
+    ['amex grouping', 'amex 3782 822463 10005', 'amex [CARD ••••0005]'],
+    ['19-digit UnionPay', `acct ${UNIONPAY_19}`, `acct [CARD ••••${UNIONPAY_19.slice(-4)}]`],
+    ['IBAN', 'IBAN DE89 3704 0044 0532 0130 00', 'IBAN [IBAN ••••3000]'],
+    ['compact IBAN', 'to GB82WEST12345698765432', 'to [IBAN ••••5432]'],
+    ['labelled utility account', 'Account no. 户号: 0755 3318 0458', 'Account no. 户号: [ACCOUNT ••••0458]'],
+    ['customer number', 'Customer No. 0755123456 · 2 kWh', 'Customer No. [ACCOUNT ••••3456] · 2 kWh'],
+    ['Chinese account label', '账号：6217-0012-3456-7899', '账号：[ACCOUNT ••••7899]'],
+  ])('%s', (_label, input, expected) => {
+    expect(redactText(input).text).toBe(expected)
+  })
+
+  it('masks PII inside Chinese text', () => {
+    const r = redactText(`我的手机号是13912345678，卡号${UNIONPAY_16}，身份证110101199003071234，邮箱mei@example.com。本月电费¥486.20。`)
+    expect(r.text).toBe(`我的手机号是[PHONE]，卡号[CARD ••••${UNIONPAY_16.slice(-4)}]，身份证[ID]，邮箱[EMAIL]。本月电费¥486.20。`)
+    expect(r.counts).toEqual({ phone: 1, card: 1, cn_id: 1, email: 1 })
+  })
+
+  it('stops an international number before a following amount', () => {
+    expect(redactText('WA +62 812 3456 7890 2000').text).toBe('WA [PHONE] 2000')
+  })
+
+  it('counts by kind and omits kinds with no matches', () => {
+    const r = redactText('a@b.io, c@d.io, 13812345678')
+    expect(r.counts).toEqual({ email: 2, phone: 1 })
+    expect(redactText('nothing here').counts).toEqual({})
+  })
+
+  it('is idempotent', () => {
+    const once = redactText(`Mei Lin ${VISA} 13812345678 mei@x.io`, ['Mei Lin']).text
+    expect(redactText(once, ['Mei Lin']).text).toBe(once)
+  })
+})
+
+describe('redactText — what must survive', () => {
+  it.each([
+    ['yuan amounts', 'You spent ¥2,000 and ¥12,345.67 this month'],
+    ['decimal amounts', 'Balance 2000.50 after 486.20'],
+    ['large grouped amounts', 'Goal ¥1,234,567,890,123'],
+    ['ISO dates', 'Due 2026-10-28, period 2026-09'],
+    ['compact dates', 'Statement 20261022'],
+    ['percentages', 'Up 57% vs average, 38.5% of target'],
+    ['short numbers', 'Order 12345, 3 videos, 10 late-night orders'],
+    ['masked numbers', 'Card •••• 4821 / ****4821'],
+    ['times', 'Late-night order at 23:45 on 10/03'],
+    ['non-Luhn long ids', 'Taobao order 1234567890123 and timestamp 1729584000001'],
+    ['minor units', 'amount: 345000 minor units'],
+    ['Chinese amounts', '本期应缴金额：486.20元，缴费截止日期：2026年10月28日'],
+    ['negative amounts', 'Refund −¥30 and -2,500.00'],
+    ['signed small numbers', '+12.5% vs last month, +2,000 saved'],
+    ['account words next to amounts', 'Account balance ¥12,345,678 · 账户余额：12345678元 · customer since 2019'],
+    ['bill numbers', 'Bill no. 账单编号: SZPS-202609-0458 · hotline 95598'],
+    ['product codes', 'iPhone 15 Pro, AirPods Pro 2, Q4 2026'],
+  ])('%s', (_label, input) => {
+    expect(redactText(input)).toEqual({ text: input, counts: {} })
+  })
+
+  it('does not redact a 16-digit number that fails Luhn and NIK structure', () => {
+    expect(redactText('ref 9999999999999999').text).toBe('ref 9999999999999999')
+  })
+
+  it('does not touch digits that are part of identifiers', () => {
+    expect(redactText(`txn_${VISA} pot_13812345678`).text).toBe(`txn_${VISA} pot_13812345678`)
+  })
+})
+
+describe('redactText — names', () => {
+  it('masks full names and their parts as whole words only', () => {
+    const r = redactText('Hi Mei Lin! Mei paid Meituan; MEI LIN again; Linus is fine.', ['Mei Lin'])
+    expect(r.text).toBe('Hi [NAME]! [NAME] paid Meituan; [NAME] again; Linus is fine.')
+    expect(r.counts.name).toBe(3)
+  })
+
+  it('masks CJK names without word boundaries', () => {
+    expect(redactText('林美的账单', ['林美']).text).toBe('[NAME]的账单')
+  })
+
+  it('handles accented names and regex metacharacters safely', () => {
+    expect(redactText('José paid', ['José']).text).toBe('[NAME] paid')
+    expect(redactText('Dr. (A+B) Smith', ['(A+B) Smith']).text).toBe('Dr. [NAME]')
+  })
+
+  it('ignores empty, one-letter and non-string names', () => {
+    expect(redactText('a b c', ['', ' ', 'a', null as unknown as string]).text).toBe('a b c')
+  })
+
+  it('never rewrites redaction placeholders', () => {
+    expect(redactText(`${VISA} [NAME]`, ['Card', 'Name']).text).toBe('[CARD ••••1111] [NAME]')
+  })
+})
+
+describe('redactDeep', () => {
+  it('redacts every string value and merges counts, leaving numbers alone', () => {
+    const input = {
+      profile: { name: 'Arif Nasution', phone: '+62 812-3456-7890', income: 480_000 },
+      txns: [
+        { memo: 'from 13812345678', amount: -4500 },
+        { memo: `card ${VISA}`, amount: 13812345678 },
+      ],
+      flags: [true, null, undefined],
+    }
+    const { value, counts } = redactDeep(input, ['Arif Nasution'])
+    expect(value).toEqual({
+      profile: { name: '[NAME]', phone: '[PHONE]', income: 480_000 },
+      txns: [
+        { memo: 'from [PHONE]', amount: -4500 },
+        { memo: 'card [CARD ••••1111]', amount: 13812345678 },
+      ],
+      flags: [true, null, undefined],
+    })
+    expect(counts).toEqual({ name: 1, phone: 2, card: 1 })
+  })
+
+  it('does not mutate the input', () => {
+    const input = { memo: 'mail me@x.io' }
+    redactDeep(input)
+    expect(input.memo).toBe('mail me@x.io')
+  })
+
+  it('handles top-level strings, primitives and cycles', () => {
+    expect(redactDeep('me@x.io').value).toBe('[EMAIL]')
+    expect(redactDeep(42).value).toBe(42)
+    const a: Record<string, unknown> = { email: 'me@x.io' }
+    a.self = a
+    const out = redactDeep(a).value as Record<string, unknown>
+    expect(out.email).toBe('[EMAIL]')
+    expect(out.self).toBe(out)
+  })
+})

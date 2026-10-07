@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" stroke-linecap="round" stroke-linejoin="round">
+<defs>
+<rect id="ph-b" x="37" y="13" width="46" height="94" rx="11"/>
+<clipPath id="ph-c"><use href="#ph-b"/></clipPath>
+<clipPath id="ph-s"><rect x="42" y="18" width="36" height="84" rx="7"/></clipPath>
+</defs>
+<path d="M60 9C88 8 111 30 110 59C111 88 88 111 59 110C30 110 9 89 10 60C9 31 32 9 60 9Z" fill="#D5EEE2"/>
+<ellipse cx="60" cy="104" rx="26" ry="4" fill="#3A2A1F" opacity=".12"/>
+<g transform="translate(60 60) rotate(-10) scale(.9) translate(-60 -60)">
+<g fill="#E2B878" stroke="#3A2A1F" stroke-width="2"><rect x="34.5" y="33" width="4" height="9" rx="1.5"/><rect x="34.5" y="45" width="4" height="9" rx="1.5"/><rect x="81.5" y="38" width="4" height="13" rx="1.5"/></g>
+<use href="#ph-b" fill="#E2B878"/>
+<g clip-path="url(#ph-c)"><rect x="78" y="10" width="8" height="100" fill="#C99A5B"/></g>
+<use href="#ph-b" fill="none" stroke="#3A2A1F" stroke-width="2.5"/>
+<rect x="40" y="16" width="40" height="88" rx="8.5" fill="#24180F"/>
+<g clip-path="url(#ph-s)">
+<rect x="40" y="16" width="40" height="88" fill="#F2BD3D"/>
+<circle cx="64" cy="52" r="8" fill="#FFF4E3" opacity=".9"/>
+<path d="M42 62Q52 54 62 60T78 58V102H42Z" fill="#EE6A4D"/>
+<path d="M42 74Q54 66 66 73T78 72V102H42Z" fill="#D9472B"/>
+<path d="M42 86Q56 80 66 86T78 85V102H42Z" fill="#B1351D"/>
+<path d="M42 18H60L42 48Z" fill="#FFFFFF" opacity=".14"/>
+<rect x="45" y="90" width="30" height="8.5" rx="4.25" fill="#FFFAF2" opacity=".3"/>
+<g><rect x="47" y="91.75" width="5" height="5" rx="1.5" fill="#FFF4E3"/><rect x="54" y="91.75" width="5" height="5" rx="1.5" fill="#4FB08A"/><rect x="61" y="91.75" width="5" height="5" rx="1.5" fill="#4A78B5"/><rect x="68" y="91.75" width="5" height="5" rx="1.5" fill="#F2BD3D"/></g>
+</g>
+<rect x="53" y="21" width="14" height="4.5" rx="2.25" fill="#24180F"/>
+<path d="M39.5 24V36" stroke="#FFF4E3" stroke-width="1.6" opacity=".7"/>
+</g>
+<g fill="#F2BD3D"><path d="M0-6Q1-1 6 0Q1 1 0 6Q-1 1-6 0Q-1-1 0-6Z" transform="translate(96 30) scale(.8)"/><path d="M0-6Q1-1 6 0Q1 1 0 6Q-1 1-6 0Q-1-1 0-6Z" transform="translate(24 84) scale(.6)"/></g>
+</svg>

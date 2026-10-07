@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" stroke-linecap="round" stroke-linejoin="round">
+<defs>
+<clipPath id="lp-s"><rect x="27.5" y="29.5" width="65" height="44" rx="2.5"/></clipPath>
+<path id="lp-d" d="M24 77H96L109 89.5V91Q109 94.5 105 94.5H15Q11 94.5 11 91V89.5Z"/>
+<clipPath id="lp-c"><use href="#lp-d"/></clipPath>
+</defs>
+<path d="M60 9C88 8 111 30 110 59C111 88 88 111 59 110C30 110 9 89 10 60C9 31 32 9 60 9Z" fill="#F5E5C8"/>
+<ellipse cx="60" cy="99" rx="50" ry="4" fill="#3A2A1F" opacity=".12"/>
+<rect x="23" y="25" width="74" height="53" rx="6" fill="#2B2019" stroke="#3A2A1F" stroke-width="2.5"/>
+<g clip-path="url(#lp-s)">
+<rect x="27" y="29" width="66" height="45" fill="#4A78B5"/>
+<circle cx="74" cy="44" r="7" fill="#F2BD3D"/>
+<path d="M27 62Q42 50 58 58T94 54V74H27Z" fill="#4FB08A"/>
+<path d="M27 68Q48 58 66 66T94 64V74H27Z" fill="#2E8B66"/>
+<path d="M62 29H76L54 74H40Z" fill="#FFFFFF" opacity=".1"/>
+</g>
+<circle cx="60" cy="27.3" r=".9" fill="#5B4636"/>
+<use href="#lp-d" fill="#DDE3EB"/>
+<g clip-path="url(#lp-c)">
+<rect x="8" y="90" width="104" height="6" fill="#B9C3D0"/>
+<path d="M31 79.5H89L94.5 86H25.5Z" fill="#B9C3D0"/>
+<path d="M30 81.7H90M28 83.9H92" stroke="#DDE3EB" stroke-width=".9" stroke-dasharray="2.2 1"/>
+<path d="M52 87H68L69 89.5H51Z" fill="#C9D1DC"/>
+</g>
+<use href="#lp-d" fill="none" stroke="#3A2A1F" stroke-width="2.5"/>
+<path d="M11.5 90H108.5" stroke="#3A2A1F" stroke-width="1.8"/>
+<path d="M53 90.6Q60 93 67 90.6" fill="none" stroke="#8C99A8" stroke-width="1.2"/>
+<g fill="#F2BD3D"><path d="M0-6Q1-1 6 0Q1 1 0 6Q-1 1-6 0Q-1-1 0-6Z" transform="translate(104 24) scale(.8)"/><path d="M0-6Q1-1 6 0Q1 1 0 6Q-1 1-6 0Q-1-1 0-6Z" transform="translate(15 40) scale(.55)"/></g>
+</svg>

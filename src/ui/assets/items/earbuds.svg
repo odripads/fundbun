@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" stroke-linecap="round" stroke-linejoin="round">
+<defs>
+<rect id="eb-b" x="16" y="56" width="54" height="42" rx="17"/>
+<clipPath id="eb-c"><use href="#eb-b"/></clipPath>
+<path id="eb-p" d="M-3.3 25V7.5C-8.5 6.5-10.5 0.5-8.6-4C-6.6-8.6-1-10.4 3.6-8.6C8.6-6.6 10.2-0.6 7.4 3.8Q5.6 6.4 3.3 7.6V25A3.3 3.3 0 0 1-3.3 25Z"/>
+<g id="eb-u"><ellipse cx="-8.6" cy="-2.6" rx="4.4" ry="5.4" transform="rotate(-28 -8.6 -2.6)" fill="#E6DCCD" stroke="#3A2A1F" stroke-width="2.2"/><use href="#eb-p" fill="#FFFFFF"/><rect x="-3.3" y="21.5" width="6.6" height="6.8" rx="3.3" fill="#C9CFD8"/><use href="#eb-p" fill="none" stroke="#3A2A1F" stroke-width="2.3"/><ellipse cx="2.6" cy="-3.2" rx="2" ry="1.3" fill="#B8AFA3"/></g>
+</defs>
+<path d="M60 9C88 8 111 30 110 59C111 88 88 111 59 110C30 110 9 89 10 60C9 31 32 9 60 9Z" fill="#FCEBC4"/>
+<ellipse cx="58" cy="101" rx="40" ry="4.5" fill="#3A2A1F" opacity=".12"/>
+<use href="#eb-b" fill="#FFFFFF"/>
+<g clip-path="url(#eb-c)"><path d="M54 52Q64 76 54 102H74V52Z" fill="#EDE5D8"/></g>
+<use href="#eb-b" fill="none" stroke="#3A2A1F" stroke-width="2.5"/>
+<path d="M16.5 69H69.5" stroke="#3A2A1F" stroke-width="1.8"/>
+<circle cx="43" cy="82" r="2.2" fill="#4FB08A"/>
+<path d="M22.5 75V87" stroke="#EDE5D8" stroke-width="2.4"/>
+<use href="#eb-u" transform="translate(70 36) rotate(-18) scale(1.3)"/>
+<use href="#eb-u" transform="translate(90 52) rotate(10) scale(-1.3 1.3)"/>
+<g fill="#F2BD3D"><path d="M0-6Q1-1 6 0Q1 1 0 6Q-1 1-6 0Q-1-1 0-6Z" transform="translate(32 36) scale(.85)"/><path d="M0-6Q1-1 6 0Q1 1 0 6Q-1 1-6 0Q-1-1 0-6Z" transform="translate(100 84) scale(.6)"/></g>
+</svg>

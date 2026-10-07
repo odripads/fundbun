@@ -1,0 +1,135 @@
+.badge {
+  --badge-c: var(--text-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  height: 24px;
+  padding: 0 9px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--badge-c) 13%, transparent);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--badge-c) 28%, transparent);
+  font-size: var(--fs-xs);
+  font-weight: 650;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.sm {
+  height: 20px;
+  padding: 0 7px;
+  font-size: 11px;
+}
+
+.icon {
+  display: inline-flex;
+  color: var(--badge-c);
+}
+
+.icon svg {
+  width: 13px;
+  height: 13px;
+  stroke-width: 2.2;
+}
+
+.sm .icon svg {
+  width: 12px;
+  height: 12px;
+}
+
+.neutral {
+  --badge-c: var(--text-3);
+}
+
+.accent {
+  --badge-c: var(--accent);
+}
+
+.over {
+  --badge-c: var(--over);
+}
+
+.under {
+  --badge-c: var(--under);
+}
+
+.warn {
+  --badge-c: var(--warn);
+}
+
+.info {
+  --badge-c: var(--info);
+}
+
+.outline {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+}
+
+.solid {
+  background: var(--text);
+  color: var(--bg);
+  box-shadow: none;
+}
+
+.solid .icon {
+  color: inherit;
+}
+
+/* AI label: a deliberate, recognisable mark (not a status colour) */
+.ai {
+  --badge-c: var(--info);
+  background: linear-gradient(120deg, color-mix(in srgb, var(--info) 16%, var(--surface)), color-mix(in srgb, var(--accent) 16%, var(--surface)));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--info) 35%, transparent);
+  font-weight: 750;
+  letter-spacing: 0.04em;
+}
+
+.engine {
+  margin-left: 5px;
+  padding-left: 5px;
+  border-left: 1px solid color-mix(in srgb, var(--text) 25%, transparent);
+  font-weight: 560;
+  letter-spacing: 0;
+}
+
+/* permission tiers: warm with risk, each with its own icon */
+.tier {
+  gap: 5px;
+}
+
+.tierCode {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.tier0 {
+  --badge-c: var(--tier-0);
+}
+
+.tier1 {
+  --badge-c: var(--tier-1);
+}
+
+.tier2 {
+  --badge-c: var(--tier-2);
+}
+
+.tier3 {
+  --badge-c: var(--tier-3);
+}
+
+.tier4 {
+  --badge-c: var(--tier-4);
+  background: var(--tier-4);
+  color: var(--bg);
+  box-shadow: inset 0 0 0 1px var(--over);
+}
+
+.tier4 .icon {
+  color: var(--over);
+}

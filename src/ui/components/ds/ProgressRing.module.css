@@ -1,0 +1,57 @@
+.root {
+  --ring-c: var(--accent);
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+}
+
+.svg {
+  position: absolute;
+  inset: 0;
+}
+
+.track {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ring-c) 16%, var(--chart-track));
+}
+
+.fill {
+  fill: none;
+  stroke: var(--ring-c);
+  stroke-linecap: round;
+  transition: stroke-dashoffset var(--dur-3) var(--ease-out);
+}
+
+.centre {
+  position: relative;
+  display: grid;
+  place-items: center;
+  max-width: 76%;
+  text-align: center;
+  line-height: 1.1;
+}
+
+.accent {
+  --ring-c: var(--accent);
+}
+
+.under {
+  --ring-c: var(--under);
+}
+
+.over {
+  --ring-c: var(--over);
+}
+
+.warn {
+  --ring-c: var(--warn);
+}
+
+.info {
+  --ring-c: var(--info);
+}
+
+.neutral {
+  --ring-c: var(--text-3);
+}

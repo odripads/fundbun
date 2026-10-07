@@ -1,0 +1,106 @@
+.root {
+  --pb-h: 10px;
+  display: grid;
+  gap: var(--s-2);
+  min-width: 0;
+}
+
+.sm {
+  --pb-h: 6px;
+}
+
+.lg {
+  --pb-h: 14px;
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+  font-size: var(--fs-sm);
+}
+
+.label {
+  color: var(--text-2);
+  font-weight: 560;
+}
+
+.value {
+  color: var(--text);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.track {
+  --pb-c: var(--accent);
+  position: relative;
+  height: var(--pb-h);
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--pb-c) 16%, var(--chart-track));
+}
+
+.fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--pb-c) 78%, var(--surface)), var(--pb-c));
+  transition: width var(--dur-3) var(--ease-out);
+}
+
+/* overflow reads as a hatched end so "over" never relies on colour alone */
+.fill[data-over] {
+  background:
+    repeating-linear-gradient(135deg, transparent 0 5px, color-mix(in srgb, var(--surface) 35%, transparent) 5px 8px),
+    var(--pb-c);
+}
+
+.marker {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: var(--text);
+  box-shadow: 0 0 0 2px var(--surface);
+}
+
+.markerLabel {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.root:has(.markerLabel) {
+  padding-bottom: 16px;
+}
+
+.accent {
+  --pb-c: var(--accent);
+}
+
+.under {
+  --pb-c: var(--under);
+}
+
+.over {
+  --pb-c: var(--over);
+}
+
+.warn {
+  --pb-c: var(--warn);
+}
+
+.info {
+  --pb-c: var(--info);
+}
+
+.neutral {
+  --pb-c: var(--text-3);
+}

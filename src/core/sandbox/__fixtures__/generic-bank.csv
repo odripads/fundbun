@@ -1,0 +1,14 @@
+﻿Date,Description,Amount,Currency,Category,Memo
+2026-09-01,"RENT SEP - LANDLORD CHEN",-4200.00,CNY,Rent & housing,
+2026-09-03,"STARBUCKS 星巴克, FUTIAN",-36.00,CNY,,
+2026-09-05,"PAYROLL ""PIXELWAVE"" DESIGN",18500.00,CNY,income,September salary
+2026-09-07,AMAZON.COM,-12.99,USD,shopping,
+2026-09-31,BAD DATE ROW,-10.00,CNY,,
+
+2026-09-10,"JD.COM 京东 order
+with a newline in the description",-129.00,CNY,shopping,"multi-line, quoted"
+2026-09-12,BALANCE ENQUIRY,0.00,CNY,,
+2026-09-15,MEITUAN*美团外卖 SZ 0931,(45.50),CNY,,
+2026-09-16,CORNER SHOP,abc,CNY,,
+2026-09-18,"STARBUCKS 星巴克, FUTIAN",-36.00,CNY,,
+2026-09-18,"STARBUCKS 星巴克, FUTIAN",-36.00,CNY,,

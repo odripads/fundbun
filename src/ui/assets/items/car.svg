@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" stroke-linecap="round" stroke-linejoin="round">
+<defs>
+<path id="car-b" d="M14 80V71Q14 63 22 62L36 60L46 45Q49 40 55 40H73Q79 40 83 45L94 59L102 61Q108 62.5 108 70V80Q108 86 102 86H20Q14 86 14 80Z"/>
+<clipPath id="car-c"><use href="#car-b"/></clipPath>
+</defs>
+<path d="M60 9C88 8 111 30 110 59C111 88 88 111 59 110C30 110 9 89 10 60C9 31 32 9 60 9Z" fill="#F5E5C8"/>
+<g transform="translate(0 -4)">
+<ellipse cx="61" cy="100" rx="46" ry="4.5" fill="#3A2A1F" opacity=".12"/>
+<use href="#car-b" fill="#D9472B"/>
+<g clip-path="url(#car-c)"><rect x="10" y="76" width="100" height="12" fill="#B1351D"/><g fill="#3A2A1F"><circle cx="34" cy="86" r="14"/><circle cx="88" cy="86" r="14"/></g></g>
+<use href="#car-b" fill="none" stroke="#3A2A1F" stroke-width="2.5"/>
+<g fill="#9EC0E8" stroke="#3A2A1F" stroke-width="2"><path d="M53.5 44H50Q48 44 47 46L41 58H53.5Z"/><path d="M57.5 44H72Q76 44 78.5 47.5L86 58H57.5Z"/></g>
+<path d="M68 47L62.5 55" stroke="#FFFFFF" stroke-width="2" opacity=".75"/>
+<path d="M57 61V79M62 65H67" stroke="#3A2A1F" stroke-width="1.8"/>
+<g fill="none" stroke="#FFF4E3" opacity=".5"><path d="M22 66.5H96" stroke-width="2"/><path d="M53 41.8H72" stroke-width="1.6"/></g>
+<g fill="none"><path d="M100 81H109M11 81H19" stroke="#3A2A1F" stroke-width="5"/><path d="M100 81H109M11 81H19" stroke="#DCE3EE" stroke-width="2"/></g>
+<ellipse cx="104.5" cy="67.5" rx="2.6" ry="2.2" fill="#F2BD3D" stroke="#3A2A1F" stroke-width="1.5"/>
+<rect x="13" y="66" width="4" height="5" rx="1.5" fill="#EE6A4D" stroke="#3A2A1F" stroke-width="1.5"/>
+<g fill="#3A2A1F"><circle cx="34" cy="86" r="11.5"/><circle cx="88" cy="86" r="11.5"/></g>
+<g fill="#DCE3EE"><circle cx="34" cy="86" r="6"/><circle cx="88" cy="86" r="6"/></g>
+<g fill="#8C99A8"><circle cx="34" cy="86" r="2.4"/><circle cx="88" cy="86" r="2.4"/></g>
+<g fill="none" stroke="#FFF4E3" stroke-width="1.2" opacity=".55"><path d="M28.5 80.5A8 8 0 0 1 33 78.2"/><path d="M82.5 80.5A8 8 0 0 1 87 78.2"/></g>
+</g>
+<g fill="#F2BD3D"><path d="M0-6Q1-1 6 0Q1 1 0 6Q-1 1-6 0Q-1-1 0-6Z" transform="translate(98 30) scale(.8)"/><path d="M0-6Q1-1 6 0Q1 1 0 6Q-1 1-6 0Q-1-1 0-6Z" transform="translate(24 38) scale(.6)"/></g>
+</svg>

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" stroke-linecap="round" stroke-linejoin="round">
+<defs>
+<rect id="hp-l" x="17" y="59" width="22" height="40" rx="11"/>
+<rect id="hp-r" x="81" y="59" width="22" height="40" rx="11"/>
+<clipPath id="hp-c"><use href="#hp-l"/><use href="#hp-r"/></clipPath>
+</defs>
+<path d="M60 9C88 8 111 30 110 59C111 88 88 111 59 110C30 110 9 89 10 60C9 31 32 9 60 9Z" fill="#E6E0F5"/>
+<ellipse cx="60" cy="103" rx="38" ry="4.5" fill="#3A2A1F" opacity=".12"/>
+<g fill="none">
+<path d="M42 30.5C47 27.5 53 26 60 26C67 26 73 27.5 78 30.5" stroke="#3A2A1F" stroke-width="9"/>
+<path d="M42 30.5C47 27.5 53 26 60 26C67 26 73 27.5 78 30.5" stroke="#FFF4E3" stroke-width="4"/>
+<path d="M28 66V56C28 33 42 21 60 21C78 21 92 33 92 56V66" stroke="#3A2A1F" stroke-width="12"/>
+<path d="M28 66V56C28 33 42 21 60 21C78 21 92 33 92 56V66" stroke="#7E6BB8" stroke-width="7"/>
+<path d="M44 23.5Q52 20.5 60 20.5" stroke="#FFF4E3" stroke-width="2" opacity=".7"/>
+</g>
+<g fill="#F2BD3D" stroke="#3A2A1F" stroke-width="2"><rect x="24.5" y="55" width="7" height="10" rx="2"/><rect x="88.5" y="55" width="7" height="10" rx="2"/></g>
+<g stroke="#3A2A1F" stroke-width="2.5"><rect x="33" y="63" width="12" height="32" rx="6" fill="#FFF4E3"/><rect x="75" y="63" width="12" height="32" rx="6" fill="#FFF4E3"/></g>
+<g fill="#EFD7AD"><rect x="39.5" y="67" width="3" height="24" rx="1.5"/><rect x="77.5" y="67" width="3" height="24" rx="1.5"/></g>
+<use href="#hp-l" fill="#7E6BB8"/><use href="#hp-r" fill="#7E6BB8"/>
+<g clip-path="url(#hp-c)" fill="#5E4D99"><rect x="31" y="55" width="10" height="48"/><rect x="95" y="55" width="10" height="48"/><rect x="10" y="91" width="100" height="10"/></g>
+<g fill="none" stroke="#3A2A1F" stroke-width="2.5"><use href="#hp-l"/><use href="#hp-r"/></g>
+<g fill="#9C8CD0"><ellipse cx="27" cy="79" rx="5" ry="9"/><ellipse cx="93" cy="79" rx="5" ry="9"/></g><g fill="#F2BD3D" stroke="#3A2A1F" stroke-width="1.5"><circle cx="27" cy="79" r="2.4"/><circle cx="93" cy="79" r="2.4"/></g>
+<g fill="none" stroke="#FFF4E3" stroke-width="2" opacity=".75"><path d="M20.5 72Q20.5 65 25 63"/><path d="M84.5 72Q84.5 65 89 63"/></g>
+<g fill="#F2BD3D"><path d="M0-6Q1-1 6 0Q1 1 0 6Q-1 1-6 0Q-1-1 0-6Z" transform="translate(102 26) scale(.8)"/><path d="M0-6Q1-1 6 0Q1 1 0 6Q-1 1-6 0Q-1-1 0-6Z" transform="translate(19 30) scale(.6)"/></g>
+</svg>

@@ -1,0 +1,326 @@
+/* FundBun global styles — base elements, utilities, scoped themes, chart palette, motion policy.
+ * Component styles live in *.module.css next to each component and use semantic tokens only. */
+
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --topbar-h: 56px;
+  /* space screens must leave free at the bottom (tab bar + safe area); AppFrame overrides per route */
+  --chrome-bottom: var(--safe-bottom);
+  --fv-display: 'SOFT' 100, 'WONK' 0;
+  --fv-display-wonk: 'SOFT' 100, 'WONK' 1;
+  --tap: 44px;
+
+  /* chart palette — fixed categorical order (never cycled), CVD-validated per mode against the surface;
+   * category charts pass CATEGORIES colours instead */
+  --chart-1: #2a78d6;
+  --chart-2: #eb6834;
+  --chart-3: #1baf7a;
+  --chart-4: #eda100;
+  --chart-5: #e87ba4;
+  --chart-6: #4a3aa7;
+  --tier-4: var(--c-soy-800);
+  /* desktop device frame */
+  --device-bezel: var(--c-soy-900);
+}
+
+/* Derived tokens. Declared on every theme scope because a custom property resolves its var()s where it is
+ * declared — on :root alone, a [data-theme] subtree would inherit the root theme's values. */
+:root,
+[data-theme] {
+  --ring: 0 0 0 3px var(--bg), 0 0 0 5px var(--focus);
+  --hairline: 1px solid var(--border);
+  --chart-track: color-mix(in srgb, var(--text) 9%, transparent);
+  --chart-grid: color-mix(in srgb, var(--text) 10%, transparent);
+  /* permission tiers — T0 read → T4 prohibited, warming with risk (T4 is set per theme) */
+  --tier-0: var(--info);
+  --tier-1: var(--under);
+  --tier-2: var(--accent);
+  --tier-3: var(--over);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --chart-1: #3987e5;
+    --chart-2: #d95926;
+    --chart-3: #199e70;
+    --chart-4: #c98500;
+    --chart-5: #d55181;
+    --chart-6: #9085e9;
+    --tier-4: #f3e3d3;
+    --device-bezel: #0b0806;
+  }
+}
+:root[data-theme='dark'] {
+  --device-bezel: #0b0806;
+  --chart-1: #3987e5;
+  --chart-2: #d95926;
+  --chart-3: #199e70;
+  --chart-4: #c98500;
+  --chart-5: #d55181;
+  --chart-6: #9085e9;
+  --tier-4: #f3e3d3;
+}
+
+/* Scoped themes: force a theme on any subtree (the gallery shows light and dark side by side).
+ * Values mirror tokens.css; keep in sync until tokens.css scopes [data-theme] to any element. */
+:not(:root)[data-theme='light'] {
+  --bg: var(--c-cream-50);
+  --bg-sunken: var(--c-cream-100);
+  --surface: #ffffff;
+  --surface-2: var(--c-dough-200);
+  --surface-glass: rgba(255, 250, 242, 0.78);
+  --border: rgba(58, 42, 31, 0.12);
+  --border-strong: rgba(58, 42, 31, 0.24);
+  --text: var(--c-soy-900);
+  --text-2: var(--c-soy-700);
+  --text-3: #8c7764;
+  --accent: var(--c-yuan-500);
+  --accent-strong: var(--c-yuan-600);
+  --accent-soft: rgba(227, 162, 26, 0.16);
+  --over: var(--c-chili-500);
+  --over-soft: rgba(217, 71, 43, 0.12);
+  --under: var(--c-jade-500);
+  --under-soft: rgba(46, 139, 102, 0.12);
+  --focus: #2b6fd6;
+  --bun: var(--c-dough-300);
+  --bun-shade: var(--c-crust-400);
+  --shadow-1: 0 1px 2px rgba(36, 24, 15, 0.06), 0 2px 8px rgba(36, 24, 15, 0.06);
+  --shadow-2: 0 4px 12px rgba(36, 24, 15, 0.08), 0 12px 32px rgba(36, 24, 15, 0.1);
+  --chart-1: #2a78d6;
+  --chart-2: #eb6834;
+  --chart-3: #1baf7a;
+  --chart-4: #eda100;
+  --chart-5: #e87ba4;
+  --chart-6: #4a3aa7;
+  --tier-4: var(--c-soy-800);
+  color-scheme: light;
+}
+:not(:root)[data-theme='dark'] {
+  --bg: #17110c;
+  --bg-sunken: #120d09;
+  --surface: #221912;
+  --surface-2: #2e2219;
+  --surface-glass: rgba(34, 25, 18, 0.8);
+  --border: rgba(248, 235, 221, 0.1);
+  --border-strong: rgba(248, 235, 221, 0.2);
+  --text: #f8ebdd;
+  --text-2: #d8c3ad;
+  --text-3: #a68f79;
+  --accent: var(--c-yuan-400);
+  --accent-strong: var(--c-yuan-500);
+  --accent-soft: rgba(242, 189, 61, 0.16);
+  --over: var(--c-chili-400);
+  --over-soft: rgba(238, 106, 77, 0.16);
+  --under: var(--c-jade-400);
+  --under-soft: rgba(79, 176, 138, 0.16);
+  --focus: #7fb0ff;
+  --bun: #e9cf9f;
+  --bun-shade: #c99a5b;
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-2: 0 8px 28px rgba(0, 0, 0, 0.45);
+  --chart-1: #3987e5;
+  --chart-2: #d95926;
+  --chart-3: #199e70;
+  --chart-4: #c98500;
+  --chart-5: #d55181;
+  --chart-6: #9085e9;
+  --tier-4: #f3e3d3;
+  color-scheme: dark;
+}
+[data-theme] {
+  color: var(--text);
+}
+
+/* ───────────── base ───────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  background: var(--bg-sunken);
+  scroll-padding-top: calc(var(--topbar-h) + var(--safe-top) + 8px);
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: var(--fs-md);
+  line-height: 1.5;
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100dvh;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-variation-settings: var(--fv-display);
+  font-weight: 620;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+p {
+  margin: 0;
+  text-wrap: pretty;
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+svg {
+  overflow: visible;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+html[data-scroll-locked],
+html[data-scroll-locked] body {
+  overflow: hidden;
+}
+
+/* ───────────── utilities ───────────── */
+
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.display {
+  font-family: var(--font-display);
+  font-variation-settings: var(--fv-display);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+.skip-link {
+  position: fixed;
+  top: calc(var(--safe-top) + 8px);
+  left: 8px;
+  z-index: 100;
+  padding: 10px 16px;
+  border-radius: var(--r-pill);
+  background: var(--text);
+  color: var(--bg);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* hidden until keyboard focus lands on it */
+.skip-link:not(:focus-visible) {
+  clip-path: inset(50%);
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* ───────────── scrollbars ───────────── */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+/* ───────────── motion policy ─────────────
+ * Ambient motion is part of the brand but never essential; both the OS setting and the in-app
+ * "Reduce motion" setting (html[data-motion=reduce]) switch it off. */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+html[data-motion='reduce'] *,
+html[data-motion='reduce'] *::before,
+html[data-motion='reduce'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+@media (forced-colors: active) {
+  :focus-visible {
+    outline-color: Highlight;
+  }
+}

@@ -1,0 +1,80 @@
+.stat {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  min-width: 0;
+}
+
+.label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  font-weight: 560;
+}
+
+.icon {
+  display: inline-flex;
+}
+
+.icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.value {
+  color: var(--text);
+  font-size: var(--fs-xl);
+  font-weight: 650;
+  line-height: 1.15;
+}
+
+.sm .value {
+  font-size: var(--fs-lg);
+}
+
+.lg .value {
+  font-size: var(--fs-3xl);
+}
+
+.delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.arrow {
+  display: inline-flex;
+}
+
+.arrow svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2.4;
+}
+
+.good {
+  color: var(--under);
+}
+
+.bad {
+  color: var(--over);
+}
+
+.neutral {
+  color: var(--text-2);
+}
+
+.trend {
+  margin-top: 4px;
+}
+
+.hint {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}

@@ -1,0 +1,67 @@
+.frame {
+  --dream-radius: clamp(10px, calc(var(--dream-size, 96px) * 0.24), 32px);
+
+  position: relative;
+  display: inline-block;
+  flex: none;
+  width: var(--dream-size, 96px);
+  height: var(--dream-size, 96px);
+  border-radius: var(--dream-radius);
+  isolation: isolate;
+  vertical-align: middle;
+}
+
+.img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  user-select: none;
+}
+
+/* the illustrations bring their own pastel blob; the plate just seats them on any surface */
+.preset .img {
+  object-fit: contain;
+  background: color-mix(in srgb, var(--accent) 7%, var(--surface));
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.photo .img {
+  object-fit: cover;
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.glow::before {
+  content: '';
+  position: absolute;
+  inset: -22%;
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 42%, transparent), transparent);
+  animation: dream-glow 4.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes dream-glow {
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: scale(0.94);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glow::before {
+    animation: none;
+  }
+}
+
+:global(html[data-motion='reduce']) .glow::before {
+  animation: none;
+}

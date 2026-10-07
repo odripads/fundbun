@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" stroke-linecap="round" stroke-linejoin="round">
+<defs>
+<rect id="gi-b" x="25" y="58" width="70" height="40" rx="4"/>
+<clipPath id="gi-c"><use href="#gi-b"/></clipPath>
+<rect id="gi-l" x="20" y="45" width="80" height="15" rx="4"/>
+<clipPath id="gi-d"><use href="#gi-l"/></clipPath>
+</defs>
+<path d="M60 9C88 8 111 30 110 59C111 88 88 111 59 110C30 110 9 89 10 60C9 31 32 9 60 9Z" fill="#FCEBC4"/>
+<ellipse cx="60" cy="101" rx="42" ry="4.5" fill="#3A2A1F" opacity=".12"/>
+<g stroke="#3A2A1F" stroke-width="2.5"><path d="M60 44C52 30 36 26 37 37C38 44 50 45 60 44Z" fill="#F2BD3D"/><path d="M60 44C68 30 84 26 83 37C82 44 70 45 60 44Z" fill="#F2BD3D"/></g>
+<g fill="#E3A21A"><path d="M56 42C50 36 43 33.5 42.5 37.5C43 41 50 42.5 56 42Z"/><path d="M64 42C70 36 77 33.5 77.5 37.5C77 41 70 42.5 64 42Z"/></g>
+<use href="#gi-b" fill="#2E8B66"/>
+<g clip-path="url(#gi-c)"><rect x="82" y="55" width="16" height="46" fill="#1F6C4E"/><rect x="20" y="58" width="80" height="5" fill="#1F6C4E"/><g fill="#FFF4E3" opacity=".3"><circle cx="33" cy="70" r="1.8"/><circle cx="44" cy="82" r="1.8"/><circle cx="34" cy="91" r="1.8"/><circle cx="76" cy="71" r="1.8"/><circle cx="86" cy="85" r="1.8"/><circle cx="74" cy="91" r="1.8"/></g></g>
+<use href="#gi-b" fill="none" stroke="#3A2A1F" stroke-width="2.5"/>
+<use href="#gi-l" fill="#4FB08A"/>
+<g clip-path="url(#gi-d)"><rect x="88" y="40" width="14" height="22" fill="#2E8B66"/></g>
+<use href="#gi-l" fill="none" stroke="#3A2A1F" stroke-width="2.5"/>
+<g fill="#F2BD3D" stroke="#3A2A1F" stroke-width="2.5"><rect x="54" y="60" width="12" height="38"/><rect x="54" y="45" width="12" height="15"/></g>
+<g fill="#E3A21A"><rect x="62.3" y="61.3" width="2.5" height="35.5"/><rect x="62.3" y="46.3" width="2.5" height="12.5"/></g>
+<rect x="53" y="38" width="14" height="10" rx="4" fill="#F2BD3D" stroke="#3A2A1F" stroke-width="2.5"/>
+<path d="M25 49.5H40" stroke="#FFF4E3" stroke-width="2" opacity=".65"/>
+<g fill="#F2BD3D"><path d="M0-6Q1-1 6 0Q1 1 0 6Q-1 1-6 0Q-1-1 0-6Z" transform="translate(101 28) scale(.8)"/><path d="M0-6Q1-1 6 0Q1 1 0 6Q-1 1-6 0Q-1-1 0-6Z" transform="translate(18 32) scale(.6)"/></g>
+</svg>

@@ -1,0 +1,101 @@
+.money {
+  display: inline-flex;
+  align-items: baseline;
+  color: var(--text);
+  font-weight: 650;
+  line-height: 1.1;
+  white-space: nowrap;
+  font-feature-settings: 'lnum' 1;
+}
+
+.inner {
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.display {
+  font-family: var(--font-display);
+  font-variation-settings: var(--fv-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.xs {
+  font-size: var(--fs-xs);
+}
+
+.sm {
+  font-size: var(--fs-sm);
+}
+
+.md {
+  font-size: var(--fs-md);
+}
+
+.lg {
+  font-size: var(--fs-xl);
+}
+
+.xl {
+  font-size: var(--fs-3xl);
+  letter-spacing: -0.025em;
+}
+
+.hero {
+  font-size: clamp(2.5rem, 12vw, 3.5rem);
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.sign {
+  margin-right: 0.04em;
+}
+
+.symbol {
+  margin-right: 0.06em;
+  font-size: 0.6em;
+  font-weight: 560;
+  align-self: flex-start;
+  transform: translateY(0.18em);
+}
+
+.fraction,
+.suffix {
+  font-size: 0.6em;
+  font-weight: 560;
+}
+
+.fraction {
+  opacity: 0.72;
+}
+
+.neutral {
+  color: inherit;
+}
+
+.over {
+  color: var(--over);
+}
+
+.under {
+  color: var(--under);
+}
+
+.accent {
+  color: var(--accent-strong);
+}
+
+.muted {
+  color: var(--text-3);
+  font-weight: 560;
+}
+
+.strike {
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+  color: var(--text-3);
+}

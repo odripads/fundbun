@@ -1,0 +1,72 @@
+.pill {
+  --pill-c: var(--under);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  margin-right: 4px;
+  padding: 0 12px 0 10px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--pill-c) 12%, var(--surface));
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pill-c) 35%, transparent);
+  font-size: var(--fs-xs);
+  font-weight: 750;
+  white-space: nowrap;
+  transition: background-color var(--dur-2) var(--ease-out), transform var(--dur-1) var(--ease-out);
+}
+
+.pill::after {
+  content: '';
+  position: absolute;
+  inset: -6px -2px;
+}
+
+.pill:hover {
+  background: color-mix(in srgb, var(--pill-c) 20%, var(--surface));
+}
+
+.pill:active {
+  transform: scale(0.96);
+}
+
+.pill:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pill-c) 35%, transparent), var(--ring);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--pill-c);
+}
+
+.active .dot {
+  animation: breathe 3s ease-in-out infinite;
+}
+
+.paused {
+  --pill-c: var(--warn);
+}
+
+.breaker {
+  --pill-c: var(--over);
+}
+
+.paused .dot,
+.breaker .dot {
+  border-radius: 2px;
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--pill-c) 50%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 4px transparent;
+  }
+}

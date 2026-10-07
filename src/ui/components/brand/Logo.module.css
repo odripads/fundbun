@@ -1,0 +1,27 @@
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--logo-size, 32px) * 0.2);
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.mark {
+  flex: none;
+}
+
+.word {
+  font-family: var(--font-display);
+  font-variation-settings: var(--fv-display, 'SOFT' 100, 'WONK' 0);
+  font-weight: 700;
+  font-size: calc(var(--logo-size, 32px) * 0.68);
+  letter-spacing: -0.02em;
+  color: var(--text);
+  white-space: nowrap;
+  /* optical centre: the mark's visual mass sits low (steam on top) */
+  transform: translateY(0.04em);
+}
+
+.bun {
+  color: var(--accent);
+}

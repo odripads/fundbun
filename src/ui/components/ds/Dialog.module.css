@@ -1,0 +1,47 @@
+.dialog {
+  overflow-y: auto;
+  padding: var(--s-6) var(--s-5) var(--s-5);
+  text-align: center;
+  background:
+    radial-gradient(100% 50% at 50% 0%, var(--accent-soft) 0%, transparent 70%),
+    var(--surface);
+}
+
+.danger {
+  background:
+    radial-gradient(100% 50% at 50% 0%, var(--over-soft) 0%, transparent 70%),
+    var(--surface);
+}
+
+.media {
+  display: grid;
+  place-items: center;
+  margin-bottom: var(--s-3);
+}
+
+.title {
+  font-size: var(--fs-xl);
+  font-weight: 640;
+}
+
+.description {
+  margin-top: var(--s-2);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+.body {
+  margin-top: var(--s-4);
+  text-align: start;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: var(--s-2);
+  margin-top: var(--s-5);
+}
+
+.actions > * {
+  width: 100%;
+}

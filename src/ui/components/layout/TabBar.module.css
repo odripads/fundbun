@@ -1,0 +1,183 @@
+.nav {
+  position: fixed;
+  left: max(12px, calc(50% - var(--app-max) / 2 + 12px));
+  right: max(12px, calc(50% - var(--app-max) / 2 + 12px));
+  bottom: calc(var(--safe-bottom) + 10px);
+  z-index: 30;
+  height: var(--tabbar-h);
+  border-radius: 26px;
+  background: var(--surface-glass);
+  box-shadow:
+    inset 0 0 0 1px var(--border),
+    inset 0 1px 0 color-mix(in srgb, var(--c-cream-50) 40%, transparent),
+    var(--shadow-2);
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+}
+
+.list {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  height: 100%;
+  margin: 0;
+  padding: 0 4px;
+  list-style: none;
+}
+
+.slot {
+  display: flex;
+  min-width: 0;
+}
+
+.tab {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 0;
+  border-radius: 20px;
+  color: var(--text-3);
+  text-decoration: none;
+  transition: color var(--dur-2) var(--ease-out);
+}
+
+.tab:hover {
+  color: var(--text);
+}
+
+.tab:focus-visible,
+.ask:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--focus);
+}
+
+.iconWrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 30px;
+  border-radius: var(--r-pill);
+  transition:
+    background-color var(--dur-2) var(--ease-out),
+    transform var(--dur-3) var(--ease-spring);
+}
+
+.iconWrap svg {
+  width: 22px;
+  height: 22px;
+  stroke-width: 1.8;
+}
+
+.active {
+  color: var(--text);
+}
+
+.active .iconWrap {
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.active .iconWrap svg {
+  stroke-width: 2.2;
+}
+
+.tab:active .iconWrap {
+  transform: scale(0.92);
+}
+
+.label {
+  overflow: hidden;
+  max-width: 100%;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ───────── centre "Ask Bun" ───────── */
+
+.askSlot {
+  justify-content: center;
+}
+
+.ask {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  width: 100%;
+  padding-bottom: 9px;
+  border-radius: 20px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.bun {
+  position: absolute;
+  top: -26px;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin-left: -32px;
+  border-radius: 50%;
+  background:
+    radial-gradient(100% 100% at 30% 20%, color-mix(in srgb, var(--c-cream-50) 70%, transparent) 0%, transparent 55%),
+    linear-gradient(160deg, var(--accent), var(--accent-strong));
+  box-shadow:
+    0 0 0 4px var(--bg),
+    0 10px 22px -8px color-mix(in srgb, var(--accent-strong) 80%, transparent),
+    inset 0 -3px 0 color-mix(in srgb, var(--c-bamboo-600) 50%, transparent);
+  transition: transform var(--dur-3) var(--ease-spring);
+}
+
+.ask:hover .bun {
+  transform: translateY(-2px) rotate(-3deg);
+}
+
+.ask:active .bun {
+  transform: scale(0.94);
+}
+
+.ask .label {
+  font-weight: 750;
+}
+
+.badge {
+  position: absolute;
+  top: -2px;
+  right: 4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--r-pill);
+  background: var(--over);
+  color: var(--c-cream-50);
+  box-shadow: 0 0 0 2px var(--surface);
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 18px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.bun .badge {
+  top: 0;
+  right: -2px;
+}
+
+.dot {
+  min-width: 10px;
+  width: 10px;
+  height: 10px;
+  padding: 0;
+}

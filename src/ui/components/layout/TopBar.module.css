@@ -1,0 +1,68 @@
+.sentinel {
+  height: 1px;
+  margin-bottom: -1px;
+}
+
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  padding-top: var(--safe-top);
+  transition:
+    background-color var(--dur-2) var(--ease-out),
+    box-shadow var(--dur-2) var(--ease-out);
+}
+
+.scrolled {
+  background: var(--surface-glass);
+  box-shadow: 0 1px 0 var(--border);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  min-height: var(--topbar-h);
+  padding: 0 var(--s-2) 0 var(--gutter, var(--s-4));
+}
+
+.back {
+  margin-left: calc(-1 * var(--s-2));
+}
+
+.titles {
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  overflow: hidden;
+  font-size: var(--fs-2xl);
+  font-weight: 640;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.subtitle {
+  overflow: hidden;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 560;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.logo {
+  color: var(--text);
+}
+
+.actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+}

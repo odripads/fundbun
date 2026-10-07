@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" stroke-linecap="round" stroke-linejoin="round">
+<defs>
+<path id="pl-f" d="M22 52H88C100 52 108 56 108 60C108 64 100 68 88 68H34C26 68 19 63 15 56C13.5 53 16 52 22 52Z"/>
+<clipPath id="pl-c"><use href="#pl-f"/></clipPath>
+</defs>
+<path d="M60 9C88 8 111 30 110 59C111 88 88 111 59 110C30 110 9 89 10 60C9 31 32 9 60 9Z" fill="#DBE6F5"/>
+<g fill="#FFFFFF"><circle cx="30" cy="89" r="6"/><circle cx="39" cy="85" r="8"/><circle cx="48" cy="90" r="5"/><rect x="24" y="89" width="29" height="6" rx="3"/><circle cx="80" cy="33" r="4.5"/><circle cx="87" cy="29" r="6.5"/><circle cx="94" cy="34" r="4"/><rect x="75" y="33" width="23" height="5" rx="2.5"/></g>
+<g transform="translate(63 60) rotate(-16) scale(.86) translate(-60 -60)" stroke="#3A2A1F" stroke-width="2.5">
+<path d="M58 53L46 36Q44.5 33.5 47.5 33.5H53Q56 33.5 57.5 35.5L72 53Z" fill="#C3D2E8"/>
+<path d="M18 56L13 33Q12.5 29.5 16 30L20 30.5Q23.5 31 25.5 34.5L36 54Z" fill="#D9472B"/>
+<use href="#pl-f" fill="#FFFFFF" stroke="none"/>
+<g clip-path="url(#pl-c)" stroke="none"><rect x="10" y="61" width="102" height="10" fill="#DCE5F2"/><path d="M30 62.5H100" stroke="#F2BD3D" stroke-width="1.8"/></g>
+<use href="#pl-f" fill="none"/>
+<g fill="#4A78B5" stroke="none"><rect x="38" y="55.5" width="3" height="3.6" rx="1.5"/><rect x="44" y="55.5" width="3" height="3.6" rx="1.5"/><rect x="50" y="55.5" width="3" height="3.6" rx="1.5"/><rect x="56" y="55.5" width="3" height="3.6" rx="1.5"/><rect x="62" y="55.5" width="3" height="3.6" rx="1.5"/><rect x="68" y="55.5" width="3" height="3.6" rx="1.5"/><rect x="74" y="55.5" width="3" height="3.6" rx="1.5"/><rect x="80" y="55.5" width="3" height="3.6" rx="1.5"/><path d="M93 55.5H99Q103 56 104.5 58.5H93Z" fill="#355C93"/></g>
+<path d="M22 60L11 67Q9 69.5 12.5 69.5H17L30 63Z" fill="#B1351D"/>
+<path d="M52 63L36 86Q34 89 37.5 89H43Q46 89 48 86.5L70 63Z" fill="#EEF3FA"/>
+<rect x="47" y="70" width="19" height="9" rx="4.5" fill="#DCE5F2"/>
+<ellipse cx="64.5" cy="74.5" rx="2" ry="3.2" fill="#5B4636" stroke="none"/>
+</g>
+<g fill="#F2BD3D"><path d="M0-6Q1-1 6 0Q1 1 0 6Q-1 1-6 0Q-1-1 0-6Z" transform="translate(26 30) scale(.75)"/><path d="M0-6Q1-1 6 0Q1 1 0 6Q-1 1-6 0Q-1-1 0-6Z" transform="translate(96 84) scale(.6)"/></g>
+</svg>
