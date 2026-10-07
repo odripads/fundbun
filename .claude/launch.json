@@ -1,0 +1,7 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "fundbun-web", "runtimeExecutable": "npx", "runtimeArgs": ["vite", "--port", "5173", "--strictPort"], "port": 5173 },
+    { "name": "fundbun-api", "runtimeExecutable": "npx", "runtimeArgs": ["tsx", "server/index.ts"], "port": 8787 }
+  ]
+}

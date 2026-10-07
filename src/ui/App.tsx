@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, type ComponentType } from 'react'
 import type { FundBunApp } from '../core/app'
 import type { AppSnapshot } from '../core/app-api'
 import { Spinner, ToastProvider } from './components/ds'
+import { ApprovalHost } from './components/agent'
 import { AppFrame, EngineNotReady, ErrorBoundary, LockScreen, ShellActions, TabBar, TopBar } from './components/layout'
 import { useMotionPreference } from './hooks/useReducedMotion'
 import { navigate, resolveRoute, ROUTE_META, setHash, useRoute, type Location, type RouteName } from './router'
@@ -15,7 +16,7 @@ import {
   InsightsScreen,
   OnboardingScreen,
   SettingsScreen,
-} from './screens/placeholders'
+} from './screens'
 import { AppProvider, shallowEqual, useEngineStatus, useRetryEngine, useSnapshot, type EngineStatus } from './state'
 
 const LazyGallery = lazy(() => import('./screens/Gallery'))
@@ -135,6 +136,7 @@ function ReadyShell({ app, loc }: { app: FundBunApp; loc: Location }) {
       >
         <Screen />
       </ErrorBoundary>
+      <ApprovalHost />
     </AppFrame>
   )
 }

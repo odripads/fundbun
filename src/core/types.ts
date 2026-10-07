@@ -432,6 +432,10 @@ export interface MirrorState {
   mood: BunMood
   /** call-to-action the hero offers */
   cta?: SuggestedAction
+  /** under target: the user-chosen guilt-free treat the surplus covers (secondary option, never pushed) */
+  treat?: DreamEquivalent
+  /** secondary CTA, e.g. "Earmark for Concert ticket" */
+  secondaryCta?: SuggestedAction
 }
 
 // ───────────────────────────── tripwires (spending thresholds) ─────────────────────────────

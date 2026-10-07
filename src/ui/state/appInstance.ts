@@ -44,7 +44,29 @@ function isStaticBuild(): boolean {
 }
 
 export function createBrowserApp(): FundBunApp {
-  return createFundBunApp({ storage: browserStorage(), llmBaseUrl: isStaticBuild() ? null : '/api' })
+  const app = createFundBunApp({ storage: browserStorage(), llmBaseUrl: isStaticBuild() ? null : '/api' })
+  applyBootParams(app)
+  return app
+}
+
+/**
+ * Deep links for judges and demos: `?demo=mei` / `?demo=arif` loads a sandbox persona (replacing local data),
+ * `?reset=1` wipes local data. The query is removed afterwards so a reload doesn't repeat it.
+ */
+export function applyBootParams(app: FundBunApp, loc: Location | undefined = globalThis.location): void {
+  if (!loc) return
+  const params = new URLSearchParams(loc.search)
+  const demo = params.get('demo')
+  const reset = params.get('reset')
+  if (!demo && !reset) return
+  if (reset === '1') app.resetAll()
+  if (demo === 'mei' || demo === 'arif') app.loadDemo(demo)
+  try {
+    const hash = loc.hash || (demo ? '#/home' : '#/onboarding')
+    globalThis.history?.replaceState(null, '', `${loc.pathname}${hash}`)
+  } catch {
+    // history can be unavailable in sandboxed frames — harmless
+  }
 }
 
 let instance: EngineStatus | null = null

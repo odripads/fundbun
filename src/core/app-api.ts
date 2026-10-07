@@ -8,6 +8,7 @@ import type {
   ChatMessage,
   Consent,
   Currency,
+  DreamEquivalent,
   DreamItem,
   FinanceContext,
   GoalProgress,
@@ -66,6 +67,10 @@ export interface DerivedState {
   busy: boolean
   /** the engine that will answer the next message */
   engine: 'offline' | 'llm'
+  /** "Could've collection": cumulative over/under across the last 6 months in dream items */
+  couldve?: { totalOver: Minor; totalUnder: Minor; equivalents: DreamEquivalent[] }
+  /** per-month mirror verdicts for the last 6 months (oldest first) */
+  mirrorHistory?: { month: YearMonth; status: MirrorState['status']; delta: Minor; item?: DreamEquivalent }[]
 }
 
 export interface AppSnapshot {

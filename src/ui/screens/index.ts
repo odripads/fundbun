@@ -1,0 +1,10 @@
+/** One module per screen so screens can be built independently. App.tsx imports from here. */
+export { OnboardingScreen } from './onboarding/OnboardingScreen'
+export { HomeScreen } from './home/HomeScreen'
+export { GoalsScreen } from './goals/GoalsScreen'
+export { InsightsScreen } from './insights/InsightsScreen'
+export { BillsScreen } from './bills/BillsScreen'
+export { ChatScreen } from './chat/ChatScreen'
+export { SettingsScreen } from './settings/SettingsScreen'
+export { ActivityScreen } from './activity/ActivityScreen'
+export { GlassBoxContent } from './glassbox/GlassBoxContent'

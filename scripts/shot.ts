@@ -5,6 +5,8 @@
  *   npx tsx scripts/shot.ts --file src/ui/assets/logo.svg --out /tmp/logo.png --width 512 --height 512
  *   options: --width 390 --height 844 --dark --full --wait 600 --click "text=Try the demo" (repeatable)
  *            --eval "localStorage.clear()" (runs before navigation completes, repeatable) --scale 2
+ *            --step 'click:text=Try the demo' --step 'fill:textarea=>How am I doing?' --step 'press:Enter'
+ *            --step 'wait:800' --step 'shot:/tmp/mid.png'   (steps run in order, after --click)
  */
 import { chromium } from 'playwright'
 import { resolve } from 'node:path'
@@ -45,6 +47,20 @@ await page.goto(url, { waitUntil: 'networkidle' })
 for (const sel of o.click ?? []) {
   await page.locator(sel).first().click({ timeout: 5000 })
   await page.waitForTimeout(300)
+}
+for (const step of o.step ?? []) {
+  const i = step.indexOf(':')
+  const kind = step.slice(0, i)
+  const arg = step.slice(i + 1)
+  if (kind === 'click') await page.locator(arg).first().click({ timeout: 8000 })
+  else if (kind === 'fill') {
+    const [sel, text] = arg.split('=>')
+    await page.locator(sel).first().fill(text, { timeout: 8000 })
+  } else if (kind === 'press') await page.keyboard.press(arg)
+  else if (kind === 'wait') await page.waitForTimeout(Number(arg))
+  else if (kind === 'shot') await page.screenshot({ path: arg, fullPage: Boolean(o.full) })
+  else if (kind === 'eval') await page.evaluate(arg)
+  await page.waitForTimeout(250)
 }
 await page.waitForTimeout(Number(o.wait?.[0] ?? 500))
 await page.screenshot({ path: outPath, fullPage: Boolean(o.full) })
