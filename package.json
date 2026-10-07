@@ -1,0 +1,45 @@
+{
+  "name": "fundbun",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FundBun — an AI personal-finance agent that turns overspending into something you can see: the dream you could've had.",
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev": "concurrently -k -n web,api -c yellow,cyan \"vite\" \"tsx watch server/index.ts\"",
+    "dev:web": "vite",
+    "dev:api": "tsx watch server/index.ts",
+    "build": "tsc -b && vite build",
+    "build:pages": "tsc -b && vite build --base=/fundbun/ --mode pages",
+    "start": "NODE_ENV=production tsx server/index.ts",
+    "preview": "vite preview",
+    "typecheck": "tsc -b --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "evidence": "tsx scripts/run-scenarios.ts",
+    "demo:record": "tsx scripts/record-demo.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.132.0",
+    "@fontsource-variable/dm-sans": "^5.3.0",
+    "@fontsource-variable/fraunces": "^5.3.0",
+    "lucide-react": "^1.52.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "tsx": "^4.23.15",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "concurrently": "^9.2.0",
+    "jsdom": "^26.0.0",
+    "playwright": "^1.63.0",
+    "typescript": "~5.9.3",
+    "vite": "^8.3.3",
+    "vitest": "^5.0.3"
+  }
+}
