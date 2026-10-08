@@ -10,6 +10,7 @@
 | Competition track | International AI Track — Topic A: Personal Finance Assistant |
 | Submission date | 2026-10-20 |
 | Source code | [github.com/odripads/fundbun](https://github.com/odripads/fundbun) |
+| Live demo | [odripads.github.io/fundbun](https://odripads.github.io/fundbun/?demo=mei) — no install, demo PIN 2580 |
 | Demo video | [youtu.be/Se5TD4KQ35A](https://youtu.be/Se5TD4KQ35A) (4:47, English subtitles) |
 
 *How to read this document.* Every number below comes from `evidence/latest/` in the repository ([github.com/odripads/fundbun](https://github.com/odripads/fundbun)), which `npm run evidence` regenerates byte for byte. The same folder is attached as **InternationalAI-FundBun-ExecutionEvidence-Logs.zip**. Topic A is not an on-chain topic, so this evidence consists of sandbox operation logs and the demo video, not transaction hashes.
@@ -188,7 +189,7 @@ npx tsx scripts/run-scenarios.ts --verify-audit evidence/latest/audit-C10.tamper
 npm run dev            # web on http://localhost:5173, LLM gateway on :8787
 ```
 
-Open **http://localhost:5173/?demo=mei#/home** (Mei, over target) or **?demo=arif** (Arif, under target). The step-up PIN is **2580**. On a wide screen the Glass Box beside the app shows each intent, tool call, policy decision and audit entry live.
+**Fastest:** open the hosted demo at **https://odripads.github.io/fundbun/?demo=mei** — no install; it is the same app and sandbox with the on-device engine. Locally: open **http://localhost:5173/?demo=mei#/home** (Mei, over target) or **?demo=arif** (Arif, under target). The step-up PIN is **2580**. On a wide screen the Glass Box beside the app shows each intent, tool call, policy decision and audit entry live.
 
 | Try | Expected result |
 |---|---|

@@ -4,7 +4,7 @@
 
 <h1 align="center">FundBun</h1>
 <p align="center"><em>"You could've gotten a Birkin."</em><br/>An AI money buddy that shows you the dream you could've had — and an agent you can trust inside your bank.</p>
-<p align="center"><a href="https://youtu.be/Se5TD4KQ35A"><b>▶ Watch the 5-minute demo</b></a> · <a href="docs/TECHNICAL.md">Technical document</a> · <a href="docs/SECURITY_SELF_ASSESSMENT.md">Security self-assessment</a> · <a href="evidence/latest/SUMMARY.md">Evidence</a></p>
+<p align="center"><a href="https://youtu.be/Se5TD4KQ35A"><b>▶ Watch the 5-minute demo</b></a> · <a href="https://odripads.github.io/fundbun/?demo=mei"><b>Try the live demo</b></a> · <a href="docs/TECHNICAL.md">Technical document</a> · <a href="docs/SECURITY_SELF_ASSESSMENT.md">Security self-assessment</a> · <a href="evidence/latest/SUMMARY.md">Evidence</a></p>
 
 ---
 
@@ -70,6 +70,9 @@
 
 ## 4. Installation and Execution
 
+> **No install needed to try it:** open https://odripads.github.io/fundbun/?demo=mei (or `?demo=arif`), demo PIN **2580**. The hosted demo is the
+> static build with the on-device engine — your data stays in your browser.
+
 ```bash
 git clone https://github.com/odripads/fundbun.git
 cd fundbun
@@ -112,8 +115,8 @@ npm run evidence       # replays all scripted scenarios → evidence/latest (log
 
 - **Repository:** https://github.com/odripads/fundbun
 - **Demo video:** https://youtu.be/Se5TD4KQ35A (4:47, English subtitles)
-- **Live demo:** static on-device build via the *Deploy demo to GitHub Pages* workflow (Actions tab) once the repository
-  is public
+- **Live demo:** https://odripads.github.io/fundbun/?demo=mei (Mei, over target) · https://odripads.github.io/fundbun/?demo=arif (Arif, under target) · PIN 2580
+  — the static on-device build, deployed by the *Deploy demo to GitHub Pages* workflow; nothing to install
 - **Deployment:** Docker image (app + gateway on one port) or `npm run build && npm start` behind any HTTPS reverse
   proxy; set `FUNDBUN_TRUST_PROXY=1` behind a proxy and `FUNDBUN_ALLOWED_ORIGINS` for your domain. CI
   (`.github/workflows/ci.yml`) runs typecheck, tests, the scenario evidence and the production build on every push.

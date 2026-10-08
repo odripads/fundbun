@@ -9,6 +9,7 @@
 | Competition track | International AI Track — Topic A: Personal Finance Assistant |
 | Submission date | 2026-10-20 |
 | Source code | [github.com/odripads/fundbun](https://github.com/odripads/fundbun) |
+| Live demo | [odripads.github.io/fundbun](https://odripads.github.io/fundbun/?demo=mei) — no install, demo PIN 2580 |
 | Demo video | [youtu.be/Se5TD4KQ35A](https://youtu.be/Se5TD4KQ35A) (4:47, English subtitles) |
 
 *How to read this document.* Each technical claim names the file that implements it (paths are relative to the repository root). Results come from `evidence/latest/SUMMARY.md`, which `npm run evidence` regenerates byte for byte, and from a Vitest run on 2026-10-08 (`npx vitest run`). Anything not yet built is labelled **Roadmap**.
@@ -601,7 +602,7 @@ The trip is audited, with a reason that names what was blocked. Only the user ca
 **Deployment modes:**
 1. **Development:** `npm run dev`, then open `http://localhost:5173/?demo=mei` or `?demo=arif` (demo PIN 2580).
 2. **Production:** `npm run build && npm start`, behind a TLS proxy.
-3. **Static / offline:** `npm run build:pages`, served from any static host with no server. A GitHub Actions workflow (`.github/workflows/pages.yml`) deploys it to GitHub Pages on demand.
+3. **Static / offline:** `npm run build:pages`, served from any static host with no server. A GitHub Actions workflow (`.github/workflows/pages.yml`) deploys it to GitHub Pages: the live demo runs at [odripads.github.io/fundbun](https://odripads.github.io/fundbun/?demo=mei) (append `?demo=arif` for Arif; PIN 2580).
 4. **Docker:** `docker build -t fundbun . && docker run -p 8787:8787 --env-file .env fundbun`, then open `http://localhost:8787/?demo=mei`. One container serves the app and the gateway, runs as a non-root user and has a health check.
 
 **Content-Security-Policy on production builds.** Every production build (`npm run build` and `build:pages`) puts a CSP `<meta>` into `index.html` (`cspMetaPlugin()` in `vite.config.ts`). The policy is `default-src 'self'`, no inline scripts, `connect-src 'self'` and `object-src 'none'`, so even the static build has no CSP gap. When the Node server serves `dist/`, it also sends the CSP as a header with `frame-ancestors 'none'`, plus `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy: no-referrer` and a restrictive `Permissions-Policy` (`server/app.ts`). Development builds skip the meta tag, because Vite's hot reload needs inline code.
@@ -645,4 +646,4 @@ The fixed seed, sandbox date, clock and seeded ids make two runs byte-identical 
 - **Passkeys/WebAuthn** instead of a numeric PIN.
 - **Off-device audit anchoring.** Send the head anchor (already stored and checked on the device) to the bank or the gateway.
 - **Cooldown.** A 24-hour wait before loosened limits take effect, modelled on Monzo's gambling block ([research 06](research/06-agent-ux-patterns.md) §2).
-- **Hosted demo.** The Docker image and the Pages workflow exist; a public deployment follows once the repository is public.
+- **Hosted demo.** Live on GitHub Pages at [odripads.github.io/fundbun](https://odripads.github.io/fundbun/?demo=mei) (static build, on-device engine only); the Docker image serves the app plus the LLM gateway for deployments with a model key.
