@@ -10,15 +10,16 @@ import { Money, ProgressBar, TierBadge, cx } from '../../components/ds'
 import { navigate } from '../../router'
 import { shallowEqual, useSnapshot } from '../../state'
 import { timeLabel } from '../activity/logic'
-import { AUTONOMY_META, AUTONOMY_ORDER, capUsage } from '../settings/logic'
+import { AUTONOMY_META, AUTONOMY_ORDER } from '../settings/logic'
 import { DECISION_META, decisionCounts, recentDecisions } from './logic'
 import styles from './GlassBox.module.css'
 
 function selectPolicy(s: AppSnapshot) {
   return {
     mandate: s.state.mandate,
-    pending: s.state.pending,
-    bank: s.state.bank,
+    // counted exactly as the policy engine counts it (security/policy.agentMoneyUsed via derived.capUsage)
+    usedToday: s.derived.capUsage.today,
+    usedMonth: s.derived.capUsage.month,
     audit: s.state.audit,
     awaiting: s.derived.awaiting.length,
     currency: (s.state.profile?.currency ?? 'CNY') as Currency,
@@ -26,8 +27,8 @@ function selectPolicy(s: AppSnapshot) {
 }
 
 export function PolicyView() {
-  const { mandate, pending, bank, audit, awaiting, currency } = useSnapshot(selectPolicy, shallowEqual)
-  const usage = useMemo(() => capUsage(pending, bank, Date.now()), [pending, bank])
+  const { mandate, usedToday, usedMonth, audit, awaiting, currency } = useSnapshot(selectPolicy, shallowEqual)
+  const usage = { today: usedToday, month: usedMonth }
   const counts = useMemo(() => decisionCounts(audit), [audit])
   const recent = useMemo(() => recentDecisions(audit, 5), [audit])
   const total = counts.allow + counts.confirm + counts.step_up + counts.deny

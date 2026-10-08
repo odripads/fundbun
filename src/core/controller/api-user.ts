@@ -1,6 +1,7 @@
 import type { AppApi } from '../app-api'
 import { importCsv as parseCsvImport } from '../sandbox/csv'
 import { auditToJSONL } from '../security/audit'
+import { clipForDisplay } from '../security/redact'
 import type { AppState, Mandate } from '../types'
 import { appendAudit, verifyAuditAnchored } from './audit'
 import { LOCKED_MSG, NOT_SET_UP_MSG, expirePending, userTx, userTxValue, type Core } from './core'
@@ -33,6 +34,25 @@ type UserApi = Omit<
   | 'sendMessage' | 'xrayBill' | 'approveAction' | 'rejectAction' | 'undoAction' | 'runSuggestedAction' | 'clearChat'
   | 'checkLlm' | 'isLocked' | 'unlock' | 'enableVault' | 'disableVault'
 >
+
+/** Longest handoff summary kept in the audit log. */
+export const HANDOFF_SUMMARY_MAX = 280
+
+/**
+ * "Talk to a human": audited as a user_action (data.type 'handoff') with a short summary whose digit runs are
+ * masked and PINs dropped; with `freeze` the kill switch goes on in the same step (audited as kill_switch).
+ */
+export function handoffIn(draft: AppState, summary: string | undefined, freeze: boolean, ts: string) {
+  const text = typeof summary === 'string'
+    ? clipForDisplay(summary.replace(/(pin|passcode|password|密码)(\W{0,3}(?:is\W{1,3})?)\d{4,6}\b/gi, '$1$2••••'), HANDOFF_SUMMARY_MAX)
+    : ''
+  const freezing = freeze && !draft.mandate.frozen
+  appendAudit(draft, ts, 'user', 'user_action', 'Asked to talk to a human', {
+    type: 'handoff', ...(text ? { summary: text } : {}), freeze: freezing, alreadyFrozen: draft.mandate.frozen,
+  })
+  if (freezing) freezeIn(draft, ts)
+  return { ok: true }
+}
 
 /** The data export never contains the PIN hash or salt. */
 export function exportableState(state: AppState): AppState {
@@ -96,6 +116,7 @@ export function createUserApi(core: Core, onLlmGranted: () => void): UserApi {
       safely('freeze', () => store.mutate((draft) => freezeIn(draft, core.now())), undefined)
     },
     unfreeze: (pin) => userTx(core, (draft, _bank, ts) => unfreezeIn(draft, pin, ts)),
+    requestHumanHandoff: (summary, opts) => userTx(core, (draft, _bank, ts) => handoffIn(draft, summary, opts?.freeze === true, ts)),
     changePin,
     verifyAudit() {
       const log = store.get().audit

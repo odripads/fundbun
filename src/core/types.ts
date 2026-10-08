@@ -336,7 +336,10 @@ export interface CategorySpend {
   limit?: Minor
   /** spent / limit * 100 */
   pct?: number
+  /** the whole previous month */
   prevMonth?: Minor
+  /** the previous month up to the same day of the month (like-for-like for a month in progress) */
+  prevMonthToDate?: Minor
   count: number
 }
 
@@ -430,11 +433,16 @@ export interface MirrorState {
   hoursOfWork?: number
   tone: Tone
   mood: BunMood
-  /** call-to-action the hero offers */
+  /** call-to-action the hero offers (over/pace_over: a rule such as a cap or tripwire; under: "Stash ¥X") */
   cta?: SuggestedAction
-  /** under target: the user-chosen guilt-free treat the surplus covers (secondary option, never pushed) */
+  /**
+   * over / pace_over: the hero's primary button opens a conversation instead of a one-tap rule —
+   * `prompt` is sent to Bun as the user's message (e.g. the "get back on track" task plan).
+   */
+  ctaPrompt?: { label: string; prompt: string }
+  /** under target: the guilt-free treat what's left after the stash covers (secondary option, never pushed) */
   treat?: DreamEquivalent
-  /** secondary CTA, e.g. "Earmark for Concert ticket" */
+  /** secondary CTA, e.g. "Earmark ¥338 for Concert ticket" (only when the treat has its own pot) */
   secondaryCta?: SuggestedAction
 }
 

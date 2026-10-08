@@ -2,7 +2,7 @@
  * Settings: the user's control room. Kill switch first, then profile, Bun's permissions, tripwires, security,
  * privacy & data, display, sandbox controls and about.
  */
-import { BadgeInfo, Bot, ChevronRight, FlaskConical, Info, Landmark, ScrollText, Sparkles, Users } from 'lucide-react'
+import { BadgeInfo, Bot, ChevronRight, ExternalLink, FlaskConical, GitBranch, Info, Landmark, ScrollText, Sparkles, Users } from 'lucide-react'
 import { useState } from 'react'
 import type { AppSnapshot } from '../../../core/app-api'
 import { Logo } from '../../components/brand'
@@ -10,7 +10,7 @@ import { Badge, Card, SectionHeader, Sheet, Toggle } from '../../components/ds'
 import { SandboxPanel } from '../../components/sandbox'
 import { shallowEqual, useApp, useSnapshot } from '../../state'
 import { KillSwitch } from './KillSwitch'
-import { APP_VERSION, LICENCES } from './logic'
+import { APP_LICENCE, APP_VERSION, LICENCES, REPO_URL, repoLabel, teamLine } from './logic'
 import { PermissionsSection } from './PermissionsSection'
 import { PrivacySection } from './PrivacySection'
 import { ProfileSection } from './ProfileSection'
@@ -115,7 +115,7 @@ const ABOUT_FACTS = [
   { icon: <Sparkles />, title: 'AI-generated content is labelled', body: 'Every message from Bun carries an AI badge and names its engine: on-device or LLM.' },
   { icon: <Info />, title: 'Not financial or investment advice', body: 'Bun explains your own numbers. It never recommends investments or credit.' },
   { icon: <Bot />, title: 'The model proposes, the policy engine decides', body: 'Permissions are enforced by code on this device, never by the AI.' },
-  { icon: <Users />, title: 'Made by Team FundBun', body: 'FinTechathon 2026 · International Track, Topic A.' },
+  { icon: <Users />, title: 'Made by Team FundBun', body: `${teamLine()}. FinTechathon 2026 · International Track, Topic A.` },
 ]
 
 function AboutSection() {
@@ -142,11 +142,22 @@ function AboutSection() {
             </li>
           ))}
           <li className={styles.fact}>
+            <a className={styles.factButton} href={REPO_URL} target="_blank" rel="noopener noreferrer">
+              <span className={styles.rowIcon} aria-hidden="true"><GitBranch /></span>
+              <span className={styles.factText}>
+                <span className={styles.factTitle}>Source code · {APP_LICENCE} licence</span>
+                <span className={styles.factBody}>{repoLabel()}</span>
+              </span>
+              <ExternalLink className={styles.factChevron} aria-hidden="true" />
+              <span className="sr-only"> (opens in a new tab)</span>
+            </a>
+          </li>
+          <li className={styles.fact}>
             <button type="button" className={styles.factButton} onClick={() => setLicences(true)}>
               <span className={styles.rowIcon} aria-hidden="true"><ScrollText /></span>
               <span className={styles.factText}>
                 <span className={styles.factTitle}>Open-source licences</span>
-                <span className={styles.factBody}>FundBun is MIT-licensed and credits {LICENCES.length} open-source components.</span>
+                <span className={styles.factBody}>FundBun is {APP_LICENCE}-licensed and credits {LICENCES.length} open-source components.</span>
               </span>
               <ChevronRight className={styles.factChevron} aria-hidden="true" />
             </button>

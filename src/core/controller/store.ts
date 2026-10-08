@@ -12,6 +12,8 @@ export interface StoreDeps {
   blockedReason(): string | null
   /** deep-freeze committed states so accidental in-place mutation throws (tests / scenarios) */
   freeze?: boolean
+  /** the controller's clock (ISO time) for time-dependent derived values (cap usage) */
+  now?: () => string
 }
 
 export interface Store {
@@ -40,7 +42,7 @@ export function createStore(initial: AppState, rt: RuntimeFlags, deps: StoreDeps
   const listeners = new Set<() => void>()
 
   function build(): AppSnapshot {
-    return Object.freeze({ state, derived: createDerived(state, runtime) })
+    return Object.freeze({ state, derived: createDerived(state, runtime, deps.now) })
   }
 
   function emit() {

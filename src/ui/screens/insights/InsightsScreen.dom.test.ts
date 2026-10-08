@@ -197,3 +197,26 @@ describe('InsightsScreen', () => {
     expect(r.container.textContent).toContain('No timed purchases')
   })
 })
+
+describe('InsightsScreen — deep link to one insight (#/insights/<id>)', () => {
+  it('unfolds the list, marks the linked card and focuses it', async () => {
+    const app = demo('mei')
+    const insights = app.getSnapshot().derived.insights
+    const last = insights[insights.length - 1]
+    expect(insights.length).toBeGreaterThan(3)
+    const { container } = await renderAt(`#/insights/${encodeURIComponent(last.id)}`, app)
+    const card = container.querySelector(`[id="insight-${last.id}"]`) as HTMLElement
+    expect(card).not.toBeNull()
+    expect(card.getAttribute('data-focused')).toBe('true')
+    expect(container.querySelectorAll('[data-focused]')).toHaveLength(1)
+    await flush(200)
+    expect(document.activeElement).toBe(card)
+    expect(byText(container, 'Show fewer', 'button')).not.toBeNull()
+  })
+
+  it('an unknown insight id is harmless: the normal overview shows', async () => {
+    const { container } = await renderAt('#/insights/ins_nope_2026-10', demo('mei'))
+    expect(container.querySelectorAll('article').length).toBeGreaterThan(0)
+    expect(container.querySelector('[data-focused]')).toBeNull()
+  })
+})

@@ -175,6 +175,39 @@ export function treatOf(m: MirrorState): DreamEquivalent | undefined {
   return { itemId: m.item.id, itemName: m.item.name, image: m.item.image, fraction: m.delta / m.item.price, label: m.item.name }
 }
 
+/** One button in the hero's action stack. */
+export type HeroAction =
+  /** start a conversation with Bun: navigate to chat and send `prompt` as the user's message */
+  | { kind: 'prompt'; label: string; prompt: string }
+  /** a one-tap rule or stash, proposed through the policy engine (useProposeAction) */
+  | { kind: 'action'; action: SuggestedAction }
+  /** weigh up a treat in the local "Should I buy it?" check (never a purchase) */
+  | { kind: 'check'; label: string; amount: Minor; itemId: string }
+
+export interface HeroActions {
+  primary?: HeroAction
+  secondary?: HeroAction
+}
+
+/**
+ * The hero's buttons. Over / pace over: "Make a plan with Bun" leads (mirror.ctaPrompt — the get-back-on-track
+ * plan in chat) and the one-tap rule (mirror.cta) follows. Under: "Stash ¥X" leads; the treat (an earmark into
+ * its own pot when it has one, otherwise a look in "Should I buy it?") is the quieter second choice.
+ */
+export function heroActions(m: MirrorState, dreams: DreamItem[]): HeroActions {
+  const losing = m.status === 'over' || m.status === 'pace_over'
+  if (losing) {
+    if (m.ctaPrompt) return { primary: { kind: 'prompt', ...m.ctaPrompt }, ...(m.cta ? { secondary: { kind: 'action', action: m.cta } } : {}) }
+    return m.cta ? { primary: { kind: 'action', action: m.cta } } : {}
+  }
+  const primary: HeroAction | undefined = m.cta ? { kind: 'action', action: m.cta } : undefined
+  if (m.secondaryCta) return { primary, secondary: { kind: 'action', action: m.secondaryCta } }
+  const treat = treatOf(m)
+  const hero = heroDream(m, dreams)
+  const item = treat && treat.itemId !== hero.item?.id ? dreams.find((d) => d.id === treat.itemId) : undefined
+  return { primary, ...(item ? { secondary: { kind: 'check', label: `Or weigh up the ${item.name}`, amount: item.price, itemId: item.id } } : {}) }
+}
+
 export type CtaIcon = 'bell' | 'gauge' | 'piggy' | 'spark'
 
 export function ctaIcon(action: SuggestedAction): CtaIcon {
@@ -492,6 +525,11 @@ export function statusRule(status: MirrorStatus): string {
 export function itemReason(m: MirrorState, currency: Currency): string | null {
   if (!m.item) return null
   const f = (x: Minor) => fmtWhole(x, currency)
+  // under target with a goal the mirror is goal-led: the surplus is shown moving the goal, not as what it buys
+  if (m.status === 'under' && m.goal && m.item.id === m.goal.itemId) {
+    const stash = stashAmount(m.cta)
+    return `Under target, Bun leads with your main goal, ${m.item.name} (${f(m.item.price)})${stash > 0 ? `: stashing ${f(stash)} of the ${f(m.delta)} takes it to ${Math.floor(pctAfter(m.goal, stash))}%` : ''}.${m.treat ? ` The rest covers ${m.treat.label}, if you’d like it.` : ''}`
+  }
   if (m.quantity) {
     return `${m.item.name} (${f(m.item.price)}) is the biggest dream on your list that ${f(m.delta)} fully covers${m.quantity >= 2 ? ` — ${m.quantity} times over` : ''}.`
   }

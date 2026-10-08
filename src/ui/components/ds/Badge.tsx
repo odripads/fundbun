@@ -72,6 +72,18 @@ export interface TierBadgeProps {
   className?: string
 }
 
+/**
+ * "T0"…"T4" with a legible digit: DM Sans has no slashed zero, so the digit is set in a monospace face where 0
+ * never reads as the letter O ("T0" vs "TO").
+ */
+export function TierCode({ tier, className }: { tier: Tier; className?: string }) {
+  return (
+    <span className={cx(styles.tierCode, className)}>
+      T<span className={styles.tierDigit}>{tier}</span>
+    </span>
+  )
+}
+
 export function TierBadge({ tier, showLabel = true, size = 'md', className }: TierBadgeProps) {
   const info = TIER_INFO[tier]
   return (
@@ -81,7 +93,7 @@ export function TierBadge({ tier, showLabel = true, size = 'md', className }: Ti
       data-tier={tier}
     >
       <span className={styles.icon} aria-hidden="true">{info.icon}</span>
-      <span className={styles.tierCode}>{info.short}</span>
+      <TierCode tier={tier} />
       {showLabel ? <span>{info.label}</span> : <span className="sr-only">{info.label}</span>}
     </span>
   )

@@ -869,6 +869,16 @@ describe('sandbox & data', () => {
     expect(app.getSnapshot().derived.unseenEvents).toEqual([])
   })
 
+  it('simulatePurchase passes a HH:MM time through to the sandbox bank (late-night orders)', () => {
+    const { app } = demoKit()
+    const { txn } = app.simulatePurchase({ merchant: 'Meituan', amount: 6_800, category: 'delivery', time: '01:10' })
+    expect(txn.time).toBe('01:10')
+    expect(app.getSnapshot().state.bank.transactions.find((t) => t.id === txn.id)?.time).toBe('01:10')
+    expect(lastAudit(app.getSnapshot().state)).toMatchObject({ type: 'sandbox_event', data: { time: '01:10' } })
+    expect(app.simulatePurchase({ merchant: 'Heytea', amount: 2_800, time: '25:99' }).txn.time).toBeUndefined()
+    expect(app.simulatePurchase({ merchant: 'Heytea', amount: 2_800 }).txn.time).toBeUndefined()
+  })
+
   it('simulatePurchase validates input', () => {
     const { app } = demoKit()
     expect(() => app.simulatePurchase({ merchant: '', amount: 100 })).toThrow()
@@ -917,6 +927,43 @@ describe('sandbox & data', () => {
     expect(delivery.every((t) => t.category === 'delivery')).toBe(true)
     const q = app.transactions({ query: 'iqiyi' })
     expect(q.length).toBeGreaterThan(0)
+  })
+})
+
+describe('human handoff & cap usage', () => {
+  it('requestHumanHandoff audits a user_action with a masked summary; freeze pauses the agent too', () => {
+    const { app } = demoKit()
+    expect(app.requestHumanHandoff('My PIN is 2580, card 6222 0210 0112 3456 789 — please help')).toEqual({ ok: true })
+    let s = app.getSnapshot().state
+    const entry = lastAudit(s)
+    expect(entry).toMatchObject({ actor: 'user', type: 'user_action', data: { type: 'handoff', freeze: false } })
+    expect(JSON.stringify(entry)).not.toMatch(/2580|6222 0210/)
+    expect(entry.data.summary).toContain('•••• 6789')
+    expect(s.mandate.frozen).toBe(false)
+    expect(app.requestHumanHandoff(undefined, { freeze: true })).toEqual({ ok: true })
+    s = app.getSnapshot().state
+    expect(s.mandate.frozen).toBe(true)
+    expect(types(s).slice(-2)).toEqual(['user_action', 'kill_switch'])
+    expect(app.verifyAudit().ok).toBe(true)
+  })
+
+  it('requestHumanHandoff needs a set-up app', () => {
+    expect(kit().app.requestHumanHandoff('hi')).toMatchObject({ ok: false })
+  })
+
+  it('derived.capUsage counts agent money moves the way the policy engine does', async () => {
+    const app = createTestApp()
+    app.loadDemo('mei')
+    expect(app.getSnapshot().derived.capUsage).toEqual({ today: 0, month: 0, dailyCap: 100_000, monthlyCap: 500_000, perActionCap: 50_000 })
+    await app.sendMessage('Move ¥300 to my Chengdu fund')
+    const p = app.getSnapshot().derived.awaiting[0]
+    expect(p).toBeDefined()
+    expect(app.getSnapshot().derived.capUsage.today).toBe(0)
+    expect(await app.approveAction(p.id)).toEqual({ ok: true })
+    expect(app.getSnapshot().derived.capUsage).toMatchObject({ today: 30_000, month: 30_000 })
+    // a user's own move (contributeToGoal) is not an agent action and never counts against the agent's caps
+    app.contributeToGoal('dream_chengdu', 10_000)
+    expect(app.getSnapshot().derived.capUsage.today).toBe(30_000)
   })
 })
 

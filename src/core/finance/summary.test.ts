@@ -160,8 +160,23 @@ describe('summarizeMonth — totals', () => {
     })
     const rows = summarizeMonth(ctx).byCategory
     expect(rows.map((r) => r.category)).toEqual(['groceries', 'delivery', 'entertainment'])
-    expect(rows[1]).toEqual({ category: 'delivery', spent: yuan(400), count: 1, limit: yuan(500), pct: 80, prevMonth: yuan(300) })
+    expect(rows[1]).toEqual({ category: 'delivery', spent: yuan(400), count: 1, limit: yuan(500), pct: 80, prevMonth: yuan(300), prevMonthToDate: yuan(300) })
     expect(rows[2]).toMatchObject({ spent: 0, count: 0, limit: yuan(200), pct: 0 })
+  })
+
+  it('prevMonthToDate compares like with like: the previous month up to the same day', () => {
+    const txns = [
+      spend('2026-09-05', 'Meituan', 'delivery', 100),
+      spend('2026-09-22', 'Meituan', 'delivery', 50),
+      spend('2026-09-23', 'Meituan', 'delivery', 300),
+      spend('2026-10-03', 'Meituan', 'delivery', 400),
+    ]
+    const ctx = makeCtx({ today: '2026-10-22', txns })
+    const now = summarizeMonth(ctx).byCategory.find((r) => r.category === 'delivery')!
+    expect(now).toMatchObject({ prevMonth: yuan(450), prevMonthToDate: yuan(150) })
+    // a finished month compares with all of the month before
+    const sep = summarizeMonth(makeCtx({ today: '2026-10-22', txns: [...txns, spend('2026-08-30', 'Meituan', 'delivery', 70)] }), '2026-09')
+    expect(sep.byCategory.find((r) => r.category === 'delivery')).toMatchObject({ prevMonth: yuan(70), prevMonthToDate: yuan(70) })
   })
 
   it("doesn't apply a plan to months before it starts", () => {

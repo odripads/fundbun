@@ -3,12 +3,14 @@ import type { Autonomy, BankState, Decision, DreamItem, Mandate, PolicyDecision,
 import {
   type AgentActionRecord,
   type PolicyContext,
+  agentMoneyUsed,
   billsDueSoon,
   callAmount,
   defaultMandate,
   evaluatePolicy,
   potIdForGoal,
   shouldTripBreaker,
+  utcOffsetMinutesAt,
   validateArgs,
 } from './policy'
 
@@ -484,5 +486,34 @@ describe('the four attacks end to end (policy + breaker)', () => {
       const d = evaluatePolicy(call('change_mandate', { autonomy: 'autopilot' }), ctx({}, { autonomy }))
       expect(d).toMatchObject({ decision: 'deny', ruleIds: ['P-T4-PROHIBITED'] })
     }
+  })
+})
+
+describe('agentMoneyUsed — the one cap-usage helper', () => {
+  it('counts approved/executed money moves in the calendar day and month of now', () => {
+    const records = [
+      executedToday(30_000),
+      record({ status: 'approved', amount: 20_000 }),
+      record({ status: 'denied', amount: 99_000 }),
+      record({ status: 'pending', amount: 99_000 }),
+      record({ tool: 'create_tripwire', amount: 99_000 }),
+      record({ amount: 10_000, ts: '2026-10-02T03:00:00.000Z' }),
+      record({ amount: 70_000, ts: '2026-09-30T03:00:00.000Z' }),
+    ]
+    expect(agentMoneyUsed(records, NOW)).toEqual({ today: 50_000, month: 60_000 })
+    expect(agentMoneyUsed([], NOW)).toEqual({ today: 0, month: 0 })
+    expect(agentMoneyUsed(undefined, NOW)).toEqual({ today: 0, month: 0 })
+  })
+
+  it('buckets by the device offset (CST) exactly like P-CAP-DAILY, and fails closed on bad timestamps', () => {
+    const lateLastNightUtc = record({ amount: 40_000, ts: '2026-10-21T17:00:00.000Z' })
+    expect(agentMoneyUsed([lateLastNightUtc], NOW, 0).today).toBe(0)
+    expect(agentMoneyUsed([lateLastNightUtc], NOW, 480).today).toBe(40_000)
+    expect(agentMoneyUsed([record({ amount: 5_000, ts: 'garbage' })], NOW).today).toBe(5_000)
+  })
+
+  it('utcOffsetMinutesAt is minutes east of UTC (0 for an unparseable time)', () => {
+    expect(utcOffsetMinutesAt(NOW)).toBe(-new Date(NOW).getTimezoneOffset())
+    expect(utcOffsetMinutesAt('nope')).toBe(0)
   })
 })

@@ -1,4 +1,5 @@
-import type { DerivedState, LlmStatus } from '../app-api'
+import { agentRecords } from '../agent/actions'
+import type { CapUsage, DerivedState, LlmStatus } from '../app-api'
 import { compareDate } from '../dates'
 import {
   allGoalProgress,
@@ -23,6 +24,7 @@ import type {
   MonthSummary,
   RecurringSeries,
 } from '../types'
+import { agentMoneyUsed, utcOffsetMinutesAt } from '../security/policy'
 import { ctxOf } from './state'
 import { safely } from './util'
 
@@ -100,9 +102,26 @@ export function engineFor(state: AppState, llm: LlmStatus): 'offline' | 'llm' {
   return state.settings.llmEnabled && consented && llm.available ? 'llm' : 'offline'
 }
 
-/** Derived view of a snapshot. Finance fields are lazy getters (computed once per committed state). */
-export function createDerived(state: AppState, rt: RuntimeFlags): DerivedState {
+/**
+ * Agent money movement against the caps, exactly as the policy engine counts it: the same agent records
+ * (agent/actions.agentRecords), the same helper (security/policy.agentMoneyUsed) and the same device-offset
+ * calendar bucketing — so the bars in Settings and the glass box show what the next cap check will see.
+ */
+export function capUsageOf(state: AppState, now: string): CapUsage {
+  const m = state.mandate
+  const used = safely('capUsage', () => agentMoneyUsed(agentRecords(state), now, utcOffsetMinutesAt(now)), { today: 0, month: 0 })
+  return { today: used.today, month: used.month, dailyCap: m.dailyCap, monthlyCap: m.monthlyCap, perActionCap: m.perActionCap }
+}
+
+const isoNow = () => new Date().toISOString()
+
+/**
+ * Derived view of a snapshot. Finance fields are lazy getters (computed once per committed state); `now`
+ * is the controller's clock (cap usage is bucketed by its calendar day).
+ */
+export function createDerived(state: AppState, rt: RuntimeFlags, now: () => string = isoNow): DerivedState {
   const fin = financeFor(state)
+  let caps: CapUsage | undefined
   return Object.freeze({
     get ctx() { return fin.ctx },
     get summary() { return fin.summary },
@@ -115,6 +134,7 @@ export function createDerived(state: AppState, rt: RuntimeFlags): DerivedState {
     get upcomingBills() { return fin.upcomingBills },
     get couldve() { return fin.couldve },
     get mirrorHistory() { return fin.mirrorHistory },
+    get capUsage() { return (caps ??= capUsageOf(state, now())) },
     unseenEvents: state.tripwireEvents.filter((e) => !e.seen),
     awaiting: state.pending.filter((p) => p.status === 'pending'),
     llm: rt.llm,

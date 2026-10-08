@@ -5,7 +5,7 @@ import { Spinner, ToastProvider } from './components/ds'
 import { ApprovalHost } from './components/agent'
 import { AppFrame, EngineNotReady, ErrorBoundary, LockScreen, ShellActions, TabBar, TopBar } from './components/layout'
 import { useMotionPreference } from './hooks/useReducedMotion'
-import { navigate, resolveRoute, ROUTE_META, setHash, useRoute, type Location, type RouteName } from './router'
+import { navigate, resolveRoute, ROUTE_META, setHash, showsGlassBox, useRoute, type Location, type RouteName } from './router'
 import {
   ActivityScreen,
   BillsScreen,
@@ -14,6 +14,7 @@ import {
   GoalsScreen,
   HomeScreen,
   InsightsScreen,
+  OnboardingGlass,
   OnboardingScreen,
   SettingsScreen,
 } from './screens'
@@ -126,7 +127,7 @@ function ReadyShell({ app, loc }: { app: FundBunApp; loc: Location }) {
       chrome={meta.chrome}
       topBar={topBar}
       tabBar={tabBar}
-      glassBox={shell.glassBox && meta.chrome === 'app' ? <GlassBoxContent /> : undefined}
+      glassBox={shell.glassBox && showsGlassBox(meta) ? (shell.hasProfile ? <GlassBoxContent /> : <OnboardingGlass />) : undefined}
       glassBoxBusy={shell.busy}
       pageKey={route}
     >

@@ -1,4 +1,4 @@
-import { BellRing, CircleHelp, Clock3, FlaskConical, Gauge, PiggyBank, ShieldCheck, Sparkles, Target, TrendingDown, TrendingUp, type LucideIcon } from 'lucide-react'
+import { ArrowRight, BellRing, CircleHelp, Clock3, FlaskConical, Gauge, MessageCircleHeart, PiggyBank, ShieldCheck, Sparkles, Target, TrendingDown, TrendingUp, type LucideIcon } from 'lucide-react'
 import { useId, useState, type CSSProperties, type ReactNode } from 'react'
 import type { AppSnapshot } from '../../../core/app-api'
 import type { Minor, MirrorStatus, SuggestedAction } from '../../../core/types'
@@ -13,13 +13,14 @@ import {
   ctaHint,
   ctaIcon,
   fmtWhole,
+  heroActions,
   heroDream,
+  type HeroAction,
   mirrorEyebrow,
   mirrorStats,
   pctAfter,
   splitHeadline,
   stashAmount,
-  treatOf,
   type CtaIcon,
   type StatusTone,
 } from './model'
@@ -114,7 +115,7 @@ export function MirrorHero({ onCheck, onSandbox }: MirrorHeroProps) {
   const propose = useProposeAction()
   const headingId = useId()
   const [why, setWhy] = useState(false)
-  const [busy, setBusy] = useState<'cta' | 'secondary' | null>(null)
+  const [busy, setBusy] = useState<'primary' | 'secondary' | null>(null)
 
   if (!mirror) {
     return (
@@ -135,8 +136,7 @@ export function MirrorHero({ onCheck, onSandbox }: MirrorHeroProps) {
   const hero = heroDream(mirror, dreams)
   const parts = splitHeadline(mirror.headline, hero.item?.name)
   const stats = mirrorStats(mirror, currency)
-  const treat = treatOf(mirror)
-  const treatItem = treat && treat.itemId !== hero.item?.id ? dreams.find((d) => d.id === treat.itemId) : undefined
+  const actions = heroActions(mirror, dreams)
   const noData = mirror.status === 'no_data'
   const losing = mirror.status === 'over' || mirror.status === 'pace_over'
   const goalNow = mirror.goal ? mirror.goal.pct : 0
@@ -149,7 +149,7 @@ export function MirrorHero({ onCheck, onSandbox }: MirrorHeroProps) {
       }
     : null
 
-  async function run(action: SuggestedAction, which: 'cta' | 'secondary') {
+  async function run(action: SuggestedAction, which: 'primary' | 'secondary') {
     setBusy(which)
     try {
       await propose(action)
@@ -161,6 +161,53 @@ export function MirrorHero({ onCheck, onSandbox }: MirrorHeroProps) {
   function askBun(text: string) {
     void app.sendMessage(text).catch(() => undefined)
     navigate('chat')
+  }
+
+  function act(a: HeroAction, which: 'primary' | 'secondary') {
+    if (a.kind === 'prompt') askBun(a.prompt)
+    else if (a.kind === 'action') void run(a.action, which)
+    else onCheck({ amount: a.amount, label: dreams.find((d) => d.id === a.itemId)?.name ?? 'this' })
+  }
+
+  function heroButton(a: HeroAction, which: 'primary' | 'secondary') {
+    const primary = which === 'primary'
+    if (a.kind === 'prompt') {
+      return (
+        <Button size="lg" fullWidth iconStart={<MessageCircleHeart />} iconEnd={<ArrowRight />} onClick={() => act(a, which)}>
+          {a.label}
+        </Button>
+      )
+    }
+    if (a.kind === 'action') {
+      return (
+        <Button
+          size={primary ? 'lg' : 'md'}
+          variant={primary ? 'primary' : 'secondary'}
+          fullWidth
+          iconStart={CTA_ICON[ctaIcon(a.action)]}
+          loading={busy === which}
+          onClick={() => act(a, which)}
+        >
+          {a.action.label}
+        </Button>
+      )
+    }
+    const item = dreams.find((d) => d.id === a.itemId)
+    return (
+      <Button variant="ghost" fullWidth iconStart={item ? <DreamImage image={item.image} alt="" size={28} /> : undefined} onClick={() => act(a, which)}>
+        {a.label}
+      </Button>
+    )
+  }
+
+  function heroHint(a: HeroAction) {
+    if (a.kind === 'check') return null
+    return (
+      <p className={styles.hint}>
+        {a.kind === 'prompt' ? <Sparkles aria-hidden="true" /> : <ShieldCheck aria-hidden="true" />}
+        {a.kind === 'prompt' ? 'Bun lines up fixes — nothing changes without your OK.' : ctaHint(a.action)}
+      </p>
+    )
   }
 
   return (
@@ -236,15 +283,10 @@ export function MirrorHero({ onCheck, onSandbox }: MirrorHeroProps) {
       ) : null}
 
       <div className={styles.actions}>
-        {mirror.cta ? (
+        {actions.primary ? (
           <>
-            <Button size="lg" fullWidth iconStart={CTA_ICON[ctaIcon(mirror.cta)]} loading={busy === 'cta'} onClick={() => run(mirror.cta!, 'cta')}>
-              {mirror.cta.label}
-            </Button>
-            <p className={styles.hint}>
-              <ShieldCheck aria-hidden="true" />
-              {ctaHint(mirror.cta)}
-            </p>
+            {heroButton(actions.primary, 'primary')}
+            {heroHint(actions.primary)}
           </>
         ) : noData ? (
           <>
@@ -254,19 +296,12 @@ export function MirrorHero({ onCheck, onSandbox }: MirrorHeroProps) {
             <p className={styles.hint}>Or import a bank CSV in Settings — it stays on this device.</p>
           </>
         ) : null}
-        {mirror.secondaryCta ? (
-          <Button variant="ghost" fullWidth loading={busy === 'secondary'} onClick={() => run(mirror.secondaryCta!, 'secondary')}>
-            {mirror.secondaryCta.label}
-          </Button>
-        ) : treatItem ? (
-          <Button
-            variant="ghost"
-            fullWidth
-            iconStart={<DreamImage image={treatItem.image} alt="" size={28} />}
-            onClick={() => onCheck({ amount: treatItem.price, label: treatItem.name })}
-          >
-            Or weigh up the {treatItem.name}
-          </Button>
+        {actions.secondary ? (
+          <div className={styles.secondary} data-kind={actions.secondary.kind}>
+            {actions.primary && actions.secondary.kind === 'action' ? <span className={styles.or} aria-hidden="true">or</span> : null}
+            {heroButton(actions.secondary, 'secondary')}
+            {actions.primary?.kind === 'prompt' ? heroHint(actions.secondary) : null}
+          </div>
         ) : null}
       </div>
 

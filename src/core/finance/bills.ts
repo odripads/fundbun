@@ -2,7 +2,7 @@ import { dateLabel, diffDays } from '../dates'
 import { MINOR_PER_MAJOR } from '../money'
 import type { Bill, BillFinding, CategoryId, FinanceContext, Minor, RecurringSeries, Transaction } from '../types'
 import { normalizeMerchant, subscriptionNiche, type SubscriptionNiche } from './categorize'
-import { type Fmt, listJoin, moneyFmt, plural } from './copy'
+import { copyFmt, type Fmt, listJoin, moneyFmt, plural } from './copy'
 import { dreamEquivalents } from './dreams'
 import { isReversed, isSpending } from './ledger'
 import { cadenceDays } from './recurring'
@@ -37,7 +37,7 @@ function monthly(s: RecurringSeries): Minor {
 
 // ───────────────────────────── price hikes ─────────────────────────────
 
-function priceHikes(series: RecurringSeries[], f: Fmt): BillFinding[] {
+function priceHikes(series: RecurringSeries[], f: Fmt, c: Fmt): BillFinding[] {
   return series
     .filter((s) => s.status === 'active' && s.priceChange && s.priceChange.to > s.priceChange.from)
     .map((s) => {
@@ -49,7 +49,7 @@ function priceHikes(series: RecurringSeries[], f: Fmt): BillFinding[] {
         kind: 'price_hike' as const,
         severity: 'warn' as const,
         title: `${s.merchant} went up ${f(diff)}`,
-        detail: `From ${f(pc.from)} to ${f(pc.to)} (+${pc.pct}%) since ${dateLabel(pc.date)}. That's ${f(perYear)} more a year.`,
+        detail: `From ${f(pc.from)} to ${f(pc.to)} (+${pc.pct}%) since ${dateLabel(pc.date)}. That's ${c(perYear)} more a year.`,
         amount: diff,
         recurringId: s.id,
         txnIds: s.txnIds,
@@ -236,7 +236,7 @@ function latestBillPerPayee(bills: Bill[]): Bill[] {
   return [...latest.values()]
 }
 
-function spikes(ctx: FinanceContext, f: Fmt): BillFinding[] {
+function spikes(ctx: FinanceContext, f: Fmt, c: Fmt): BillFinding[] {
   const out: BillFinding[] = []
   for (const b of latestBillPerPayee(ctx.bank.bills.filter((x) => x.category === 'utilities'))) {
     const history = billHistory(b, ctx)
@@ -249,7 +249,7 @@ function spikes(ctx: FinanceContext, f: Fmt): BillFinding[] {
       kind: 'bill_spike',
       severity: 'warn',
       title: `${b.name} is ${Math.round(pct)}% higher than usual`,
-      detail: `${f(b.amountDue)} this time vs a ${f(avg)} average over your last ${plural(history.length, 'bill')}. Worth a look at usage before it's due ${dateLabel(b.dueDate)}.`,
+      detail: `${f(b.amountDue)} this time vs a ${c(avg)} average over your last ${plural(history.length, 'bill')}. Worth a look at usage before it's due ${dateLabel(b.dueDate)}.`,
       amount: b.amountDue - avg,
       billId: b.id,
       ...(isUnpaid(b) ? { suggestedAction: { tool: 'set_bill_reminder' as const, args: { billId: b.id, daysBefore: 3 }, label: 'Remind me 3 days before' } } : {}),
@@ -270,7 +270,7 @@ function cancelCandidate(group: RecurringSeries[]): RecurringSeries {
   return [...group].sort((a, b) => Number(!!b.priceChange) - Number(!!a.priceChange) || b.lastAmount - a.lastAmount)[0]
 }
 
-function overlaps(series: RecurringSeries[], f: Fmt): BillFinding[] {
+function overlaps(series: RecurringSeries[], f: Fmt, c: Fmt): BillFinding[] {
   const byNiche = new Map<SubscriptionNiche, RecurringSeries[]>()
   for (const s of activeSubs(series)) {
     const niche = subscriptionNiche(s.merchant)
@@ -287,7 +287,7 @@ function overlaps(series: RecurringSeries[], f: Fmt): BillFinding[] {
       kind: 'subscription_overlap',
       severity: 'warn',
       title: `${group.length} ${NICHE_LABEL[niche]} services`,
-      detail: `${listJoin(names)} cost ${f(total)}/month together (${f(total * 12)}/year). Dropping ${drop.merchant} saves ${f(monthly(drop))} a month.`,
+      detail: `${listJoin(names)} cost ${c(total)}/month together (${c(total * 12)}/year). Dropping ${drop.merchant} saves ${f(monthly(drop))} a month.`,
       amount: total,
       recurringId: drop.id,
       txnIds: group.flatMap((s) => s.txnIds),
@@ -330,14 +330,16 @@ function annualCost(ctx: FinanceContext, series: RecurringSeries[], f: Fmt): Bil
  * apart, two coffees are real purchases). Bill rawText is never read here (untrusted).
  */
 export function analyzeBills(ctx: FinanceContext, recurring: RecurringSeries[]): BillFinding[] {
+  // exact amounts for one bill / charge / price; whole yuan from ¥100 for totals and averages
   const f = moneyFmt(ctx.profile.currency)
+  const c = copyFmt(ctx.profile.currency)
   const findings = [
     ...duplicates(ctx, recurring, f),
     ...dueFindings(ctx, f),
-    ...priceHikes(recurring, f),
-    ...spikes(ctx, f),
-    ...overlaps(recurring, f),
-    ...annualCost(ctx, recurring, f),
+    ...priceHikes(recurring, f, c),
+    ...spikes(ctx, f, c),
+    ...overlaps(recurring, f, c),
+    ...annualCost(ctx, recurring, c),
   ]
   return findings
     .map((x, i) => ({ x, i }))

@@ -2,7 +2,7 @@ import { CATEGORIES, SPENDING_CATEGORIES } from '../categories'
 import { monthsBack, shiftMonth, ym } from '../dates'
 import { MINOR_PER_MAJOR } from '../money'
 import type { BudgetPlan, CategoryBudget, CategoryId, Currency, FinanceContext, ISODateTime, Minor, YearMonth } from '../types'
-import { type Fmt, moneyFmt } from './copy'
+import { copyFmt, type Fmt } from './copy'
 import { FIXED_CATEGORIES, monthSpend, upTo } from './ledger'
 import { median } from './stats'
 
@@ -158,7 +158,7 @@ export function proposeBudget(
   month: YearMonth,
   opts: { now?: ISODateTime; createdBy?: BudgetPlan['createdBy'] } = {},
 ): BudgetPlan {
-  const f = moneyFmt(ctx.profile.currency)
+  const f = copyFmt(ctx.profile.currency)
   const target = Math.max(0, ctx.profile.targetSpend)
   const history = historyMedians(ctx, month)
   const plan =

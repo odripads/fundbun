@@ -1,12 +1,18 @@
-import { fmt } from '../money'
+import { fmt, fmtCopy } from '../money'
 import type { Currency, Minor, Tone } from '../types'
 
 /** Copy helpers shared by mirror / tripwires / insights / affordability (internal). */
 
 export type Fmt = (m: Minor) => string
 
+/** Exact money (cents shown when present): one bill, one transaction, a price, a line item. */
 export function moneyFmt(currency: Currency): Fmt {
   return (m) => fmt(m, currency)
+}
+
+/** Money for prose — totals, deltas, targets, projections: whole units from ¥100 (money.fmtCopy). */
+export function copyFmt(currency: Currency): Fmt {
+  return (m) => fmtCopy(m, currency)
 }
 
 /** Pick the string for the user's tone. */

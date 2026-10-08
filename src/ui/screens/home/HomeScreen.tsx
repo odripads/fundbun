@@ -1,7 +1,7 @@
 import { FlaskConical } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { SandboxPanel } from '../../components/sandbox'
-import { Sheet } from '../../components/ds'
+import { Button, Sheet } from '../../components/ds'
 import { BillsStrip } from './BillsStrip'
 import { CouldveStrip } from './CouldveStrip'
 import { InsightsPeek } from './InsightsPeek'
@@ -19,7 +19,8 @@ export function HomeScreen() {
   const [sandbox, setSandbox] = useState(false)
   const [check, setCheck] = useState<CheckRequest | null>(null)
   const clearCheck = useCallback(() => setCheck(null), [])
-  useTripwireToasts()
+  // the open sandbox sheet shows each purchase's tripwires inline; a toast on top would only hide them
+  useTripwireToasts({ quiet: sandbox })
 
   return (
     <div className={styles.page}>
@@ -39,8 +40,10 @@ export function HomeScreen() {
         title="Sandbox"
         description="Demo controls: simulated purchases and days in the sandbox bank. No real money moves."
         media={<span className={styles.sandboxIcon} aria-hidden="true"><FlaskConical /></span>}
+        footer={<Button fullWidth onClick={() => setSandbox(false)}>Done</Button>}
       >
-        <SandboxPanel onDone={() => setSandbox(false)} />
+        {/* stays open after a purchase: the new transaction and the tripwires it fired show inline */}
+        <SandboxPanel />
       </Sheet>
     </div>
   )

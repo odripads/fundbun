@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as mirror from '../finance/mirror'
 import { buildDemoState } from './demo'
-import { createDerived, financeFor } from './derive'
+import { capUsageOf, createDerived, financeFor } from './derive'
 import { emptyState } from './state'
 
 vi.mock('../finance/mirror', async (importOriginal) => {
@@ -56,5 +56,26 @@ describe('createDerived — couldve & mirrorHistory', () => {
     const d = createDerived(emptyState('2026-10-22'), RT)
     expect(d.couldve).toBeUndefined()
     expect(d.mirrorHistory).toBeUndefined()
+  })
+})
+
+describe('createDerived — capUsage', () => {
+  it('shows the mandate caps and zero usage for a fresh demo, memoised per snapshot', () => {
+    const state = buildDemoState('mei', NOW)
+    const d = createDerived(state, RT, () => NOW)
+    expect(d.capUsage).toEqual({ today: 0, month: 0, dailyCap: 100_000, monthlyCap: 500_000, perActionCap: 50_000 })
+    expect(d.capUsage).toBe(d.capUsage)
+  })
+
+  it('counts executed agent moves of the day; user moves and other days do not count', () => {
+    const state = buildDemoState('mei', NOW)
+    const p = (id: string, proposedBy: 'offline' | 'user', executedAt: string, amount: number) => ({
+      id, call: { id: `c_${id}`, tool: 'transfer_to_goal', args: { goalId: 'dream_chengdu', amount }, proposedBy },
+      decision: { decision: 'confirm', tier: 2, reasons: [], ruleIds: [], tainted: false },
+      preview: { title: 't', summary: 's', amount, reversible: true, risk: 'low', effects: [] },
+      createdAt: executedAt, expiresAt: executedAt, executedAt, status: 'executed', bindingHash: 'x',
+    })
+    const withMoves = { ...state, pending: [p('a', 'offline', NOW, 30_000), p('b', 'user', NOW, 20_000), p('c', 'offline', '2026-10-02T02:00:00.000Z', 10_000)] } as typeof state
+    expect(capUsageOf(withMoves, NOW)).toMatchObject({ today: 30_000, month: 40_000 })
   })
 })

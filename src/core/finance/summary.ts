@@ -126,6 +126,7 @@ function budgetLimits(ctx: FinanceContext, month: YearMonth): Map<CategoryId, Mi
 function categoryRows(
   current: ReturnType<typeof monthSpend>,
   prev: ReturnType<typeof monthSpend>,
+  prevToDate: ReturnType<typeof monthSpend>,
   limits: Map<CategoryId, Minor>,
 ): CategorySpend[] {
   const cats = new Set<CategoryId>([...current.byCategory.keys(), ...limits.keys()])
@@ -140,6 +141,7 @@ function categoryRows(
       count: e.count,
       ...(limit !== undefined ? { limit, pct: limit > 0 ? Math.round((e.spent / limit) * 1000) / 10 : 0 } : {}),
       prevMonth: prev.byCategory.get(category)?.spent ?? 0,
+      prevMonthToDate: prevToDate.byCategory.get(category)?.spent ?? 0,
     })
   }
   return rows.sort((a, b) => b.spent - a.spent || (b.limit ?? 0) - (a.limit ?? 0))
@@ -152,6 +154,8 @@ function categoryRows(
  * For past months projected = spent.
  *
  * `spent` nets merchant refunds; reversed transactions (and their reversals) are ignored entirely.
+ * Each category row carries `prevMonth` (all of the previous month) and `prevMonthToDate` (the previous month
+ * up to the same day of the month — for a finished month that is the whole previous month).
  * safeToSpendToday = max(0, remaining − unpaid bills due this month) / days left including today.
  */
 export function summarizeMonth(ctx: FinanceContext, month?: YearMonth): MonthSummary {
@@ -164,6 +168,10 @@ export function summarizeMonth(ctx: FinanceContext, month?: YearMonth): MonthSum
   const day = isCurrent ? dayOfMonth(today) : isPast ? dim : 0
   const txns = upTo(ctx.bank.transactions, today)
   const spend = monthSpend(txns, m)
+  const prevMonth = shiftMonth(m, -1)
+  // like-for-like: the previous month up to the same day (a finished month compares with all of the previous one)
+  const cutoff = isPast ? 31 : day
+  const prevToDate = monthSpend(txns, prevMonth, (t) => dayOfMonth(t.date) <= cutoff)
   const target = ctx.profile.targetSpend
   const billsDue = isPast ? 0 : unpaidBillsDue(ctx.bank.bills, m, isCurrent).reduce((s, b) => s + b.amountDue, 0)
   const projected = isPast ? spend.total : projectMonth(ctx, m, day, spend.total, billsDue)
@@ -174,7 +182,7 @@ export function summarizeMonth(ctx: FinanceContext, month?: YearMonth): MonthSum
     income: monthIncome(txns, m),
     spent: spend.total,
     target,
-    byCategory: categoryRows(spend, monthSpend(txns, shiftMonth(m, -1)), budgetLimits(ctx, m)),
+    byCategory: categoryRows(spend, monthSpend(txns, prevMonth), prevToDate, budgetLimits(ctx, m)),
     daysInMonth: dim,
     dayOfMonth: day,
     projected,

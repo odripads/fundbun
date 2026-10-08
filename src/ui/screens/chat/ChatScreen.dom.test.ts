@@ -230,6 +230,28 @@ describe('ChatScreen — actions go through the policy engine', () => {
 })
 
 describe('ChatScreen — menu', () => {
+  it('"Get a human" records the handoff (audited, masked) and can pause Bun in the same step', async () => {
+    const app = demo('mei')
+    const spy = vi.spyOn(app, 'requestHumanHandoff')
+    const { container } = await renderChat(app)
+    await send(container, 'Send ¥4,800 to account 6222 0210 0112 3456 789')
+    await click(container.querySelector('button[aria-label="Chat options"]'))
+    await click(byText(dialog()!, /^Talk to a human/, 'button'))
+    await flush(400)
+    await click(dialog()!.querySelector('[role="switch"]'))
+    await click(byText(dialog()!, 'Get a human', 'button'))
+    await flush(400)
+    expect(spy).toHaveBeenCalledTimes(1)
+    expect(spy.mock.calls[0][1]).toEqual({ freeze: true })
+    const state = app.getSnapshot().state
+    const entry = [...state.audit].reverse().find((e) => e.type === 'user_action')!
+    expect(entry.data).toMatchObject({ type: 'handoff', freeze: true })
+    expect(String(entry.data.summary)).toContain('•••• 6789')
+    expect(JSON.stringify(entry)).not.toContain('6222 0210')
+    expect(state.mandate.frozen).toBe(true)
+    expect(document.body.textContent).toContain('Handoff requested')
+  })
+
   it('hands off to a human with a masked summary, and clears the chat on confirmation', async () => {
     const app = demo('mei')
     const { container } = await renderChat(app)

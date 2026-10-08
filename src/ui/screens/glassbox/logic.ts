@@ -2,6 +2,7 @@
  * Pure view logic for the glass box: reading a turn's trace, policy decision labels, the task-plan DAG layout
  * and the policy tail from the audit log. Trace `detail` is `unknown`, so every read is defensive.
  */
+import { clipForDisplay, maskDigitRuns } from '../../../core/security/redact'
 import { toolTier } from '../../../core/agent/specs'
 import type { AuditEntry, ChatMessage, Decision, PlanStep, TaskPlan, Tier, TraceStep } from '../../../core/types'
 
@@ -35,7 +36,7 @@ export function latestTurn(chat: readonly ChatMessage[]): LatestTurn | null {
     const m = chat[i]
     if (m.role !== 'assistant' || !m.trace?.length) continue
     for (let j = i - 1; j >= 0; j--) {
-      if (chat[j].role === 'user') return { message: m, question: chat[j].text }
+      if (chat[j].role === 'user') return { message: m, question: safeText(chat[j].text, QUESTION_MAX) }
       if (chat[j].role === 'assistant') break
     }
     return { message: m }
@@ -71,13 +72,27 @@ export type StepView =
   | { kind: 'grounding'; title: string; ok: boolean; checked?: number; ungrounded: string[] }
   | { kind: 'llm' | 'redaction' | 'error'; title: string; facts: [string, string][] }
 
+/** The user's question as the trace shows it. */
+export const QUESTION_MAX = 140
+/** A step title (labels can carry tool summaries built from untrusted text, e.g. a bill's merchant line). */
+export const TITLE_MAX = 120
+const ARG_MAX = 28
+
+/**
+ * Anything the glass box prints from a trace may come from untrusted text (a pasted bill, a memo, the user's own
+ * message with an account number in it): digit runs of 8+ are masked to the last four FIRST, then the text is
+ * clipped — so a cut never leaves most of a card number visible.
+ */
+export function safeText(text: string, max = TITLE_MAX): string {
+  return clipForDisplay(text, max)
+}
+
 function argText(v: unknown): string {
-  if (typeof v === 'string') return v.length > 28 ? `${v.slice(0, 27)}…` : v
+  if (typeof v === 'string') return safeText(v, ARG_MAX)
   if (typeof v === 'number' || typeof v === 'boolean') return String(v)
   if (v === null || v === undefined) return '—'
   try {
-    const s = JSON.stringify(v)
-    return s.length > 28 ? `${s.slice(0, 27)}…` : s
+    return safeText(JSON.stringify(v), ARG_MAX)
   } catch {
     return '…'
   }
@@ -90,8 +105,9 @@ function facts(d: Rec, skip: string[] = []): [string, string][] {
     .map(([k, v]) => [k, argText(v)])
 }
 
-export function stepView(step: TraceStep): StepView {
-  const d = rec(step.detail)
+export function stepView(raw: TraceStep): StepView {
+  const step = { ...raw, label: safeText(String(raw.label ?? ''), TITLE_MAX) }
+  const d = rec(raw.detail)
   switch (step.kind) {
     case 'intent': {
       const alternatives = (Array.isArray(d.alternatives) ? d.alternatives : [])
@@ -119,12 +135,12 @@ export function stepView(step: TraceStep): StepView {
         decision: isDecision(d.decision) ? d.decision : refusal ? 'deny' : undefined,
         tier: tier !== undefined && tier >= 0 && tier <= 4 ? (tier as Tier) : undefined,
         ruleIds: [...strings(d.ruleIds), ...(rule ? [rule] : [])],
-        reasons: [...strings(d.reasons), ...(str(d.reason) ? [str(d.reason) as string] : [])],
+        reasons: [...strings(d.reasons), ...(str(d.reason) ? [str(d.reason) as string] : [])].map((r) => maskDigitRuns(r)),
         tainted: d.tainted === true,
       }
     }
     case 'injection':
-      return { kind: 'injection', title: step.label, signals: strings(d.signals), score: num(d.score), reason: str(d.reason) }
+      return { kind: 'injection', title: step.label, signals: strings(d.signals), score: num(d.score), reason: str(d.reason) !== undefined ? safeText(str(d.reason) as string, TITLE_MAX) : undefined }
     case 'grounding':
       return { kind: 'grounding', title: step.label, ok: d.ok !== false, checked: num(d.checked), ungrounded: strings(d.ungrounded) }
     default:

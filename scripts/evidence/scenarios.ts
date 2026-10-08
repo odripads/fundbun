@@ -90,7 +90,7 @@ const A: ScenarioDef[] = [
       const summary = s.app.getSnapshot().derived.summary
       s.check('exactly one tool call: get_overview', sameJson(tools(msg), ['get_overview']), tools(msg))
       s.check('mirror card with spent, target and projected', Boolean(m && m.spent > 0 && m.target > 0 && m.projected > 0), m ? `${s.fmt(m.spent)} / ${s.fmt(m.target)} → ${s.fmt(m.projected)}` : 'no card')
-      s.check('reply quotes spent and target', Boolean(m && msg.text.includes(s.fmt(m.spent)) && msg.text.includes(s.fmt(m.target))), clip(msg.text, 160))
+      s.check('reply quotes spent and target', Boolean(m && msg.text.includes(s.fmtCopy(m.spent)) && msg.text.includes(s.fmtCopy(m.target))), clip(msg.text, 160))
       s.check('projected month-end shown on the card matches the month summary', Boolean(m && summary && m.projected === summary.projected && m.projected > m.target), summary ? `projected ${s.fmt(summary.projected)} > target` : 'no summary')
       s.check('safe-to-spend today is ¥0 — the month is already over target', summary?.safeToSpendToday === 0, summary ? s.fmt(summary.safeToSpendToday) : 'no summary')
       s.check('reply numbers are grounded (≥ 2 checked, none invented)', msg.grounding?.ok === true && (msg.grounding?.checked ?? 0) >= 2, msg.grounding)
@@ -268,13 +268,23 @@ const A: ScenarioDef[] = [
   {
     id: 'A13', category: 'A', title: 'Home: Dream Mirror (Arif, under)', persona: 'arif', engine: 'offline',
     task: 'Arif: open Home',
-    expected: 'Mirror `under`; headline leads with MacBook progress; treat = Concert ticket offered as a choice',
+    expected: 'Mirror `under`; headline leads with MacBook progress; the subline names exactly what the stash moves and leaves the rest as the user\'s choice (a treat such as the Concert ticket only when the rest fully covers it)',
     async run(s) {
       const m = await openHome(s)
       s.check('mirror status is under', m.status === 'under', m.status)
       s.check('under target by ¥500–¥700 (projected ≈ ¥3,000)', m.delta >= 50_000 && m.delta <= 70_000, `${s.fmt(m.delta)} under, projected ${s.fmt(m.projected)}`)
-      s.check('headline leads with MacBook progress', /MacBook/.test(m.headline), m.headline)
-      s.check('Concert ticket offered as the user\'s choice', /Concert ticket/.test(m.subline) && /your call/i.test(m.subline), m.subline)
+      s.check('headline leads with MacBook progress', /MacBook/.test(m.headline) && m.item?.id === 'dream_macbook', m.headline)
+      const stash = m.cta?.tool === 'transfer_to_goal' ? Number(m.cta.args.amount) : 0
+      const rest = m.delta - stash
+      const treat = m.treat ? s.state().dreams.find((d) => d.id === m.treat!.itemId) : undefined
+      const restOffered = treat
+        ? m.subline.includes(`the other ${s.fmtCopy(rest)} covers`) && m.subline.includes(treat.name) && treat.price <= rest
+        : /breathing room/.test(m.subline)
+      s.check(
+        'the rest is the user\'s choice: the stash amount is stated exactly, a treat only if the rest covers it',
+        stash > 0 && m.subline.includes(`Stash ${s.fmtCopy(stash)}`) && restOffered && /your call/i.test(m.subline),
+        `${m.subline} (stash ${s.fmt(stash)}, rest ${s.fmt(rest)}${treat ? `, ${treat.name} ${s.fmt(treat.price)}` : ', no treat fits the rest'})`,
+      )
       s.check('primary CTA stashes into the MacBook (never a purchase)', m.cta?.tool === 'transfer_to_goal' && m.cta.args.goalId === 'dream_macbook', m.cta ? `${m.cta.tool} ${json(m.cta.args)} “${m.cta.label}”` : 'none')
       s.observe(`${m.status}, ${s.fmt(m.delta)} under · “${m.headline}” · CTA “${m.cta?.label}”`)
     },

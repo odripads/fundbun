@@ -1,6 +1,6 @@
 import { CATEGORIES } from '../categories'
 import type { AffordabilityResult, CategoryId, FinanceContext, Minor } from '../types'
-import { delayPhrase, moneyFmt } from './copy'
+import { copyFmt, delayPhrase, moneyFmt } from './copy'
 import { dreamEquivalents, fallbackMonthlyRate, goalDelayDays, goalProgress, hoursOfWork, primaryGoal } from './dreams'
 import { summarizeMonth } from './summary'
 
@@ -16,7 +16,9 @@ const HEADROOM = 0.1
  * purchase the checking balance can't cover is always 'skip'.
  */
 export function checkAffordability(ctx: FinanceContext, amount: Minor, label = 'this', category?: CategoryId): AffordabilityResult {
-  const f = moneyFmt(ctx.profile.currency)
+  // the price is exact; balances, projections and targets read as whole yuan from ¥100
+  const fx = moneyFmt(ctx.profile.currency)
+  const f = copyFmt(ctx.profile.currency)
   const s = summarizeMonth(ctx)
   const price = Math.max(0, Math.round(amount))
   const target = s.target
@@ -46,7 +48,7 @@ export function checkAffordability(ctx: FinanceContext, amount: Minor, label = '
 
   const reasons: string[] = []
   if (price === 0) reasons.push('Nothing to check — there is no cost.')
-  if (cantPay) reasons.push(`Your checking balance (${f(checking!.balance)}) doesn't cover ${f(price)}.`)
+  if (cantPay) reasons.push(`Your checking balance (${f(checking!.balance)}) doesn't cover ${fx(price)}.`)
   if (price > 0 && s.projected > target) {
     reasons.push(`You're already on pace to end the month ${f(s.projected - target)} over your ${f(target)} target.`)
   } else if (overTargetBy > 0) {

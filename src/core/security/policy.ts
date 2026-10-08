@@ -426,13 +426,28 @@ function liquidityProblem(amount: Minor, checking: Account, bank: BankState, mon
 }
 
 function usedThisPeriod(ctx: PolicyContext): { today: Minor; month: Minor } {
-  const offset = ctx.utcOffsetMinutes ?? 0
-  const nowMs = Date.parse(ctx.now)
+  return agentMoneyUsed(ctx.recentAgentActions, ctx.now, ctx.utcOffsetMinutes ?? 0)
+}
+
+/** Minutes east of UTC on this device at `now` (China Standard Time = 480), so caps follow the user's calendar. */
+export function utcOffsetMinutesAt(now: ISODateTime): number {
+  const ms = Date.parse(now)
+  return Number.isFinite(ms) ? -new Date(ms).getTimezoneOffset() : 0
+}
+
+/**
+ * Agent money movement counted against the daily / monthly caps: approved or executed agent records of
+ * money-moving tools, bucketed into the calendar day and month of `now` shifted by `utcOffsetMinutes`.
+ * The policy gate (P-CAP-DAILY / P-CAP-MONTHLY) and every UI that shows cap usage use this one function.
+ */
+export function agentMoneyUsed(records: readonly AgentActionRecord[] | undefined, now: ISODateTime, utcOffsetMinutes = 0): { today: Minor; month: Minor } {
+  const offset = Number.isFinite(utcOffsetMinutes) ? utcOffsetMinutes : 0
+  const nowMs = Date.parse(now)
   const day = periodKey(nowMs, offset, 10)
   const month = periodKey(nowMs, offset, 7)
   let today = 0
   let thisMonth = 0
-  for (const r of ctx.recentAgentActions ?? []) {
+  for (const r of records ?? []) {
     if (r.status !== 'approved' && r.status !== 'executed') continue
     if (!isToolName(r.tool) || !TOOL_SPECS[r.tool].movesMoney) continue
     const amt = Number.isFinite(r.amount) ? Math.abs(r.amount) : 0

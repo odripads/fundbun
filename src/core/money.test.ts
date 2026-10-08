@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { fmt, parseAmount, roundMajor, toMinor } from './money'
+import { fmt, fmtCopy, parseAmount, roundMajor, toMinor } from './money'
 
 describe('parseAmount — plain amounts', () => {
   it.each([
@@ -72,5 +72,30 @@ describe('money helpers', () => {
     expect(fmt(-48_620)).toBe('−¥486.20')
     expect(toMinor(12.34)).toBe(1_234)
     expect(roundMajor(12_345)).toBe(12_300)
+  })
+})
+
+describe('fmtCopy — money in prose', () => {
+  it('drops cents from ¥100 up, rounding to the nearest yuan', () => {
+    expect(fmtCopy(258_024)).toBe('¥2,580')
+    expect(fmtCopy(1_208_024)).toBe('¥12,080')
+    expect(fmtCopy(258_050)).toBe('¥2,581')
+    expect(fmtCopy(10_000)).toBe('¥100')
+    expect(fmtCopy(48_620)).toBe('¥486')
+  })
+
+  it('keeps cents below ¥100 and passes options through', () => {
+    expect(fmtCopy(2_850)).toBe('¥28.50')
+    expect(fmtCopy(9_999)).toBe('¥99.99')
+    expect(fmtCopy(3_000)).toBe('¥30')
+    expect(fmtCopy(-258_024)).toBe('−¥2,580')
+    expect(fmtCopy(258_024, 'CNY', { signed: true })).toBe('+¥2,580')
+    expect(fmtCopy(258_024, 'CNY', { bare: true })).toBe('2,580')
+    expect(fmtCopy(1_234_500, 'CNY', { compact: true })).toBe('¥12.3k')
+  })
+
+  it('works for currencies without minor units', () => {
+    expect(fmtCopy(12_345, 'JPY')).toBe('¥12,345')
+    expect(fmtCopy(99, 'JPY')).toBe('¥99')
   })
 })

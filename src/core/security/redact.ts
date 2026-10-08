@@ -291,3 +291,42 @@ function isPlainObject(v: object): v is Record<string, unknown> {
 function mergeCounts(into: Record<string, number>, from: Record<string, number>): void {
   for (const [k, n] of Object.entries(from)) into[k] = (into[k] ?? 0) + n
 }
+
+// ───────────────────────────── display masking (traces, chat, summaries) ─────────────────────────────
+
+/**
+ * Digit runs whose digits may be split by single spaces or dashes ("6222 0210 0112 3456 789"). Runs glued to
+ * letters or underscores are identifiers ("pa_3f20135526478a", ISO timestamps), not account numbers.
+ */
+const DIGIT_RUN = /(?<![A-Za-z_\d])\d(?:[ -]?\d)+(?![A-Za-z_\d])/g
+/** ISO dates are never account numbers ("2026-10-28"). */
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
+
+/**
+ * Mask every digit run of `minDigits`+ digits (account / card / phone numbers, however they are spaced) to its
+ * last four: "6222 0210 0112 3456 789" → "•••• 6789". ISO dates and amounts written with thousands separators
+ * or decimals ("¥12,080.24") are left alone. Meant for display surfaces (chat, glass-box traces, summaries);
+ * redactText is the stricter pass for anything that leaves the device.
+ */
+export function maskDigitRuns(text: string, minDigits = 8): string {
+  if (typeof text !== 'string' || !/\d/.test(text)) return typeof text === 'string' ? text : String(text ?? '')
+  return text.replace(DIGIT_RUN, (run, offset: number, whole: string) => {
+    const digits = run.replace(/\D/g, '')
+    if (digits.length < minDigits) return run
+    // a date (optionally followed by an hour) keeps its date part
+    const date = run.slice(0, 10)
+    if (ISO_DATE.test(date) && (run.length === 10 || /^[ -]/.test(run.slice(10)))) {
+      const rest = run.slice(10)
+      return date + (rest.replace(/\D/g, '').length >= minDigits ? rest.replace(/\d(?:[ -]?\d)+/, (r) => `•••• ${r.replace(/\D/g, '').slice(-4)}`) : rest)
+    }
+    // part of a decimal / grouped amount ("12,345,678.90" never reaches here as one run, but "12345678.90" does)
+    if (whole[offset + run.length] === '.' && /\d/.test(whole[offset + run.length + 1] ?? '')) return run
+    return `•••• ${digits.slice(-4)}`
+  })
+}
+
+/** Shorten untrusted or long text for display: masked digit runs, collapsed whitespace, at most `max` chars. */
+export function clipForDisplay(text: string, max = 160): string {
+  const clean = maskDigitRuns(String(text ?? '')).replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, '').replace(/\s+/g, ' ').trim()
+  return clean.length > max ? `${clean.slice(0, Math.max(1, max - 1)).trimEnd()}…` : clean
+}

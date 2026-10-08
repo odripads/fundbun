@@ -1151,6 +1151,11 @@
   text-align: start;
 }
 
+a.factButton {
+  color: inherit;
+  text-decoration: none;
+}
+
 .factButton:hover {
   background: color-mix(in srgb, var(--text) 3%, transparent);
 }

@@ -103,6 +103,7 @@ export function createFundBunApp(opts: CreateAppOptions = {}): FundBunApp {
     },
     blockedReason: () => (lock.locked ? LOCKED_MSG : null),
     freeze: opts.freezeState ?? false,
+    now,
   })
   if (boot.persist) persistence.save(boot.state)
 

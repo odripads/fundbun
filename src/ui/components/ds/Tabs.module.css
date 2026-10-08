@@ -35,8 +35,13 @@
   transition: color var(--dur-2) var(--ease-out), background-color var(--dur-2) var(--ease-out);
 }
 
-.tab:hover:not(:disabled) {
+/* hover lifts an unselected label only: the selected pill is inverted (text on --text), so it keeps its own colour */
+.tab:not(.selected):hover:not(:disabled) {
   color: var(--text);
+}
+
+.pill .tab:not(.selected):hover:not(:disabled) {
+  background: color-mix(in srgb, var(--text) 6%, transparent);
 }
 
 .tab:focus-visible {

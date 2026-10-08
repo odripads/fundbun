@@ -52,6 +52,21 @@ function trimZero(s: string): string {
   return s.replace(/\.0$/, '')
 }
 
+/** From this many major units (¥100) up, amounts in prose drop their cents. */
+export const COPY_WHOLE_FROM_MAJOR = 100
+
+/**
+ * Money for human copy (mirror lines, tripwire and insight text, chat replies): whole units once the absolute
+ * amount reaches ¥100 ("¥2,580 over", "¥12,080 spent"), cents kept below that ("¥28.50"). Rounds to the
+ * nearest unit, so the grounding check (which allows display rounding) still traces it to the exact source.
+ * Use plain `fmt` for exact figures: one bill or transaction (¥486.20), line items, and tables or cards
+ * where precision matters.
+ */
+export function fmtCopy(minor: Minor, currency: Currency = 'CNY', opts: Omit<FmtOptions, 'decimals'> = {}): string {
+  if (Math.abs(toMajor(minor, currency)) < COPY_WHOLE_FROM_MAJOR) return fmt(minor, currency, opts)
+  return fmt(roundMajor(minor, currency), currency, { ...opts, decimals: false })
+}
+
 /**
  * Magnitude suffixes. Single letters only count written directly after the digits ("2k", "1.5w", "5m", "5mn"),
  * words may follow a space ("3 thousand", "2 grand", "5 million"); either way the suffix must end at a

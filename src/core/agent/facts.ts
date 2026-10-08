@@ -3,11 +3,13 @@ import { listJoin, withArticle } from '../finance/copy'
 import type { AppState, Minor, RecurringSeries, ToolName } from '../types'
 import type { Intent } from './nlu'
 import type { ActionStage } from './voice'
-import { categoryLabel, findBill, findDream, money, pctLabel, shortDate } from './support'
+import { categoryLabel, findBill, findDream, money, moneyCopy, pctLabel, shortDate } from './support'
 
 /**
  * Tool outcomes → the pre-formatted fact strings voice.composeReply expects (see voice.FACT_KEYS).
  * Every number in a fact comes from tool data (or the call's own args), so offline replies stay grounded.
+ * Totals, targets and projections read as whole yuan from ¥100 (moneyCopy); one bill, one transaction, a price
+ * or an amount the user asked to move keeps its cents (money).
  */
 export type Facts = Record<string, string>
 
@@ -64,7 +66,7 @@ export function readFacts(tool: ToolName, data: unknown, state: AppState): Facts
 type Reader = (d: D, state: AppState) => Facts
 
 function overviewFacts(d: D, state: AppState): Facts {
-  const f = money(state)
+  const f = moneyCopy(state)
   const facts: Facts = {}
   put(facts, 'status', text(d.status))
   put(facts, 'month', text(d.monthLabel))
@@ -93,7 +95,7 @@ function itemPhrase(d: D): string | undefined {
 }
 
 function breakdownFacts(d: D, state: AppState): Facts {
-  const f = money(state)
+  const f = moneyCopy(state)
   const facts: Facts = {}
   put(facts, 'month', text(d.monthLabel))
   put(facts, 'total', positive(f, d.total))
@@ -119,11 +121,12 @@ function breakdownFacts(d: D, state: AppState): Facts {
 
 function searchFacts(d: D, state: AppState): Facts {
   const f = money(state)
+  const c = moneyCopy(state)
   const facts: Facts = { count: String(num(d.count) ?? 0) }
   put(facts, 'query', text(d.query) ?? (text(d.category) ? categoryLabel(text(d.category)) : undefined))
   const month = text(d.month)
   if (month && /^\d{4}-\d{2}$/.test(month)) facts.month = monthLabel(month)
-  put(facts, 'total', positive(f, d.total))
+  put(facts, 'total', positive(c, d.total))
   const largest = obj(d.largest)
   if (num(largest.amount)) facts.largest = `${f(num(largest.amount) as number)} at ${text(largest.merchant) ?? 'a merchant'} on ${shortDate(text(largest.date))}`
   return facts
@@ -131,9 +134,10 @@ function searchFacts(d: D, state: AppState): Facts {
 
 function subscriptionFacts(d: D, state: AppState): Facts {
   const f = money(state)
+  const c = moneyCopy(state)
   const facts: Facts = { count: String(num(d.count) ?? 0) }
-  put(facts, 'monthlyTotal', positive(f, d.monthlyTotal))
-  put(facts, 'annualTotal', positive(f, d.annualTotal))
+  put(facts, 'monthlyTotal', positive(c, d.monthlyTotal))
+  put(facts, 'annualTotal', positive(c, d.annualTotal))
   const hike = obj(d.priceHike)
   if (text(hike.merchant)) facts.priceHike = `${text(hike.merchant)} went from ${f(num(hike.from) ?? 0)} to ${f(num(hike.to) ?? 0)}`
   const overlap = obj(d.overlap)
@@ -170,14 +174,15 @@ function insightFacts(d: D): Facts {
 
 function affordFacts(d: D, state: AppState): Facts {
   const f = money(state)
+  const c = moneyCopy(state)
   const facts: Facts = {}
   put(facts, 'verdict', text(d.verdict))
   const label = text(d.label)
   put(facts, 'label', label && label !== 'this' ? label : undefined)
   put(facts, 'amount', positive(f, d.amount))
   const after = num(d.remainingAfter)
-  if (after !== undefined && after >= 0) facts.remainingAfter = f(after)
-  put(facts, 'overTargetBy', positive(f, d.overTargetBy))
+  if (after !== undefined && after >= 0) facts.remainingAfter = c(after)
+  put(facts, 'overTargetBy', positive(c, d.overTargetBy))
   const hours = num(d.hoursOfWork)
   if (hours) facts.hoursOfWork = String(hours)
   put(facts, 'goalName', text(d.goalName))
@@ -188,7 +193,7 @@ function affordFacts(d: D, state: AppState): Facts {
 }
 
 function goalsFacts(d: D, state: AppState): Facts {
-  const f = money(state)
+  const f = moneyCopy(state)
   const goals = arr(d.goals)
   const facts: Facts = { count: String(goals.length) }
   const primary = goals.find((g) => g.kind === 'goal') ?? goals[0]
@@ -207,6 +212,7 @@ function goalsFacts(d: D, state: AppState): Facts {
 
 function xrayFacts(d: D, state: AppState): Facts {
   const f = money(state)
+  const c = moneyCopy(state)
   const facts: Facts = {}
   if (obj(d.injection).suspicious === true) facts.injection = 'yes'
   put(facts, 'merchant', text(d.merchant))
@@ -217,7 +223,7 @@ function xrayFacts(d: D, state: AppState): Facts {
   const cmp = obj(d.comparison)
   const change = num(cmp.changePct)
   if (change !== undefined && num(cmp.previousAverage)) {
-    facts.comparison = `that's ${Math.abs(Math.round(change))}% ${change >= 0 ? 'above' : 'below'} your usual ${f(num(cmp.previousAverage) as number)}`
+    facts.comparison = `that's ${Math.abs(Math.round(change))}% ${change >= 0 ? 'above' : 'below'} your usual ${c(num(cmp.previousAverage) as number)}`
   }
   const warnings = Array.isArray(d.warnings) ? (d.warnings as string[]) : []
   put(facts, 'warning', noStop(warnings.find((w) => !/instructions|safety scan|above your usual/i.test(w))))
@@ -251,6 +257,7 @@ export interface ActionInfo {
 
 export function actionFacts(tool: ToolName, args: Record<string, unknown>, state: AppState, info: ActionInfo): Facts {
   const f = money(state)
+  const c = moneyCopy(state)
   const facts: Facts = { stage: info.stage }
   put(facts, 'reason', noStop(info.reason))
   put(facts, 'options', info.options)
@@ -267,19 +274,19 @@ export function actionFacts(tool: ToolName, args: Record<string, unknown>, state
     case 'set_category_budget': {
       const category = text(args.category)
       put(facts, 'category', category ? categoryLabel(category) : undefined)
-      put(facts, 'limit', positive(f, args.limit))
-      const prev = num(data.previousLimit) ?? state.budget?.categories.find((c) => c.category === category)?.limit
-      put(facts, 'previousLimit', positive(f, prev))
-      put(facts, 'lastMonth', positive(f, data.lastMonth))
+      put(facts, 'limit', positive(c, args.limit))
+      const prev = num(data.previousLimit) ?? state.budget?.categories.find((b) => b.category === category)?.limit
+      put(facts, 'previousLimit', positive(c, prev))
+      put(facts, 'lastMonth', positive(c, data.lastMonth))
       break
     }
     case 'create_budget_plan': {
       const method = text(data.method) ?? text(args.method)
       put(facts, 'method', method === 'fifty_thirty_twenty' ? 'the 50/30/20 rule' : method === 'history' ? 'your last 3 months' : method)
-      put(facts, 'total', positive(f, data.total))
-      put(facts, 'needs', positive(f, data.needs))
-      put(facts, 'wants', positive(f, data.wants))
-      put(facts, 'savings', positive(f, data.savings))
+      put(facts, 'total', positive(c, data.total))
+      put(facts, 'needs', positive(c, data.needs))
+      put(facts, 'wants', positive(c, data.wants))
+      put(facts, 'savings', positive(c, data.savings))
       put(facts, 'rationale', noStop(text(data.rationale)))
       break
     }
@@ -301,7 +308,7 @@ export function actionFacts(tool: ToolName, args: Record<string, unknown>, state
       const s = (info.recurring ?? []).find((r) => r.id === args.recurringId)
       put(facts, 'merchant', s?.merchant ?? text(data.merchant))
       put(facts, 'amount', positive(f, s?.lastAmount ?? data.monthly))
-      put(facts, 'annualCost', positive(f, s?.annualCost ?? data.annualCost))
+      put(facts, 'annualCost', positive(c, s?.annualCost ?? data.annualCost))
       break
     }
     case 'dispute_transaction': {

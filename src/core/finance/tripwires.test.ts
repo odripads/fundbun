@@ -180,3 +180,15 @@ describe('evaluateTripwires — general', () => {
     expect(e.message).not.toMatch(/undefined|NaN/)
   })
 })
+
+describe('evaluateTripwires — money in prose', () => {
+  it('month totals read as whole yuan; a single purchase keeps its exact amount', () => {
+    const ctx = ctxAt(350.37, [tw('m', 'month_pct', 80)])
+    const [ev] = evaluateTripwires(ctx, { now: NOW }).events
+    expect(ev.message).toMatch(/^You've spent ¥7,708 of your ¥9,500 target/)
+    const big = spend('2026-10-22', 'Taobao', 'shopping', 1_299.5)
+    const one = ctxAt(100, [tw('s', 'single_over', yuan(950))])
+    one.bank.transactions.push(big)
+    expect(evaluateTripwires(one, { newTxns: [big], now: NOW }).events[0].title).toBe('Big purchase: ¥1,299.50 at Taobao')
+  })
+})

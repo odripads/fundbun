@@ -50,6 +50,9 @@ import {
   txnWhen,
   vsPrevStat,
   vsTargetStat,
+  insightMonthOf,
+  needsExpandFor,
+  categoryCompareText,
 } from './model'
 import { countFrame, easeOut } from './useCountUp'
 
@@ -365,11 +368,11 @@ describe('habits', () => {
     expect(heatSummary(map, 'October', 'CNY')).toMatch(/Late night \(22:00–04:00\): \d+ purchases, ¥[\d,.]+, \d+ of them food delivery\./)
   })
 
-  it('reconciles with the engine’s late-night insight: habits + scheduled midnight renewals', () => {
+  it('reconciles with the engine’s late-night insight: both count the habit, not the scheduled midnight renewals', () => {
     const insight = mei.snap.derived.insights.find((i) => i.kind === 'late_night')!
     const map = heatmap(mei.ctx.bank.transactions, '2026-10')
-    expect(map.late.count + map.lateScheduled.count).toBe(insight.evidence.count)
-    expect(map.late.amount + map.lateScheduled.amount).toBe(insight.evidence.total)
+    expect(map.late.count).toBe(insight.evidence.count)
+    expect(map.late.amount).toBe(insight.evidence.total)
     expect(map.lateScheduled.count).toBeGreaterThan(0)
   })
 
@@ -517,5 +520,39 @@ describe('count-up', () => {
     expect(countFrame(0, 1208024, 1)).toBe(1208000)
     expect(countFrame(1000000, 0, 0)).toBe(1000000)
     expect(countFrame(0, 10000, 0.5) % 100).toBe(0)
+  })
+})
+
+describe('insight deep links', () => {
+  it('reads the month from an engine insight id', () => {
+    expect(insightMonthOf('ins_late_night_2026-10')).toBe('2026-10')
+    expect(insightMonthOf('ins_category_up_2026-09_delivery')).toBe('2026-09')
+    expect(insightMonthOf('ins_anomaly_2026-10_txn_abc')).toBe('2026-10')
+    expect(insightMonthOf('nope')).toBeUndefined()
+    expect(insightMonthOf(undefined)).toBeUndefined()
+  })
+
+  it('unfolds the list only when the linked card is beyond the first ones shown', () => {
+    const list = ['a', 'b', 'c', 'd', 'e'].map((id) => ({ id }) as Insight)
+    expect(needsExpandFor('b', list, 3)).toBe(false)
+    expect(needsExpandFor('d', list, 3)).toBe(true)
+    expect(needsExpandFor('zzz', list, 3)).toBe(false)
+    expect(needsExpandFor(undefined, list, 3)).toBe(false)
+  })
+})
+
+describe('categoryCompareText', () => {
+  const row = { category: 'delivery' as const, spent: 40_000, count: 4, prevMonth: 90_000, prevMonthToDate: 30_000 }
+  const base = { month: '2026-10', isCurrent: true, dayOfMonth: 22, byCategory: [row] } as unknown as MonthSummary
+  it('a month in progress compares with the same days of last month, then names all of it', () => {
+    expect(categoryCompareText(base, 'delivery', 'CNY')).toBe('By Sep 22: ¥300 (+33% now) · all of September: ¥900')
+  })
+  it('a finished month compares with the whole previous month', () => {
+    expect(categoryCompareText({ ...base, isCurrent: false } as MonthSummary, 'delivery', 'CNY')).toBe('September: ¥900 (−56% in Oct)')
+  })
+  it('caps the day at the previous month’s length and handles an empty previous month', () => {
+    const march = { ...base, month: '2026-03', dayOfMonth: 31 } as MonthSummary
+    expect(categoryCompareText(march, 'delivery', 'CNY')).toMatch(/^By Feb 28: /)
+    expect(categoryCompareText(base, 'groceries', 'CNY')).toBe('Nothing here in September.')
   })
 })

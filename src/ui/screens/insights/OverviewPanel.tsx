@@ -4,7 +4,7 @@ import { fmt } from '../../../core/money'
 import type { CategoryId, Currency, Insight, MonthHistoryPoint, MonthSummary, YearMonth } from '../../../core/types'
 import { BarChart, Button, Card, Donut, EmptyState, SectionHeader, cx } from '../../components/ds'
 import { InsightCard } from './InsightCard'
-import { categoryRows, featuredInsight, guideStatus, monthName, split, splitSlices, trendBars } from './model'
+import { categoryRows, featuredInsight, guideStatus, monthName, needsExpandFor, split, splitSlices, trendBars } from './model'
 import { TrendChart } from './TrendChart'
 import styles from './panels.module.css'
 
@@ -15,14 +15,16 @@ const SHOW_CATEGORIES = 6
 
 interface InsightListProps {
   insights: Insight[]
+  /** deep-linked insight: expanded into view and highlighted */
+  focusId?: string
   month: YearMonth
   currency: Currency
   actionable: boolean
   onAsk: (text: string) => void
 }
 
-function InsightList({ insights, month, currency, actionable, onAsk }: InsightListProps) {
-  const [all, setAll] = useState(false)
+function InsightList({ insights, focusId, month, currency, actionable, onAsk }: InsightListProps) {
+  const [all, setAll] = useState(() => needsExpandFor(focusId, insights, SHOW_INSIGHTS))
   const { featured, rest } = featuredInsight(insights)
   const visible = all ? rest : rest.slice(0, SHOW_INSIGHTS - 1)
   const hidden = rest.length - visible.length
@@ -35,9 +37,9 @@ function InsightList({ insights, month, currency, actionable, onAsk }: InsightLi
       />
       {featured ? (
         <div className={styles.cards}>
-          <InsightCard insight={featured} month={month} currency={currency} featured actionable={actionable} onAsk={onAsk} />
+          <InsightCard insight={featured} month={month} currency={currency} featured actionable={actionable} onAsk={onAsk} focused={featured.id === focusId} />
           {visible.map((i, n) => (
-            <InsightCard key={i.id} insight={i} month={month} currency={currency} actionable={actionable} onAsk={onAsk} index={n + 1} />
+            <InsightCard key={i.id} insight={i} month={month} currency={currency} actionable={actionable} onAsk={onAsk} index={n + 1} focused={i.id === focusId} />
           ))}
           {hidden > 0 || all ? (
             <Button variant="ghost" size="sm" className={styles.more} iconEnd={<ChevronDown className={cx(all && styles.flip)} />} aria-expanded={all} onClick={() => setAll((a) => !a)}>
@@ -213,6 +215,8 @@ function SplitSection({ s, currency }: { s: MonthSummary; currency: Currency }) 
 export interface OverviewPanelProps {
   s: MonthSummary
   insights: Insight[]
+  /** #/insights/<insightId>: the card to bring into view */
+  focusId?: string
   history: MonthHistoryPoint[]
   current: MonthSummary | null
   currency: Currency
@@ -221,10 +225,10 @@ export interface OverviewPanelProps {
   onSelectMonth: (m: YearMonth) => void
 }
 
-export function OverviewPanel({ s, insights, history, current, currency, onAsk, onOpenCategory, onSelectMonth }: OverviewPanelProps) {
+export function OverviewPanel({ s, insights, focusId, history, current, currency, onAsk, onOpenCategory, onSelectMonth }: OverviewPanelProps) {
   return (
     <div className={styles.panel}>
-      <InsightList insights={insights} month={s.month} currency={currency} actionable={s.isCurrent} onAsk={onAsk} />
+      <InsightList key={focusId ?? ''} insights={insights} focusId={focusId} month={s.month} currency={currency} actionable={s.isCurrent} onAsk={onAsk} />
       <CategorySection s={s} currency={currency} onOpen={onOpenCategory} />
       <TrendSection history={history} current={current} selected={s.month} currency={currency} onSelect={onSelectMonth} />
       <SplitSection s={s} currency={currency} />

@@ -166,6 +166,9 @@ function amountOf(p: PendingAction, bank: BankState): Minor {
 }
 
 /**
+ * @deprecated read `snapshot.derived.capUsage` instead — it is computed by the policy engine's own helper
+ * (security/policy.agentMoneyUsed) with the controller clock. Kept for backward compatibility.
+ *
  * Agent money movement counted against the caps — the same records the policy engine counts
  * (agent-proposed, approved or executed, money-moving tools), bucketed by the device's calendar day/month.
  */
@@ -397,6 +400,29 @@ export function pinLockText(lockedUntil: string | undefined, nowMs: number): str
 // ───────────────────────────── about ─────────────────────────────
 
 export const APP_VERSION = '1.0.0'
+export const APP_LICENCE = 'MIT'
+export const REPO_URL = 'https://github.com/odripads/fundbun'
+
+export interface TeamMember {
+  name: string
+  university: string
+  role?: string
+}
+
+export const TEAM: readonly TeamMember[] = [
+  { name: 'Odri Prince Sembiring', role: 'leader', university: 'Universitas Gadjah Mada' },
+  { name: 'Nadine Griselda', university: 'Universitas Airlangga' },
+]
+
+/** "Odri Prince Sembiring (leader, Universitas Gadjah Mada) · Nadine Griselda (Universitas Airlangga)" */
+export function teamLine(team: readonly TeamMember[] = TEAM): string {
+  return team.map((m) => `${m.name} (${[m.role, m.university].filter(Boolean).join(', ')})`).join(' · ')
+}
+
+/** "github.com/odripads/fundbun" — the repo URL without its scheme, for display. */
+export function repoLabel(url: string = REPO_URL): string {
+  return url.replace(/^https?:\/\//, '').replace(/\/$/, '')
+}
 
 export interface Licence {
   name: string

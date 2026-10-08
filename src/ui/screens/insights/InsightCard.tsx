@@ -1,5 +1,5 @@
 import { Check, ChevronDown, Lightbulb, MessageCircle, PartyPopper, TriangleAlert } from 'lucide-react'
-import { useCallback, useId, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import type { AppSnapshot } from '../../../core/app-api'
 import { CATEGORIES } from '../../../core/categories'
 import type { Currency, Insight, YearMonth } from '../../../core/types'
@@ -21,6 +21,8 @@ export interface InsightCardProps {
   onAsk: (text: string) => void
   /** stagger index for the entrance */
   index?: number
+  /** deep-linked (#/insights/<id>): scrolled into view, focused and briefly highlighted */
+  focused?: boolean
 }
 
 const SEVERITY_ICON: Record<Insight['severity'], ReactNode> = {
@@ -30,8 +32,18 @@ const SEVERITY_ICON: Record<Insight['severity'], ReactNode> = {
 }
 
 /** One engine insight: what, what it's worth in dreams, why (rule + numbers), and what to do about it. */
-export function InsightCard({ insight, month, currency, featured = false, actionable, onAsk, index = 0 }: InsightCardProps) {
+export function InsightCard({ insight, month, currency, featured = false, actionable, onAsk, index = 0, focused = false }: InsightCardProps) {
   const propose = useProposeAction()
+  const ref = useRef<HTMLElement>(null)
+  useEffect(() => {
+    if (!focused) return
+    // after the shell's own scroll-to-top on navigation has run
+    const t = window.setTimeout(() => {
+      ref.current?.scrollIntoView?.({ block: 'center', behavior: 'smooth' })
+      ref.current?.focus({ preventScroll: true })
+    }, 120)
+    return () => window.clearTimeout(t)
+  }, [focused])
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   // the PendingAction this card proposed: follow it so the button turns into "Done" (and back after an undo)
@@ -65,7 +77,11 @@ export function InsightCard({ insight, month, currency, featured = false, action
 
   return (
     <article
-      className={cx(styles.card, styles[insight.severity], featured && styles.featured)}
+      ref={ref}
+      id={`insight-${insight.id}`}
+      tabIndex={focused ? -1 : undefined}
+      data-focused={focused || undefined}
+      className={cx(styles.card, styles[insight.severity], featured && styles.featured, focused && styles.focused)}
       aria-labelledby={titleId}
       style={{ animationDelay: `${Math.min(index, 6) * 50}ms` }}
     >

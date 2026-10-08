@@ -4,7 +4,7 @@ import { roundMajor } from '../money'
 import type { CategoryId, DreamEquivalent, FinanceContext, Insight, InsightKind, Minor, MonthSummary, Tone, Transaction, YearMonth } from '../types'
 import { capCategoryAction, dailyTripwireAction, majorUnits, stashAction } from './actions'
 import { type Anomaly, detectAnomalies } from './anomalies'
-import { byTone, type Fmt, listJoin, moneyFmt, plural } from './copy'
+import { byTone, copyFmt, type Fmt, listJoin, moneyFmt, plural } from './copy'
 import { dreamEquivalents, goalEquivalent, goalProgress, primaryGoal } from './dreams'
 import { FIXED_CATEGORIES, inMonth, isLateNight, isSpending, monthSpend, upTo } from './ledger'
 import { mirrorStatus } from './mirror'
@@ -23,7 +23,10 @@ interface Env {
   month: YearMonth
   txns: Transaction[]
   spend: Transaction[]
+  /** prose money (totals, deltas, targets): whole yuan from ¥100 */
   f: Fmt
+  /** exact money: one transaction */
+  fx: Fmt
   tone: Tone
   minor: (major: number) => Minor
 }
@@ -198,9 +201,25 @@ function topMerchant(env: Env): Scored[] {
   })]
 }
 
+/**
+ * Late-night spending the user chose to make: scheduled renewals that happen to post after midnight
+ * (subscriptions, bills, rent and other fixed categories, detected recurring series) are not a habit.
+ */
+export function lateNightSpend(spend: Transaction[], txns: Transaction[], today: string, cancelled: string[] = []): Transaction[] {
+  const late = spend.filter(isLateNight)
+  if (late.length === 0) return late
+  const scheduled = new Set(
+    detectRecurring(txns, today, cancelled)
+      // a monthly (or rarer) charge at the same time each period is a schedule; a weekly one may well be a habit
+      .filter((r) => r.isSubscription || FIXED_CATEGORIES.has(r.category) || r.cadence !== 'weekly')
+      .flatMap((r) => r.txnIds),
+  )
+  return late.filter((t) => !FIXED_CATEGORIES.has(t.category) && !t.recurringId && !t.billId && !scheduled.has(t.id))
+}
+
 function lateNight(env: Env): Scored[] {
   const { f, s, ctx } = env
-  const late = env.spend.filter(isLateNight)
+  const late = lateNightSpend(env.spend, env.txns, ctx.bank.today, ctx.bank.cancelledMerchants)
   if (late.length < 3) return []
   const amount = total(late)
   const { category, share } = dominantCategory(late)
@@ -213,7 +232,7 @@ function lateNight(env: Env): Scored[] {
     amount,
     category,
     severity: s.spent > 0 && amount >= s.spent * 0.05 ? 'warn' : 'neutral',
-    why: `Counted purchases timestamped between 22:00 and 04:00 this month: ${late.length}, totalling ${f(amount)}.`,
+    why: `Counted purchases timestamped between 22:00 and 04:00 this month (scheduled renewals and bills left out): ${late.length}, totalling ${f(amount)}.`,
     dream,
     suggestedAction: CATEGORIES[category].kind === 'want' && usual > 0 ? capCategoryAction(ctx, category, usual) : undefined,
     evidence: { count: late.length, total: amount, topCategory: category, topCategorySharePct: Math.round(share * 100) },
@@ -307,13 +326,13 @@ function anomaliesInMonth(txns: Transaction[], env: Env): { anomaly: Anomaly; tx
 }
 
 function anomalyInsights(env: Env): Scored[] {
-  const { f } = env
+  const { f, fx } = env
   return anomaliesInMonth(env.txns, env)
     .slice(0, 2)
     .map(({ anomaly: a, txn }, i) => {
       const dream = dreamFor(a.amount, env)
       return make(env, 'anomaly', a.txnId, 90 - i * 5, {
-        title: `Unusual: ${f(a.amount)} at ${txn.merchant}`,
+        title: `Unusual: ${fx(a.amount)} at ${txn.merchant}`,
         body: `${a.reason}${thats(dream)}`,
         amount: a.amount,
         category: a.category,
@@ -365,7 +384,8 @@ export function generateInsights(ctx: FinanceContext, month?: YearMonth): Insigh
     month: m,
     txns,
     spend: txns.filter((t) => isSpending(t) && inMonth(t, m)),
-    f: moneyFmt(ctx.profile.currency),
+    f: copyFmt(ctx.profile.currency),
+    fx: moneyFmt(ctx.profile.currency),
     tone: ctx.profile.tone,
     minor: (major) => majorUnits(major, ctx.profile.currency),
   }

@@ -65,6 +65,16 @@ describe('HomeScreen — the Dream Mirror', () => {
     expect(spy.mock.calls[0][0]).toEqual(cta)
   })
 
+  it('Mei (over): "Make a plan with Bun" opens chat with the get-back-on-track request', async () => {
+    const app = demo('mei')
+    const spy = vi.spyOn(app, 'sendMessage')
+    const { container } = await renderHome(app)
+    await click(byText(container, 'Make a plan with Bun', 'button'))
+    await flush()
+    expect(spy).toHaveBeenCalledWith('Help me get back on track this month')
+    expect(window.location.hash).toBe('#/chat')
+  })
+
   it('Arif (under): shows the goal and offers to stash, never to spend', async () => {
     const app = demo('arif')
     const { container } = await renderHome(app)
@@ -119,12 +129,30 @@ describe('HomeScreen — the Dream Mirror', () => {
     expect(spy.mock.calls[0][0]).toMatchObject({ tool: 'pay_bill', args: { billId: expect.stringContaining('electricity') } })
   })
 
+  it('shows the two alerts the demo primes at load, and clears them on "Clear all"', async () => {
+    const app = demo('mei')
+    expect(app.getSnapshot().derived.unseenEvents).toHaveLength(2)
+    const { container } = await renderHome(app)
+    const deck = Array.from(container.querySelectorAll('section')).find((s) => s.textContent?.includes('Tripwires'))!
+    expect(deck).toBeDefined()
+    expect(deck.textContent).toContain('1 more behind this one')
+    await click(byText(deck, 'Clear all', 'button'))
+    await flush()
+    expect(app.getSnapshot().derived.unseenEvents).toHaveLength(0)
+    expect(container.textContent).not.toContain('Tripwires')
+  })
+
   it('toasts a new tripwire with its dream picture and stacks it until "Got it"', async () => {
     const app = demo('mei')
+    // start from a clean deck: the demo's two primed alerts are covered by the test above
+    app.markEventsSeen()
     const { container } = await renderHome(app)
     expect(container.textContent).not.toContain('Tripwires')
     await click(byText(container, 'Sandbox', 'button'))
-    expect(document.querySelector('[role="dialog"]')!.textContent).toContain('No real money moves')
+    const sheet = document.querySelector('[role="dialog"]')!
+    expect(sheet.textContent).toContain('No real money moves')
+    await click(byText(sheet, 'Done', 'button'))
+    await flush(400)
     // drive the sandbox bank directly — the same AppApi call the panel's presets make
     let out!: ReturnType<FundBunApp['simulatePurchase']>
     await act(async () => {
@@ -140,6 +168,42 @@ describe('HomeScreen — the Dream Mirror', () => {
     await click(byText(deck, 'Clear all', 'button') ?? byText(deck, 'Got it', 'button'))
     await flush()
     expect(app.getSnapshot().derived.unseenEvents.length).toBeLessThan(out.events.length)
+  })
+
+  it('the sandbox sheet stays open after a purchase to show the result, and closes on Done', async () => {
+    const app = demo('mei')
+    const { container } = await renderHome(app)
+    await click(byText(container, 'Sandbox', 'button'))
+    const sheet = () => document.querySelector('[role="dialog"]')
+    await click(sheet()!.querySelector('button[title^="A big purchase"]'))
+    await flush()
+    expect(sheet()).not.toBeNull()
+    expect(sheet()!.textContent).toContain('JD.com')
+    expect(sheet()!.textContent).toContain('Tripwire')
+    // shown inline, so no toast covers it (it still lands in the Tripwires deck)
+    expect(document.querySelector('[aria-label="Notifications"]')?.textContent ?? '').not.toContain('JD.com')
+    expect(app.getSnapshot().derived.unseenEvents.some((e) => e.title.includes('JD.com'))).toBe(true)
+    // the late-night preset carries its time onto the transaction
+    await click(sheet()!.querySelector('button[title^="A late-night"]'))
+    await flush()
+    expect(app.getSnapshot().state.bank.transactions.at(-1)).toMatchObject({ merchant: 'Meituan', time: '01:10' })
+    await click(byText(sheet()!, 'Done', 'button'))
+    await flush(400)
+    expect(sheet()).toBeNull()
+  })
+
+  it('each "Bun noticed" card links to that insight on Insights', async () => {
+    const app = demo('mei')
+    const { container } = await renderHome(app)
+    const section = Array.from(container.querySelectorAll('section')).find((s) => s.querySelector('h2')?.textContent === 'Bun noticed')!
+    const links = Array.from(section.querySelectorAll<HTMLAnchorElement>('ul a'))
+    expect(links.length).toBe(2)
+    const ids = app.getSnapshot().derived.insights.map((i) => i.id)
+    for (const a of links) {
+      const m = a.getAttribute('href')!.match(/^#\/insights\/(.+)$/)
+      expect(m).not.toBeNull()
+      expect(ids).toContain(decodeURIComponent(m![1]))
+    }
   })
 
   it('shows the six-month could’ve strip with captions per month', async () => {

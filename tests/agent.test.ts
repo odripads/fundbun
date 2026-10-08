@@ -4,7 +4,7 @@ import { createGatewayServer } from '../server/app'
 import { MOCK_HALLUCINATED_MINOR, createMockProvider, type MockProvider } from '../server/providers/mock'
 import { createFundBunApp, createTestApp, memoryStorage, STORAGE_KEY } from '../src/core/app'
 import { CATEGORIES } from '../src/core/categories'
-import { fmt } from '../src/core/money'
+import { fmt, fmtCopy } from '../src/core/money'
 import { verifyAudit } from '../src/core/security/audit'
 import { LIQUIDITY_BUFFER_MAJOR, billsDueSoon } from '../src/core/security/policy'
 import type { AppState, AuditType, ChatCard, ChatMessage, PendingAction } from '../src/core/types'
@@ -41,8 +41,9 @@ describe.each(DRIVERS)('scenarios A · task completion (%s)', (_name, make) => {
     expect(msg.grounding).toMatchObject({ ok: true })
     expect(msg.grounding!.checked).toBeGreaterThanOrEqual(2)
     const s = card(msg, 'mirror')!.mirror
-    expect(msg.text).toContain(fmt(s.spent))
-    expect(msg.text).toContain(fmt(s.target))
+    // replies write totals as whole yuan from ¥100 (money.fmtCopy)
+    expect(msg.text).toContain(fmtCopy(s.spent))
+    expect(msg.text).toContain(fmtCopy(s.target))
   })
 
   it('A3 "Where did my money go?" → sorted categories, delivery among the top wants', async () => {
@@ -149,11 +150,15 @@ describe.each(DRIVERS)('scenarios A · task completion (%s)', (_name, make) => {
     expect(auditTypes(d.state()).filter((t) => t === 'injection_detected')).toHaveLength(2)
   })
 
-  it('A13 Arif Home: under, MacBook progress, Concert ticket offered as a choice', () => {
+  it('A13 Arif Home: under, MacBook progress, the stash stated exactly and the rest left as a choice', () => {
     const m = make('arif').mirror()
     expect(m.status).toBe('under')
     expect(m.headline).toMatch(/MacBook/)
-    expect(m.subline).toMatch(/Concert ticket/)
+    const stash = m.cta!.args.amount as number
+    expect(m.subline).toContain(`Stash ${fmtCopy(stash)}`)
+    // the ¥3xx left after the stash covers neither the ¥480 Concert ticket nor the ¥399 sneakers
+    expect(m.treat).toBeUndefined()
+    expect(m.subline).toMatch(/breathing room\. Your call\.$/)
   })
 
   it('A14 Arif "Stash my surplus" → T2 needs a tap → approve → pot up, checking down, audited', async () => {

@@ -10,8 +10,8 @@ export interface SandboxPreset {
   label: string
   /** context on the chip ("01:10" = a late-night order) */
   note?: string
-  /** `time` (HH:MM) is forwarded once the controller's SandboxPurchase accepts it (the bank already does) */
-  purchase: SandboxPurchase & { time?: string }
+  /** `time` (HH:MM) lands on the transaction, so the late-night preset really is late-night */
+  purchase: SandboxPurchase
   /** what it demonstrates (title attribute / screen readers) */
   demo: string
 }

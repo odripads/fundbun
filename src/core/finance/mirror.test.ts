@@ -74,10 +74,50 @@ describe('computeMirror — over', () => {
     expect((m.cta!.args.limit as number) % 1000).toBe(0)
   })
 
-  it('suggests a tripwire instead when that category already has a budget', () => {
+  it('an 80% alert only for a category still below 80% of its budget', () => {
+    const ctx = meiLike()
+    ctx.budget = { month: '2026-10', total: yuan(5_000), categories: [{ category: 'delivery', limit: yuan(5_000) }], method: 'custom', createdBy: 'user', createdAt: '2026-10-01T00:00:00Z' }
+    expect(computeMirror(ctx).cta).toMatchObject({ tool: 'create_tripwire', args: { kind: 'category_pct', threshold: 80, category: 'delivery' }, label: 'Alert me at 80% of Food delivery' })
+  })
+
+  it('never an 80% alert for a category already past 80%: over target it offers a daily line below the current pace', () => {
     const ctx = meiLike()
     ctx.budget = { month: '2026-10', total: yuan(800), categories: [{ category: 'delivery', limit: yuan(800) }], method: 'custom', createdBy: 'user', createdAt: '2026-10-01T00:00:00Z' }
-    expect(computeMirror(ctx).cta).toMatchObject({ tool: 'create_tripwire', args: { kind: 'category_pct', threshold: 80, category: 'delivery' } })
+    const m = computeMirror(ctx)
+    const s = summarizeMonth(ctx)
+    expect(m.status).toBe('over')
+    expect(m.cta).toMatchObject({ tool: 'create_tripwire', args: { kind: 'daily_over' } })
+    const line = m.cta!.args.threshold as number
+    expect(line).toBeLessThan(s.dailyAvg)
+    expect(line % 1000).toBe(0)
+    expect(m.cta!.label).toBe(`Alert me on days over ¥${line / 100}`)
+    // a daily line that already exists is not offered again
+    ctx.tripwires = [{ id: 'tw_day', kind: 'daily_over', threshold: line, enabled: true, createdBy: 'user', label: 'x' }]
+    expect(computeMirror(ctx).cta).toMatchObject({ tool: 'create_tripwire', args: { kind: 'pace_over', threshold: 100 } })
+  })
+
+  it('a cap for a category without a limit sits between what is spent and where it is heading', () => {
+    const ctx = meiLike()
+    const m = computeMirror(ctx)
+    const row = summarizeMonth(ctx).byCategory.find((r) => r.category === 'delivery')!
+    const s = summarizeMonth(ctx)
+    const pace = Math.round((row.spent / s.dayOfMonth) * s.daysInMonth)
+    expect(m.cta?.tool).toBe('set_category_budget')
+    expect(m.cta!.args.limit as number).toBeGreaterThan(row.spent)
+    expect(m.cta!.args.limit as number).toBeLessThan(pace)
+  })
+
+  it('over and pace_over lead with "Make a plan with Bun" (ctaPrompt), under never does', () => {
+    expect(computeMirror(meiLike()).ctaPrompt).toEqual({ label: 'Make a plan with Bun', prompt: 'Help me get back on track this month' })
+    expect(computeMirror(paced(2_500, [birkin])).ctaPrompt?.prompt).toBe('Help me get back on track this month')
+    expect(computeMirror(arifLike()).ctaPrompt).toBeUndefined()
+  })
+
+  it('writes amounts in prose as whole yuan from ¥100 (fmtCopy)', () => {
+    for (const tone of TONES) {
+      const m = computeMirror(meiLike(tone))
+      expect(`${m.headline} ${m.subline}`).not.toMatch(/¥[\d,]{3,}\.\d\d/)
+    }
   })
 })
 
@@ -101,20 +141,39 @@ describe('computeMirror — pace_over', () => {
 })
 
 describe('computeMirror — under', () => {
-  it('leads with goal progress and offers the treat as the user\'s choice', () => {
+  it('leads with goal progress and describes exactly what the stash moves', () => {
     const ctx = arifLike('gentle')
     const s = summarizeMonth(ctx)
     const m = computeMirror(ctx)
     const delta = s.target - s.projected
-    expect(m).toMatchObject({ status: 'under', delta, quantity: 1, mood: 'happy', tone: 'gentle' })
+    expect(m).toMatchObject({ status: 'under', delta, mood: 'happy', tone: 'gentle' })
     expect(delta).toBeGreaterThanOrEqual(yuan(500))
     expect(delta).toBeLessThanOrEqual(yuan(700))
-    expect(m.item?.id).toBe('dream_concert')
+    // the headline is goal-led, so the hero item is the goal
+    expect(m.item?.id).toBe('dream_macbook')
+    expect(m.fraction).toBeCloseTo(delta / yuan(7_999), 3)
+    expect(m.quantity).toBeUndefined()
     expect(m.goal).toMatchObject({ itemId: 'dream_macbook', pct: 46 })
     expect(m.headline).toMatch(/^¥6\d\d closer to your MacBook Air \(46% there\)\.$/)
-    expect(m.subline).toContain('a Concert ticket, guilt-free')
-    expect(m.subline).toContain('Your call.')
+    const stash = m.cta!.args.amount as number
+    const after = Math.floor(((m.goal!.saved + stash) / m.goal!.price) * 100)
+    expect(m.subline).toBe(`You're on pace to finish ¥${delta / 100} under your ¥3,600 target. Stash ¥${stash / 100} and your MacBook Air is ${after}% there — or keep it as breathing room. Your call.`)
+    // ¥3xx left after the stash covers neither the ¥480 ticket nor the ¥399 sneakers: no treat is offered
+    expect(m.treat).toBeUndefined()
     expect(m.goalDelayDays).toBeUndefined()
+  })
+
+  it('offers a treat only out of what the stash leaves: "the other ¥X covers …"', () => {
+    const ctx = arifLike('gentle')
+    ctx.dreams = [...ARIF_DREAMS, makeDream('dream_gig', 'Gig ticket', 250, 'treat', { image: 'preset:ticket' })]
+    const m = computeMirror(ctx)
+    const stash = m.cta!.args.amount as number
+    const rest = m.delta - stash
+    expect(m.subline).toContain(`Stash ¥${stash / 100} and your MacBook Air is`)
+    expect(m.subline).toContain(`— the other ¥${rest / 100} covers a Gig ticket, guilt-free. Your call.`)
+    expect(m.treat).toMatchObject({ itemId: 'dream_gig', label: 'a Gig ticket' })
+    expect(m.treat!.fraction).toBeCloseTo(rest / yuan(250), 3)
+    expect(stash + rest).toBe(m.delta)
   })
 
   it('primary CTA stashes half of a projected surplus in the goal — never a purchase', () => {
@@ -127,10 +186,13 @@ describe('computeMirror — under', () => {
   it('cheeky and numbers variants', () => {
     const cheeky = computeMirror(arifLike('cheeky'))
     expect(cheeky.headline).toMatch(/^¥6\d\d under target — your MacBook Air is blushing\.$/)
-    expect(cheeky.subline).toContain('Concert ticket, guilt-free — your call')
+    expect(cheeky.subline).toMatch(/Stash ¥3\d0 and you're \d\d% of the way there, or keep it as breathing room — your call, legend\.$/)
     const numbers = computeMirror(arifLike('numbers'))
     expect(numbers.headline).toMatch(/^¥6\d\d under target\.$/)
-    expect(numbers.subline).toMatch(/MacBook Air: 46% saved, \d\d% if stashed\. Alternative: Concert ticket \(¥480\)\./)
+    expect(numbers.subline).toMatch(/MacBook Air: 46% saved, \d\d% with ¥3\d0 stashed\.$/)
+    const ctx = arifLike('numbers')
+    ctx.dreams = [...ARIF_DREAMS, makeDream('dream_gig', 'Gig ticket', 250, 'treat')]
+    expect(computeMirror(ctx).subline).toMatch(/The other ¥\d+ covers Gig ticket \(¥250\)\.$/)
   })
 
   it('with only treats on the wishlist: "that\'s a Concert ticket, guilt-free!" and no CTA', () => {
@@ -321,21 +383,34 @@ describe('computeMirror — brand-new users', () => {
 })
 
 describe('computeMirror — treat & secondary CTA (under target)', () => {
-  it('fills treat with the biggest treat the surplus covers; no secondary CTA when the treat has no pot', () => {
-    const m = computeMirror(arifLike())
-    expect(m.treat).toMatchObject({ itemId: 'dream_concert', itemName: 'Concert ticket', label: 'a Concert ticket', image: 'preset:ticket' })
-    expect(m.treat!.fraction).toBeCloseTo(m.delta / yuan(480), 3)
+  const withGig = (balance?: number) => {
+    const ctx = arifLike()
+    ctx.dreams = [...ARIF_DREAMS, makeDream('dream_gig', 'Gig ticket', 250, 'treat', { image: 'preset:ticket' })]
+    if (balance !== undefined) ctx.bank.accounts = [checking(2_500), pot('dream_macbook', 3_680), pot('dream_gig', balance)]
+    return ctx
+  }
+
+  it('fills treat with the biggest treat the rest covers; no secondary CTA when the treat has no pot', () => {
+    const m = computeMirror(withGig())
+    expect(m.treat).toMatchObject({ itemId: 'dream_gig', itemName: 'Gig ticket', label: 'a Gig ticket', image: 'preset:ticket' })
     expect(m.secondaryCta).toBeUndefined()
   })
 
-  it('"Earmark for <treat>" moves money into the treat\'s own pot, capped at what it still needs', () => {
-    const ctx = arifLike()
-    ctx.bank.accounts = [checking(2_500), pot('dream_macbook', 3_680), pot('dream_concert', 100)]
+  it('"Earmark ¥X for <treat>" moves money into the treat\'s own pot, capped at what it still needs', () => {
+    const ctx = withGig(100)
     const m = computeMirror(ctx)
-    expect(m.secondaryCta).toEqual({ tool: 'transfer_to_goal', args: { goalId: 'dream_concert', amount: yuan(380) }, label: 'Earmark for Concert ticket' })
+    expect(m.secondaryCta).toEqual({ tool: 'transfer_to_goal', args: { goalId: 'dream_gig', amount: yuan(150) }, label: 'Earmark ¥150 for Gig ticket' })
     expect(m.cta?.args.goalId).toBe('dream_macbook')
-    ctx.bank.accounts = [checking(2_500), pot('dream_macbook', 3_680), pot('dream_concert', 480)]
-    expect(computeMirror(ctx).secondaryCta).toBeUndefined()
+    expect(computeMirror(withGig(250)).secondaryCta).toBeUndefined()
+  })
+
+  it('a treat-only wishlist offers the treat out of the whole surplus', () => {
+    const ctx = arifLike()
+    ctx.dreams = ARIF_DREAMS.filter((d) => d.kind === 'treat')
+    const m = computeMirror(ctx)
+    expect(m.cta).toBeUndefined()
+    expect(m.treat).toMatchObject({ itemId: 'dream_concert' })
+    expect(m.treat!.fraction).toBeCloseTo(m.delta / yuan(480), 3)
   })
 
   it('no treat when over or when no treat fits', () => {

@@ -4,7 +4,7 @@ import type { AppSnapshot } from '../../../core/app-api'
 import { BunMascot } from '../../components/brand'
 import { Button, Callout, Dialog, List, ListItem, Sheet, Toggle, useToast } from '../../components/ds'
 import { useApp, useSnapshot } from '../../state'
-import { handoffSummary } from './model'
+import { handoffSummary, handoffText } from './model'
 import styles from './ChatScreen.module.css'
 
 export type ChatOverlay = 'menu' | 'human' | 'clear' | null
@@ -55,7 +55,12 @@ function HumanHandoff({ open, onClose }: { open: boolean; onClose: () => void })
   const summary = handoffSummary(chat, awaiting)
 
   const request = () => {
-    if (pause && !frozen) app.freeze()
+    // audited as a user_action (type 'handoff'); pausing goes through the same call, so it is one step
+    const res = app.requestHumanHandoff(handoffText(summary), { freeze: pause && !frozen })
+    if (!res.ok) {
+      toast.show({ tone: 'danger', title: 'The handoff didn’t go through', message: res.error ?? 'Please try again.' })
+      return
+    }
     onClose()
     setPause(false)
     toast.show({

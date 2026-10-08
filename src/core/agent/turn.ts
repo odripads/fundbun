@@ -1,6 +1,8 @@
 import { uid } from '../ids'
+import { clipForDisplay, maskDigitRuns } from '../security/redact'
 import type { ChatCard, DialogueState, ISODateTime, TraceKind, TraceStep } from '../types'
 import type { AgentHost } from './host'
+import { profileFacts } from './support'
 
 /**
  * One agent turn: the glass-box trace, the cards for the reply, the taint flag and every tool-derived value
@@ -50,13 +52,41 @@ export function startTurn(host: AgentHost, source: TurnSource): Turn {
     noticeKeys: new Set(),
     now: () => host.now(),
   }
+  // the user's own target, income and dream prices are always quotable
+  addSource(turn, safeProfileFacts(host))
   if (source === 'xray') taint(turn, 'The user pasted outside text (bill X-ray)')
   return turn
 }
 
+function safeProfileFacts(host: AgentHost): Record<string, unknown> | undefined {
+  try {
+    return profileFacts(host.state())
+  } catch {
+    return undefined
+  }
+}
+
+/** Longest string kept in a trace detail (labels are shorter still). */
+export const TRACE_TEXT_MAX = 400
+export const TRACE_LABEL_MAX = 160
+
+/**
+ * Traces are shown in the chat and the glass box and stored with the message, so nothing in them may echo
+ * pasted bill text or an account number verbatim: strings are clipped and digit runs of 8+ are masked to the
+ * last four. Numbers, booleans and structure are kept as they are.
+ */
+export function safeTraceDetail(value: unknown, depth = 0): unknown {
+  if (typeof value === 'string') return value.length > TRACE_TEXT_MAX ? clipForDisplay(value, TRACE_TEXT_MAX) : maskDigitRuns(value)
+  if (value === null || typeof value !== 'object' || depth > 8) return value
+  if (Array.isArray(value)) return value.slice(0, 50).map((v) => safeTraceDetail(v, depth + 1))
+  const out: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(value)) out[k] = safeTraceDetail(v, depth + 1)
+  return out
+}
+
 export function trace(turn: Turn, kind: TraceKind, label: string, detail?: unknown): void {
-  const step: TraceStep = { kind, label, ts: turn.now() }
-  if (detail !== undefined) step.detail = detail
+  const step: TraceStep = { kind, label: label.length > TRACE_LABEL_MAX ? clipForDisplay(label, TRACE_LABEL_MAX) : maskDigitRuns(label), ts: turn.now() }
+  if (detail !== undefined) step.detail = safeTraceDetail(detail)
   turn.trace.push(step)
 }
 

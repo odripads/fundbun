@@ -105,3 +105,20 @@ describe('support helpers', () => {
     expect(isAfter(undefined, '2026-10-22T02:00:00.000Z')).toBe(false)
   })
 })
+
+describe('facts — money in prose', () => {
+  const run = (tool: ToolName, args: Record<string, unknown>) => executeTool({ id: 'c', tool, args, proposedBy: 'offline' }, host).data
+  it('totals read as whole yuan from ¥100; a bill keeps its cents', () => {
+    const state = host.state()
+    const overview = readFacts('get_overview', run('get_overview', {}), state)
+    expect(overview.spent).toMatch(/^¥\d{1,2},\d{3}$/)
+    expect(overview.delta).toMatch(/^¥\d,\d{3}$/)
+    const xray = readFacts('xray_bill', run('xray_bill', { text: raw }), state)
+    expect(xray.total).toBe('¥486.20')
+    expect(xray.comparison).toMatch(/your usual ¥\d{3}$/)
+    const bills = readFacts('analyze_bills', run('analyze_bills', {}), state)
+    expect(bills.nextBill).toMatch(/\(¥\d+(\.\d\d)?, due/)
+    const reply = composeReply('overview', overview, 'gentle')
+    expect(checkGrounding(reply, [run('get_overview', {})], 'CNY').ok).toBe(true)
+  })
+})

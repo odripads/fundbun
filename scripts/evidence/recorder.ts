@@ -1,5 +1,6 @@
 import type { Result } from '../../src/core/app-api'
 import { createFundBunApp, createTestApp, memoryStorage, type FundBunApp, type StorageLike } from '../../src/core/app'
+import { fmtCopy } from '../../src/core/money'
 import { parseAuditJSONL, verifyAudit } from '../../src/core/security/audit'
 import type { AppState, AuditEntry, ChatMessage, Currency, PendingAction, TraceStep } from '../../src/core/types'
 import { cardLine, clip, hash8, json, money, pendingLine, quote, redact, redactValue, signedMoney } from './format'
@@ -210,6 +211,11 @@ export class Scenario {
 
   fmt(minor: number): string {
     return money(minor, this.currency)
+  }
+
+  /** money as replies and mirror copy write it (whole yuan from ¥100 — money.fmtCopy) */
+  fmtCopy(minor: number): string {
+    return fmtCopy(minor, this.currency)
   }
 
   // ───────────────────────────── driving the product ─────────────────────────────

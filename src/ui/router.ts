@@ -30,10 +30,20 @@ export interface RouteMeta {
   parent?: RouteName
   /** redirect to onboarding when the user has not onboarded yet */
   requiresOnboarding: boolean
+  /**
+   * show the desktop glass box beside the phone (when the user has it switched on); default: chrome === 'app'.
+   * Onboarding opts in: before there is anything to trace, the panel explains privacy and permissions.
+   */
+  glassBox?: boolean
+}
+
+/** Whether a route shows the desktop glass-box panel (the user's setting still applies on top). */
+export function showsGlassBox(meta: RouteMeta): boolean {
+  return meta.chrome !== 'wide' && (meta.glassBox ?? meta.chrome === 'app')
 }
 
 export const ROUTE_META: Record<RouteName, RouteMeta> = {
-  onboarding: { title: 'Welcome', chrome: 'bare', tab: null, topBar: false, tabBar: false, requiresOnboarding: false },
+  onboarding: { title: 'Welcome', chrome: 'bare', tab: null, topBar: false, tabBar: false, requiresOnboarding: false, glassBox: true },
   home: { title: 'Home', chrome: 'app', tab: 'home', topBar: true, tabBar: true, requiresOnboarding: true },
   insights: { title: 'Insights', chrome: 'app', tab: 'insights', topBar: true, tabBar: true, requiresOnboarding: true },
   bills: { title: 'Bills', chrome: 'app', tab: 'bills', topBar: true, tabBar: true, requiresOnboarding: true },

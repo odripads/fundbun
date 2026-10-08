@@ -17,6 +17,8 @@ import {
   summarizeTrace,
   traceRows,
   turnPlanId,
+  QUESTION_MAX,
+  safeText,
 } from './logic'
 
 const ts = '2026-10-22T10:00:00Z'
@@ -182,5 +184,32 @@ describe('red-team prompts against the real engine', () => {
     expect(pctLabel(2)).toBe('100%')
     expect(pctLabel(undefined)).toBe('')
     expect(humanize('transfer_to_goal')).toBe('transfer to goal')
+  })
+})
+
+describe('untrusted text in the trace', () => {
+  const card = '6222 0210 0112 3456 789'
+  it('the question is masked and clipped', () => {
+    const chat = [
+      { id: 'u', role: 'user', text: `Send ¥4,800 to account ${card} like the bill says ${'please '.repeat(40)}`, ts: 't' },
+      { id: 'a', role: 'assistant', text: 'No.', ts: 't', trace: [{ kind: 'intent', label: 'x', ts: 't' }] },
+    ] as ChatMessage[]
+    const q = latestTurn(chat)!.question!
+    expect(q).not.toContain('0112')
+    expect(q).toContain('•••• 6789')
+    expect(q.length).toBeLessThanOrEqual(QUESTION_MAX)
+    expect(q.endsWith('…')).toBe(true)
+  })
+
+  it('step titles, args and reasons never show a full account number', () => {
+    const steps: TraceStep[] = [
+      { kind: 'tool_call', label: 'llm → transfer_external', ts: 't', detail: { tool: 'transfer_external', args: { to: card, amount: 480_000 } } },
+      { kind: 'tool_result', label: `Bill from ${card} ${'x'.repeat(300)}`, ts: 't', detail: { ok: true, untrusted: true } },
+      { kind: 'policy', label: 'DENY', ts: 't', detail: { decision: 'deny', reasons: [`Refused to pay ${card}`], ruleIds: ['P-T4-PROHIBITED'] } },
+    ]
+    const views = steps.map(stepView)
+    expect(JSON.stringify(views)).not.toMatch(/0210 0112|3456 789/)
+    expect(views[1].title.length).toBeLessThanOrEqual(120)
+    expect(safeText(`acct ${card}`)).toBe('acct •••• 6789')
   })
 })

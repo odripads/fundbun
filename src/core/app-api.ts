@@ -71,6 +71,11 @@ export interface DerivedState {
   couldve?: { totalOver: Minor; totalUnder: Minor; equivalents: DreamEquivalent[] }
   /** per-month mirror verdicts for the last 6 months (oldest first) */
   mirrorHistory?: { month: YearMonth; status: MirrorState['status']; delta: Minor; item?: DreamEquivalent }[]
+  /**
+   * Agent money movement against the mandate's caps, computed with the policy engine's own helper and
+   * calendar bucketing (security/policy.agentMoneyUsed, device UTC offset) — what Settings and the glass box show.
+   */
+  capUsage: CapUsage
 }
 
 export interface AppSnapshot {
@@ -127,6 +132,23 @@ export interface SandboxPurchase {
   amount: Minor
   category?: CategoryId
   memo?: string
+  /** local time of the purchase, 'HH:MM' (e.g. '01:10' for a late-night order); invalid values are ignored */
+  time?: string
+}
+
+export interface CapUsage {
+  /** agent-initiated money moved today (approved or executed), the same bucketing as the policy engine */
+  today: Minor
+  /** … and this calendar month */
+  month: Minor
+  dailyCap: Minor
+  monthlyCap: Minor
+  perActionCap: Minor
+}
+
+export interface HandoffOptions {
+  /** also pause the agent (kill switch) while a human helps */
+  freeze?: boolean
 }
 
 export interface AppApi {
@@ -152,6 +174,11 @@ export interface AppApi {
   /** a UI button (e.g. "Cancel iQIYI" on a finding) — goes through the SAME policy gate as the agent */
   runSuggestedAction(action: SuggestedAction): Promise<PendingAction>
   clearChat(): void
+  /**
+   * "Talk to a human": records the handoff request (audited as user_action, data.type 'handoff', with a short
+   * masked summary — never PINs or full account numbers) and, with `opts.freeze`, pauses the agent too.
+   */
+  requestHumanHandoff(summary?: string, opts?: HandoffOptions): Result
 
   // ── dreams ──
   addDream(input: DreamInput): DreamItem

@@ -175,3 +175,33 @@ describe('generateInsights — suggested caps never loosen a budget', () => {
     expect(late(0)).toEqual({ category: 'delivery', limit: yuan(680) })
   })
 })
+
+describe('generateInsights — late-night spending is a habit, not a renewal', () => {
+  it('scheduled subscription renewals and bills after midnight are left out', () => {
+    const late = (date: string, merchant: string, category: CategoryId, amount: number, time: string) => ({ ...spend(date, merchant, category, amount), time })
+    const months = ['2026-07', '2026-08', '2026-09', '2026-10']
+    const renewals = months.flatMap((m) => [late(`${m}-06`, 'iQIYI', 'subscriptions', 30, '00:03'), late(`${m}-14`, 'Youku', 'subscriptions', 25, '00:05'), late(`${m}-18`, 'Gym Club', 'health', 399, '00:01')])
+    const orders = [late('2026-10-03', 'Meituan', 'delivery', 60, '23:40'), late('2026-10-09', 'Meituan', 'delivery', 55, '00:47'), late('2026-10-16', 'Ele.me', 'delivery', 48, '01:10')]
+    const ctx = makeCtx({ today: '2026-10-22', txns: [...renewals, ...orders, ...daily('2026-10-01', '2026-10-22', 'Canteen', 'dining', 60)], dreams: MEI_DREAMS })
+    const x = byKind(generateInsights(ctx), 'late_night')!
+    expect(x.evidence.count).toBe(3)
+    expect(x.evidence.total).toBe(yuan(163))
+    expect(x.category).toBe('delivery')
+    expect(x.why).toContain('scheduled renewals and bills left out')
+  })
+
+  it('too few late-night purchases once renewals are excluded → no insight', () => {
+    const late = (date: string, merchant: string, category: CategoryId, amount: number, time: string) => ({ ...spend(date, merchant, category, amount), time })
+    const txns = [late('2026-10-06', 'iQIYI', 'subscriptions', 30, '00:03'), late('2026-10-14', 'Youku', 'subscriptions', 25, '00:05'), late('2026-10-03', 'Meituan', 'delivery', 60, '23:40'), late('2026-10-09', 'Meituan', 'delivery', 55, '00:47')]
+    expect(byKind(generateInsights(makeCtx({ today: '2026-10-22', txns })), 'late_night')).toBeUndefined()
+  })
+})
+
+describe('generateInsights — money in prose', () => {
+  it('titles and bodies show whole yuan from ¥100; cents stay below ¥100', () => {
+    for (const x of generateInsights(meiLike())) {
+      const text = `${x.title} ${x.body}`
+      for (const m of text.matchAll(/¥([\d,]+)\.(\d\d)/g)) expect(Number(m[1].replace(/,/g, '')), `${x.kind}: ${text}`).toBeLessThan(100)
+    }
+  })
+})

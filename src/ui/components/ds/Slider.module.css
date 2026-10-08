@@ -142,17 +142,24 @@
   box-shadow: inset 0 0 0 7px var(--slider-c), var(--ring);
 }
 
+/* stop labels are 44×44 pointer targets (WCAG 2.5.5); the row tucks up so the labels sit close to the rail */
 .stops {
   position: relative;
-  height: 32px;
-  margin: 0 calc(var(--thumb) / 2);
+  height: 44px;
+  margin: calc(var(--s-2) * -1) calc(var(--thumb) / 2) 0;
 }
 
 .stop {
   position: absolute;
   top: 0;
-  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
   padding: 0 4px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
   border: 0;
   background: transparent;
   color: var(--text-3);
@@ -163,11 +170,17 @@
 }
 
 .first {
+  justify-content: flex-start;
   transform: translateX(calc(var(--thumb) / -2));
 }
 
 .last {
+  justify-content: flex-end;
   transform: translateX(calc(-100% + var(--thumb) / 2));
+}
+
+.stop:disabled {
+  cursor: not-allowed;
 }
 
 .stopOn {

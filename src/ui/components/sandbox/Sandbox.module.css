@@ -347,3 +347,7 @@
 .custom input {
   width: 0;
 }
+
+.done {
+  margin-top: var(--s-1);
+}

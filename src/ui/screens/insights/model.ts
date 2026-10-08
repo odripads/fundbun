@@ -3,7 +3,7 @@
  * outputs; no money maths happens in components. Money stays integer minor units until Money / fmt.
  */
 import { CATEGORIES } from '../../../core/categories'
-import { dateLabel, dayOfMonth, monthLabel, shiftMonth, weekday } from '../../../core/dates'
+import { dateLabel, dayOfMonth, daysInMonth, monthLabel, shiftMonth, weekday } from '../../../core/dates'
 import { generateInsights, isSpending, mirrorStatus, netSpend, summarizeMonth } from '../../../core/finance'
 import { fmt, parseAmount } from '../../../core/money'
 import type {
@@ -818,6 +818,41 @@ export function bodyWithoutDream(body: string, label: string): string {
 }
 
 /** Order insights so the most useful comes first; the engine already scores them, this keeps that order stable. */
+/**
+ * The category sheet's comparison line. A month in progress compares like with like — the previous month up to
+ * the same day (CategorySpend.prevMonthToDate) — and then names the whole previous month; a finished month
+ * compares with all of the previous one.
+ */
+export function categoryCompareText(s: MonthSummary, category: CategoryId, currency: Currency): string {
+  const row = s.byCategory.find((r) => r.category === category)
+  const spent = row?.spent ?? 0
+  const prev = row?.prevMonth ?? 0
+  const prevMonth = shiftMonth(s.month, -1)
+  const pctChange = (base: Minor) => (base > 0 ? Math.round(((spent - base) / base) * 100) : null)
+  const changeText = (c: number | null, where: string) => (c !== null && c !== 0 ? ` (${c > 0 ? '+' : '−'}${Math.abs(c)}% ${where})` : '')
+  if (prev <= 0) return `Nothing here in ${monthName(prevMonth)}.`
+  if (!s.isCurrent) return `${monthName(prevMonth)}: ${fmt(prev, currency)}${changeText(pctChange(prev), `in ${monthName(s.month, 'short')}`)}`
+  const day = Math.min(s.dayOfMonth, daysInMonth(prevMonth))
+  const toDate = row?.prevMonthToDate ?? 0
+  return `By ${monthName(prevMonth, 'short')} ${day}: ${fmt(toDate, currency)}${changeText(pctChange(toDate), 'now')} · all of ${monthName(prevMonth)}: ${fmt(prev, currency)}`
+}
+
+/** The month an engine insight id belongs to (`ins_<kind>_<YYYY-MM>[_<key>]`), if it carries one. */
+export function insightMonthOf(id: string | undefined): YearMonth | undefined {
+  const m = id?.match(/^ins_[a-z_]+?_(\d{4}-\d{2})(?:_|$)/)
+  return m ? m[1] : undefined
+}
+
+/**
+ * For a deep link (#/insights/<insightId>): should the folded list start expanded so the linked card is visible?
+ * The featured card and the first SHOW-1 others are always shown.
+ */
+export function needsExpandFor(id: string | undefined, list: Insight[], shown: number): boolean {
+  if (!id) return false
+  const i = list.findIndex((x) => x.id === id)
+  return i >= shown
+}
+
 export function featuredInsight(list: Insight[]): { featured: Insight | null; rest: Insight[] } {
   return { featured: list[0] ?? null, rest: list.slice(1) }
 }

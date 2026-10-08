@@ -102,9 +102,22 @@
 }
 
 .tierCode {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 1px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
+}
+
+/* T0 vs TO: DM Sans ships no 'zero' feature, so the digit uses a monospace face with a slashed zero */
+.tierDigit {
+  font-family: ui-monospace, 'SF Mono', 'Roboto Mono', 'Cascadia Mono', Menlo, Consolas, monospace;
+  font-size: 0.95em;
+  font-weight: 700;
+  font-variant-numeric: slashed-zero tabular-nums;
+  font-feature-settings: 'zero' 1, 'tnum' 1;
+  letter-spacing: 0;
 }
 
 .tier0 {

@@ -319,6 +319,13 @@ export function handoffSummary(messages: Pick<ChatMessage, 'role' | 'text'>[], a
   return { topics, messages: messages.length, awaiting }
 }
 
+/** The one-line summary recorded with the handoff request (masked again by the controller before auditing). */
+export function handoffText(s: HandoffSummary): string {
+  const topics = s.topics.length ? `Asked about: ${s.topics.map((t) => `“${t}”`).join(' · ')}` : 'No questions yet'
+  const waiting = s.awaiting ? `${s.awaiting} action${s.awaiting === 1 ? '' : 's'} waiting` : 'nothing waiting'
+  return `${topics}. ${s.messages} message${s.messages === 1 ? '' : 's'}, ${waiting}.`
+}
+
 /** Secrets never leave in a summary: long digit runs (account / card numbers) keep the last 4, PINs vanish. */
 export function maskDigits(text: string): string {
   return text

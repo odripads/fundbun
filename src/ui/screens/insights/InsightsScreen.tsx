@@ -9,6 +9,7 @@ import { shallowEqual, useApp, useSafeAction, useSnapshot } from '../../state'
 import { CategorySheet } from './CategorySheet'
 import { MonthHero } from './MonthHero'
 import {
+  insightMonthOf,
   insightsFor,
   insightsQuery,
   ledgerTxns,
@@ -58,7 +59,9 @@ function InsightsView({ ctx, current, history, currentInsights }: ViewProps) {
   const currency = ctx.profile.currency
   const currentMonth = ym(ctx.bank.today)
   const choices = useMemo(() => monthChoices(history, currentMonth), [history, currentMonth])
-  const month = resolveMonth(loc.query.month, choices, currentMonth)
+  // #/insights/<insightId> (e.g. from a Home card): open that insight's month and point at its card
+  const focusId = loc.params[0]
+  const month = resolveMonth(loc.query.month ?? insightMonthOf(focusId), choices, currentMonth)
   const tab = resolveTab(loc.query.tab)
   const catFilter = loc.query.cat && loc.query.cat in CATEGORIES ? (loc.query.cat as CategoryId) : null
   const query = loc.query.q ?? ''
@@ -115,6 +118,7 @@ function InsightsView({ ctx, current, history, currentInsights }: ViewProps) {
       <OverviewPanel
         s={s}
         insights={insights}
+        focusId={focusId}
         history={history}
         current={current}
         currency={currency}

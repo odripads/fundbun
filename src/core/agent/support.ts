@@ -1,7 +1,9 @@
 import { CATEGORIES } from '../categories'
 import { dateLabel } from '../dates'
 import { potFor } from '../finance/dreams'
-import { fmt } from '../money'
+import { billMerchant } from '../finance/xray'
+import { clipForDisplay } from '../security/redact'
+import { fmt, fmtCopy } from '../money'
 import { checkingAccount } from '../security/policy'
 import type {
   Account,
@@ -33,9 +35,30 @@ export function currencyOf(state: AppState): Currency {
   return state.profile?.currency ?? checkingAccount(state.bank)?.currency ?? 'CNY'
 }
 
+/** Exact money: one bill, one transaction, a price, an amount the user asked to move. */
 export function money(state: AppState): (m: Minor) => string {
   const currency = currencyOf(state)
   return (m) => fmt(m, currency)
+}
+
+/** Money for prose (totals, targets, projections, averages): whole units from ¥100 — see money.fmtCopy. */
+export function moneyCopy(state: AppState): (m: Minor) => string {
+  const currency = currencyOf(state)
+  return (m) => fmtCopy(m, currency)
+}
+
+/**
+ * Facts the user told FundBun themselves — target, income and dream prices. Every turn may quote them, so
+ * they are part of each turn's grounding sources (a true "your ¥9,500 target" must never be stripped).
+ */
+export function profileFacts(state: AppState): Record<string, unknown> {
+  const p = state.profile
+  if (!p) return {}
+  return {
+    targetSpend: p.targetSpend,
+    monthlyIncome: p.monthlyIncome,
+    dreamPrices: state.dreams.filter((d) => d.price > 0).map((d) => d.price),
+  }
 }
 
 export function categoryLabel(c: CategoryId | string | undefined): string {
@@ -113,6 +136,22 @@ export function nluContextOf(state: AppState, recurring: RecurringSeries[]): Nlu
     recurring: recurring.map((r) => ({ id: r.id, merchant: r.merchant })),
     merchants: [...new Set(state.bank.transactions.map((t) => t.merchant))].slice(0, 2000),
   }
+}
+
+/**
+ * What the chat stores for a pasted bill instead of the bill itself ("Pasted a bill · Shenzhen Power Supply ·
+ * 2,341 chars"): the text is untrusted, possibly huge, and may carry account numbers — it is X-rayed, never kept.
+ */
+export function pastedBillLine(text: string): string {
+  const raw = String(text ?? '')
+  let merchant: string | undefined
+  try {
+    merchant = billMerchant(raw)
+  } catch {
+    merchant = undefined
+  }
+  const name = merchant ? clipForDisplay(merchant, 40) : ''
+  return ['Pasted a bill', name, `${raw.length.toLocaleString('en-US')} chars`].filter(Boolean).join(' · ')
 }
 
 /** Long digit runs (account / card numbers) → "•••• 1234". Amounts with separators are left alone. */

@@ -7,6 +7,7 @@ import {
   grounded,
   showGroundingFlag,
   handoffSummary,
+  handoffText,
   hasConversation,
   humanize,
   layoutConversation,
@@ -243,5 +244,12 @@ describe('handoffSummary', () => {
     expect(maskDigits('¥4,800 on Oct 22')).toBe('¥4,800 on Oct 22')
     expect(maskDigits('my PIN is 2580')).toBe('my PIN is ••••')
     expect(maskDigits('PIN: 2580, pin 123456')).toBe('PIN: ••••, pin ••••')
+  })
+})
+
+describe('handoffText', () => {
+  it('one line with topics and open items', () => {
+    expect(handoffText({ topics: ['Why am I over?', 'Pay my bill'], messages: 4, awaiting: 1 })).toBe('Asked about: “Why am I over?” · “Pay my bill”. 4 messages, 1 action waiting.')
+    expect(handoffText({ topics: [], messages: 1, awaiting: 0 })).toBe('No questions yet. 1 message, nothing waiting.')
   })
 })

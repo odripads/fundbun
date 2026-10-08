@@ -7,7 +7,7 @@ import { useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import type { AppSnapshot } from '../../../core/app-api'
 import { CURRENCY_SYMBOL, fmt } from '../../../core/money'
 import type { Autonomy, Currency, ToolName } from '../../../core/types'
-import { Button, Card, CardHeader, Money, ProgressBar, SectionHeader, Sheet, Slider, TextField, TierBadge, Toggle, cx, useToast } from '../../components/ds'
+import { Button, Card, CardHeader, Money, ProgressBar, SectionHeader, Sheet, Slider, TextField, TierBadge, TierCode, Toggle, cx, useToast } from '../../components/ds'
 import { shallowEqual, useApp, useSafeAction, useSnapshot } from '../../state'
 import {
   AUTONOMY_META,
@@ -18,7 +18,6 @@ import {
   GATE_META,
   TIERS,
   TIER_SHORT,
-  capUsage,
   capsDraft,
   capsRaise,
   changedCaps,
@@ -52,8 +51,9 @@ function selectPerms(s: AppSnapshot) {
     dailyCap: m.dailyCap,
     monthlyCap: m.monthlyCap,
     disabledTools: m.disabledTools,
-    pending: s.state.pending,
-    bank: s.state.bank,
+    // the policy engine's own count (derived.capUsage): what the next cap check will see
+    usedToday: s.derived.capUsage.today,
+    usedMonth: s.derived.capUsage.month,
     currency: (s.state.profile?.currency ?? 'CNY') as Currency,
     tone: s.state.profile?.tone,
   }
@@ -70,7 +70,7 @@ export function PermissionsSection() {
   const run = useSafeAction()
   const p = useSnapshot(selectPerms, shallowEqual)
   const caps: Caps = { perActionCap: p.perActionCap, dailyCap: p.dailyCap, monthlyCap: p.monthlyCap }
-  const usage = useMemo(() => capUsage(p.pending, p.bank, Date.now()), [p.pending, p.bank])
+  const usage = { today: p.usedToday, month: p.usedMonth }
   const [pinTask, setPinTask] = useState<PinTask | null>(null)
   const [editing, setEditing] = useState(false)
 
@@ -260,7 +260,7 @@ function TierMatrix({ autonomy, frozen }: { autonomy: Autonomy; frozen: boolean 
             <tr key={t}>
               <th scope="row">
                 <span className={styles.tierHead}>
-                  <span className={styles.tierCode} data-tier={t}>T{t}</span>
+                  <span className={styles.tierCode} data-tier={t}><TierCode tier={t} /></span>
                   <span className={styles.tierName}>{TIER_SHORT[t]}</span>
                 </span>
               </th>

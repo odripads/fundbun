@@ -1,3 +1,4 @@
+import { pastedBillLine } from '../agent/support'
 import type { AppApi, LlmStatus, Result } from '../app-api'
 import type { ChatMessage, SuggestedAction } from '../types'
 import { STATIC_BUILD_REASON } from './constants'
@@ -22,13 +23,15 @@ export function createAgentApi(core: Core): AgentApi {
   }
 
   /** Persist the failed turn (user text + an apology) so the conversation stays coherent. Never throws. */
-  function recordFailure(text: string, chatStart: number, e: unknown): ChatMessage {
+  function recordFailure(text: string, chatStart: number, e: unknown, source: 'chat' | 'xray' = 'chat'): ChatMessage {
     console.error('[fundbun] agent turn failed:', e)
     const ts = core.now()
     const msg = turnErrorMessage(errorMessage(e), ts)
+    // a pasted bill is never stored verbatim, not even when the turn fails
+    const shown = source === 'xray' ? safely('pastedBillLine', () => pastedBillLine(text), 'Pasted a bill') : text
     safely('record failed turn', () => store.mutate((draft) => {
-      const hasUser = draft.chat.slice(chatStart).some((m) => m.role === 'user' && m.text === text)
-      if (!hasUser) draft.chat.push(userMessage(text, ts))
+      const hasUser = draft.chat.slice(chatStart).some((m) => m.role === 'user' && (m.text === text || m.text === shown))
+      if (!hasUser) draft.chat.push(userMessage(shown, ts))
       draft.chat.push(msg)
     }), undefined)
     return msg
@@ -48,7 +51,7 @@ export function createAgentApi(core: Core): AgentApi {
       safely('engine.expire', () => engine.expire(), undefined)
       return await engine.respond(text, { source })
     } catch (e) {
-      return recordFailure(text, chatStart, e)
+      return recordFailure(text, chatStart, e, source)
     } finally {
       busy(-1)
     }

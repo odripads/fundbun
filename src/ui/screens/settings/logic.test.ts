@@ -6,6 +6,10 @@ import {
   AUTONOMY_ORDER,
   CAP_KEYS,
   LICENCES,
+  REPO_URL,
+  TEAM,
+  repoLabel,
+  teamLine,
   TIERS,
   TRIPWIRE_KINDS,
   TRIPWIRE_KIND_ORDER,
@@ -289,5 +293,15 @@ describe('security & about', () => {
     expect(app.setAutonomy('autopilot', '2580').ok).toBe(true)
     expect(app.setAutonomy('suggest').ok).toBe(true)
     expect(level()).toBe('suggest')
+  })
+})
+
+describe('about', () => {
+  it('credits the team with their universities, the repo and the MIT licence', () => {
+    expect(teamLine()).toBe('Odri Prince Sembiring (leader, Universitas Gadjah Mada) · Nadine Griselda (Universitas Airlangga)')
+    expect(TEAM).toHaveLength(2)
+    expect(REPO_URL).toBe('https://github.com/odripads/fundbun')
+    expect(repoLabel()).toBe('github.com/odripads/fundbun')
+    expect(teamLine([{ name: 'A', university: 'U' }])).toBe('A (U)')
   })
 })

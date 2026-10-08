@@ -52,7 +52,18 @@ describe('App shell — before onboarding', () => {
     expect(window.location.hash).toBe('#/onboarding')
     expect(byText(container, 'Meet Bun')).not.toBeNull()
     expect(container.querySelector('nav[aria-label="Primary"]')).toBeNull()
-    expect(container.querySelector('header')).toBeNull()
+    // no top bar in the phone (the glass-box panel beside it has its own header)
+    expect([...container.querySelectorAll('header')].filter((el) => !el.closest('aside'))).toEqual([])
+  })
+
+  it('beside onboarding, the glass box explains privacy and permissions (nothing to trace yet)', async () => {
+    const { container } = await renderAt('#/onboarding', createTestApp())
+    const panel = container.querySelector('aside')!
+    expect(panel.textContent).toContain('Glass box')
+    expect(panel.textContent).toContain('Two consents, nothing pre-ticked')
+    expect(panel.textContent).not.toContain('Red-team')
+    await click(byText(panel, 'Permissions', 'button'))
+    expect(panel.querySelectorAll('[data-tier]')).toHaveLength(5)
   })
 
   it('guards app routes', async () => {
@@ -61,11 +72,11 @@ describe('App shell — before onboarding', () => {
     expect(byText(container, 'Meet Bun')).not.toBeNull()
   })
 
-  it('integration: "Try the demo" loads the sandbox persona and lands on home', async () => {
+  it('integration: Mei’s demo card loads the sandbox persona and lands on home', async () => {
     const app = createTestApp()
     const { container } = await renderAt('#/onboarding', app)
-    await click(byText(container, 'Try the demo', 'button'))
-    await flush()
+    await click(container.querySelector('button[data-status="over"]'))
+    await flush(80)
     expect(app.isOnboarded()).toBe(true)
     expect(window.location.hash).toBe('#/home')
     expect(container.querySelector('h1')!.textContent).toBe('Home')
@@ -78,8 +89,8 @@ describe('App shell — before onboarding', () => {
       throw new Error('persona not ready')
     })
     const { container } = await renderAt('#/onboarding', app)
-    await click(byText(container, 'Try the demo', 'button'))
-    await flush()
+    await click(container.querySelector('button[data-status="over"]'))
+    await flush(80)
     expect(document.body.textContent).toContain('persona not ready')
     expect(window.location.hash).toBe('#/onboarding')
   })

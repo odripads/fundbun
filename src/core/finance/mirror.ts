@@ -13,8 +13,8 @@ import type {
   Tone,
   YearMonth,
 } from '../types'
-import { majorUnits, overspendAction, roundDownTo10, stashAction } from './actions'
-import { byTone, delayPhrase, type Fmt, moneyFmt, pctText, plural, withArticle } from './copy'
+import { majorUnits, overspendAction, roundDownTo10, stashAction, stashAmountOf } from './actions'
+import { byTone, copyFmt, delayPhrase, type Fmt, pctText, plural, withArticle } from './copy'
 import { dreamEquivalents, equivalentOf, fallbackMonthlyRate, goalDelayDays, goalProgress, hoursOfWork, potFor, primaryGoal } from './dreams'
 import { isSpending } from './ledger'
 import { summarizeMonth } from './summary'
@@ -150,30 +150,66 @@ function paceOverCopy(c: CopyInput): Copy {
   }
 }
 
-function underCopy(c: CopyInput, dreams: DreamItem[]): Copy {
+/**
+ * How an under-target surplus is split: what the stash CTA moves into the goal, what is left, and the biggest
+ * treat that the rest fully covers (a treat is only ever offered out of money the stash doesn't use).
+ */
+export interface SurplusSplit {
+  surplus: Minor
+  stash: Minor
+  rest: Minor
+  treat?: DreamItem
+}
+
+export function splitSurplus(surplus: Minor, stash: Minor, dreams: DreamItem[]): SurplusSplit {
+  const moved = Math.max(0, Math.min(stash, surplus))
+  const rest = Math.max(0, surplus - moved)
+  const treat = rest > 0 ? biggestTreatCovered(rest, dreams) : undefined
+  return { surplus, stash: moved, rest, ...(treat ? { treat } : {}) }
+}
+
+function goalPctAfter(goal: GoalProgress, extra: Minor): string {
+  return goal.price > 0 ? `${Math.floor(Math.min(100, ((goal.saved + extra) / goal.price) * 100))}%` : '100%'
+}
+
+function underCopy(c: CopyInput, split: SurplusSplit): Copy {
   const { f, s, delta, goal } = c
-  const treat = biggestTreatCovered(delta, dreams)
-  const otherGoal = c.item && c.quantity && c.item.kind === 'goal' && c.item.id !== goal?.itemId ? c.item : undefined
-  const choice = treat ? `it covers ${withArticle(treat.name)}, guilt-free` : otherGoal ? `it fully funds ${withArticle(otherGoal.name)}` : ''
+  const { treat, stash, rest } = split
   const pace = s.isCurrent ? `You're on pace to finish ${f(delta)} under your ${f(s.target)} target.` : `You finished ${f(delta)} under your ${f(s.target)} target.`
   if (!goal) {
     const headline = treat ? `You're ${f(delta)} under target — that's ${withArticle(treat.name)}, guilt-free!` : `You're ${f(delta)} under target.`
     return { headline: c.tone === 'numbers' ? `${f(delta)} under target.` : headline, subline: `${pace} Spend it or save it — your call.` }
   }
   const now = `${Math.floor(goal.pct)}%`
-  const after = `${Math.floor(Math.min(100, ((goal.saved + delta) / goal.price) * 100))}%`
   // "(0% there)" reads like a scolding — an empty pot gets a fresh-start line instead
   const started = goal.saved > 0
+  const headline = byTone(c.tone, {
+    gentle: started ? `${f(delta)} closer to your ${goal.name} (${now} there).` : `${f(delta)} under target — a first stash for your ${goal.name}?`,
+    cheeky: `${f(delta)} under target — your ${goal.name} is blushing.`,
+    numbers: `${f(delta)} under target.`,
+  })
+  const proj = s.isCurrent ? `Projected ${f(s.projected)}` : `Spent ${f(s.spent)}`
+  const saved = started ? `${now} saved` : 'nothing saved yet'
+  if (stash <= 0) {
+    // nothing to stash (the goal is funded, or the surplus is tiny): the surplus is the user's to keep
+    const choice = treat ? `It covers ${withArticle(treat.name)}, guilt-free — or keep it as breathing room.` : 'Keep it as breathing room.'
+    return {
+      headline,
+      subline: byTone(c.tone, {
+        gentle: `${pace} ${choice} Your call.`,
+        cheeky: `${pace} ${choice} Your call, legend.`,
+        numbers: `${proj} vs ${f(s.target)} target. ${goal.name}: ${saved}.${treat ? ` Covers ${treat.name} (${f(treat.price)}).` : ''}`,
+      }),
+    }
+  }
+  const after = goalPctAfter(goal, stash)
+  const otherTreat = treat ? `the other ${f(rest)} covers ${withArticle(treat.name)}, guilt-free` : ''
   return {
-    headline: byTone(c.tone, {
-      gentle: started ? `${f(delta)} closer to your ${goal.name} (${now} there).` : `${f(delta)} under target — a first stash for your ${goal.name}?`,
-      cheeky: `${f(delta)} under target — your ${goal.name} is blushing.`,
-      numbers: `${f(delta)} under target.`,
-    }),
+    headline,
     subline: byTone(c.tone, {
-      gentle: `${pace} Stash it and your ${goal.name} is ${after} there${choice ? ` — or, if you'd like, ${choice}` : ''}. Your call.`,
-      cheeky: `${pace} Stash it and you're ${after} of the way there${choice ? `, or ${choice}` : ''} — your call, legend.`,
-      numbers: `${s.isCurrent ? `Projected ${f(s.projected)}` : `Spent ${f(s.spent)}`} vs ${f(s.target)} target. ${goal.name}: ${started ? `${now} saved` : 'nothing saved yet'}, ${after} if stashed.${treat ? ` Alternative: ${treat.name} (${f(treat.price)}).` : ''}`,
+      gentle: `${pace} Stash ${f(stash)} and your ${goal.name} is ${after} there — ${treat ? `${otherTreat}.` : 'or keep it as breathing room.'} Your call.`,
+      cheeky: `${pace} Stash ${f(stash)} and you're ${after} of the way there${treat ? ` — ${otherTreat}` : ', or keep it as breathing room'} — your call, legend.`,
+      numbers: `${proj} vs ${f(s.target)} target. ${goal.name}: ${saved}, ${after} with ${f(stash)} stashed.${treat ? ` The other ${f(rest)} covers ${treat.name} (${f(treat.price)}).` : ''}`,
     }),
   }
 }
@@ -240,23 +276,19 @@ export function isFirstMonth(ctx: FinanceContext, s: MonthSummary): boolean {
   return s.isCurrent && !ctx.bank.transactions.some((t) => t.date < start && isSpending(t))
 }
 
-/** The guilt-free treat an under-target surplus fully covers (biggest first), as a dream equivalent. */
-function treatFor(status: MirrorStatus, delta: Minor, dreams: DreamItem[]): { item: DreamItem; eq: DreamEquivalent } | undefined {
-  if (status !== 'under' || delta <= 0) return undefined
-  const item = biggestTreatCovered(delta, dreams)
-  return item ? { item, eq: equivalentOf(delta, item) } : undefined
-}
-
-/** "Earmark for <treat>": only when the treat already has its own pot to move money into (never a purchase). */
-function earmarkAction(ctx: FinanceContext, treat: DreamItem, surplus: Minor): SuggestedAction | undefined {
+/** "Earmark ¥X for <treat>": only when the treat already has its own pot to move money into (never a purchase). */
+function earmarkAction(ctx: FinanceContext, treat: DreamItem, available: Minor): SuggestedAction | undefined {
   const pot = potFor(treat, ctx.bank.accounts)
   if (!pot) return undefined
   const currency = ctx.profile.currency
-  const raw = Math.min(surplus, Math.max(0, treat.price - Math.max(0, pot.balance)))
+  const raw = Math.min(available, Math.max(0, treat.price - Math.max(0, pot.balance)))
   const amount = raw >= majorUnits(10, currency) ? roundDownTo10(raw, currency) : Math.floor(raw)
   if (amount < majorUnits(1, currency)) return undefined
-  return { tool: 'transfer_to_goal', args: { goalId: treat.id, amount }, label: `Earmark for ${treat.name}` }
+  return { tool: 'transfer_to_goal', args: { goalId: treat.id, amount }, label: `Earmark ${copyFmt(currency)(amount)} for ${treat.name}` }
 }
+
+/** Over or heading over: the hero's main button starts a plan with Bun (the "get back on track" task plan). */
+export const MIRROR_PLAN_PROMPT = { label: 'Make a plan with Bun', prompt: 'Help me get back on track this month' } as const
 
 /**
  * The Dream Mirror — FundBun's signature landing hero.
@@ -269,22 +301,25 @@ function earmarkAction(ctx: FinanceContext, treat: DreamItem, surplus: Minor): S
  *                                                                  "¥X closer to your {goal} (62% there)."
  *   'on_track'  otherwise; 'no_data' when no spending.
  * Item choice: the most expensive dream item fully covered by |delta| (quantity >= 1); if none, the primary
- * goal with `fraction`. Fill goalDelayDays, hoursOfWork, goal progress, mood and a CTA:
- *   over/pace_over → create_tripwire or set_category_budget on the biggest 'want' category;
- *   under → transfer_to_goal of (part of) the surplus.
- * Copy varies by profile.tone (cheeky | gentle | numbers); numbers in copy are formatted with money.fmt.
+ * goal with `fraction`. Under target with a goal the headline is goal-led, so `item` is the goal (with
+ * `fraction` = surplus ÷ goal price). Fill goalDelayDays, hoursOfWork, goal progress, mood and the CTAs:
+ *   over/pace_over → `ctaPrompt` "Make a plan with Bun" (primary: starts the get-back-on-track plan in chat)
+ *                    and `cta`, a rule that still bites this month (finance/actions.overspendAction);
+ *   under → `cta` transfer_to_goal of (part of) the surplus.
+ * Copy varies by profile.tone (cheeky | gentle | numbers); amounts in copy use money.fmtCopy (whole yuan from ¥100).
  *
  * Pace verdicts wait until day 5 (early projections are noise). Under-target copy leads with goal progress
- * and offers the treat as the user's own choice; the CTA is always "stash", never a purchase.
- * Under target, `treat` is the biggest treat the surplus fully covers; `secondaryCta` ("Earmark for <treat>",
- * a transfer_to_goal) is offered only when that treat already has its own pot.
+ * and describes exactly what the stash CTA moves ("Stash ¥330 and your MacBook Air is 50% there — …"); the
+ * rest is offered as `treat` only when it fully covers one ("the other ¥338 covers a Concert ticket"),
+ * otherwise as breathing room. The CTA is always "stash", never a purchase. `secondaryCta`
+ * ("Earmark ¥338 for <treat>", a transfer_to_goal) is offered only when that treat already has its own pot.
  * A first month with no earlier spending gets a welcome (status 'on_track' instead of a projection-only
  * 'under', or a welcoming 'no_data'), and an untouched goal is never described as "0% there".
  */
 export function computeMirror(ctx: FinanceContext, month?: YearMonth): MirrorState {
   const s = summarizeMonth(ctx, month)
   const tone = ctx.profile.tone
-  const f = moneyFmt(ctx.profile.currency)
+  const f = copyFmt(ctx.profile.currency)
   const raw = mirrorStatus(s)
   const firstMonth = isFirstMonth(ctx, s)
   // a brand-new user's "under" (or a first few days) is a projection with no history behind it — welcome instead
@@ -295,22 +330,28 @@ export function computeMirror(ctx: FinanceContext, month?: YearMonth): MirrorSta
   // a treat-only wishlist has nothing to "get closer to" or delay
   const goalItem = main?.kind === 'goal' ? main : undefined
   const goal = goalItem ? goalProgress(goalItem, ctx) : undefined
-  const pick = status === 'over' || status === 'pace_over' || status === 'under' ? pickMirrorItem(delta, ctx.dreams) : { item: main }
   const losing = status === 'over' || status === 'pace_over'
+  const under = status === 'under'
+  // under target with a goal, the headline (and so the hero) is about the goal, not the covered item
+  const goalLed = under && goalItem !== undefined && delta > 0
+  const pick = goalLed
+    ? { item: goalItem, fraction: Math.round((delta / goalItem.price) * 10_000) / 10_000 }
+    : losing || under ? pickMirrorItem(delta, ctx.dreams) : { item: main }
   const delayDays = losing && goal ? goalDelayDays(delta, goal, fallbackMonthlyRate(ctx.profile)) : 0
+  const cta = losing ? overspendAction(ctx, s) : under ? stashAction(ctx, s, delta) : undefined
+  const split = under && delta > 0 ? splitSurplus(delta, stashAmountOf(cta), ctx.dreams) : undefined
 
   const input: CopyInput = { tone, f, s, delta, ...pick, goal, delayDays }
   const name = ctx.profile.name?.trim() ?? ''
   const copy =
     status === 'over' ? overCopy(input)
     : status === 'pace_over' ? paceOverCopy(input)
-    : status === 'under' ? underCopy(input, ctx.dreams)
+    : status === 'under' ? underCopy(input, split ?? splitSurplus(0, 0, []))
     : welcome ? welcomeCopy(input, name)
     : status === 'on_track' ? onTrackCopy(input)
     : noDataCopy(input, firstMonth ? name : undefined)
-  const cta = losing ? overspendAction(ctx, s) : status === 'under' ? stashAction(ctx, s, delta) : undefined
-  const treat = treatFor(status, delta, ctx.dreams)
-  const secondaryCta = treat ? earmarkAction(ctx, treat.item, delta) : undefined
+  const treat = split?.treat ? equivalentOf(split.rest, split.treat) : undefined
+  const secondaryCta = split?.treat ? earmarkAction(ctx, split.treat, split.rest) : undefined
 
   return {
     status,
@@ -322,7 +363,7 @@ export function computeMirror(ctx: FinanceContext, month?: YearMonth): MirrorSta
     headline: copy.headline,
     subline: copy.subline,
     ...(pick.item ? { item: pick.item } : {}),
-    ...(pick.quantity ? { quantity: pick.quantity } : {}),
+    ...('quantity' in pick && pick.quantity ? { quantity: pick.quantity } : {}),
     ...(pick.fraction !== undefined ? { fraction: pick.fraction } : {}),
     ...(goal ? { goal } : {}),
     ...(losing && goal ? { goalDelayDays: delayDays } : {}),
@@ -330,7 +371,8 @@ export function computeMirror(ctx: FinanceContext, month?: YearMonth): MirrorSta
     tone,
     mood: moodFor(status, tone),
     ...(cta ? { cta } : {}),
-    ...(treat ? { treat: treat.eq } : {}),
+    ...(losing ? { ctaPrompt: { ...MIRROR_PLAN_PROMPT } } : {}),
+    ...(treat ? { treat } : {}),
     ...(secondaryCta ? { secondaryCta } : {}),
   }
 }
@@ -346,8 +388,10 @@ export interface MirrorHistoryPoint {
 export function mirrorHistory(ctx: FinanceContext, months: number): MirrorHistoryPoint[] {
   return monthsBack(ym(ctx.bank.today), Math.max(0, Math.floor(months))).map((month) => {
     const m = computeMirror(ctx, month)
-    const showItem = m.item && m.delta > 0 && (m.status === 'over' || m.status === 'pace_over' || m.status === 'under')
-    return { month, status: m.status, delta: m.delta, ...(showItem ? { item: equivalentOf(m.delta, m.item!) } : {}) }
+    // what the month's difference adds up to — for an under month that is the item it covers, not the goal it's led by
+    const item = m.status === 'under' ? pickMirrorItem(m.delta, ctx.dreams).item : m.item
+    const showItem = item && m.delta > 0 && (m.status === 'over' || m.status === 'pace_over' || m.status === 'under')
+    return { month, status: m.status, delta: m.delta, ...(showItem ? { item: equivalentOf(m.delta, item) } : {}) }
   })
 }
 

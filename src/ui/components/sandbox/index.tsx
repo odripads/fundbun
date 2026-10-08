@@ -19,6 +19,10 @@ import styles from './Sandbox.module.css'
 export interface SandboxPanelProps {
   /** compact layout for the desktop glass box */
   compact?: boolean
+  /**
+   * Shows a "Done" button that calls this. Results never close the panel on their own: the new transaction and
+   * the tripwires it fired stay visible until the user is done looking.
+   */
   onDone?: () => void
 }
 
@@ -52,7 +56,6 @@ export function SandboxPanel({ compact = false, onDone }: SandboxPanelProps) {
   function show(r: SandboxResult) {
     setResult(r)
     setResultKey((k) => k + 1)
-    onDone?.()
   }
 
   async function buy(p: SandboxPreset['purchase']) {
@@ -165,6 +168,11 @@ export function SandboxPanel({ compact = false, onDone }: SandboxPanelProps) {
       </section>
 
       <SandboxResultView key={resultKey} result={result} currency={currency} />
+      {onDone ? (
+        <Button variant="secondary" fullWidth onClick={onDone} className={styles.done}>
+          Done
+        </Button>
+      ) : null}
 
       <section className={styles.block} aria-labelledby={ids.clock}>
         <div className={styles.blockHead}>
@@ -208,8 +216,13 @@ export function SandboxPanel({ compact = false, onDone }: SandboxPanelProps) {
 }
 
 function SandboxResultView({ result, currency }: { result: SandboxResult | null; currency: Currency }) {
+  const ref = useRef<HTMLDivElement>(null)
+  // a preset tapped at the top lands its result below the form: bring it into view inside the sheet / panel
+  useEffect(() => {
+    if (result) ref.current?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' })
+  }, [result])
   return (
-    <div className={styles.resultSlot} aria-live="polite" aria-atomic="true">
+    <div ref={ref} className={styles.resultSlot} aria-live="polite" aria-atomic="true">
       {result ? <ResultBody result={result} currency={currency} /> : null}
     </div>
   )

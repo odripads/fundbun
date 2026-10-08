@@ -73,11 +73,12 @@ export function simulatePurchaseIn(
   p: SandboxPurchase,
   ts: ISODateTime,
 ): { txn: Transaction; events: TripwireEvent[] } {
-  const txn = bank.simulatePurchase({ merchant: p.merchant.trim(), amount: p.amount, category: p.category, memo: p.memo })
+  // the bank keeps `time` only when it is a valid HH:MM
+  const txn = bank.simulatePurchase({ merchant: p.merchant.trim(), amount: p.amount, category: p.category, memo: p.memo, time: typeof p.time === 'string' ? p.time : undefined })
   draft.bank = bank.state
   const events = applyTripwires(draft, [txn], ts)
-  appendAudit(draft, ts, 'user', 'sandbox_event', `Sandbox purchase: ${fmt(p.amount, currencyOf(draft))} at ${txn.merchant}`, {
-    txnId: txn.id, merchant: txn.merchant, amount: txn.amount, category: txn.category, events: events.length,
+  appendAudit(draft, ts, 'user', 'sandbox_event', `Sandbox purchase: ${fmt(p.amount, currencyOf(draft))} at ${txn.merchant}${txn.time ? ` (${txn.time})` : ''}`, {
+    txnId: txn.id, merchant: txn.merchant, amount: txn.amount, category: txn.category, events: events.length, ...(txn.time ? { time: txn.time } : {}),
   })
   return { txn, events }
 }

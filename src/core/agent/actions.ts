@@ -6,6 +6,7 @@ import {
   callAmount,
   evaluatePolicy,
   shouldTripBreaker,
+  utcOffsetMinutesAt,
   type AgentActionRecord,
   type PolicyContext,
 } from '../security/policy'
@@ -95,11 +96,6 @@ function safeRecurring(host: AgentHost): RecurringSeries[] {
   }
 }
 
-/** Minutes east of UTC on this device, so daily caps follow the user's calendar day. */
-function utcOffset(now: string): number {
-  const ms = Date.parse(now)
-  return Number.isFinite(ms) ? -new Date(ms).getTimezoneOffset() : 0
-}
 
 export function policyContext(host: AgentHost, state: AppState, tainted: boolean, excludeId?: string): PolicyContext {
   const now = host.now()
@@ -112,7 +108,7 @@ export function policyContext(host: AgentHost, state: AppState, tainted: boolean
     now,
     recentAgentActions: agentRecords(state, excludeId),
     knownRecurringIds: recurringIds(host),
-    utcOffsetMinutes: utcOffset(now),
+    utcOffsetMinutes: utcOffsetMinutesAt(now),
   }
 }
 

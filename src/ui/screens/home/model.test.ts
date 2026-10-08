@@ -16,6 +16,7 @@ import {
   dueTone,
   fmtWhole,
   freshEvents,
+  heroActions,
   heroDream,
   historyBars,
   hoursReason,
@@ -434,6 +435,13 @@ describe('"Why am I seeing this?"', () => {
     expect(itemReason(mirror({ item: dream({ name: 'Birkin', price: 9_800_000 }), fraction: 0.02 }), 'CNY')).toContain('share of your main goal')
     expect(itemReason(mirror({ status: 'on_track', item: dream({ name: 'Birkin' }) }), 'CNY')).toBe('Birkin is your main goal.')
     expect(itemReason(mirror(), 'CNY')).toBeNull()
+    const mac = dream({ id: 'dream_macbook', name: 'MacBook Air', price: 799_900 })
+    const under = mirror({
+      status: 'under', delta: 66_800, item: mac, fraction: 0.0835,
+      goal: goal({ itemId: 'dream_macbook', name: 'MacBook Air', saved: 370_000, price: 799_900, pct: 46.3 }),
+      cta: { tool: 'transfer_to_goal', args: { goalId: 'dream_macbook', amount: 33_000 }, label: 'Stash ¥330 in MacBook Air' },
+    })
+    expect(itemReason(under, 'CNY')).toBe('Under target, Bun leads with your main goal, MacBook Air (¥7,999): stashing ¥330 of the ¥668 takes it to 50%.')
     expect(delayReason(m, 'CNY')).toBe('You save about ¥2,233 a month toward Birkin 25 (3-month average), so ¥2,580 is roughly 35 days of saving.')
     expect(delayReason(mirror({ goal: goal({ monthlyRate: 0 }), goalDelayDays: 12 }), 'CNY')).toContain('10% of your income')
     expect(delayReason(mirror(), 'CNY')).toBeNull()
@@ -454,14 +462,47 @@ describe('with the demo personas', () => {
     expect(mirrorStats(m, 'CNY').map((x) => x.id)).toEqual(['delta', 'hours', 'delay'])
   })
 
-  it('Arif (under): the hero shows the goal with its progress, and the treat stays a secondary choice', () => {
+  it('Arif (under): the hero shows the goal with its progress; no treat fits what the stash leaves', () => {
     const s = demo('arif')
     const m = s.derived.mirror!
     expect(m.status).toBe('under')
     const hero = heroDream(m, s.state.dreams)
     expect(hero).toMatchObject({ role: 'goal', item: { id: 'dream_macbook' } })
     expect(m.cta?.tool).toBe('transfer_to_goal')
-    expect(treatOf(m)?.itemName).toBe('Concert ticket')
+    expect(treatOf(m)).toBeUndefined()
+    expect(heroActions(m, s.state.dreams)).toEqual({ primary: { kind: 'action', action: m.cta } })
     expect(mirrorStats(m, 'CNY').at(-1)!.value).toMatch(/^46→\d+%$/)
+  })
+
+  it('Mei (over): "Make a plan with Bun" leads, the one-tap rule follows', () => {
+    const s = demo('mei')
+    const m = s.derived.mirror!
+    const a = heroActions(m, s.state.dreams)
+    expect(a.primary).toEqual({ kind: 'prompt', label: 'Make a plan with Bun', prompt: 'Help me get back on track this month' })
+    expect(a.secondary).toEqual({ kind: 'action', action: m.cta })
+    expect(m.cta?.label).not.toMatch(/80%/)
+  })
+})
+
+describe('heroActions', () => {
+  const dreams: DreamItem[] = [
+    { id: 'dream_macbook', name: 'MacBook Air', price: 799_900, image: 'preset:laptop', kind: 'goal', createdAt: '2026-01-01' },
+    { id: 'dream_gig', name: 'Gig ticket', price: 25_000, image: 'preset:ticket', kind: 'treat', createdAt: '2026-01-01' },
+  ]
+  const stash = { tool: 'transfer_to_goal' as const, args: { goalId: 'dream_macbook', amount: 30_000 }, label: 'Stash ¥300 in MacBook Air' }
+  const under = (over: Partial<MirrorState> = {}) => mirror({ status: 'under', delta: 60_000, item: dreams[0], cta: stash, ...over })
+
+  it('over without a prompt falls back to the rule as the primary', () => {
+    const cta = { tool: 'create_tripwire' as const, args: { kind: 'pace_over', threshold: 100 }, label: 'Warn me before I overshoot' }
+    expect(heroActions(mirror({ cta }), dreams)).toEqual({ primary: { kind: 'action', action: cta } })
+    expect(heroActions(mirror(), dreams)).toEqual({})
+  })
+
+  it('under: the earmark is the secondary when the treat has a pot, otherwise "weigh it up"', () => {
+    const treat = { itemId: 'dream_gig', itemName: 'Gig ticket', image: 'preset:ticket', fraction: 1.2, label: 'a Gig ticket' }
+    const earmark = { tool: 'transfer_to_goal' as const, args: { goalId: 'dream_gig', amount: 25_000 }, label: 'Earmark ¥250 for Gig ticket' }
+    expect(heroActions(under({ treat, secondaryCta: earmark }), dreams)).toEqual({ primary: { kind: 'action', action: stash }, secondary: { kind: 'action', action: earmark } })
+    expect(heroActions(under({ treat }), dreams).secondary).toEqual({ kind: 'check', label: 'Or weigh up the Gig ticket', amount: 25_000, itemId: 'dream_gig' })
+    expect(heroActions(under(), dreams).secondary).toBeUndefined()
   })
 })

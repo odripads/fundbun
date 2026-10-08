@@ -40,7 +40,7 @@ export function InsightsPeek() {
           const sev = SEVERITY[i.severity]
           return (
             <li key={i.id}>
-              <a className={styles.card} href={href('insights')} data-severity={i.severity}>
+              <a className={styles.card} href={href('insights', [i.id])} data-severity={i.severity}>
                 <span className={styles.art} aria-hidden="true">
                   {i.dream ? <DreamImage image={i.dream.image} alt="" size={52} /> : <span className={styles.icon}><Sparkles /></span>}
                 </span>

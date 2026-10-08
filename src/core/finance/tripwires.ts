@@ -13,7 +13,7 @@ import type {
   Tripwire,
   TripwireEvent,
 } from '../types'
-import { byTone, type Fmt, moneyFmt, plural } from './copy'
+import { byTone, copyFmt, type Fmt, moneyFmt, plural } from './copy'
 import { goalEquivalent, hoursOfWork } from './dreams'
 import { isSpending, upTo } from './ledger'
 import { summarizeMonth } from './summary'
@@ -70,7 +70,10 @@ interface Firing {
 interface EvalInput {
   ctx: FinanceContext
   s: MonthSummary
+  /** prose money (totals, targets): whole yuan from ¥100 */
   f: Fmt
+  /** exact money: one purchase */
+  fx: Fmt
   txns: Transaction[]
   newTxns: Transaction[]
 }
@@ -129,7 +132,7 @@ function categoryPct(t: Tripwire, { ctx, s, f }: EvalInput): Firing[] {
   }]
 }
 
-function singleOver(t: Tripwire, { ctx, f, newTxns }: EvalInput): Firing[] {
+function singleOver(t: Tripwire, { ctx, f, fx, newTxns }: EvalInput): Firing[] {
   const tone = ctx.profile.tone
   return newTxns
     .filter((x) => isSpending(x) && -x.amount >= t.threshold)
@@ -141,12 +144,12 @@ function singleOver(t: Tripwire, { ctx, f, newTxns }: EvalInput): Firing[] {
         key: x.id,
         txnId: x.id,
         title: byTone(tone, {
-          gentle: `Big purchase: ${f(amount)} at ${x.merchant}`,
-          cheeky: `Whoa, ${f(amount)} at ${x.merchant}`,
-          numbers: `Purchase over ${f(t.threshold)}: ${f(amount)}`,
+          gentle: `Big purchase: ${fx(amount)} at ${x.merchant}`,
+          cheeky: `Whoa, ${fx(amount)} at ${x.merchant}`,
+          numbers: `Purchase over ${f(t.threshold)}: ${fx(amount)}`,
         }),
         message: join(
-          dreamLine(dream, amount, f),
+          dreamLine(dream, amount, fx),
           byTone(tone, {
             gentle: `Still worth it? It's your call.`,
             cheeky: 'Hope it sparks joy!',
@@ -242,7 +245,7 @@ export function evaluateTripwires(
   const newTxns = (opts.newTxns ?? []).filter((t) => t.date <= ctx.bank.today)
   const txns = upTo(mergeTxns(ctx.bank.transactions, newTxns), ctx.bank.today)
   const evalCtx: FinanceContext = { ...ctx, bank: { ...ctx.bank, transactions: txns } }
-  const input: EvalInput = { ctx: evalCtx, s: summarizeMonth(evalCtx), f: moneyFmt(ctx.profile.currency), txns, newTxns }
+  const input: EvalInput = { ctx: evalCtx, s: summarizeMonth(evalCtx), f: copyFmt(ctx.profile.currency), fx: moneyFmt(ctx.profile.currency), txns, newTxns }
   const firings = new Map(ctx.tripwires.map((t) => [t.id, t.enabled ? EVALUATORS[t.kind](t, input).filter((x) => x.key !== t.lastFiredKey) : []]))
   const loudest = loudestMonthPct(ctx.tripwires, firings)
   const events: TripwireEvent[] = []

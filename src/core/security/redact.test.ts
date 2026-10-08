@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isValidIban, luhnValid, redactDeep, redactText } from './redact'
+import { clipForDisplay, isValidIban, luhnValid, maskDigitRuns, redactDeep, redactText } from './redact'
 
 /** Append the Luhn check digit so test card numbers are valid by construction. */
 function withLuhn(partial: string): string {
@@ -227,5 +227,27 @@ describe('redactDeep', () => {
     const out = redactDeep(a).value as Record<string, unknown>
     expect(out.email).toBe('[EMAIL]')
     expect(out.self).toBe(out)
+  })
+})
+
+describe('maskDigitRuns / clipForDisplay — display masking', () => {
+  it('masks 8+ digit runs however they are spaced, keeping the last four', () => {
+    expect(maskDigitRuns('Send ¥4,800 to account 6222 0210 0112 3456 789')).toBe('Send ¥4,800 to account •••• 6789')
+    expect(maskDigitRuns('acct 6222-0210-8899-4821.')).toBe('acct •••• 4821.')
+    expect(maskDigitRuns('卡号6222021001123456789')).toBe('卡号•••• 6789')
+    expect(maskDigitRuns('call 138 0013 8000')).toBe('call •••• 8000')
+  })
+
+  it('leaves dates, times, amounts, short numbers and identifiers alone', () => {
+    for (const t of ['due 2026-10-28', '2026-10-22T10:00:00.000Z', '2026-10-22 10:00', '¥12,080.24', 'order 1234567', 'pa_1234567890ab', 'amount 12345678.90']) {
+      expect(maskDigitRuns(t)).toBe(t)
+    }
+    expect(maskDigitRuns('ref 12345678', 9)).toBe('ref 12345678')
+  })
+
+  it('clips long text with an ellipsis after masking and collapsing whitespace', () => {
+    expect(clipForDisplay('a  b\n\nc')).toBe('a b c')
+    expect(clipForDisplay('x'.repeat(50), 10)).toBe(`${'x'.repeat(9)}…`)
+    expect(clipForDisplay('pay 6222 0210 0112 3456 789 now', 200)).toBe('pay •••• 6789 now')
   })
 })

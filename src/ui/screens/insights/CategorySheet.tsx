@@ -1,12 +1,11 @@
 import { ArrowRight, MessageCircle } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { CATEGORIES } from '../../../core/categories'
-import { shiftMonth } from '../../../core/dates'
 import { CURRENCY_SYMBOL, fmt } from '../../../core/money'
 import type { CategoryId, Currency, Minor, MonthSummary, Transaction } from '../../../core/types'
 import { Button, List, ListItem, Money, ProgressBar, Sheet, TextField } from '../../components/ds'
 import { useApp, useSafeAction } from '../../state'
-import { askAboutCategory, monthName, parseLimit, txnWhen } from './model'
+import { askAboutCategory, categoryCompareText, monthName, parseLimit, txnWhen } from './model'
 import styles from './sheets.module.css'
 
 export interface CategorySheetProps {
@@ -93,11 +92,8 @@ export function CategorySheet({ open, category, s, txns, currency, onClose, onAs
   const row = s.byCategory.find((r) => r.category === category)
   const spent = row?.spent ?? 0
   const limit = row?.limit
-  const prev = row?.prevMonth ?? 0
   const monthLong = monthName(s.month)
-  const prevMonth = shiftMonth(s.month, -1)
   const count = txns.filter((t) => t.amount < 0).length
-  const change = prev > 0 ? Math.round(((spent - prev) / prev) * 100) : null
   const over = limit !== undefined && spent > limit
 
   return (
@@ -132,11 +128,7 @@ export function CategorySheet({ open, category, s, txns, currency, onClose, onAs
           ) : null}
           <p className={styles.compare}>
             {over ? <strong className={styles.overText}>{fmt(spent - (limit ?? 0), currency)} over · </strong> : null}
-            {prev > 0
-              ? s.isCurrent
-                ? `All of ${monthName(prevMonth)}: ${fmt(prev, currency)}`
-                : `${monthName(prevMonth)}: ${fmt(prev, currency)}${change !== null && change !== 0 ? ` (${change > 0 ? '+' : '−'}${Math.abs(change)}% in ${monthName(s.month, 'short')})` : ''}`
-              : `Nothing here in ${monthName(prevMonth)}.`}
+            {categoryCompareText(s, category, currency)}
           </p>
         </div>
 

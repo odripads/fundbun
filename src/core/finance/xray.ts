@@ -1,6 +1,7 @@
 import { addMonths, diffDays, ym } from '../dates'
 import { fmt, toMinor } from '../money'
 import { scanForInjection } from '../security/injection'
+import { maskDigitRuns } from '../security/redact'
 import type { BillLineItem, CategoryId, FinanceContext, InjectionReport, ISODate, Minor, XrayResult, YearMonth } from '../types'
 import { categorize, merchantInfo, normalizeMerchant } from './categorize'
 import { isReversed } from './ledger'
@@ -163,6 +164,11 @@ function findMerchant(lines: string[]): string | undefined {
   return first ? normalizeMerchant(first) : undefined
 }
 
+/** The biller a pasted bill names (header, "Biller:" label or a known merchant), if any — untrusted text. */
+export function billMerchant(text: string): string | undefined {
+  return findMerchant(linesOf(normalizeText(String(text ?? '').slice(0, MAX_TEXT))))
+}
+
 const LINE_ITEM = new RegExp(String.raw`^(.{2,60}?)[\s:.…·\-]+((?:¥|rmb|cny)\s*)?(-?\d{1,3}(?:,\d{3})+(?:\.\d{2})?|-?\d+(?:\.\d{2})?)\s*(元|yuan)?$`, 'i')
 
 function findLineItems(lines: string[]): BillLineItem[] {
@@ -218,7 +224,9 @@ export function xrayBill(text: string, ctx: FinanceContext, scan: (text: string)
   const lines = linesOf(clean)
   const today = ctx.bank.today
   const injection = safeScan(text.slice(0, MAX_TEXT), scan)
-  const merchant = findMerchant(lines)
+  // the merchant line is bill text too: never carry a full account number through it
+  const found = findMerchant(lines)
+  const merchant = found ? maskDigitRuns(found) : undefined
   const total = findTotal(lines)
   const dueRaw = labelled(lines, DUE_LABELS, DATE)
   const dueDate = dueRaw ? parseBillDate(dueRaw[1], today) : undefined
@@ -263,7 +271,8 @@ export function xrayBill(text: string, ctx: FinanceContext, scan: (text: string)
     ...(maskedAccount ? { maskedAccount } : {}),
     ...(category ? { category } : {}),
     warnings,
-    injection,
+    // excerpts are shown in chat cards: no account number from the bill is echoed back in full
+    injection: { ...injection, excerpts: injection.excerpts.map((e) => maskDigitRuns(e)) },
     ...(comparison ? { comparison } : {}),
   }
 }

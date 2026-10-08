@@ -19,11 +19,20 @@ function EventArt({ event, size }: { event: TripwireEvent; size: number }) {
  * Toast a tripwire the moment it fires while Home is open (e.g. after a sandbox purchase). Events already
  * unseen when the screen mounts are shown in the stack instead, so they never toast twice.
  */
-export function useTripwireToasts() {
+export interface TripwireToastOptions {
+  /**
+   * Don't toast new events (they still land in the Tripwires deck) — e.g. while the sandbox sheet is open and
+   * already shows each purchase's tripwires inline, where a toast would only cover them.
+   */
+  quiet?: boolean
+}
+
+export function useTripwireToasts(opts: TripwireToastOptions = {}) {
   const events = useSnapshot(selectUnseen, sameIds)
   const toast = useToast()
   const app = useApp()
   const known = useRef<Set<string> | null>(null)
+  const quiet = opts.quiet === true
 
   useEffect(() => {
     if (!known.current) {
@@ -33,7 +42,7 @@ export function useTripwireToasts() {
     const fresh = freshEvents(known.current, events)
     for (const e of fresh) known.current.add(e.id)
     const lead = leadEvent(fresh)
-    if (!lead) return
+    if (!lead || quiet) return
     const more = fresh.length - 1
     toast.show({
       id: 'tripwire',
@@ -44,7 +53,7 @@ export function useTripwireToasts() {
       duration: 9000,
       actions: [{ label: 'Got it', onClick: () => app.markEventsSeen(fresh.map((e) => e.id)) }],
     })
-  }, [events, toast, app])
+  }, [events, toast, app, quiet])
 }
 
 /** Unseen tripwire reminders as a stacked deck: the newest on top, the rest peeking out behind. */

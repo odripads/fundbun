@@ -18,7 +18,7 @@ import { isRefusalIntent, understand } from './nlu'
 import { actionReply, nluContext, respondOffline, toneOf, type Reply } from './offline-engine'
 import { buildPreview } from './previews'
 import { TOOL_SPECS, isToolName } from './specs'
-import { currencyOf, money } from './support'
+import { currencyOf, money, pastedBillLine, profileFacts } from './support'
 import { startTurn, trace, type Turn } from './turn'
 import { composeReply } from './voice'
 
@@ -41,8 +41,10 @@ export const createAgentEngine: AgentEngineFactory = (host) => {
 async function respond(host: AgentHost, text: string, source: 'chat' | 'xray'): Promise<ChatMessage> {
   const turn = startTurn(host, source)
   const input = String(text ?? '').slice(0, 8000)
+  // a pasted bill is untrusted data: the chat keeps a one-line note, never the bill text itself
+  const shown = source === 'xray' ? pastedBillLine(String(text ?? '')) : input
   host.mutate((draft) => {
-    draft.chat.push({ id: uid('msg'), role: 'user', text: input, ts: turn.ts })
+    draft.chat.push({ id: uid('msg'), role: 'user', text: shown, ts: turn.ts })
   })
   const client = source === 'chat' ? host.llm() : null
   let reply: Reply & { grounding?: GroundingReport }
@@ -105,7 +107,7 @@ function message(host: AgentHost, text: string, engine: 'offline' | 'llm', extra
 }
 
 function appendAssistant(host: AgentHost, text: string, cards: ChatCard[], traceSteps: TraceStep[], sources: unknown[] = []): ChatMessage {
-  const grounding = checkGrounding(text, sources, currencyOf(host.state()))
+  const grounding = checkGrounding(text, [...sources, profileFacts(host.state())], currencyOf(host.state()))
   const msg = message(host, text, 'offline', { cards, trace: [...traceSteps, { kind: 'grounding', label: grounding.ok ? `Grounded: ${grounding.checked} numbers checked` : `Ungrounded numbers: ${grounding.ungrounded.join(', ')}`, detail: grounding, ts: host.now() }], grounding })
   host.mutate((draft) => {
     draft.chat.push(msg)

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { buildHash, href, isRouteName, navigate, parseHash, resolveRoute, ROUTE_META, ROUTES, setHash, subscribeHash, TABS } from './router'
+import { buildHash, href, isRouteName, navigate, parseHash, resolveRoute, ROUTE_META, ROUTES, setHash, showsGlassBox, subscribeHash, TABS } from './router'
 
 describe('parseHash', () => {
   it('parses a plain route with or without the leading #', () => {
@@ -79,6 +79,12 @@ describe('route tables', () => {
     expect(ROUTE_META.onboarding.requiresOnboarding).toBe(false)
     expect(ROUTE_META.gallery.requiresOnboarding).toBe(false)
     expect(ROUTE_META.gallery.chrome).toBe('wide')
+  })
+
+  it('shows the desktop glass box on app routes and on onboarding, never on the gallery', () => {
+    expect(ROUTES.filter((r) => showsGlassBox(ROUTE_META[r]))).toEqual(['onboarding', 'home', 'insights', 'bills', 'chat', 'goals', 'settings', 'activity'])
+    expect(showsGlassBox({ ...ROUTE_META.gallery, glassBox: true })).toBe(false)
+    expect(showsGlassBox({ ...ROUTE_META.home, glassBox: false })).toBe(false)
   })
 })
 

@@ -15,6 +15,7 @@ import {
   categoryLabel,
   findDream,
   money,
+  moneyCopy,
   openDreams,
   potOf,
   shortDate,
@@ -514,7 +515,7 @@ const HABIT_INSIGHTS = new Set(['late_night', 'small_frequent', 'weekend_spike']
 // ───────────────────────────── plan reply ─────────────────────────────
 
 export function planReply(outcome: PlanOutcome, state: AppState, tone: Tone): string {
-  const f = money(state)
+  const f = moneyCopy(state)
   const { plan, overview } = outcome
   const actions = plan.steps.filter((s) => !READ_TOOLS.has(s.tool))
   const done = actions.filter((s) => s.status === 'done')
