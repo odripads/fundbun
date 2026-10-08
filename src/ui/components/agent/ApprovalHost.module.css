@@ -25,11 +25,11 @@
   flex: none;
   width: 18px;
   height: 18px;
-  color: var(--over);
+  color: var(--over-text);
 }
 
 .error {
-  color: var(--over);
+  color: var(--over-text);
   font-size: var(--fs-sm);
   font-weight: 600;
 }

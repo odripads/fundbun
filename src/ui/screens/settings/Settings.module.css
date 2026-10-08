@@ -97,7 +97,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: var(--under);
+  color: var(--under-text);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.1em;
@@ -660,7 +660,7 @@
 .locked svg {
   width: 12px;
   height: 12px;
-  color: var(--over);
+  color: var(--over-text);
 }
 
 /* ───────────── profile ───────────── */
@@ -668,6 +668,8 @@
 .profileForm {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  /* a field's error grows its cell; its neighbour stays put instead of stretching */
+  align-items: start;
   gap: var(--s-4) var(--s-3);
 }
 
@@ -802,7 +804,7 @@
   height: 40px;
   border-radius: 14px;
   background: var(--warn-soft);
-  color: var(--warn);
+  color: var(--warn-text);
   transition: background-color var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out);
 }
 
@@ -845,7 +847,7 @@
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  color: var(--accent-strong);
+  color: var(--accent-text);
   font-weight: 650;
 }
 
@@ -861,7 +863,7 @@
 
 .deleteButton {
   flex: none;
-  color: var(--over);
+  color: var(--over-text);
 }
 
 .kindField {
@@ -924,7 +926,7 @@
   width: 16px;
   height: 16px;
   margin-top: 2px;
-  color: var(--accent-strong);
+  color: var(--accent-text);
 }
 
 /* ───────────── security ───────────── */
@@ -954,7 +956,7 @@
   flex: none;
   width: 18px;
   height: 18px;
-  color: var(--under);
+  color: var(--under-text);
 }
 
 /* ───────────── privacy ───────────── */
@@ -997,6 +999,26 @@
 
 .engineRow {
   background: var(--bg-sunken);
+}
+
+/* the raw gateway reason, collapsed: consumer copy above, the technical detail for whoever wants it */
+.engineDetail {
+  margin-top: 2px;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+
+.engineDetail summary {
+  width: fit-content;
+  cursor: pointer;
+  font-weight: 650;
+}
+
+.engineDetail span {
+  display: block;
+  margin-top: 2px;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  overflow-wrap: anywhere;
 }
 
 .trailIcon {
@@ -1203,5 +1225,5 @@ a.factButton {
 .savedNote svg {
   width: 16px;
   height: 16px;
-  color: var(--under);
+  color: var(--under-text);
 }

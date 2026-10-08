@@ -6,7 +6,7 @@ import type { SandboxBank } from '../sandbox/bank'
 import type { CsvImportResult } from '../sandbox/csv'
 import type { AppState, CategoryId, ISODateTime, Transaction, TripwireEvent, YearMonth } from '../types'
 import { appendAudit } from './audit'
-import { applyTripwires, currencyOf } from './tripwires'
+import { applyTripwires, currencyOf, retireStaleEvents } from './tripwires'
 import { isIntIn, isNonEmptyString, isPosInt } from './util'
 
 export function txnKey(t: Pick<Transaction, 'date' | 'amount' | 'merchant'>): string {
@@ -83,6 +83,31 @@ export function simulatePurchaseIn(
   return { txn, events }
 }
 
+/**
+ * Move the bank's clock forward one day at a time. Each day's new transactions are checked against the tripwires
+ * ON that day, so month-level alerts (month_pct, category_pct, pace_over) see the month they belong to — one jump of
+ * ten days fires exactly what ten one-day steps fire. Crossing into a new month retires the finished month's pace
+ * alerts (retireStaleEvents). Runs inside a mutation; no audit entry of its own.
+ */
+export function advanceClockIn(
+  draft: AppState,
+  bank: SandboxBank,
+  n: number,
+  ts: ISODateTime,
+): { txns: Transaction[]; events: TripwireEvent[] } {
+  const txns: Transaction[] = []
+  const events: TripwireEvent[] = []
+  for (let i = 0; i < n; i++) {
+    const month = ym(draft.bank.today)
+    const day = bank.advanceDays(1)
+    draft.bank = bank.state
+    txns.push(...day)
+    if (ym(draft.bank.today) !== month) retireStaleEvents(draft)
+    events.push(...applyTripwires(draft, day, ts))
+  }
+  return { txns, events }
+}
+
 export function advanceDaysIn(
   draft: AppState,
   bank: SandboxBank,
@@ -91,9 +116,7 @@ export function advanceDaysIn(
 ): { txns: Transaction[]; events: TripwireEvent[] } {
   if (!isIntIn(n, 1, 366)) throw new Error('Advance the sandbox clock by 1–366 days')
   const from = draft.bank.today
-  const txns = bank.advanceDays(n)
-  draft.bank = bank.state
-  const events = applyTripwires(draft, txns, ts)
+  const { txns, events } = advanceClockIn(draft, bank, n, ts)
   appendAudit(draft, ts, 'user', 'sandbox_event', `Sandbox clock advanced ${n} day(s): ${from} → ${bank.state.today}`, {
     days: n, from, to: bank.state.today, txns: txns.length, events: events.length,
   })

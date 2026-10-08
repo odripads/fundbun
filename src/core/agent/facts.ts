@@ -1,9 +1,11 @@
 import { monthLabel, ym } from '../dates'
 import { listJoin, withArticle } from '../finance/copy'
 import type { AppState, Minor, RecurringSeries, ToolName } from '../types'
+import type { Lang } from './lang'
 import type { Intent } from './nlu'
 import type { ActionStage } from './voice'
 import { categoryLabel, findBill, findDream, money, moneyCopy, pctLabel, shortDate } from './support'
+import { categoryName, dateName, dueInPhrase, groupName, joinList, monthName } from './voice-i18n'
 
 /**
  * Tool outcomes → the pre-formatted fact strings voice.composeReply expects (see voice.FACT_KEYS).
@@ -58,18 +60,43 @@ function positive(f: (m: Minor) => string, v: unknown): string | undefined {
 
 // ───────────────────────────── read tools ─────────────────────────────
 
-export function readFacts(tool: ToolName, data: unknown, state: AppState): Facts {
-  const builder = READERS[tool]
-  return builder ? builder(obj(data), state) : {}
+export interface FactOptions {
+  /** reply language: month, date and category labels follow it (default English) */
+  lang?: Lang
+  /** recurring series, to name the subscription behind a finding */
+  recurring?: RecurringSeries[]
 }
 
-type Reader = (d: D, state: AppState) => Facts
+export function readFacts(tool: ToolName, data: unknown, state: AppState, opts: FactOptions = {}): Facts {
+  const builder = READERS[tool]
+  return builder ? builder(obj(data), state, { lang: opts.lang ?? 'en', recurring: opts.recurring ?? [] }) : {}
+}
 
-function overviewFacts(d: D, state: AppState): Facts {
+type Reader = (d: D, state: AppState, o: Required<FactOptions>) => Facts
+
+/** Month / date / category labels in the reply language. */
+function labels(lang: Lang) {
+  return {
+    month: (ymOrIso: unknown, fallback?: unknown) => (lang === 'en' ? text(fallback) ?? (typeof ymOrIso === 'string' && /^\d{4}-\d{2}/.test(ymOrIso) ? monthLabel(ymOrIso.slice(0, 7)) : undefined) : monthName(text(ymOrIso), lang)),
+    monthShort: (m: unknown, fallback?: unknown) => (lang === 'en' ? text(fallback) ?? (typeof m === 'string' && /^\d{4}-\d{2}/.test(m) ? monthLabel(m.slice(0, 7), 'short') : undefined) : monthName(text(m), lang, true)),
+    date: (d: unknown) => (lang === 'en' ? shortDate(text(d)) : dateName(text(d), lang)),
+    category: (c: unknown, fallback?: unknown) => (lang === 'en' ? text(fallback) ?? (text(c) ? categoryLabel(text(c)) : undefined) : categoryName(text(c), lang) ?? text(fallback)),
+    list: (items: string[]) => (lang === 'en' ? listJoin(items) : joinList(items, lang)),
+  }
+}
+
+/** "+¥1,998" / "−¥300" / "±¥0". */
+function signed(f: (m: Minor) => string, delta: number): string {
+  return delta > 0 ? `+${f(delta)}` : delta < 0 ? `−${f(-delta)}` : `±${f(0)}`
+}
+
+function overviewFacts(d: D, state: AppState, o: Required<FactOptions>): Facts {
   const f = moneyCopy(state)
+  const exact = money(state)
+  const L = labels(o.lang)
   const facts: Facts = {}
   put(facts, 'status', text(d.status))
-  put(facts, 'month', text(d.monthLabel))
+  put(facts, 'month', L.month(d.month, d.monthLabel))
   put(facts, 'spent', f(num(d.spent) ?? 0))
   put(facts, 'target', f(num(d.target) ?? 0))
   put(facts, 'delta', positive(f, d.delta))
@@ -80,8 +107,34 @@ function overviewFacts(d: D, state: AppState): Facts {
   put(facts, 'goalName', text(obj(d.goal).name))
   const delay = num(d.goalDelayDays)
   if (delay !== undefined && delay > 0) facts.goalDelayDays = String(delay)
-  put(facts, 'headline', text(d.headline))
+  if (o.lang === 'en') put(facts, 'headline', text(d.headline))
+  // balance (focus 'balance'): the everyday account — masked number only — and each pot
+  const checking = num(d.checkingBalance)
+  if (checking !== undefined) {
+    facts.checking = exact(checking)
+    facts.account = [text(d.checkingName) ?? (o.lang === 'zh' ? '活期账户' : o.lang === 'id' ? 'Rekening utama' : 'Everyday account'), text(d.checkingMasked)].filter(Boolean).join(' ')
+  }
+  const pots = arr(d.pots).filter((p) => text(p.name) && num(p.balance) !== undefined)
+  if (pots.length) facts.pots = L.list(pots.map((p) => `${text(p.name)} ${f(num(p.balance) as number)}`))
+  // safe to spend (focus 'safe_to_spend')
+  put(facts, 'overBy', positive(f, d.overBy))
+  const daysLeft = num(d.daysLeft)
+  if (daysLeft !== undefined && daysLeft > 0) facts.daysLeft = String(daysLeft)
+  put(facts, 'perDayLeft', positive(f, d.perDayLeft))
+  put(facts, 'nextMonthDaily', positive(f, d.nextMonthDaily))
+  const month = text(d.month)
+  put(facts, 'nextMonth', o.lang === 'en' ? text(d.nextMonthLabel) : month ? monthName(nextMonthOf(month), o.lang) : undefined)
+  // savings rate (focus 'savings_rate')
+  const rate = num(d.savingsRate)
+  if (rate !== undefined && rate > 0) facts.savingsRate = pctLabel(rate)
+  put(facts, 'income', positive(f, d.income))
+  put(facts, 'savedToGoals', positive(f, d.savedToGoals))
   return facts
+}
+
+function nextMonthOf(month: string): string {
+  const [y, m] = month.split('-').map(Number)
+  return m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, '0')}`
 }
 
 function itemPhrase(d: D): string | undefined {
@@ -94,45 +147,102 @@ function itemPhrase(d: D): string | undefined {
   return fr !== undefined && fr > 0 ? `${pctLabel(fr * 100)} of your ${name}` : withArticle(name)
 }
 
-function breakdownFacts(d: D, state: AppState): Facts {
+function breakdownFacts(d: D, state: AppState, o: Required<FactOptions>): Facts {
   const f = moneyCopy(state)
+  const L = labels(o.lang)
   const facts: Facts = {}
-  put(facts, 'month', text(d.monthLabel))
+  put(facts, 'month', L.month(d.month, d.monthLabel))
   put(facts, 'total', positive(f, d.total))
   const top = arr(d.categories)[0]
   if (top && (num(top.spent) ?? 0) > 0) {
-    put(facts, 'topCategory', text(top.label))
+    put(facts, 'topCategory', L.category(top.category, top.label))
     put(facts, 'topAmount', f(num(top.spent) ?? 0))
     put(facts, 'topShare', num(top.share) !== undefined ? pctLabel(num(top.share) as number) : undefined)
   }
   const focus = obj(d.focus)
   if (text(focus.label)) {
-    put(facts, 'category', text(focus.label))
+    put(facts, 'category', L.category(focus.category, focus.label))
     put(facts, 'categorySpent', f(num(focus.spent) ?? 0))
     put(facts, 'categoryLimit', positive(f, focus.limit))
     put(facts, 'categoryPct', num(focus.pct) !== undefined ? `${num(focus.pct)}%` : undefined)
     put(facts, 'categoryPrev', positive(f, focus.prevMonth))
     const count = num(focus.count)
     if (count) facts.count = String(count)
-    put(facts, 'itemEquivalent', text(focus.equivalent))
+    if (o.lang === 'en') put(facts, 'itemEquivalent', equivalentPhrase(focus))
+  }
+  const cmp = obj(d.compare)
+  if (num(cmp.total) !== undefined) {
+    if (cmp.likeForLike === true) facts.likeForLike = 'yes'
+    put(facts, 'prevMonth', L.month(cmp.prevMonth, cmp.prevLabel))
+    facts.total = f(num(cmp.total) as number)
+    put(facts, 'prevTotal', positive(f, cmp.prevTotal))
+    put(facts, 'prevToDate', positive(f, cmp.prevToDate))
+    facts.change = signed(f, num(cmp.delta) ?? 0)
+    const movers = arr(cmp.movers).filter((m) => num(m.delta)).map((m) => `${L.category(m.category, m.label)} ${signed(f, num(m.delta) as number)}`)
+    if (movers.length) facts.movers = L.list(movers)
+    const c = obj(cmp.category)
+    if (text(c.category)) {
+      put(facts, 'category', L.category(c.category, c.label))
+      facts.categorySpent = f(num(c.spent) ?? 0)
+      facts.categoryPrev = f(num(c.prev) ?? 0)
+      put(facts, 'categoryPrevFull', positive(f, c.prevFull))
+      facts.change = signed(f, num(c.delta) ?? 0)
+    }
+  }
+  const range = obj(d.range)
+  const months = arr(range.months)
+  if (months.length >= 2) {
+    facts.monthsCount = String(months.length)
+    const soFar = o.lang === 'zh' ? '（至今）' : o.lang === 'id' ? ' (sejauh ini)' : ' so far'
+    facts.rangeList = months.map((m) => `${L.monthShort(m.month, m.label)} ${f(num(m.spent) ?? 0)}${m.current === true ? soFar : ''}`).join(' · ')
+    put(facts, 'rangeTotal', positive(f, range.total))
+    if (!facts.category) put(facts, 'category', text(d.group) ? groupName('food', o.lang) : L.category(focus.category, range.label))
+  }
+  const group = obj(d.group)
+  if (num(group.spent) !== undefined) {
+    put(facts, 'groupLabel', groupName('food', o.lang) ?? text(group.label))
+    facts.groupSpent = f(num(group.spent) as number)
+    const parts = arr(group.parts).filter((p) => (num(p.spent) ?? 0) > 0).map((p) => `${L.category(p.category, p.label)} ${f(num(p.spent) as number)}`)
+    if (parts.length) facts.groupParts = L.list(parts)
+    put(facts, 'groupPrev', positive(f, group.prevMonth))
+    if (months.length >= 2) facts.category = groupName('food', o.lang) ?? 'Food'
   }
   return facts
 }
 
-function searchFacts(d: D, state: AppState): Facts {
+/** "about the price of your New running shoes" · "2.6% of your Birkin 25" · "the price of 2× New sneakers". */
+function equivalentPhrase(focus: D): string | undefined {
+  const label = text(focus.equivalent)
+  const item = text(focus.equivalentItem)
+  const fraction = num(focus.equivalentFraction)
+  if (!label) return undefined
+  if (!item || fraction === undefined) return label
+  if (fraction >= 0.95 && fraction < 2) return `about the price of your ${item}`
+  if (fraction >= 2) return `the price of ${label}`
+  return label
+}
+
+function searchFacts(d: D, state: AppState, o: Required<FactOptions>): Facts {
   const f = money(state)
   const c = moneyCopy(state)
+  const L = labels(o.lang)
   const facts: Facts = { count: String(num(d.count) ?? 0) }
-  put(facts, 'query', text(d.query) ?? (text(d.category) ? categoryLabel(text(d.category)) : undefined))
+  put(facts, 'query', text(d.query) ?? (text(d.category) ? L.category(d.category) : text(d.group) ? groupName(text(d.group), o.lang) : undefined))
   const month = text(d.month)
-  if (month && /^\d{4}-\d{2}$/.test(month)) facts.month = monthLabel(month)
+  if (month && /^\d{4}-\d{2}$/.test(month)) put(facts, 'month', L.month(month))
   put(facts, 'total', positive(c, d.total))
+  put(facts, 'transfers', positive(c, d.transfersOut))
+  const at = (t: D) => (o.lang === 'zh' ? `${L.date(t.date)}在${text(t.merchant) ?? '某商家'}花了${f(Math.abs(num(t.amount) ?? 0))}` : o.lang === 'id' ? `${f(Math.abs(num(t.amount) ?? 0))} di ${text(t.merchant) ?? 'sebuah toko'} pada ${L.date(t.date)}` : `${f(Math.abs(num(t.amount) ?? 0))} at ${text(t.merchant) ?? 'a merchant'} on ${L.date(t.date)}`)
   const largest = obj(d.largest)
-  if (num(largest.amount)) facts.largest = `${f(num(largest.amount) as number)} at ${text(largest.merchant) ?? 'a merchant'} on ${shortDate(text(largest.date))}`
+  if (num(largest.amount)) facts.largest = at(largest)
+  if (text(d.sort) === 'amount') {
+    const second = arr(d.transactions)[1]
+    if (second && num(second.amount)) facts.second = at(second)
+  }
   return facts
 }
 
-function subscriptionFacts(d: D, state: AppState): Facts {
+function subscriptionFacts(d: D, state: AppState, _o: Required<FactOptions>): Facts {
   const f = money(state)
   const c = moneyCopy(state)
   const facts: Facts = { count: String(num(d.count) ?? 0) }
@@ -146,20 +256,66 @@ function subscriptionFacts(d: D, state: AppState): Facts {
   return facts
 }
 
-function billsFacts(d: D, state: AppState): Facts {
+function billsFacts(d: D, state: AppState, o: Required<FactOptions>): Facts {
   const f = money(state)
+  const L = labels(o.lang)
   const findings = arr(d.findings)
   const facts: Facts = { count: String(findings.length) }
+  const billLine = (b: D) => {
+    const amount = f(num(b.amountDue) ?? 0)
+    const due = L.date(b.dueDate)
+    return o.lang === 'zh' ? `${text(b.name)}（${amount}，${due}到期）` : o.lang === 'id' ? `${text(b.name)} (${amount}, jatuh tempo ${due})` : `${text(b.name)} (${amount}, due ${due})`
+  }
   const next = arr(d.upcoming)[0]
-  if (next) facts.nextBill = `${text(next.name)} (${f(num(next.amountDue) ?? 0)}, due ${shortDate(text(next.dueDate))})`
-  const first = (kind: string) => noStop(text(findings.find((x) => x.kind === kind)?.title))
-  put(facts, 'duplicate', first('duplicate_charge'))
-  put(facts, 'spike', first('bill_spike'))
-  put(facts, 'priceHike', first('price_hike'))
+  if (next) facts.nextBill = billLine(next)
+  const first = (kind: string) => findings.find((x) => x.kind === kind)
+  if (o.lang === 'en') {
+    put(facts, 'duplicate', noStop(text(first('duplicate_charge')?.title)))
+    put(facts, 'spike', noStop(text(first('bill_spike')?.title)))
+    put(facts, 'priceHike', noStop(text(first('price_hike')?.title)))
+  }
+  const actionable = num(d.actionable)
+  if (actionable !== undefined) facts.actionable = String(actionable)
+  const fyi = num(d.fyi)
+  if (fyi) facts.fyi = String(fyi)
+  // the duplicate charge, by merchant and date (focus 'duplicate')
+  const dup = first('duplicate_charge')
+  if (dup) {
+    const ids = Array.isArray(dup.txnIds) ? (dup.txnIds as string[]) : []
+    const txn = state.bank.transactions.find((t) => t.id === ids[ids.length - 1])
+    put(facts, 'dupMerchant', txn?.merchant)
+    put(facts, 'dupAmount', positive(f, dup.amount))
+    put(facts, 'dupDate', L.date(txn?.date))
+  }
+  const spike = o.lang !== 'en' ? first('bill_spike') : undefined
+  if (spike) {
+    put(facts, 'spikeBill', findBill(state, spike.billId)?.name)
+    const pct = num(obj(spike.evidence).pct)
+    if (pct !== undefined) facts.spikePct = `${Math.round(pct)}%`
+  }
+  const hike = o.lang !== 'en' ? first('price_hike') : undefined
+  if (hike) put(facts, 'hikeMerchant', o.recurring.find((r) => r.id === hike.recurringId)?.merchant)
+  // one bill (focus 'due')
+  const focus = obj(d.focus)
+  if (text(focus.name)) {
+    facts.billName = text(focus.name) as string
+    put(facts, 'amount', positive(f, focus.amountDue))
+    put(facts, 'dueDate', L.date(focus.dueDate))
+    const days = num(focus.daysUntil)
+    if (days !== undefined && text(focus.status) !== 'paid') facts.dueIn = dueInPhrase(days, o.lang)
+    if (text(focus.status) === 'paid') facts.dueIn = o.lang === 'zh' ? '已付' : o.lang === 'id' ? 'sudah dibayar' : 'already paid'
+  }
+  // what is due soon (withinDays)
+  const window = obj(d.window)
+  if (num(window.days) !== undefined) {
+    facts.windowDays = String(num(window.days))
+    const bills = arr(window.bills)
+    if (bills.length) facts.windowList = L.list(bills.map(billLine))
+  }
   return facts
 }
 
-function insightFacts(d: D): Facts {
+function insightFacts(d: D, _state: AppState, _o: Required<FactOptions>): Facts {
   const insights = arr(d.insights)
   const facts: Facts = { count: String(insights.length) }
   const [top, second] = insights
@@ -172,7 +328,7 @@ function insightFacts(d: D): Facts {
   return facts
 }
 
-function affordFacts(d: D, state: AppState): Facts {
+function affordFacts(d: D, state: AppState, _o: Required<FactOptions>): Facts {
   const f = money(state)
   const c = moneyCopy(state)
   const facts: Facts = {}
@@ -188,29 +344,42 @@ function affordFacts(d: D, state: AppState): Facts {
   put(facts, 'goalName', text(d.goalName))
   const delay = num(d.goalDelayDays)
   if (delay) facts.goalDelayDays = String(delay)
-  put(facts, 'equivalent', text(arr(d.equivalents)[0]?.label))
+  // never "you could've gotten AirPods Pro" about the AirPods Pro themselves
+  const eq = arr(d.equivalents).find((e) => !label || (text(e.itemName) ?? '').toLowerCase() !== label.toLowerCase())
+  put(facts, 'equivalent', text(eq?.label))
   return facts
 }
 
-function goalsFacts(d: D, state: AppState): Facts {
+function goalsFacts(d: D, state: AppState, o: Required<FactOptions>): Facts {
   const f = moneyCopy(state)
+  const L = labels(o.lang)
   const goals = arr(d.goals)
   const facts: Facts = { count: String(goals.length) }
-  const primary = goals.find((g) => g.kind === 'goal') ?? goals[0]
+  const whatIf = obj(d.whatIf)
+  const primary = (text(whatIf.goalId) ? goals.find((g) => g.id === whatIf.goalId) : undefined) ?? goals.find((g) => g.kind === 'goal') ?? goals[0]
   if (!primary) return facts
   put(facts, 'goalName', text(primary.name))
   facts.saved = f(num(primary.saved) ?? 0)
   facts.price = f(num(primary.price) ?? 0)
   facts.pct = pctLabel(num(primary.pct) ?? 0)
   const eta = text(primary.etaDate)
-  if (eta) facts.eta = monthLabel(ym(eta))
+  if (eta) put(facts, 'eta', L.month(ym(eta)))
+  // what-if projection ("if I save ¥3,000 a month")
+  if (num(whatIf.monthly)) {
+    facts.monthly = f(num(whatIf.monthly) as number)
+    facts.months = String(num(whatIf.months) ?? 0)
+    put(facts, 'eta', L.month(ym(text(whatIf.etaDate) ?? '')))
+    const sooner = num(whatIf.monthsSooner)
+    if (sooner !== undefined && sooner > 0) facts.sooner = String(sooner)
+    put(facts, 'currentRate', positive(f, whatIf.currentMonthlyRate))
+  }
   put(facts, 'monthlyRate', positive(f, primary.monthlyRate))
   const others = goals.filter((g) => g !== primary).slice(0, 3).map((g) => `${text(g.name)} (${pctLabel(num(g.pct) ?? 0)})`)
-  if (others.length) facts.others = listJoin(others)
+  if (others.length) facts.others = L.list(others)
   return facts
 }
 
-function xrayFacts(d: D, state: AppState): Facts {
+function xrayFacts(d: D, state: AppState, _o: Required<FactOptions>): Facts {
   const f = money(state)
   const c = moneyCopy(state)
   const facts: Facts = {}
@@ -253,11 +422,14 @@ export interface ActionInfo {
   /** "A, B or C" for need_target */
   options?: string
   recurring?: RecurringSeries[]
+  /** reply language (default English) */
+  lang?: Lang
 }
 
 export function actionFacts(tool: ToolName, args: Record<string, unknown>, state: AppState, info: ActionInfo): Facts {
   const f = money(state)
   const c = moneyCopy(state)
+  const L = labels(info.lang ?? 'en')
   const facts: Facts = { stage: info.stage }
   put(facts, 'reason', noStop(info.reason))
   put(facts, 'options', info.options)
@@ -273,11 +445,18 @@ export function actionFacts(tool: ToolName, args: Record<string, unknown>, state
     }
     case 'set_category_budget': {
       const category = text(args.category)
-      put(facts, 'category', category ? categoryLabel(category) : undefined)
+      put(facts, 'category', category ? L.category(category) : undefined)
       put(facts, 'limit', positive(c, args.limit))
       const prev = num(data.previousLimit) ?? state.budget?.categories.find((b) => b.category === category)?.limit
       put(facts, 'previousLimit', positive(c, prev))
       put(facts, 'lastMonth', positive(c, data.lastMonth))
+      // a new limit can loosen the plan past the user's own target — say so instead of letting it slide
+      const total = num(data.total)
+      const target = state.profile?.targetSpend
+      const limit = num(args.limit)
+      if (info.stage === 'done' && total !== undefined && target && total > target && (prev === undefined || (limit ?? 0) > prev)) {
+        facts.loosens = `your category limits now add up to ${c(total)}, above your ${c(target)} target`
+      }
       break
     }
     case 'create_budget_plan': {
@@ -299,9 +478,9 @@ export function actionFacts(tool: ToolName, args: Record<string, unknown>, state
       const bill = findBill(state, args.billId)
       put(facts, 'billName', bill?.name ?? text(data.billName))
       put(facts, 'amount', positive(f, bill?.amountDue ?? data.amount))
-      put(facts, 'dueDate', shortDate(bill?.dueDate))
+      put(facts, 'dueDate', L.date(bill?.dueDate))
       put(facts, 'payee', state.bank.payees.find((p) => p.id === bill?.payeeId)?.name)
-      put(facts, 'scheduledFor', data.status === 'scheduled' ? shortDate(text(data.scheduledFor)) : undefined)
+      put(facts, 'scheduledFor', data.status === 'scheduled' ? L.date(text(data.scheduledFor)) : undefined)
       break
     }
     case 'cancel_subscription': {

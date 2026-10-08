@@ -21,7 +21,7 @@ npx tsx scripts/run-scenarios.ts --verify-audit evidence/latest/audit-C1.jsonl  
 npx tsx scripts/run-scenarios.ts --verify-audit evidence/latest/audit-C10.tampered.jsonl # → broken at the edited entry
 ```
 
-Expected: `45/45 scenarios PASS`, `231/231 assertions`, exit code 0
+Expected: `45/45 scenarios PASS`, `233/233 assertions`, exit code 0
 (the runner exits 1 if any assertion fails). Running it twice gives byte-identical files except the git commit line in
 `SUMMARY.md`:
 

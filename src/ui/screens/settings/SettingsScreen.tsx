@@ -3,11 +3,12 @@
  * privacy & data, display, sandbox controls and about.
  */
 import { BadgeInfo, Bot, ChevronRight, ExternalLink, FlaskConical, GitBranch, Info, Landmark, ScrollText, Sparkles, Users } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { AppSnapshot } from '../../../core/app-api'
 import { Logo } from '../../components/brand'
 import { Badge, Card, SectionHeader, Sheet, Toggle } from '../../components/ds'
 import { SandboxPanel } from '../../components/sandbox'
+import { useRoute } from '../../router'
 import { shallowEqual, useApp, useSnapshot } from '../../state'
 import { KillSwitch } from './KillSwitch'
 import { APP_LICENCE, APP_VERSION, LICENCES, REPO_URL, repoLabel, teamLine } from './logic'
@@ -28,10 +29,10 @@ const JUMPS = [
   { id: 'set-about', label: 'About' },
 ] as const
 
-function jump(id: string) {
+function jump(id: string, behavior: ScrollBehavior = 'smooth') {
   const el = document.getElementById(id)
   if (!el) return
-  el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  el.scrollIntoView({ behavior, block: 'start' })
   const heading = el.querySelector<HTMLElement>('h2')
   if (heading) {
     heading.tabIndex = -1
@@ -39,7 +40,22 @@ function jump(id: string) {
   }
 }
 
+/** `#/settings?s=tripwires` → the section id to open at, when it names one of the jump targets (or the kill switch). */
+export function sectionFromQuery(query: Record<string, string>): string | null {
+  const id = query.s ? `set-${query.s}` : ''
+  return id === 'set-kill' || JUMPS.some((j) => j.id === id) ? id : null
+}
+
 export function SettingsScreen() {
+  const { query } = useRoute()
+  const section = sectionFromQuery(query)
+  useEffect(() => {
+    if (!section) return
+    // after the shell's own "new page: scroll to top, focus <main>" effect, which runs after this one
+    const t = setTimeout(() => jump(section, 'auto'), 0)
+    return () => clearTimeout(t)
+  }, [section])
+
   return (
     <div className={styles.page}>
       <KillSwitch />

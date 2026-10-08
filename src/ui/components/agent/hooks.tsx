@@ -53,6 +53,14 @@ export function announceExecuted(app: FundBunApp, toast: ToastApi, p: PendingAct
   })
 }
 
+export interface ApprovalFlowOptions {
+  /**
+   * How success is announced. 'toast' (default): a toast with Undo — for flows with no card on screen (the approval
+   * sheet). 'card': the inline action card shows the result and its own Undo countdown, so no toast repeats it.
+   */
+  announce?: 'toast' | 'card'
+}
+
 export interface ApprovalFlow {
   approve: (pin?: string) => Promise<boolean>
   reject: () => void
@@ -67,7 +75,7 @@ export interface ApprovalFlow {
  * Approve / reject one pending action through the controller (policy re-check, binding hash, PIN).
  * A refusal that leaves the action pending (wrong PIN) stays in `error`; anything final becomes a toast.
  */
-export function useApprovalFlow(pendingId: string | null, onSettled?: (ok: boolean) => void): ApprovalFlow {
+export function useApprovalFlow(pendingId: string | null, onSettled?: (ok: boolean) => void, opts: ApprovalFlowOptions = {}): ApprovalFlow {
   const app = useApp()
   const toast = useToast()
   const [busy, setBusy] = useState(false)
@@ -76,6 +84,7 @@ export function useApprovalFlow(pendingId: string | null, onSettled?: (ok: boole
   const inFlight = useRef(false)
   const settled = useRef(onSettled)
   settled.current = onSettled
+  const toastOnSuccess = opts.announce !== 'card'
 
   useEffect(() => {
     setError(null)
@@ -92,7 +101,7 @@ export function useApprovalFlow(pendingId: string | null, onSettled?: (ok: boole
       const after = find(pendingId)
       if (r.ok) {
         setError(null)
-        if (after) announceExecuted(app, toast, after)
+        if (after && toastOnSuccess) announceExecuted(app, toast, after)
         settled.current?.(true)
         return true
       }
@@ -108,7 +117,7 @@ export function useApprovalFlow(pendingId: string | null, onSettled?: (ok: boole
       inFlight.current = false
       setBusy(false)
     }
-  }, [app, find, pendingId, toast])
+  }, [app, find, pendingId, toast, toastOnSuccess])
 
   const reject = useCallback(() => {
     if (!pendingId) return

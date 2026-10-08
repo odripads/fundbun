@@ -319,6 +319,13 @@
 
 /* ───────────── timeline ───────────── */
 
+.clockNote {
+  margin-top: calc(var(--s-2) * -1);
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  line-height: 1.4;
+}
+
 .days {
   display: grid;
   gap: var(--s-5);
@@ -431,7 +438,7 @@
 
 .actor_agent {
   background: color-mix(in srgb, var(--accent) 18%, var(--surface));
-  color: var(--accent-strong);
+  color: var(--accent-text);
 }
 
 .actor_policy {
@@ -441,7 +448,7 @@
 
 .actor_user {
   background: color-mix(in srgb, var(--under) 12%, var(--surface));
-  color: var(--under);
+  color: var(--under-text);
 }
 
 .actor_bank {
@@ -450,7 +457,7 @@
 
 .entryBlocked .actor {
   background: var(--over-soft);
-  color: var(--over);
+  color: var(--over-text);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--over) 40%, transparent), 0 0 0 4px var(--bg);
 }
 
@@ -584,7 +591,7 @@
   flex: none;
   width: 16px;
   height: 16px;
-  color: var(--under);
+  color: var(--under-text);
 }
 
 .hashNote {
@@ -730,7 +737,7 @@
   flex: none;
   width: 18px;
   height: 18px;
-  color: var(--under);
+  color: var(--under-text);
 }
 
 .takeawayActions {

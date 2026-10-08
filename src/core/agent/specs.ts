@@ -31,8 +31,14 @@ export const TOOL_SPECS: Record<ToolName, ToolSpec> = {
   },
   get_spending_breakdown: {
     name: 'get_spending_breakdown', tier: 0, label: 'Read spending by category', exposedToLLM: true, movesMoney: false, reversible: true,
-    description: 'Spending per category for a month, with budget limits and the previous month for comparison.',
-    inputSchema: obj({ month, category }),
+    description: 'Spending per category for a month, with budget limits and the previous month for comparison. Optional: compare (this month vs last, like-for-like to today), months (a run of 2–6 months for one category or group), group ("food" = delivery + eating out + groceries).',
+    inputSchema: obj({
+      month,
+      category,
+      compare: { type: 'boolean', description: 'Also compare with the previous month (same day of month while the month is running).' },
+      months: { type: 'integer', minimum: 2, maximum: 6, description: 'Show this many months up to `month`, oldest first.' },
+      group: { type: 'string', enum: ['food'], description: 'A group of categories: food = delivery + eating out + groceries.' },
+    }),
   },
   search_transactions: {
     name: 'search_transactions', tier: 0, label: 'Search transactions', exposedToLLM: true, movesMoney: false, reversible: true,
@@ -43,6 +49,10 @@ export const TOOL_SPECS: Record<ToolName, ToolSpec> = {
       month,
       minAmount: minor('Only transactions at least this large.'),
       limit: { type: 'integer', minimum: 1, maximum: 25 },
+      lateNight: { type: 'boolean', description: 'Only purchases made between 22:00 and 05:00.' },
+      sort: { type: 'string', enum: ['date', 'amount'], description: 'amount = biggest spending first.' },
+      purchasesOnly: { type: 'boolean', description: 'Leave out rent, utilities and other fixed bills (for "my biggest purchase").' },
+      group: { type: 'string', enum: ['food'], description: 'A group of categories: food = delivery + eating out + groceries.' },
     }),
   },
   list_recurring: {
@@ -52,8 +62,11 @@ export const TOOL_SPECS: Record<ToolName, ToolSpec> = {
   },
   analyze_bills: {
     name: 'analyze_bills', tier: 0, label: 'Analyze bills', exposedToLLM: true, movesMoney: false, reversible: true,
-    description: 'Bill analysis: price hikes, duplicate charges, bills due soon or overdue, bill spikes vs history, overlapping subscriptions, annual subscription cost.',
-    inputSchema: obj({}),
+    description: 'Bill analysis: price hikes, duplicate charges, bills due soon or overdue, bill spikes vs history, overlapping subscriptions, annual subscription cost. Optional billId focuses one bill; withinDays lists only what is due that soon.',
+    inputSchema: obj({
+      billId: { type: 'string', maxLength: 80 },
+      withinDays: { type: 'integer', minimum: 0, maximum: 60 },
+    }),
   },
   get_insights: {
     name: 'get_insights', tier: 0, label: 'Spending insights', exposedToLLM: true, movesMoney: false, reversible: true,
@@ -67,8 +80,11 @@ export const TOOL_SPECS: Record<ToolName, ToolSpec> = {
   },
   get_goals: {
     name: 'get_goals', tier: 0, label: 'Read dream goals', exposedToLLM: true, movesMoney: false, reversible: true,
-    description: 'Dream items (goals and treats) with saved amount, percent complete, monthly saving rate and ETA.',
-    inputSchema: obj({}),
+    description: 'Dream items (goals and treats) with saved amount, percent complete, monthly saving rate and ETA. With `monthly` (and optionally goalId) also projects when that goal is reached at that monthly saving.',
+    inputSchema: obj({
+      monthly: minor('What-if monthly saving.'),
+      goalId: { type: 'string', maxLength: 80 },
+    }),
   },
   xray_bill: {
     name: 'xray_bill', tier: 0, label: 'Bill X-ray', exposedToLLM: true, movesMoney: false, reversible: true,

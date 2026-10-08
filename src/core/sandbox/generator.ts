@@ -112,15 +112,26 @@ function payeeName(script: PersonaScript, payeeId: string, fallback: string): st
   return script.payees.find((p) => p.id === payeeId)?.name ?? fallback
 }
 
-function billPaymentDraft(script: PersonaScript, seed: number, series: BillSeriesSpec, bill: Bill, w: Window): Draft {
+/**
+ * When the persona habitually pays a bill it pays by hand: `payLeadDays` before it is due (never before the 1st of
+ * the due month), at a time in `payHours`. Deterministic per (seed, persona, bill) — the generated history and
+ * SandboxBank.advanceDays share it, so the persona keeps its habit after the clock moves.
+ */
+export function billPaymentSchedule(script: PersonaScript, seed: number, series: BillSeriesSpec, bill: Pick<Bill, 'id' | 'dueDate'>): { date: ISODate; time: string } {
   const rng = rngFor(seed, script.def.id, 'bill', bill.id)
   const lead = rng.int(series.payLeadDays[0], series.payLeadDays[1])
-  const date = maxDate(maxDate(addDays(bill.dueDate, -lead), startOfMonth(ym(bill.dueDate))), w.start)
+  const date = maxDate(addDays(bill.dueDate, -lead), startOfMonth(ym(bill.dueDate)))
+  return { date, time: timeInWindow(rng, series.payHours) }
+}
+
+function billPaymentDraft(script: PersonaScript, seed: number, series: BillSeriesSpec, bill: Bill, w: Window): Draft {
+  const plan = billPaymentSchedule(script, seed, series, bill)
+  const date = maxDate(plan.date, w.start)
   const name = payeeName(script, series.payeeId, series.name)
   return {
     accountId: CHECKING_ID,
     date,
-    time: timeInWindow(rng, series.payHours),
+    time: plan.time,
     amount: -bill.amountDue,
     merchant: name,
     description: billPaymentDescription(bill, name),

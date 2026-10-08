@@ -1,7 +1,8 @@
 /**
  * Pure view logic for the agent components (action cards, plans, evidence). No React, no DOM — unit-tested.
  */
-import type { ActionPreview, Currency, PendingAction, PlanStep, PlanStepStatus, TaskPlan } from '../../../core/types'
+import { dateLabel } from '../../../core/dates'
+import type { ActionPreview, Currency, ISODate, PendingAction, PlanStep, PlanStepStatus, SuggestedAction, TaskPlan } from '../../../core/types'
 import { fmt } from '../../../core/money'
 
 // ───────────────────────────── action cards ─────────────────────────────
@@ -56,6 +57,62 @@ export function shortHash(hash: string | undefined, length = 6): string {
   const clean = (hash ?? '').replace(/[^0-9a-f]/gi, '').toLowerCase()
   return clean.slice(0, Math.max(0, length))
 }
+
+/**
+ * The headline for an action, from its structured call: a bill payment dated after today is a schedule, so it reads
+ * "Schedule China Mobile plan ¥128 for Oct 24" rather than "Pay …" (the preview's effects say when it goes out).
+ */
+export function actionTitle(p: Pick<PendingAction, 'call' | 'preview'>, today: ISODate): string {
+  const title = p.preview.title
+  const date = p.call.args?.date
+  if (p.call.tool !== 'pay_bill' || typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date) || date <= today) return title
+  if (/^Schedule\b/.test(title)) return title
+  return `${title.replace(/^Pay\s+/, 'Schedule ')} for ${dateLabel(date)}`
+}
+
+const TARGET_ARGS = ['category', 'billId', 'recurringId', 'goalId', 'dreamId', 'kind'] as const
+
+/**
+ * Settings-like tools: once one ran on a target, offering it again (re-derived from the new state) would read as
+ * a contradiction. Money moves (stash, pay) can legitimately repeat, so only the button's own proposal counts.
+ */
+const SETTING_TOOLS: ReadonlySet<string> = new Set(['set_category_budget', 'create_tripwire', 'set_bill_reminder', 'cancel_subscription'])
+
+/** What a call acts on — its tool plus the first identifying argument ("set_category_budget:shopping"). */
+export function suggestionTarget(call: { tool: string; args?: Record<string, unknown> }): string {
+  const args = (call.args ?? {}) as Record<string, unknown>
+  const key = TARGET_ARGS.find((k) => typeof args[k] === 'string' || typeof args[k] === 'number')
+  return key ? `${call.tool}:${String(args[key])}` : call.tool
+}
+
+/**
+ * The receipt for a suggestion button: the action it proposed (`pid`), else — for settings-like tools — the newest
+ * executed action on the same target. A button that already ran shows what actually ran (the executed preview — "Set Shopping budget to ¥460 a
+ * month"), never a suggestion re-derived from the new state ("Cap Shopping at ¥410").
+ */
+export function suggestionReceipt(
+  pending: readonly PendingAction[],
+  action: Pick<SuggestedAction, 'tool' | 'args'> | undefined,
+  pid?: string | null,
+): PendingAction | undefined {
+  if (pid) {
+    const own = pending.find((x) => x.id === pid)
+    if (own) return own
+  }
+  if (!action || !SETTING_TOOLS.has(action.tool)) return undefined
+  const target = suggestionTarget(action)
+  // the newest change to that target decides: executed → receipt; undone → offer the suggestion again
+  for (let i = pending.length - 1; i >= 0; i--) {
+    const x = pending[i]
+    if (x.decision.tier === 0 || suggestionTarget(x.call) !== target) continue
+    if (x.status === 'executed') return x
+    if (x.status === 'undone') return undefined
+  }
+  return undefined
+}
+
+/** The chip for who proposed an action when it wasn't the agent: the user's own tap started it. */
+export const USER_PROPOSED_LABEL = 'You started this'
 
 export function needsPin(p: Pick<PendingAction, 'decision'>): boolean {
   return p.decision.decision === 'step_up'

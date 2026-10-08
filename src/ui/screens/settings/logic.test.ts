@@ -19,7 +19,12 @@ import {
   changedCaps,
   checkCapsDraft,
   checkProfileDraft,
+  consentVersionLabel,
   deleteConfirmed,
+  engineCopy,
+  firedText,
+  MAX_MONTHLY_MAJOR,
+  restorePatch,
   gateChanges,
   isBudgetCategory,
   isRaise,
@@ -303,5 +308,70 @@ describe('about', () => {
     expect(REPO_URL).toBe('https://github.com/odripads/fundbun')
     expect(repoLabel()).toBe('github.com/odripads/fundbun')
     expect(teamLine([{ name: 'A', university: 'U' }])).toBe('A (U)')
+  })
+})
+
+describe('profile validation (F46)', () => {
+  const app = loadedApp()
+  const profile = app.getSnapshot().state.profile!
+
+  it('an invalid edit is an error, not a silent no-op (so the form never says "All changes saved")', () => {
+    const { patch, errors } = checkProfileDraft({ ...profileDraft(profile), target: 'abc' }, profile)
+    expect(patch).toEqual({})
+    expect(errors.target).toMatch(/Enter what you’re happy to spend/)
+  })
+
+  it('a target above the income needs an explicit OK; with it, it saves', () => {
+    const d = { ...profileDraft(profile), target: '20000' }
+    const blocked = checkProfileDraft(d, profile)
+    expect(blocked.aboveIncome).toBe(true)
+    expect(blocked.errors.target).toMatch(/above your ¥18,500 income/)
+    expect(blocked.patch.targetSpend).toBeUndefined()
+    const ok = checkProfileDraft(d, profile, { allowAboveIncome: true })
+    expect(ok.errors).toEqual({})
+    expect(ok.patch.targetSpend).toBe(2_000_000)
+  })
+
+  it('a typo with extra zeros is rejected outright', () => {
+    const d = { ...profileDraft(profile), target: '99999999' }
+    const r = checkProfileDraft(d, profile, { allowAboveIncome: true })
+    expect(r.errors.target).toMatch(/check for an extra zero/)
+    expect(r.patch).toEqual({})
+    expect(checkProfileDraft({ ...profileDraft(profile), income: String(MAX_MONTHLY_MAJOR + 1) }, profile).errors.income).toMatch(/extra zero/)
+  })
+
+  it('an above-income target that is already saved is left alone', () => {
+    const over = { ...profile, targetSpend: 2_000_000 }
+    expect(checkProfileDraft(profileDraft(over), over)).toEqual({ patch: {}, errors: {} })
+  })
+
+  it('restorePatch undoes exactly what a save changed', () => {
+    expect(restorePatch(profile, { targetSpend: 1, tone: 'numbers' })).toEqual({ targetSpend: profile.targetSpend, tone: profile.tone })
+  })
+})
+
+describe('dates and copy on the Settings screen (F55, F67)', () => {
+  it('"Fired 1× · last Oct 22": the sandbox date, never the device’s', () => {
+    const ev: TripwireEvent = { id: 'twe_tw_a_2026-10', tripwireId: 'tw_a', firedAt: new Date('2026-10-08T07:36:00').toISOString(), title: 't', message: 'm', seen: false }
+    expect(firedText([ev], 'tw_a', '2026-10-22')).toBe('Fired 1× · last Oct 22')
+    expect(firedText([], 'tw_a', '2026-10-22')).toBe('Hasn’t fired yet')
+  })
+
+  it('shows the consent version as words, not an internal id', () => {
+    expect(consentVersionLabel('consent-2026-10')).toBe('Consent version 2026-10')
+    expect(consentVersionLabel('2026-10')).toBe('Consent version 2026-10')
+    expect(consentVersionLabel(undefined)).toBe('')
+  })
+
+  it('says why Bun is on-device in plain words; the raw gateway reason only goes in a details row', () => {
+    const base = { engine: 'offline' as const, llmConsent: true, llmEnabled: true }
+    const down = engineCopy({ ...base, llm: { checked: true, available: false, reason: 'Gateway answered HTTP 502' } })
+    expect(down.line).toBe('On-device Bun Engine')
+    expect(down.why).toBe('Cloud AI unavailable right now — Bun answers on-device.')
+    expect(down.why).not.toMatch(/HTTP|502|gateway/i)
+    expect(down.detail).toBe('Gateway answered HTTP 502')
+    expect(engineCopy({ ...base, llmConsent: false, llm: { checked: true, available: false } }).why).toMatch(/Cloud AI is off/)
+    expect(engineCopy({ ...base, llm: { checked: false, available: false } }).why).toMatch(/Checking/)
+    expect(engineCopy({ ...base, engine: 'llm', llm: { checked: true, available: true, provider: 'anthropic', model: 'claude' } }).line).toBe('anthropic · claude')
   })
 })

@@ -8,9 +8,9 @@ import type { AppSnapshot } from '../../../core/app-api'
 import { CURRENCY_SYMBOL } from '../../../core/money'
 import type { Profile } from '../../../core/types'
 import { BunMascot, DreamImage } from '../../components/brand'
-import { Button, Card, SectionHeader, Segmented, TextField } from '../../components/ds'
+import { Button, Card, Checkbox, SectionHeader, Segmented, TextField, useToast } from '../../components/ds'
 import { useApp, useSafeAction, useSnapshot } from '../../state'
-import { TONE_OPTIONS, checkProfileDraft, mirrorPreview, parseMoneyInput, profileDraft, toneLine, type ProfileDraft } from './logic'
+import { TONE_OPTIONS, checkProfileDraft, mirrorPreview, parseMoneyInput, profileDraft, restorePatch, toneLine, type ProfileDraft } from './logic'
 import styles from './Settings.module.css'
 
 const selectProfile = (s: AppSnapshot) => s.state.profile
@@ -26,19 +26,33 @@ export function ProfileSection() {
 function ProfileForm({ profile }: { profile: Profile }) {
   const app = useApp()
   const run = useSafeAction()
+  const toast = useToast()
   const ctx = useSnapshot(selectCtx)
   const [draft, setDraft] = useState<ProfileDraft>(() => profileDraft(profile))
   const [showErrors, setShowErrors] = useState(false)
-  const { patch, errors } = checkProfileDraft(draft, profile)
-  const dirty = Object.keys(patch).length > 0
+  // fields the user has edited: their errors show as they type, not only after pressing Save
+  const [touched, setTouched] = useState<ReadonlySet<keyof ProfileDraft>>(() => new Set())
+  const [aboveOk, setAboveOk] = useState(false)
+  const { patch, errors, aboveIncome } = checkProfileDraft(draft, profile, { allowAboveIncome: aboveOk })
+  // an invalid edit is an unsaved change too — never "All changes saved" over a field that says "abc"
+  const dirty = Object.keys(patch).length > 0 || Object.keys(errors).length > 0
   const symbol = CURRENCY_SYMBOL[profile.currency]
 
-  const target = parseMoneyInput(draft.target, profile.currency) ?? undefined
+  // preview only a target that could be saved — a typo shouldn't rewrite the Mirror story, even in preview
+  const target = errors.target ? undefined : parseMoneyInput(draft.target, profile.currency) ?? undefined
   const preview = useMemo(() => mirrorPreview(ctx, draft.tone, target), [ctx, draft.tone, target])
 
   const set = (k: keyof ProfileDraft) => (e: { currentTarget: { value: string } }) => {
     const value = e.currentTarget.value
     setDraft((d) => ({ ...d, [k]: value }))
+    setTouched((t) => (t.has(k) ? t : new Set(t).add(k)))
+  }
+
+  function undoEdits() {
+    setDraft(profileDraft(profile))
+    setShowErrors(false)
+    setTouched(new Set())
+    setAboveOk(false)
   }
 
   async function save(e: FormEvent) {
@@ -48,13 +62,22 @@ function ProfileForm({ profile }: { profile: Profile }) {
       return
     }
     if (!dirty) return
-    const r = await run(() => app.setProfile(patch), {
-      success: toneLine(draft.tone, { gentle: 'Saved. Bun’s got it.', cheeky: 'Noted. Bun’s taking notes.', numbers: 'Profile saved.' }),
-    })
-    if (r?.ok) setShowErrors(false)
+    const before = profile
+    const r = await run(() => app.setProfile(patch), { errorTitle: 'Couldn’t save your profile' })
+    if (r?.ok) {
+      setShowErrors(false)
+      setTouched(new Set())
+      setAboveOk(false)
+      toast.show({
+        id: 'profile-saved',
+        tone: 'success',
+        title: toneLine(draft.tone, { gentle: 'Saved. Bun’s got it.', cheeky: 'Noted. Bun’s taking notes.', numbers: 'Profile saved.' }),
+        actions: [{ label: 'Undo', onClick: () => void app.setProfile(restorePatch(before, patch)) }],
+      })
+    }
   }
 
-  const err = (k: keyof ProfileDraft) => (showErrors ? errors[k] : undefined)
+  const err = (k: keyof ProfileDraft) => (showErrors || touched.has(k) ? errors[k] : undefined)
 
   return (
     <section id="set-profile" aria-labelledby="set-profile-h" className={styles.section}>
@@ -65,6 +88,15 @@ function ProfileForm({ profile }: { profile: Profile }) {
           <TextField label="Monthly income" prefix={symbol} inputMode="decimal" value={draft.income} onChange={set('income')} error={err('income')} hint="After tax" />
           <TextField label="Spending target" prefix={symbol} inputMode="decimal" value={draft.target} onChange={set('target')} error={err('target')} hint="Per month, not savings" />
           <TextField label="Payday" inputMode="numeric" value={draft.payday} onChange={set('payday')} error={err('payday')} hint="Day of the month, 1–28" />
+          {aboveIncome ? (
+            <Checkbox
+              className={styles.span2}
+              checked={aboveOk}
+              onChange={setAboveOk}
+              label="Yes — I plan to spend more than I earn"
+              description="Bun will treat every month as over budget and flag it."
+            />
+          ) : null}
 
           <fieldset className={styles.toneField}>
             <legend className={styles.fieldLabel}>Bun’s tone</legend>
@@ -96,7 +128,7 @@ function ProfileForm({ profile }: { profile: Profile }) {
             {dirty ? (
               <>
                 <Button type="submit">Save changes</Button>
-                <Button type="button" variant="ghost" iconStart={<RotateCcw />} onClick={() => { setDraft(profileDraft(profile)); setShowErrors(false) }}>
+                <Button type="button" variant="ghost" iconStart={<RotateCcw />} onClick={undoEdits}>
                   Undo edits
                 </Button>
               </>

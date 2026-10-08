@@ -39,7 +39,7 @@
 .icon {
   display: inline-flex;
   flex: none;
-  color: var(--accent-strong);
+  color: var(--accent-text);
 }
 
 .icon svg {

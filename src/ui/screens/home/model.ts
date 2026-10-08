@@ -129,6 +129,18 @@ export interface HeroStat {
   tone: StatusTone
 }
 
+/**
+ * A dream name short enough for a tile or the mirror's name plate (the full name stays in headlines and in the
+ * screen-reader text): cut at a word boundary, "Noise-cancelling headphones for long flights" → "Noise-cancelling…".
+ */
+export function shortName(name: string, max = 24): string {
+  const n = name.trim()
+  if (n.length <= max) return n
+  const cut = n.slice(0, max - 1)
+  const space = cut.lastIndexOf(' ')
+  return `${(space >= 8 ? cut.slice(0, space) : cut).replace(/[\s,;:·–—-]+$/, '')}…`
+}
+
 /** The three evidence tiles under the mirror headline. */
 export function mirrorStats(m: MirrorState, currency: Currency): HeroStat[] {
   const stats: HeroStat[] = []
@@ -136,9 +148,9 @@ export function mirrorStats(m: MirrorState, currency: Currency): HeroStat[] {
   const tone: StatusTone = m.status === 'over' ? 'over' : 'warn'
   if (losing) {
     if (m.item && m.quantity && m.quantity >= 2) {
-      stats.push({ id: 'item', value: `${m.quantity}×`, label: m.item.name, description: `The difference buys ${m.quantity} × ${m.item.name}.`, tone })
+      stats.push({ id: 'item', value: `${m.quantity}×`, label: shortName(m.item.name), description: `The difference buys ${m.quantity} × ${m.item.name}.`, tone })
     } else if (m.item && m.fraction !== undefined) {
-      stats.push({ id: 'item', value: pctText(m.fraction), label: `of ${m.item.name}`, description: `The difference is ${pctText(m.fraction)} of your ${m.item.name}.`, tone })
+      stats.push({ id: 'item', value: pctText(m.fraction), label: `of ${shortName(m.item.name)}`, description: `The difference is ${pctText(m.fraction)} of your ${m.item.name}.`, tone })
     } else {
       // one whole item is already the headline — the tile carries the amount instead
       stats.push({ id: 'delta', value: fmtWhole(m.delta, currency), label: m.status === 'over' ? 'over target' : 'projected over', description: `${fmtWhole(m.delta, currency)} over target.`, tone })
@@ -147,7 +159,7 @@ export function mirrorStats(m: MirrorState, currency: Currency): HeroStat[] {
       stats.push({ id: 'hours', value: hoursText(m.hoursOfWork), label: 'of your work', description: `About ${m.hoursOfWork} hours of your work.`, tone: 'neutral' })
     }
     if (m.goal && m.goalDelayDays && m.goalDelayDays > 0) {
-      stats.push({ id: 'delay', value: `+${shortDelay(m.goalDelayDays)}`, label: `${m.goal.name} delay`, description: `${m.goal.name} pushed back ${delayPhrase(m.goalDelayDays)}.`, tone })
+      stats.push({ id: 'delay', value: `+${shortDelay(m.goalDelayDays)}`, label: `${shortName(m.goal.name)} delay`, description: `${m.goal.name} pushed back ${delayPhrase(m.goalDelayDays)}.`, tone })
     }
   } else if (m.status === 'under') {
     stats.push({ id: 'delta', value: fmtWhole(m.delta, currency), label: 'under target', description: `On pace to finish ${fmtWhole(m.delta, currency)} under target.`, tone: 'under' })
@@ -159,11 +171,11 @@ export function mirrorStats(m: MirrorState, currency: Currency): HeroStat[] {
       const now = Math.floor(m.goal.pct)
       const after = Math.floor(pctAfter(m.goal, extra))
       stats.push(extra > 0 && after > now
-        ? { id: 'goal', value: `${now}→${after}%`, label: `${m.goal.name} if stashed`, description: `${m.goal.name} goes from ${now}% to ${after}% saved if you stash ${fmtWhole(extra, currency)}.`, tone: 'under' }
-        : { id: 'goal', value: `${now}%`, label: `${m.goal.name} saved`, description: `${m.goal.name} is ${now}% saved.`, tone: 'under' })
+        ? { id: 'goal', value: `${now}→${after}%`, label: `${shortName(m.goal.name)} if stashed`, description: `${m.goal.name} goes from ${now}% to ${after}% saved if you stash ${fmtWhole(extra, currency)}.`, tone: 'under' }
+        : { id: 'goal', value: `${now}%`, label: `${shortName(m.goal.name)} saved`, description: `${m.goal.name} is ${now}% saved.`, tone: 'under' })
     }
   } else if (m.status === 'on_track' && m.goal) {
-    stats.push({ id: 'goal', value: `${Math.floor(m.goal.pct)}%`, label: `${m.goal.name} saved`, description: `${m.goal.name} is ${Math.floor(m.goal.pct)}% saved.`, tone: 'accent' })
+    stats.push({ id: 'goal', value: `${Math.floor(m.goal.pct)}%`, label: `${shortName(m.goal.name)} saved`, description: `${m.goal.name} is ${Math.floor(m.goal.pct)}% saved.`, tone: 'accent' })
   }
   return stats
 }

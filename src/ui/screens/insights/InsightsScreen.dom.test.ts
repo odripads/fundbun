@@ -219,4 +219,36 @@ describe('InsightsScreen — deep link to one insight (#/insights/<id>)', () => 
     expect(container.querySelectorAll('article').length).toBeGreaterThan(0)
     expect(container.querySelector('[data-focused]')).toBeNull()
   })
+
+  it('F41: a cap’s "Done" note names what ran (¥460), not a suggestion re-derived from the new limit', async () => {
+    const app = demo('mei')
+    const { container } = await renderAt('#/insights', app)
+    const button = Array.from(container.querySelectorAll<HTMLButtonElement>('article button')).find((b) => /^Cap Shopping at /.test(b.textContent ?? ''))
+    expect(button).toBeDefined()
+    const card = button!.closest('article')!
+    const label = button!.textContent!
+    await click(button!)
+    await flush()
+    const ran = app.getSnapshot().state.pending.at(-1)!
+    expect(ran.status).toBe('executed')
+    const note = card.querySelector('[role="status"]')!.textContent!
+    expect(note).toBe(`Done · ${ran.preview.title}`)
+    expect(note).toContain(label.replace(/^Cap Shopping at /, ''))
+    // the insight now suggests a lower cap — the receipt must not adopt it
+    const next = app.getSnapshot().derived.insights.find((i) => i.suggestedAction?.tool === 'set_category_budget' && i.suggestedAction.args.category === 'shopping')
+    if (next) expect(note).not.toContain(next.suggestedAction!.label)
+  })
+
+  it('F41: after leaving and coming back, the card still shows the receipt instead of offering a further cut', async () => {
+    const app = demo('mei')
+    const first = await renderAt('#/insights', app)
+    const button = Array.from(first.container.querySelectorAll<HTMLButtonElement>('article button')).find((b) => /^Cap Shopping at /.test(b.textContent ?? ''))!
+    await click(button)
+    await flush()
+    const ran = app.getSnapshot().state.pending.at(-1)!
+    await first.unmount()
+    const again = await renderAt('#/insights', app)
+    expect(again.container.textContent).toContain(`Done · ${ran.preview.title}`)
+    expect(Array.from(again.container.querySelectorAll('article button')).some((b) => /^Cap Shopping at /.test(b.textContent ?? ''))).toBe(false)
+  })
 })

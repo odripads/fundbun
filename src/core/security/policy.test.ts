@@ -394,19 +394,56 @@ describe('helpers', () => {
 })
 
 describe('shouldTripBreaker', () => {
-  const denied = (over: Partial<AgentActionRecord & { tainted: boolean; decision: Decision }> = {}) => ({
+  const denied = (over: Partial<AgentActionRecord & { tainted: boolean; decision: Decision; ruleIds: string[] }> = {}) => ({
     ts: minutesAgo(2),
-    tool: 'transfer_to_goal' as const,
+    tool: 'transfer_external' as AgentActionRecord['tool'],
     amount: 60_000,
     status: 'denied' as const,
     decision: 'deny' as const,
     ...over,
   })
+  /** an ordinary "no" to something the user asked for: over a cap, an empty pot, the liquidity cushion */
+  const ordinary = (over: Partial<AgentActionRecord & { tainted: boolean; ruleIds: string[] }> = {}) => denied({ tool: 'transfer_to_goal', ruleIds: ['P-CAP-PER-ACTION'], ...over })
 
-  it('trips on 3 denied money moves within 10 minutes', () => {
+  it('trips on 3 blocked tier-4 attempts within 10 minutes and names what was blocked', () => {
     const r = shouldTripBreaker([denied(), denied(), denied()], NOW)
     expect(r.trip).toBe(true)
-    expect(r.reason).toMatch(/3 blocked attempts to move money in 10 minutes/)
+    expect(r.reason).toBe('3 blocked attempts to send money to someone else in 10 minutes, so the assistant was paused for your safety.')
+  })
+
+  it('F3: ordinary cap / funds / liquidity / validation denials never trip it, however many', () => {
+    const r = shouldTripBreaker([
+      ordinary(),
+      ordinary({ tool: 'pay_bill', amount: 420_000 }),
+      ordinary({ tool: 'withdraw_from_goal', ruleIds: ['P-FUNDS'] }),
+      ordinary({ ruleIds: ['P-LIQUIDITY'] }),
+      ordinary({ ruleIds: ['P-CAP-DAILY'] }),
+      ordinary({ ruleIds: undefined }),
+      ordinary({ tool: 'pay_bill', ruleIds: ['P-ARGS'] }),
+    ], NOW)
+    expect(r).toEqual({ trip: false })
+  })
+
+  it('F3: ordinary denials do not add up with attack signals either', () => {
+    expect(shouldTripBreaker([ordinary(), denied(), ordinary(), denied()], NOW).trip).toBe(false)
+    expect(shouldTripBreaker([ordinary(), denied(), denied({ tool: 'add_payee', amount: 0 }), denied({ tool: 'change_mandate', amount: 0 })], NOW).trip).toBe(true)
+  })
+
+  it('F3: three permission changes say "permission", not "move money"', () => {
+    const r = shouldTripBreaker([0, 1, 2].map(() => denied({ tool: 'change_mandate', amount: 0 })), NOW)
+    expect(r.trip).toBe(true)
+    expect(r.reason).toMatch(/^3 blocked attempts to change its own permissions in 10 minutes/)
+    expect(r.reason).not.toMatch(/move money/)
+  })
+
+  it('a mix of attacks is spelled out', () => {
+    const r = shouldTripBreaker([denied(), denied(), denied({ tool: 'change_mandate', amount: 0 })], NOW)
+    expect(r.reason).toBe('3 blocked attempts in 10 minutes (2 to send money to someone else, 1 to change its own permissions), so the assistant was paused for your safety.')
+  })
+
+  it('a signal rule id counts even on an exposed tool (the LLM asked for something it is never offered)', () => {
+    const r = shouldTripBreaker([0, 1, 2].map(() => ordinary({ ruleIds: ['P-LLM-NOT-EXPOSED', 'P-CAP-PER-ACTION'] })), NOW)
+    expect(r.trip).toBe(true)
   })
 
   it('does not trip on 2', () => {
@@ -421,6 +458,7 @@ describe('shouldTripBreaker', () => {
     const r = shouldTripBreaker([denied({ tainted: true, tool: 'transfer_external' })], NOW)
     expect(r.trip).toBe(true)
     expect(r.reason).toMatch(/send money to someone else.*prompt injection/)
+    expect(shouldTripBreaker([ordinary({ tainted: true })], NOW).trip).toBe(true)
   })
 
   it('counts T4 attempts like add_payee and change_mandate', () => {
@@ -441,14 +479,13 @@ describe('shouldTripBreaker', () => {
   })
 
   it('accepts status "denied" without a decision field', () => {
-    const r = shouldTripBreaker([0, 1, 2].map(() => ({ ts: minutesAgo(1), tool: 'pay_bill' as const, amount: 1, status: 'denied' as const })), NOW)
+    const r = shouldTripBreaker([0, 1, 2].map(() => ({ ts: minutesAgo(1), tool: 'add_payee' as const, amount: 0, status: 'denied' as const })), NOW)
     expect(r.trip).toBe(true)
   })
 
-  it('counts hallucinated money tools with an amount, but not without', () => {
+  it('counts hallucinated (unknown) tools, with or without an amount', () => {
     const fake = (amount: number) => denied({ tool: 'wire_money' as unknown as 'pay_bill', amount })
-    expect(shouldTripBreaker([fake(100), fake(100), fake(100)], NOW).trip).toBe(true)
-    expect(shouldTripBreaker([fake(0), fake(0), fake(0)], NOW).trip).toBe(false)
+    expect(shouldTripBreaker([fake(100), fake(0), fake(0)], NOW)).toMatchObject({ trip: true, reason: expect.stringMatching(/run an action that doesn't exist/) })
   })
 
   it('ignores attempts from before a manual reset', () => {
@@ -463,6 +500,39 @@ describe('shouldTripBreaker', () => {
 
   it('handles an empty history', () => {
     expect(shouldTripBreaker([], NOW)).toEqual({ trip: false })
+  })
+})
+
+describe('F30: a button the user tapped is the user\'s decision — the assistant\'s caps and rate limit do not apply', () => {
+  const tap = (tool: string, args: Record<string, unknown> = {}): ToolCall => ({ id: 'tc_u', tool, args, proposedBy: 'user' })
+
+  it('Pay ¥4,200 rent from its own button: step_up with the PIN, not P-CAP-PER-ACTION', () => {
+    const d = evaluatePolicy(tap('pay_bill', { billId: 'bill_rent' }), ctx())
+    expect(d).toMatchObject({ decision: 'step_up', ruleIds: ['P-TIER-MATRIX'] })
+    // the same call proposed by the assistant is still capped, with a next step
+    const agent = evaluatePolicy(call('pay_bill', { billId: 'bill_rent' }), ctx())
+    expect(agent).toMatchObject({ decision: 'deny', ruleIds: ['P-CAP-PER-ACTION'] })
+    expect(agent.reasons[0]).toMatch(/^¥4,200 is more than the ¥500 limit you set for a single assistant action\. You can pay it yourself — tap Pay on the bill in Bills/)
+  })
+
+  it('daily / monthly caps and the hourly rate limit bind only the assistant', () => {
+    const spent = [executedToday(90_000)]
+    const c = ctx({ recentAgentActions: spent }, { monthlyCap: 100_000 })
+    expect(evaluatePolicy(tap('transfer_to_goal', { goalId: 'dream_birkin', amount: 40_000 }), c)).toMatchObject({ decision: 'confirm' })
+    expect(evaluatePolicy(call('transfer_to_goal', { goalId: 'dream_birkin', amount: 40_000 }), c).ruleIds).toEqual(['P-CAP-DAILY'])
+    const busy = ctx({ recentAgentActions: Array.from({ length: 20 }, () => record({ tool: 'create_tripwire', amount: 0, ts: minutesAgo(1) })) })
+    expect(evaluatePolicy(tap('set_category_budget', { category: 'delivery', limit: 80_000 }), busy).decision).toBe('allow')
+    expect(evaluatePolicy(call('set_category_budget', { category: 'delivery', limit: 80_000 }), busy).ruleIds).toEqual(['P-RATE'])
+  })
+
+  it('every other rule still applies to a tap: entity, funds, liquidity, unverified payees, frozen, T4', () => {
+    expect(evaluatePolicy(tap('pay_bill', { billId: 'bill_scam' }), ctx()).ruleIds).toEqual(['P-ENTITY'])
+    expect(evaluatePolicy(tap('transfer_to_goal', { goalId: 'dream_birkin', amount: 900_000 }), ctx()).ruleIds).toEqual(['P-FUNDS'])
+    expect(evaluatePolicy(tap('transfer_to_goal', { goalId: 'dream_birkin', amount: 600_000 }), ctx()).ruleIds).toEqual(['P-LIQUIDITY'])
+    expect(evaluatePolicy(tap('withdraw_from_goal', { goalId: 'dream_airpods', amount: 20_000 }), ctx()).ruleIds).toEqual(['P-FUNDS'])
+    expect(evaluatePolicy(tap('pay_bill', { billId: 'bill_rent' }), ctx({}, { frozen: true })).ruleIds).toEqual(['P-FROZEN'])
+    expect(evaluatePolicy(tap('transfer_external', { to: 'x', amount: 1 }), ctx()).ruleIds).toEqual(['P-T4-PROHIBITED'])
+    expect(evaluatePolicy(tap('pay_bill', { billId: 'bill_rent' }), ctx({ tainted: true })).decision).toBe('step_up')
   })
 })
 

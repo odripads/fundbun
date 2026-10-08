@@ -21,7 +21,7 @@ import { useId, useState, type CSSProperties, type ReactNode } from 'react'
 import type { AppSnapshot } from '../../../core/app-api'
 import type { PendingAction } from '../../../core/types'
 import { fmt } from '../../../core/money'
-import { useApp, useSnapshot } from '../../state'
+import { sandboxToday, useApp, useSnapshot } from '../../state'
 import { AiBadge, Badge, Button, Money, TierBadge, cx } from '../ds'
 import { useToast } from '../ds/Toast'
 import { openApproval } from './approvalStore'
@@ -30,7 +30,9 @@ import { undoWithToast, useApprovalFlow, useNow } from './hooks'
 import {
   PHASE_META,
   RISK_META,
+  USER_PROPOSED_LABEL,
   actionPhase,
+  actionTitle,
   approveLabel,
   clockTime,
   needsPin,
@@ -78,6 +80,7 @@ export function ActionCard({ pendingId, compact = false, variant, part = 'all', 
 }
 
 const selectCurrency = (s: AppSnapshot) => s.state.profile?.currency ?? 'CNY'
+const selectToday = (s: AppSnapshot) => sandboxToday(s)
 
 function usePhase(p: PendingAction): { phase: ActionPhase; now: number } {
   const ticking = p.status === 'executed' && secondsLeft(p.undoUntil, Date.now()) > 0
@@ -87,8 +90,10 @@ function usePhase(p: PendingAction): { phase: ActionPhase; now: number } {
 
 function FullCard({ p, sheet, part, className }: { p: PendingAction; sheet: boolean; part: 'all' | 'summary' | 'assurance'; className?: string }) {
   const currency = useSnapshot(selectCurrency)
+  const today = useSnapshot(selectToday)
   const { phase, now } = usePhase(p)
   const titleId = useId()
+  const title = actionTitle(p, today)
   const meta = PHASE_META[phase]
   const { preview, decision } = p
   const agentProposed = AGENT.has(p.call.proposedBy)
@@ -139,11 +144,11 @@ function FullCard({ p, sheet, part, className }: { p: PendingAction; sheet: bool
       data-phase={phase}
       data-tier={decision.tier}
       aria-labelledby={sheet ? undefined : titleId}
-      aria-label={sheet ? preview.title : undefined}
+      aria-label={sheet ? title : undefined}
     >
       <div className={styles.top}>
         <TierBadge tier={decision.tier} size="sm" />
-        {agentProposed ? <AiBadge engine={p.call.proposedBy === 'llm' ? 'llm' : 'offline'} /> : <Badge size="sm" variant="outline">Your tap</Badge>}
+        {agentProposed ? <AiBadge engine={p.call.proposedBy === 'llm' ? 'llm' : 'offline'} /> : <Badge size="sm" variant="outline">{USER_PROPOSED_LABEL}</Badge>}
         {phase !== 'pending' ? (
           <span className={cx(styles.phase, styles[`tone-${meta.tone}`])}>
             <span className={styles.phaseIcon} aria-hidden="true">{PHASE_ICON[phase]}</span>
@@ -152,7 +157,7 @@ function FullCard({ p, sheet, part, className }: { p: PendingAction; sheet: bool
         ) : null}
       </div>
 
-      {!sheet ? <h3 id={titleId} className={styles.title}>{preview.title}</h3> : null}
+      {!sheet ? <h3 id={titleId} className={styles.title}>{title}</h3> : null}
       {showAmount ? (
         <div className={styles.amount}>
           <Money amount={preview.amount!} currency={currency} size="xl" strike={phase === 'undone'} />
@@ -187,6 +192,12 @@ function FullCard({ p, sheet, part, className }: { p: PendingAction; sheet: bool
       {part === 'all' ? assurance : null}
 
       {!sheet ? <CardState p={p} phase={phase} now={now} /> : null}
+      {/* the card is the receipt (no toast repeats it): say the outcome for screen readers; no seconds, or it would talk every tick */}
+      {!sheet ? (
+        <p className="sr-only" role="status">
+          {phase === 'pending' ? '' : `${title}: ${meta.label}${phase === 'undoable' ? '. You can undo it from this card.' : '.'}`}
+        </p>
+      ) : null}
     </article>
   )
 }
@@ -226,7 +237,7 @@ function Seal({ hash }: { hash: string }) {
 }
 
 function CardState({ p, phase, now }: { p: PendingAction; phase: ActionPhase; now: number }) {
-  const flow = useApprovalFlow(p.id)
+  const flow = useApprovalFlow(p.id, undefined, { announce: 'card' })
   const app = useApp()
   const toast = useToast()
   switch (phase) {
@@ -307,6 +318,7 @@ function UndoButton({ p, now, onUndo, small = false }: { p: PendingAction; now: 
 
 function Receipt({ p, className }: { p: PendingAction; className?: string }) {
   const currency = useSnapshot(selectCurrency)
+  const today = useSnapshot(selectToday)
   const app = useApp()
   const toast = useToast()
   const { phase, now } = usePhase(p)
@@ -315,7 +327,7 @@ function Receipt({ p, className }: { p: PendingAction; className?: string }) {
     <div className={cx(styles.receipt, meta.muted && styles.muted, className)} data-phase={phase}>
       <span className={cx(styles.receiptIcon, styles[`tone-${meta.tone}`])} aria-hidden="true">{PHASE_ICON[phase]}</span>
       <div className={styles.receiptText}>
-        <p className={styles.receiptTitle}>{p.preview.title}</p>
+        <p className={styles.receiptTitle}>{actionTitle(p, today)}</p>
         <p className={styles.receiptMeta}>
           {phase === 'pending' && needsPin(p) ? 'Needs your PIN' : meta.label}
           {p.preview.amount !== undefined ? (

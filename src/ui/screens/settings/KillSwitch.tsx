@@ -57,7 +57,7 @@ export function KillSwitch() {
 
   if (!k.frozen) {
     return (
-      <section className={styles.kill} aria-labelledby="kill-title">
+      <section id="set-kill" className={styles.kill} aria-labelledby="kill-title">
         <div className={styles.killHead}>
           <span className={styles.killArt} aria-hidden="true">
             <BunMascot mood="happy" size={72} animated />
@@ -81,7 +81,7 @@ export function KillSwitch() {
 
   const breaker = Boolean(k.breakerAt)
   return (
-    <section className={cx(styles.kill, styles.killFrozen)} aria-labelledby="kill-title">
+    <section id="set-kill" className={cx(styles.kill, styles.killFrozen)} aria-labelledby="kill-title">
       <span className={styles.snow} aria-hidden="true" />
       <div className={styles.killHead}>
         <span className={styles.killArt} aria-hidden="true">

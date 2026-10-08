@@ -62,6 +62,15 @@ describe('analyzeBills — Mei-like month', () => {
     expect(f.suggestedAction).toEqual({ tool: 'cancel_subscription', args: { recurringId: 'rec_iqiyi' }, label: 'Cancel iQIYI' })
   })
 
+  it('F61: overlap evidence says what the CTA saves (savesPerYear), separately from what all of them cost', () => {
+    const f = findings.find((x) => x.kind === 'subscription_overlap')!
+    const iqiyi = Number(f.evidence.savesPerMonth)
+    expect(iqiyi).toBeGreaterThan(0)
+    expect(f.evidence.savesPerYear).toBe(iqiyi * 12)
+    expect(Number(f.evidence.savesPerYear)).toBeLessThan(Number(f.evidence.annualTotal))
+    expect(f.detail).toMatch(/Dropping iQIYI saves ¥[\d.,]+ a month \(¥[\d,]+ a year\)\./)
+  })
+
   it('annual cost with a dream equivalent', () => {
     const f = findings.find((x) => x.kind === 'annual_cost')!
     expect(f.severity).toBe('info')
@@ -124,7 +133,8 @@ describe('analyzeBills — duplicates', () => {
       ...weeks.map((d) => spend(d, 'Meituan', 'delivery', 45, { time: '19:00', channel: 'alipay' })),
       spend('2026-10-15', 'Meituan', 'delivery', 45, { time: '20:30', channel: 'alipay' }),
     ]
-    expect(detectRecurring(txns, TODAY, []).some((s) => s.merchant === 'Meituan')).toBe(true)
+    // a weekly takeaway is a habit, not a recurring bill (F37) — and never a duplicate either
+    expect(detectRecurring(txns, TODAY, []).some((s) => s.merchant === 'Meituan')).toBe(false)
     expect(kinds(makeCtx({ today: TODAY, txns }))).not.toContain('duplicate_charge')
   })
 
@@ -137,7 +147,7 @@ describe('analyzeBills — duplicates', () => {
       spend('2026-10-14', 'Shenzhen Metro', 'transport', 7, { time: '18:30' }),
     ]
     const ctx = makeCtx({ today: TODAY, txns })
-    expect(detectRecurring(txns, TODAY, []).length).toBeGreaterThan(0)
+    expect(detectRecurring(txns, TODAY, [])).toEqual([])
     expect(kinds(ctx)).not.toContain('duplicate_charge')
   })
 

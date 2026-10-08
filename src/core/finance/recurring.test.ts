@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { monthsBack } from '../dates'
+import { addDays, monthsBack } from '../dates'
 import { makeTxn, monthly, spend, yuan } from './__fixtures__'
 import { detectRecurring, findPriceChange, recurringId } from './recurring'
 
@@ -169,5 +169,28 @@ describe('recurringId', () => {
     expect(recurringId('云膳过桥米线')).toMatch(/^rec_[a-z0-9_]+$/)
     expect(recurringId('云膳过桥米线')).toBe(recurringId('云膳过桥米线'))
     expect(recurringId('云膳过桥米线')).not.toBe(recurringId('沙县小吃'))
+  })
+})
+
+describe('detectRecurring — F37: habits are not recurring bills', () => {
+  it('irregular corner-shop visits never become a "weekly" series, even when a near-median subset looks regular', () => {
+    const gaps = [5, 2, 7, 2, 3, 20, 5, 7, 7, 1, 6, 7, 2, 7, 7, 3, 4, 7, 7, 2]
+    let d = '2026-06-01'
+    const txns = gaps.map((g, i) => {
+      d = addDays(d, g)
+      return spend(d, 'Meiyijia', 'groceries', i % 3 === 2 ? 48 : 17)
+    })
+    expect(detectRecurring(txns, TODAY)).toEqual([])
+  })
+
+  it('a non-billed series must be most of what that merchant charges', () => {
+    const weekly = ['2026-09-02', '2026-09-09', '2026-09-16', '2026-09-23', '2026-09-30', '2026-10-07', '2026-10-14', '2026-10-21']
+    const club = weekly.map((x) => spend(x, 'Badminton Club', 'entertainment', 40))
+    expect(detectRecurring(club, TODAY)).toHaveLength(1)
+    const extras = ['2026-09-04', '2026-09-12', '2026-09-27', '2026-10-02', '2026-10-10', '2026-10-17'].map((x, i) => spend(x, 'Badminton Club', 'entertainment', 150 + i * 37))
+    expect(detectRecurring([...club, ...extras], TODAY)).toEqual([])
+    // a subscription merchant with extra one-off purchases is still a subscription
+    const apple = [...monthly('iCloud', 'subscriptions', 6, 3, MONTHS), spend('2026-09-14', 'iCloud', 'subscriptions', 68), spend('2026-10-11', 'iCloud', 'subscriptions', 30)]
+    expect(detectRecurring(apple, TODAY).map((s) => s.merchant)).toEqual(['iCloud'])
   })
 })

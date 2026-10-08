@@ -200,10 +200,12 @@ function isRealDate(d: string): boolean {
  *  P-TOOL-DISABLED       tool in mandate.disabledTools → deny
  *  P-FROZEN              mandate.frozen and tier >= 1 → deny
  *  P-OBSERVE             autonomy 'observe' and tier >= 1 → deny
- *  P-RATE                > maxActionsPerHour agent actions in the last hour → deny
+ *  P-RATE                > maxActionsPerHour agent actions in the last hour → deny (agent-proposed calls only)
  *  P-ENTITY              referenced goal/bill/txn/recurring must exist; bill payee must be verified → deny
  *  P-CAP-PER-ACTION      money amount > perActionCap → deny
  *  P-CAP-DAILY / P-CAP-MONTHLY   cumulative executed/approved agent money movement would exceed caps → deny
+ *                        (the caps and P-RATE bind the assistant: a call the user tapped — proposedBy 'user' — is the
+ *                        user's own decision and skips them; every other rule, the tier matrix and the T3 PIN still apply)
  *  P-FUNDS               transfer_to_goal amount > checking balance → deny
  *  P-LIQUIDITY           transfer_to_goal would leave checking below (unpaid bills due in the next 14 days + ¥500
  *                        buffer) → deny with a plain reason (protects against overdraft — Medina 2021)
@@ -245,7 +247,9 @@ export function evaluatePolicy(call: ToolCall, ctx: PolicyContext): PolicyDecisi
   if (tier >= 1 && mandate.autonomy === 'observe') {
     return deny('P-OBSERVE', 'Your assistant is set to Observe, so it can explain things but not take actions.')
   }
-  if (tier >= 1) {
+  // a button the user tapped is the user's own decision: the assistant's rate limit and caps don't apply to it
+  const byUser = call.proposedBy === 'user'
+  if (tier >= 1 && !byUser) {
     const lastHour = actionsInLastHour(ctx.recentAgentActions, ctx.now)
     const maxPerHour = limit(mandate.maxActionsPerHour, defaultMandate().maxActionsPerHour)
     if (lastHour >= maxPerHour) {
@@ -258,7 +262,7 @@ export function evaluatePolicy(call: ToolCall, ctx: PolicyContext): PolicyDecisi
 
   const amount = spec.movesMoney ? callAmount(call, bank) : 0
   if (spec.movesMoney) {
-    const moneyDenial = checkMoney(tool, args, amount, ctx, money)
+    const moneyDenial = checkMoney(tool, args, amount, ctx, money, byUser)
     if (moneyDenial) return deny(moneyDenial.ruleId, moneyDenial.reason)
   }
 
@@ -352,32 +356,26 @@ function checkEntities(tool: ToolName, args: Record<string, unknown>, ctx: Polic
 
 // ───────────────────────────── money checks (caps, funds, liquidity) ─────────────────────────────
 
+/** What the user can do instead when the assistant's own limit stops a money move (the caps bind the assistant, not the user). */
+function overCapNextStep(tool: ToolName): string {
+  const raise = 'raise the limit in Settings → Permissions with your PIN'
+  if (tool === 'pay_bill') return ` You can pay it yourself — tap Pay on the bill in Bills (it asks for your PIN) — or ${raise}.`
+  if (tool === 'transfer_to_goal') return ` You can move it yourself with Add money on the goal, or ${raise}.`
+  return ` You can ask for a smaller amount, or ${raise}.`
+}
+
 function checkMoney(
   tool: ToolName,
   args: Record<string, unknown>,
   amount: Minor,
   ctx: PolicyContext,
   money: (m: Minor) => string,
+  byUser = false,
 ): { ruleId: string; reason: string } | null {
-  const { mandate, bank } = ctx
-  const perAction = limit(mandate.perActionCap, 0)
-  const daily = limit(mandate.dailyCap, 0)
-  const monthly = limit(mandate.monthlyCap, 0)
-  if (amount > perAction) {
-    return { ruleId: 'P-CAP-PER-ACTION', reason: `${money(amount)} is more than the ${money(perAction)} limit you set for a single assistant action.` }
-  }
-  const used = usedThisPeriod(ctx)
-  if (used.today + amount > daily) {
-    return {
-      ruleId: 'P-CAP-DAILY',
-      reason: `The assistant has already moved ${money(used.today)} today. Another ${money(amount)} would go over your ${money(daily)} daily limit.`,
-    }
-  }
-  if (used.month + amount > monthly) {
-    return {
-      ruleId: 'P-CAP-MONTHLY',
-      reason: `The assistant has already moved ${money(used.month)} this month. Another ${money(amount)} would go over your ${money(monthly)} monthly limit.`,
-    }
+  const { bank } = ctx
+  if (!byUser) {
+    const capDenial = checkCaps(tool, amount, ctx, money)
+    if (capDenial) return capDenial
   }
 
   const checking = checkingAccount(bank)
@@ -399,6 +397,35 @@ function checkMoney(
     const paysNow = typeof args.date !== 'string' || args.date <= bank.today
     if (paysNow && (!checking || amount > checking.balance)) {
       return { ruleId: 'P-FUNDS', reason: `You only have ${money(Math.max(0, checking?.balance ?? 0))} in checking, which isn't enough to pay ${money(amount)} now.` }
+    }
+  }
+  return null
+}
+
+/**
+ * The assistant's own limits (P-CAP-PER-ACTION / P-CAP-DAILY / P-CAP-MONTHLY). They bind agent-proposed calls only:
+ * a button the user tapped is the user's decision (still tier rules, PIN for T3, entity, funds and liquidity checks).
+ */
+function checkCaps(tool: ToolName, amount: Minor, ctx: PolicyContext, money: (m: Minor) => string): { ruleId: string; reason: string } | null {
+  const { mandate } = ctx
+  const perAction = limit(mandate.perActionCap, 0)
+  const daily = limit(mandate.dailyCap, 0)
+  const monthly = limit(mandate.monthlyCap, 0)
+  const next = overCapNextStep(tool)
+  if (amount > perAction) {
+    return { ruleId: 'P-CAP-PER-ACTION', reason: `${money(amount)} is more than the ${money(perAction)} limit you set for a single assistant action.${next}` }
+  }
+  const used = usedThisPeriod(ctx)
+  if (used.today + amount > daily) {
+    return {
+      ruleId: 'P-CAP-DAILY',
+      reason: `The assistant has already moved ${money(used.today)} today. Another ${money(amount)} would go over your ${money(daily)} daily limit.${next}`,
+    }
+  }
+  if (used.month + amount > monthly) {
+    return {
+      ruleId: 'P-CAP-MONTHLY',
+      reason: `The assistant has already moved ${money(used.month)} this month. Another ${money(amount)} would go over your ${money(monthly)} monthly limit.${next}`,
     }
   }
   return null
@@ -474,16 +501,33 @@ function actionsInLastHour(records: AgentActionRecord[] | undefined, now: ISODat
 
 // ───────────────────────────── circuit breaker ─────────────────────────────
 
+/** A denied attempt as the breaker sees it. `ruleIds` / `proposedBy` are optional extras that sharpen the verdict. */
+export type BreakerRecord = AgentActionRecord & {
+  tainted?: boolean
+  decision?: PolicyDecision['decision']
+  /** the denial's rule ids, when the caller has them (P-T4-PROHIBITED, P-LLM-NOT-EXPOSED, P-CAP-…) */
+  ruleIds?: string[]
+  proposedBy?: ToolCall['proposedBy']
+}
+
+/** Denials that are attack signals in themselves — whatever the tool, the turn or the amount. */
+export const BREAKER_SIGNAL_RULES: readonly string[] = ['P-UNKNOWN-TOOL', 'P-T4-PROHIBITED', 'P-LLM-NOT-EXPOSED']
+
 /**
- * Circuit breaker (human-takeover trigger): trip when, within the last 10 minutes, there were >= 3 denied
- * money-moving agent attempts, or any denied money-moving attempt in a tainted turn. The controller then
- * sets mandate.frozen = true, breakerTrippedAt/breakerReason, and audits 'circuit_breaker'.
- * Tier-4 attempts (add_payee, change_mandate, …) count as money-moving: they are the first step of an induced
- * transfer or a privilege escalation. Pass `since` (e.g. when the user last un-froze the agent) so attempts
- * from before the reset don't immediately re-trip it.
+ * Circuit breaker (human-takeover trigger). Only SUSPICIOUS denials count — never the ordinary "no" to something the
+ * user asked for (over a cap, an empty pot, the liquidity cushion, invalid details): those are answered with a plain
+ * reason and a next step, and freezing the assistant over them would only punish honest mistakes.
+ * Suspicious = a tier-4 attempt (add_payee, transfer_external, change_mandate, … — the first step of an induced
+ * transfer or a privilege escalation; the LLM is never even offered them), an action that doesn't exist, a denial
+ * with a signal rule (P-UNKNOWN-TOOL, P-T4-PROHIBITED, P-LLM-NOT-EXPOSED), or any denied money-moving / tier-4 attempt
+ * in a tainted turn (right after reading outside text).
+ * Trips on one tainted attempt, or on BREAKER_MAX_DENIALS suspicious denials within BREAKER_WINDOW_MINUTES. The
+ * controller then sets mandate.frozen = true, breakerTrippedAt/breakerReason, and audits 'circuit_breaker'; the
+ * reason names what was actually blocked. Pass `since` (e.g. when the user last un-froze the agent) so attempts from
+ * before the reset don't immediately re-trip it.
  */
 export function shouldTripBreaker(
-  recent: (AgentActionRecord & { tainted?: boolean; decision?: PolicyDecision['decision'] })[],
+  recent: BreakerRecord[],
   now: ISODateTime,
   opts: { since?: ISODateTime } = {},
 ): { trip: boolean; reason?: string } {
@@ -492,35 +536,63 @@ export function shouldTripBreaker(
   const windowStart = nowMs - BREAKER_WINDOW_MINUTES * 60_000
   const denied = (recent ?? []).filter((r) => {
     if (r.decision !== 'deny' && r.status !== 'denied') return false
-    if (!isHighRisk(r)) return false
     const ms = Date.parse(r.ts)
     if (!Number.isFinite(ms) || !Number.isFinite(nowMs)) return true
     return ms > windowStart && ms >= sinceMs
   })
-  const injected = denied.find((r) => r.tainted)
+  const injected = denied.find((r) => r.tainted && isHighRisk(r))
   if (injected) {
     return {
       trip: true,
       reason: `A blocked attempt to ${actionPhrase(injected.tool)} came right after reading outside text (possible prompt injection), so the assistant was paused.`,
     }
   }
-  if (denied.length >= BREAKER_MAX_DENIALS) {
-    return {
-      trip: true,
-      reason: `${denied.length} blocked attempts to move money in ${BREAKER_WINDOW_MINUTES} minutes, so the assistant was paused for your safety.`,
-    }
+  const suspicious = denied.filter(isAttackSignal)
+  if (suspicious.length >= BREAKER_MAX_DENIALS) {
+    return { trip: true, reason: `${describeBlocked(suspicious)}, so the assistant was paused for your safety.` }
   }
   return { trip: false }
 }
 
+/** Money-moving or tier-4 (or unknown) tool: what a tainted turn must never get near. */
 function isHighRisk(r: AgentActionRecord): boolean {
-  if (!isToolName(r.tool)) return Number.isFinite(r.amount) && r.amount > 0
+  if (!isToolName(r.tool)) return true
   const spec = TOOL_SPECS[r.tool]
   return spec.movesMoney || spec.tier === 4
 }
 
+function isAttackSignal(r: BreakerRecord): boolean {
+  if (!isToolName(r.tool) || TOOL_SPECS[r.tool].tier === 4) return true
+  return (r.ruleIds ?? []).some((id) => BREAKER_SIGNAL_RULES.includes(id))
+}
+
+/** "3 blocked attempts to change its own permissions in 10 minutes" / "3 blocked attempts in 10 minutes (2 to …, 1 to …)" */
+function describeBlocked(records: BreakerRecord[]): string {
+  const counts = new Map<string, number>()
+  for (const r of records) {
+    const what = actionPhrase(r.tool)
+    counts.set(what, (counts.get(what) ?? 0) + 1)
+  }
+  const window = `in ${BREAKER_WINDOW_MINUTES} minutes`
+  if (counts.size === 1) return `${records.length} blocked attempts to ${[...counts.keys()][0]} ${window}`
+  const parts = [...counts].sort((a, b) => b[1] - a[1]).map(([what, n]) => `${n} to ${what}`)
+  return `${records.length} blocked attempts ${window} (${parts.join(', ')})`
+}
+
 function actionPhrase(tool: string): string {
-  return isToolName(tool) ? TOOL_SPECS[tool].label.toLowerCase() : 'move money'
+  if (!isToolName(tool)) return 'run an action that doesn\'t exist'
+  return BREAKER_PHRASES[tool] ?? TOOL_SPECS[tool].label.toLowerCase()
+}
+
+const BREAKER_PHRASES: Partial<Record<ToolName, string>> = {
+  change_mandate: 'change its own permissions',
+  add_payee: 'add a new payee',
+  transfer_external: 'send money to someone else',
+  invest: 'buy investments',
+  apply_credit: 'apply for credit',
+  transfer_to_goal: 'move money to a goal pot',
+  withdraw_from_goal: 'move money back from a goal pot',
+  pay_bill: 'pay a bill',
 }
 
 // ───────────────────────────── amounts & lookups ─────────────────────────────

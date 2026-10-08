@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import type { FinanceContext } from '../types'
-import { arifLike, checking, daily, makeCtx, MEI_DREAMS, meiLike, yuan } from './__fixtures__'
+import { arifLike, checking, daily, makeBill, makeCtx, MEI_DREAMS, meiLike, monthly, spend, yuan } from './__fixtures__'
 import { checkAffordability } from './affordability'
+import { delayShort } from './copy'
+import { computeMirror } from './mirror'
 import { summarizeMonth } from './summary'
 
 /** day 10, ¥100/day, no history → projected ¥3,100 against a ¥5,000 target (¥1,900 headroom, 10% = ¥500) */
@@ -38,9 +40,15 @@ describe('checkAffordability', () => {
     expect(checkAffordability(c, yuan(400), 'socks', 'shopping').verdict).toBe('go')
   })
 
-  it("'skip' when the month would end over target", () => {
+  it("'skip' when the month would end clearly over target (beyond the mirror's 5% band)", () => {
+    const r = checkAffordability(ctx(), yuan(2_300))
+    expect(r).toMatchObject({ verdict: 'skip', overTargetBy: yuan(400), projectedAfter: yuan(5_400), basis: 'projection' })
+    expect(r.reasons[0]).toBe('With this, the month would end around ¥5,400 — ¥400 over your ¥5,000 target.')
+  })
+
+  it("'think' (not skip) when it lands within the mirror's 5% band — the mirror would still say on track", () => {
     const r = checkAffordability(ctx(), yuan(2_000))
-    expect(r).toMatchObject({ verdict: 'skip', overTargetBy: yuan(100) })
+    expect(r).toMatchObject({ verdict: 'think', overTargetBy: yuan(100) })
     expect(r.reasons[0]).toBe('With this, the month would end around ¥5,100 — ¥100 over your ¥5,000 target.')
   })
 
@@ -53,7 +61,65 @@ describe('checkAffordability', () => {
   it('an already-over month is a gentle skip for any purchase', () => {
     const r = checkAffordability(meiLike(), yuan(89))
     expect(r.verdict).toBe('skip')
-    expect(r.reasons[0]).toMatch(/^You're already on pace to end the month ¥[\d,]+ over your ¥9,500 target\.$/)
+    expect(r.reasons[0]).toMatch(/^You're already ¥[\d,]+ over your ¥9,500 target this month\.$/)
+  })
+
+  describe('F27: one verdict rule with the Dream Mirror', () => {
+    /** 1 Nov: an October at ~¥9,000 behind, ¥120 spent today, rent ¥4,200 due today → projection ≈ target + 20% */
+    function newMonth(): FinanceContext {
+      return makeCtx({
+        today: '2026-11-01',
+        txns: [
+          ...monthly('Landlord', 'housing', 4_200, 1, ['2026-08', '2026-09', '2026-10'], { billId: 'x' }),
+          ...daily('2026-08-01', '2026-10-31', 'Canteen', 'dining', 200),
+          spend('2026-11-01', 'Canteen', 'dining', 120),
+        ],
+        bills: [makeBill({ id: 'bill_rent_2026-11', name: 'Rent', category: 'housing', amountDue: yuan(4_200), dueDate: '2026-11-01', period: '2026-11' })],
+        accounts: [checking(30_000)],
+        dreams: MEI_DREAMS,
+        profile: { targetSpend: yuan(9_500), monthlyIncome: yuan(18_500) },
+      })
+    }
+
+    it('in the first days the mirror has no pace verdict, so a small purchase is judged on spent + bills, not the projection', () => {
+      const c = newMonth()
+      const s = summarizeMonth(c)
+      // the projection runs > 5% over the target, but on day 1 the mirror (rightly) gives no pace verdict
+      expect(s.projected).toBeGreaterThan(yuan(9_500) * 1.05)
+      expect(computeMirror(c).status).toBe('on_track')
+      const r = checkAffordability(c, yuan(20), 'coffee', 'coffee_tea')
+      expect(r.verdict).toBe('go')
+      expect(r).toMatchObject({ basis: 'spent_and_bills', projectedAfter: s.spent + yuan(4_200) + yuan(20) })
+      expect(r.reasons.join(' ')).not.toMatch(/on pace to end the month/)
+    })
+
+    it('a purchase within today\'s safe-to-spend is never a skip just because the pace runs hot', () => {
+      const c = meiLike()
+      // Mei is over already → skip regardless; take an under-target month that paces over instead
+      const hot = makeCtx({
+        today: '2026-10-12',
+        txns: [...daily('2026-07-01', '2026-09-30', 'Canteen', 'dining', 400), ...daily('2026-10-01', '2026-10-12', 'Canteen', 'dining', 380)],
+        accounts: [checking(50_000)],
+        dreams: MEI_DREAMS,
+        profile: { targetSpend: yuan(10_000), monthlyIncome: yuan(18_500) },
+      })
+      expect(computeMirror(hot).status).toBe('pace_over')
+      const s = summarizeMonth(hot)
+      expect(s.safeToSpendToday).toBeGreaterThan(yuan(20))
+      const small = checkAffordability(hot, yuan(20))
+      expect(small.verdict).toBe('think')
+      expect(small.reasons[0]).toMatch(/fits today's safe-to-spend, so it's your call/)
+      expect(checkAffordability(hot, s.safeToSpendToday + yuan(100)).verdict).toBe('skip')
+      expect(checkAffordability(c, yuan(20)).verdict).toBe('skip')
+    })
+
+    it('delay text uses the one short form', () => {
+      const r = checkAffordability(meiLike(), yuan(1_899), 'AirPods')
+      expect(r.delayText).toBe('4 wks')
+      expect(delayShort(9)).toBe('9 days')
+      expect(delayShort(18)).toBe('3 wks')
+      expect(delayShort(120)).toBe('4 mo')
+    })
   })
 
   it('includes goal delay, hours of work and dream equivalents', () => {

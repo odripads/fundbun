@@ -53,6 +53,8 @@ export interface GateResult {
   outcome?: ToolOutcome
   pending?: PendingAction
   reason?: string
+  /** an identical proposal was already waiting: that card is shown again instead of a second one */
+  reused?: boolean
 }
 
 /** Stored in PendingAction.result once executed. */
@@ -67,7 +69,7 @@ const AGENT_PROPOSERS = new Set<ToolCall['proposedBy']>(['llm', 'offline'])
 
 // ───────────────────────────── policy context ─────────────────────────────
 
-export function agentRecords(state: AppState, excludeId?: string): (AgentActionRecord & { tainted: boolean; decision: Decision })[] {
+export function agentRecords(state: AppState, excludeId?: string): (AgentActionRecord & { tainted: boolean; decision: Decision; ruleIds: string[]; proposedBy: ToolCall['proposedBy'] })[] {
   return state.pending
     .filter((p) => p.id !== excludeId && AGENT_PROPOSERS.has(p.call.proposedBy))
     .map((p) => ({
@@ -77,6 +79,9 @@ export function agentRecords(state: AppState, excludeId?: string): (AgentActionR
       status: p.status,
       tainted: p.decision.tainted,
       decision: p.decision.decision,
+      // the breaker weighs denials by rule (P-T4-PROHIBITED, P-LLM-NOT-EXPOSED … are attack signals, a cap is not)
+      ruleIds: [...(p.decision.ruleIds ?? [])],
+      proposedBy: p.call.proposedBy,
     }))
 }
 
@@ -165,10 +170,36 @@ export function newCall(tool: string, args: Record<string, unknown>, proposedBy:
 
 export function runGated(host: AgentHost, turn: Turn, call: ToolCall, opts: GateOptions = {}): GateResult {
   const state = host.state()
+  const tier = isToolName(call.tool) ? TOOL_SPECS[call.tool].tier : 4
+  const twin = tier >= 1 && tier <= 3 && !opts.planStep ? waitingTwin(state, call, host.now()) : undefined
+  if (twin) return reuseTwin(host, turn, call, twin)
   const decision = llmGuard(call, evaluatePolicy(call, policyContext(host, state, turn.tainted)))
   trace(turn, 'tool_call', `${call.proposedBy} → ${call.tool}`, { callId: call.id, tool: call.tool, args: summarizeArgs(call.args), proposedBy: call.proposedBy })
-  const tier = isToolName(call.tool) ? TOOL_SPECS[call.tool].tier : 4
   return tier === 0 ? runRead(host, turn, call, decision, opts) : runAction(host, turn, call, decision, opts)
+}
+
+/** A proposal with the same tool and arguments that is still waiting for the user (not expired). */
+function waitingTwin(state: AppState, call: ToolCall, now: string): PendingAction | undefined {
+  const key = stableArgs(call.args)
+  return state.pending.find((p) => p.status === 'pending' && p.call.tool === call.tool && stableArgs(p.call.args) === key && !isAfter(now, p.expiresAt))
+}
+
+function stableArgs(args: Record<string, unknown>): string {
+  return JSON.stringify(Object.keys(args ?? {}).filter((k) => args[k] !== undefined).sort().map((k) => [k, args[k]]))
+}
+
+/**
+ * "Move ¥200 to my Birkin fund" three times leaves one card, not three: the waiting twin is shown again (and
+ * stays the one the user approves), so a double-send can never move the money twice.
+ */
+function reuseTwin(host: AgentHost, turn: Turn, call: ToolCall, twin: PendingAction): GateResult {
+  trace(turn, 'tool_call', `${call.proposedBy} → ${call.tool}`, { callId: call.id, tool: call.tool, args: summarizeArgs(call.args), proposedBy: call.proposedBy })
+  trace(turn, 'policy', `${twin.decision.decision.toUpperCase()} · ${call.tool} (already waiting)`, { tool: call.tool, decision: twin.decision.decision, tier: twin.decision.tier, ruleIds: twin.decision.ruleIds, reasons: twin.decision.reasons, pendingId: twin.id, reused: true })
+  host.audit('agent', 'tool_call', `${call.proposedBy} proposed ${call.tool} again — the waiting card was reused`, { callId: call.id, tool: call.tool, proposedBy: call.proposedBy, reusedPendingId: twin.id, args: summarizeArgs(call.args) })
+  addCard(turn, { type: 'action', pendingId: twin.id })
+  addSource(turn, { tool: call.tool, args: summarizeArgs(call.args), preview: twin.preview, reasons: twin.decision.reasons })
+  if (turn.source === 'chat') turn.dialogue.lastProposalId = twin.id
+  return { call, decision: twin.decision, status: 'pending', pending: twin, reason: twin.decision.reasons[0], reused: true }
 }
 
 function runRead(host: AgentHost, turn: Turn, call: ToolCall, decision: PolicyDecision, opts: GateOptions): GateResult {

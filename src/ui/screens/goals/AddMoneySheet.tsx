@@ -5,8 +5,8 @@ import { CURRENCY_SYMBOL, parseAmount, toMajor } from '../../../core/money'
 import type { DreamItem, GoalProgress } from '../../../core/types'
 import { DreamImage } from '../../components/brand'
 import { Button, Callout, Chip, ProgressBar, Sheet, TextField, useToast } from '../../components/ds'
-import { shallowEqual, useApp, useSafeAction, useSnapshot } from '../../state'
-import { billsDueWithin, contributionError, fmtWhole, liquidityNote, pctAfterAdding, quickAmounts, remainingOf } from './model'
+import { sandboxToday, shallowEqual, useApp, useSafeAction, useSnapshot } from '../../state'
+import { billsDueWithin, contributionError, fmtWhole, isNegativeInput, liquidityNote, pctAfterAdding, quickAmounts, remainingOf } from './model'
 import styles from './Goals.module.css'
 
 export interface AddMoneySheetProps {
@@ -18,7 +18,7 @@ export interface AddMoneySheetProps {
 const selectFunds = (s: AppSnapshot) => ({
   available: s.state.bank.accounts.find((a) => a.type === 'checking')?.balance ?? 0,
   bills: s.derived.upcomingBills,
-  today: s.state.bank.today,
+  today: sandboxToday(s),
   currency: s.state.profile?.currency ?? 'CNY',
 })
 
@@ -45,8 +45,10 @@ export function AddMoneySheet({ item, progress, onClose }: AddMoneySheetProps) {
 
   const target = shown?.item
   const p = item ? progress : shown?.progress
-  const amount = parseAmount(text, currency)
-  const error = contributionError(amount, available, currency)
+  // a minus sign is never dropped silently: "-50" is not "Stash ¥50"
+  const negative = isNegativeInput(text)
+  const amount = negative ? null : parseAmount(text, currency)
+  const error = contributionError(amount, available, currency, text)
   const remaining = remainingOf(p)
   const chips = quickAmounts(remaining, available, currency)
   const after = pctAfterAdding(p, amount ?? 0)
@@ -81,7 +83,7 @@ export function AddMoneySheet({ item, progress, onClose }: AddMoneySheetProps) {
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button iconStart={<PiggyBank />} loading={busy} disabled={Boolean(attempted && error)} onClick={() => void submit()}>
+          <Button iconStart={<PiggyBank />} loading={busy} disabled={Boolean((attempted || negative) && error)} onClick={() => void submit()}>
             {amount && !error ? `Stash ${fmtWhole(amount, currency)}` : 'Stash it'}
           </Button>
         </>
@@ -98,7 +100,7 @@ export function AddMoneySheet({ item, progress, onClose }: AddMoneySheetProps) {
             placeholder="0"
             value={text}
             onChange={(e) => setText(e.currentTarget.value)}
-            error={attempted && error ? error : undefined}
+            error={(attempted || negative) && error ? error : undefined}
             className={styles.amountField}
           />
           {chips.length > 0 ? (
@@ -116,8 +118,8 @@ export function AddMoneySheet({ item, progress, onClose }: AddMoneySheetProps) {
               max={100}
               tone="under"
               label={`${target.name} after this`}
-              valueLabel={`${Math.floor(p.pct)}% → ${after}%`}
-              valueText={`${after}% saved after this`}
+              valueLabel={amount && !error ? `${Math.floor(p.pct)}% → ${after}%` : `${Math.floor(p.pct)}% saved`}
+              valueText={amount && !error ? `${after}% saved after this` : `${Math.floor(p.pct)}% saved so far`}
               markers={[{ value: p.pct }]}
             />
           ) : null}

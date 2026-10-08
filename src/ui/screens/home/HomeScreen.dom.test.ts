@@ -217,3 +217,72 @@ describe('HomeScreen — the Dream Mirror', () => {
     expect(container.textContent).toContain('August:')
   })
 })
+
+describe('Home regressions', () => {
+  const deckOf = (container: HTMLElement) => Array.from(container.querySelectorAll('section')).find((s) => s.querySelector('h2')?.textContent?.startsWith('Tripwires'))
+
+  it('F64: "Got it" moves focus to the next card; dismissing the last one lands on the next section', async () => {
+    const app = demo('mei')
+    const { container } = await renderHome(app)
+    const deck = deckOf(container)!
+    const first = deck.querySelector('article h3')!.textContent
+    await click(byText(deck, 'Got it', 'button'))
+    await flush()
+    const now = deckOf(container)!
+    expect(now.querySelector('article h3')!.textContent).not.toBe(first)
+    expect(document.activeElement).toBe(now.querySelector('article h3'))
+    await click(byText(now, 'Got it', 'button'))
+    await flush()
+    expect(deckOf(container)).toBeUndefined()
+    expect(document.activeElement).not.toBe(document.body)
+    expect(document.activeElement?.tagName).toMatch(/^H[23]$/)
+  })
+
+  it('F64: "Edit tripwires" deep-links to the Tripwires section of Settings', async () => {
+    const { container } = await renderHome(demo('mei'))
+    await click(byText(deckOf(container)!, 'Edit tripwires', 'button'))
+    expect(window.location.hash).toBe('#/settings?s=tripwires')
+  })
+
+  it('F55: the deck’s time sits on the sandbox calendar', async () => {
+    const app = demo('mei')
+    const { container } = await renderHome(app)
+    const time = deckOf(container)!.querySelector('time')!
+    expect(time.getAttribute('dateTime')).toMatch(/^2026-10-(0\d|1\d|2[0-2])$/)
+    expect(time.textContent).not.toMatch(/Oct 8\b/)
+  })
+
+  it('F41: a hero action that ran shows what ran, not the next re-derived suggestion', async () => {
+    const app = demo('mei')
+    const { container } = await renderHome(app)
+    const cta = app.getSnapshot().derived.mirror!.cta!
+    await click(byText(container, cta.label, 'button'))
+    await flush()
+    const ran = app.getSnapshot().state.pending.at(-1)!
+    expect(ran.status).toBe('executed')
+    const hero = container.querySelector('section[data-status]')!
+    expect(hero.querySelector('[role="status"]')!.textContent).toBe(`Done · ${ran.preview.title}`)
+  })
+
+  it('F67: a brand-new user with no bills reads "No bills yet", not "every bill is paid"', async () => {
+    const app = createTestApp({ storage: memoryStorage() })
+    const res = app.completeOnboarding({
+      name: 'Lin',
+      currency: 'CNY',
+      monthlyIncome: 1_000_000,
+      targetSpend: 600_000,
+      payday: 10,
+      tone: 'gentle',
+      consent: { financialData: true, llmProcessing: false, notifications: false },
+      dreams: [{ name: 'Camera', price: 500_000, image: 'preset:camera', kind: 'goal' }],
+      autonomy: 'copilot',
+      pin: '2580',
+      dataSource: { kind: 'empty', startingBalance: 300_000 },
+    })
+    expect(res.ok).toBe(true)
+    const { container } = await renderHome(app)
+    expect(container.textContent).toContain('No bills yet')
+    expect(container.textContent).not.toContain('every bill is paid')
+  })
+})
+

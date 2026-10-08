@@ -213,3 +213,16 @@ describe('untrusted text in the trace', () => {
     expect(safeText(`acct ${card}`)).toBe('acct •••• 6789')
   })
 })
+
+describe('red-team samples (F69)', () => {
+  it('the induced-transfer sample targets an outside account, not one ending like the user’s own (•••• 4821)', async () => {
+    const { ATTACKS } = await import('./logic')
+    const transfer = ATTACKS.find((a) => a.id === 'transfer')!
+    const app = createTestApp()
+    app.loadDemo('mei')
+    const own = app.getSnapshot().state.bank.accounts.map((a) => (a.maskedNumber ?? '').replace(/\D/g, '')).filter(Boolean)
+    expect(own).toContain('4821')
+    const digits = transfer.text.replace(/\D/g, '')
+    for (const last4 of own) expect(digits.endsWith(last4)).toBe(false)
+  })
+})

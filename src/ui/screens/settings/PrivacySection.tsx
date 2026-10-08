@@ -10,7 +10,7 @@ import { Badge, Button, Card, Dialog, List, ListItem, SectionHeader, TextField, 
 import { navigate } from '../../router'
 import { shallowEqual, useApp, useSnapshot } from '../../state'
 import { byteSize, downloadText, exportFileName } from './download'
-import { DELETE_PHRASE, deleteConfirmed } from './logic'
+import { DELETE_PHRASE, consentVersionLabel, deleteConfirmed, engineCopy } from './logic'
 import styles from './Settings.module.css'
 
 function selectPrivacy(s: AppSnapshot) {
@@ -67,10 +67,8 @@ export function PrivacySection() {
     toast.show({ tone: ok ? 'success' : 'warn', title: ok ? 'Audit log exported' : 'Downloads aren’t available here', message: ok ? `${p.auditCount} entries, one JSON line each, hashes included.` : undefined })
   }
 
-  const engineLine = p.engine === 'llm' && p.llm.available
-    ? `${p.llm.provider ?? 'LLM'}${p.llm.model ? ` · ${p.llm.model}` : ''}`
-    : 'On-device Bun Engine only'
-  const engineWhy = p.engine === 'llm' ? 'Answers use the LLM; permissions are still decided on this device.' : p.llm.reason ?? (p.llm.checked ? 'The LLM gateway isn’t reachable.' : 'Checking the LLM gateway…')
+  const engine = engineCopy(p)
+  const version = consentVersionLabel(p.version)
 
   return (
     <section id="set-privacy" aria-labelledby="set-privacy-h" className={styles.section}>
@@ -81,7 +79,7 @@ export function PrivacySection() {
           <span className={styles.consentText}>
             <span className={styles.consentTitle}>Financial data processing</span>
             <span className={styles.consentSub}>
-              {p.financial ? `Granted${p.grantedAt ? ` ${new Date(p.grantedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}` : ''}${p.version ? ` · v${p.version}` : ''} · required. To withdraw, delete your data.` : 'Not granted.'}
+              {p.financial ? `Granted${p.grantedAt ? ` ${new Date(p.grantedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}` : ''}${version ? ` · ${version}` : ''} · required. To withdraw, delete your data.` : 'Not granted.'}
             </span>
           </span>
           <Badge variant={p.financial ? 'under' : 'neutral'} size="sm">{p.financial ? 'On' : 'Off'}</Badge>
@@ -98,8 +96,14 @@ export function PrivacySection() {
         <div className={styles.engineRow}>
           <span className={styles.rowIcon} aria-hidden="true">{p.engine === 'llm' ? <Cloud /> : <Cpu />}</span>
           <span className={styles.consentText} role="status" aria-live="polite">
-            <span className={styles.consentTitle}>{engineLine}</span>
-            <span className={styles.consentSub}>{engineWhy}</span>
+            <span className={styles.consentTitle}>{engine.line}</span>
+            <span className={styles.consentSub}>{engine.why}</span>
+            {engine.detail ? (
+              <details className={styles.engineDetail}>
+                <summary>Details</summary>
+                <span>{engine.detail}</span>
+              </details>
+            ) : null}
           </span>
           <Button size="sm" variant="ghost" iconStart={<RefreshCw />} loading={checking} onClick={check}>Check</Button>
         </div>

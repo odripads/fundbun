@@ -349,3 +349,12 @@ describe('buildOnboardingInput → the real controller', () => {
     expect(r.ok && r.input.consent).toEqual({ financialData: true, llmProcessing: false, notifications: true })
   })
 })
+
+describe('the name error says what to do (F58)', () => {
+  it('does not just repeat the field label', () => {
+    const d = { ...emptyDraft(), name: '  ' } as OnboardingDraft
+    const e = validateMoney(d)
+    expect(e.name).toBe('Add a first name (or nickname) so Bun can greet you')
+    expect(e.name).not.toBe('What should Bun call you?')
+  })
+})

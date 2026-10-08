@@ -123,6 +123,9 @@ function categoryChanges(env: Env): Scored[] {
   const prevLabel = s.isCurrent ? `this point in ${monthLabel(prevMonth, 'short').split(' ')[0]}` : monthLabel(prevMonth, 'short').split(' ')[0]
   const changes: { category: CategoryId; now: Minor; before: Minor; diff: Minor }[] = []
   for (const category of new Set<CategoryId>([...cur.keys(), ...prev.keys()])) {
+    // rent, utilities, phone, subscriptions are paid on a schedule: a month-to-date gap is when the bill lands
+    // (or that it hasn't been paid yet), not a change in habits — "Rent down 100%, nice one" is never true
+    if (FIXED_CATEGORIES.has(category)) continue
     const now = cur.get(category)?.spent ?? 0
     const before = prev.get(category)?.spent ?? 0
     const diff = now - before
@@ -373,7 +376,8 @@ function savingsRate(env: Env): Scored[] {
  * equivalent and, where useful, a suggestedAction. Max 8, most useful first.
  *
  * For the current month, category changes compare like with like: month-to-date vs the same days of the
- * previous month.
+ * previous month. Fixed, scheduled categories (rent, utilities, phone, insurance, subscriptions) are left out of
+ * category_up / category_down: their month-to-date gap is billing timing, not behaviour.
  */
 export function generateInsights(ctx: FinanceContext, month?: YearMonth): Insight[] {
   const m = month ?? ym(ctx.bank.today)

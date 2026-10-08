@@ -6,7 +6,7 @@ import { KeyRound } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import type { Result } from '../../../core/app-api'
 import { PinPad, Sheet } from '../../components/ds'
-import { errorText, useSnapshot } from '../../state'
+import { errorText } from '../../state'
 import styles from './Settings.module.css'
 
 export interface PinSheetProps {
@@ -22,11 +22,7 @@ export interface PinSheetProps {
   onClose: () => void
 }
 
-const selectDemo = (s: { state: { profile: { personaId?: string } | null; bank: { personaId?: string } } }) =>
-  Boolean(s.state.profile?.personaId ?? s.state.bank.personaId)
-
 export function PinSheet({ open, title, description, children, label = 'Enter your PIN', onSubmit, onSuccess, onClose }: PinSheetProps) {
-  const demo = useSnapshot(selectDemo)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [errorKey, setErrorKey] = useState(0)
@@ -60,7 +56,8 @@ export function PinSheet({ open, title, description, children, label = 'Enter yo
         <PinPad minLength={4} maxLength={6} label={label} onComplete={complete} error={error} errorKey={errorKey} busy={busy} onCancel={onClose} />
         <p className={styles.pinFoot}>
           <KeyRound aria-hidden="true" />
-          {demo ? 'Sandbox demo PIN: 2580. ' : ''}Your PIN is checked on this device and never stored in plain text.
+          {/* no demo-PIN hint here: anyone at the screen could unfreeze or escalate — it lives in the sandbox controls */}
+          Your PIN is checked on this device and never stored in plain text.
         </p>
       </div>
     </Sheet>

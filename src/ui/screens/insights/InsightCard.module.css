@@ -86,17 +86,17 @@
 
 .sev-over {
   background: var(--over-soft);
-  color: var(--over);
+  color: var(--over-text);
 }
 
 .sev-under {
   background: var(--under-soft);
-  color: var(--under);
+  color: var(--under-text);
 }
 
 .sev-accent {
   background: var(--accent-soft);
-  color: color-mix(in srgb, var(--accent-strong) 80%, var(--text));
+  color: var(--accent-text);
 }
 
 .cat {
@@ -224,14 +224,14 @@
 }
 
 .done strong {
-  color: var(--under);
+  color: var(--under-text);
 }
 
 .done svg {
   flex: none;
   width: 16px;
   height: 16px;
-  color: var(--under);
+  color: var(--under-text);
   stroke-width: 3;
 }
 

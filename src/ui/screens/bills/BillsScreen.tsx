@@ -7,7 +7,7 @@ import { useCallback, useEffect } from 'react'
 import type { AppSnapshot } from '../../../core/app-api'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
 import { useRoute } from '../../router'
-import { shallowEqual, useSnapshot } from '../../state'
+import { sandboxToday, shallowEqual, useSnapshot } from '../../state'
 import { useActionRunner } from './actions'
 import { BillsHero } from './BillsHero'
 import { CsvImportCard } from './CsvImportCard'
@@ -21,7 +21,7 @@ import styles from './BillsScreen.module.css'
 function selectBills(s: AppSnapshot) {
   return {
     profile: s.state.profile,
-    today: s.state.bank.today,
+    today: sandboxToday(s),
     bills: s.state.bank.bills,
     payees: s.state.bank.payees,
     dreams: s.state.dreams,

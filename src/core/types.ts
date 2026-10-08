@@ -72,6 +72,8 @@ export interface Account {
   goalId?: string
   /** e.g. "•••• 4821" — never a full number */
   maskedNumber?: string
+  /** a goal pot whose dream was removed: kept for the ledger, but no standing order or new goal ever uses it again */
+  closed?: boolean
 }
 
 export type PayChannel = 'wechat_pay' | 'alipay' | 'card' | 'bank_transfer' | 'cash'
@@ -476,7 +478,12 @@ export interface Tripwire {
 export interface TripwireEvent {
   id: string
   tripwireId: string
+  /** real (device) time the event was recorded — for the audit log */
   firedAt: ISODateTime
+  /** the app's own day it fired on (bank.today: the sandbox clock for demo personas) — what screens should show */
+  firedOn?: ISODate
+  /** month-level kinds (month_pct, category_pct, pace_over): the month the alert is about */
+  month?: YearMonth
   txnId?: string
   title: string
   message: string
@@ -497,9 +504,17 @@ export interface AffordabilityResult {
   remainingAfter: Minor
   /** how far over target the month would end (0 if not) */
   overTargetBy: Minor
+  /**
+   * where the month would end with the purchase, on `basis` (optional for older saved cards).
+   * 'projection' = pace model + bills still due; 'spent_and_bills' = spent so far + bills still due (first days of a month)
+   */
+  projectedAfter?: Minor
+  basis?: 'projection' | 'spent_and_bills'
   hoursOfWork: number
   goalName?: string
   goalDelayDays?: number
+  /** goalDelayDays in the one short form every surface shows ("18 days", "5 wks"; finance/copy.delayShort) */
+  delayText?: string
   equivalents: DreamEquivalent[]
   reasons: string[]
 }

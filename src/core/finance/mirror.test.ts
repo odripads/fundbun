@@ -294,19 +294,35 @@ describe('mirrorHistory & couldveCollection', () => {
     expect(mirrorHistory(meiLike(), 0)).toEqual([])
   })
 
-  it("adds up the realised overspend into a \"could've\" collection", () => {
+  it("F52: one definition — the NET over/under of the finished months; the current month is reported as soFar", () => {
     const ctx = meiLike()
     const h = mirrorHistory(ctx, 4)
     const c = couldveCollection(ctx, 4)
-    expect(c.totalOver).toBe(h.filter((p) => p.status === 'over').reduce((s, p) => s + p.delta, 0))
-    expect(c.totalUnder).toBe(h.filter((p) => p.status === 'under' && p.month !== '2026-10').reduce((s, p) => s + p.delta, 0))
-    expect(c.equivalents[0]).toMatchObject({ itemId: 'dream_chengdu' })
+    const finished = h.filter((p) => p.month !== '2026-10')
+    const net = finished.reduce((s, p) => s + (p.status === 'over' ? p.delta : -p.delta), 0)
+    expect(c.finishedMonths).toBe(3)
+    expect(c.totalOver).toBe(Math.max(0, net))
+    expect(c.totalUnder).toBe(Math.max(0, -net))
+    // October is over target, but it isn't finished: it is shown on its own, not added to the total
+    expect(c.soFar).toEqual({ month: '2026-10', status: 'over', delta: h[3].delta })
+    if (c.totalOver > 0) expect(c.equivalents.length).toBeGreaterThan(0)
+  })
+
+  it('F52: an over month and an under month cancel out (both stories use the same rule)', () => {
+    const over = paced(500, MEI_DREAMS, 'gentle', '2026-10-31')
+    const nov = { ...over, bank: { ...over.bank, today: '2026-11-02' } }
+    const c = couldveCollection(nov, 3)
+    const h = mirrorHistory(nov, 3).filter((p) => p.month !== '2026-11')
+    const signed = h.map((p) => (p.status === 'over' ? p.delta : -p.delta))
+    expect(c.totalOver - c.totalUnder).toBe(signed.reduce((s, x) => s + x, 0))
+    expect(Math.min(c.totalOver, c.totalUnder)).toBe(0)
   })
 
   it("doesn't count a projected surplus that hasn't happened yet", () => {
     const ctx = arifLike()
     const c = couldveCollection(ctx, 1)
-    expect(c).toEqual({ totalOver: 0, totalUnder: 0, equivalents: [] })
+    expect(c).toMatchObject({ totalOver: 0, totalUnder: 0, equivalents: [], finishedMonths: 0 })
+    expect(c.soFar?.status).toBe('under')
     expect(couldveCollection(ctx, 2).totalUnder).toBe(summarizeMonth(ctx, '2026-09').target - summarizeMonth(ctx, '2026-09').spent)
   })
 })

@@ -79,8 +79,17 @@
   --border-strong: rgba(58, 42, 31, 0.24);
   --text: var(--c-soy-900);
   --text-2: var(--c-soy-700);
-  --text-3: #8c7764;
+  /* hints, captions, timestamps: ≥ 4.5:1 on white, cream and sunken panels (#8c7764 was ~4:1) */
+  --text-3: #75614f;
   --text-on-accent: #24180f;
+  /* small coloured TEXT (≥ 4.5:1 on surfaces and their own soft tints); the plain tones stay for fills, bars, icons */
+  --accent-text: #8a5e00;
+  --over-text: #b8381f;
+  --under-text: #1f6c4e;
+  --warn-text: #8a5e00;
+  /* solid danger fills that carry text (danger buttons, count badges, "denied" pills) */
+  --danger: #b8381f;
+  --on-danger: #fffaf2;
   --accent: var(--c-yuan-500);
   --accent-strong: var(--c-yuan-600);
   --accent-soft: rgba(227, 162, 26, 0.16);
@@ -123,6 +132,12 @@
     --text: #f8ebdd;
     --text-2: #d8c3ad;
     --text-3: #a68f79;
+    --accent-text: #e3a21a;
+    --over-text: #ee6a4d;
+    --under-text: #4fb08a;
+    --warn-text: #d9a43a;
+    --danger: #b1351d;
+    --on-danger: #fffaf2;
     --accent: var(--c-yuan-400);
     --accent-strong: var(--c-yuan-500);
     --accent-soft: rgba(242, 189, 61, 0.16);
@@ -159,6 +174,12 @@
   --text: #f8ebdd;
   --text-2: #d8c3ad;
   --text-3: #a68f79;
+  --accent-text: #e3a21a;
+  --over-text: #ee6a4d;
+  --under-text: #4fb08a;
+  --warn-text: #d9a43a;
+  --danger: #b1351d;
+  --on-danger: #fffaf2;
   --accent: var(--c-yuan-400);
   --accent-strong: var(--c-yuan-500);
   --accent-soft: rgba(242, 189, 61, 0.16);

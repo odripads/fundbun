@@ -37,7 +37,7 @@
 
 .kicker {
   margin-bottom: calc(-1 * var(--s-1));
-  color: var(--accent-strong);
+  color: var(--accent-text);
   font-size: var(--fs-xs);
   font-weight: 750;
   letter-spacing: 0.1em;
@@ -54,7 +54,7 @@
 
 .promise em {
   display: block;
-  color: var(--accent-strong);
+  color: var(--accent-text);
   font-style: italic;
   font-variation-settings: var(--fv-display-wonk);
 }
@@ -216,7 +216,7 @@
   align-items: center;
   gap: 6px;
   min-height: 24px;
-  color: var(--accent-strong);
+  color: var(--accent-text);
   font-size: var(--fs-sm);
   font-weight: 700;
 }
@@ -246,7 +246,7 @@
   flex: none;
   width: 14px;
   height: 14px;
-  color: var(--under);
+  color: var(--under-text);
 }
 
 @media (max-width: 359.98px) {

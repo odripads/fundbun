@@ -48,7 +48,8 @@ export function ThresholdStepper({ id, label, value, unit, currency, range, onCh
       <button type="button" className={styles.btn} onClick={() => nudge(-1)} disabled={value <= range.min} aria-label={`Lower: ${label}`}>
         <Minus aria-hidden="true" />
       </button>
-      <span className={styles.box}>
+      {/* a label, so the whole 64×44 box focuses the field (the digits alone are a ~25px target) */}
+      <label className={styles.box} htmlFor={id}>
         {unit === 'money' ? <span className={styles.affix} aria-hidden="true">{CURRENCY_SYMBOL[currency]}</span> : null}
         <input
           id={id}
@@ -69,7 +70,7 @@ export function ThresholdStepper({ id, label, value, unit, currency, range, onCh
           }}
         />
         {unit === 'pct' ? <span className={styles.affix} aria-hidden="true">%</span> : null}
-      </span>
+      </label>
       <button type="button" className={styles.btn} onClick={() => nudge(1)} disabled={value >= range.max} aria-label={`Raise: ${label}`}>
         <Plus aria-hidden="true" />
       </button>

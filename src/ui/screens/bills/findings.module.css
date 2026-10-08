@@ -51,7 +51,8 @@
   border-radius: var(--r-md);
   background: color-mix(in srgb, var(--sev) 14%, var(--surface));
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sev) 26%, transparent);
-  color: var(--sev);
+  /* the tone, pulled toward the text colour: small text reaches 4.5:1 in both themes */
+  color: color-mix(in srgb, var(--sev) 65%, var(--text));
 }
 
 .icon svg {

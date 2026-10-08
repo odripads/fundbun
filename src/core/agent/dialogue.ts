@@ -13,6 +13,10 @@ export type DialogueAct =
   | { act: 'correction'; body: string }
   | { act: 'plan_recovery' }
   | { act: 'explain_bill' }
+  /** roll back the last action that ran ("undo that", "cancel that payment", "撤销", "batalkan yang tadi") */
+  | { act: 'undo' }
+  /** file a charge under another category ("Recategorize the Tony Hair Studio charge as personal care") */
+  | { act: 'recategorize'; subject: string; target: string }
 
 const LEAD = '(?:(?:ok(?:ay)?|hey|bun|please|pls|just|oh|um+|uh+)[\\s,]+)*'
 const TAIL = '(?:[\\s,]+(?:please|pls|bun|now|thanks|thank you|for now|right now|a sec(?:ond)?|a minute))*[\\s!.~]*$'
@@ -34,6 +38,25 @@ const AFFIRM_RE = new RegExp(
   'i',
 )
 
+const UNDO_CORE = [
+  'undo', 'revert', 'reverse', 'roll ?back', 'take (?:it|that) back', 'put (?:it|that|the money) back',
+  'give (?:it|that|me my money) back',
+  "cancel (?:that|this|the|my) (?:last |previous |latest )?(?:payment|transfer|move|deposit|change|top[- ]?up|transaction|budget|tripwire|alert|reminder|one)",
+  'cancel (?:what you (?:just )?did|the last (?:one|action|thing))',
+  '(?:撤销|撤回)(?:刚才|上一笔|那笔|刚刚)?(?:的)?(?:转账|操作|付款|那笔)?', '取消(?:刚才|上一笔|那笔|刚刚)(?:的)?(?:转账|操作|付款|那笔)?', '退回(?:刚才)?(?:的)?(?:转账)?',
+  'batalkan (?:yang )?(?:tadi|barusan)', 'batalkan (?:transfer|pembayaran|transaksi|pindahan) (?:itu|tadi|barusan)', 'kembalikan(?: uang(?:nya)?)?(?: tadi)?',
+].join('|')
+const UNDO_RE = new RegExp(`^${LEAD}(?:${UNDO_CORE})(?:[\\s,]+(?:that|it|this|the last one|last one|my last one|the last (?:one|action|move|transfer|change)|my last (?:one|action|move|transfer|change)|tadi|itu|barusan))*${TAIL}`, 'i')
+
+/** "recategorize X as Y", "mark the X charge as Y", "move X to the Y category", "把X归类为Y", "ubah kategori X jadi Y". */
+const RECATEGORIZE_RES: RegExp[] = [
+  /^(?:(?:please|pls|can you|could you)\s+)?(?:re-?categori[sz]e|reclassify|re-?label|re-?file)\s+(.{2,80}?)\s+(?:as|to|into|under)\s+(.{2,40}?)(?:\s+category)?[.!?]*$/i,
+  /^(?:(?:please|pls|can you|could you)\s+)?(?:mark|tag|file|count|classify|categori[sz]e|log)\s+(.{2,80}?)\s+(?:as|under)\s+(.{2,40}?)(?:\s+category)?[.!?]*$/i,
+  /^(?:(?:please|pls|can you|could you)\s+)?(?:move|put|change)\s+(.{2,80}?)\s+(?:to|into|under)\s+(?:the\s+)?(.{2,40}?)\s+category[.!?]*$/i,
+  /^(?:把|将)(.{2,30}?)(?:改成|改为|归到|归类为|归类到|算作|分类为|算到)(.{2,20}?)(?:类|类别|里)?[。!！?？]*$/u,
+  /^(?:ubah|ganti|pindahkan)\s+kategori\s+(.{2,80}?)\s+(?:jadi|menjadi|ke)\s+(.{2,40}?)[.!?]*$/i,
+]
+
 const CORRECTION_RE = /^(?:actually|no|nope|sorry|oops|wait|hmm|i meant|i mean|make (?:it|that)|change (?:it|that)(?: to)?|instead|rather|not that one|other one|wrong (?:one|amount))\b[\s,:-]*/i
 const CORRECTION_HINT = /\b(?:make (?:it|that)|change (?:it|that)|instead|i meant|i mean|the .{1,30} one|not .{1,30}(?:,| but))\b/i
 
@@ -44,6 +67,11 @@ const EXPLAIN_BILL_RE = /\b(?:explain|what'?s (?:in|on)|what is (?:in|on)|read|w
 export function detectDialogueAct(text: string): DialogueAct | null {
   const t = (text ?? '').trim()
   if (!t || t.length > 200) return null
+  if (UNDO_RE.test(t)) return { act: 'undo' }
+  for (const re of RECATEGORIZE_RES) {
+    const m = t.match(re)
+    if (m) return { act: 'recategorize', subject: m[1].trim(), target: m[2].trim() }
+  }
   if (INTERRUPT_RE.test(t)) return { act: 'interrupt', soft: false }
   if (NEGATE_RE.test(t)) return { act: 'interrupt', soft: true }
   if (AFFIRM_RE.test(t)) return { act: 'affirm' }

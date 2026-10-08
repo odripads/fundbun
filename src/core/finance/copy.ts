@@ -51,6 +51,18 @@ export function delayPhrase(days: number): string {
   return `about ${Math.round(days / 30.4)} months`
 }
 
+/**
+ * The one short form of a goal delay for chips and tiles, on the same units as delayPhrase: days under two weeks,
+ * then weeks, then months. 9 → "9 days", 18 → "3 wks", 35 → "5 wks", 120 → "4 mo".
+ */
+export function delayShort(days: number): string {
+  const d = Math.max(0, Math.round(days))
+  if (d <= 1) return '1 day'
+  if (d < 14) return `${d} days`
+  if (d < 60) return `${Math.round(d / 7)} wks`
+  return `${Math.round(d / 30.4)} mo`
+}
+
 export function plural(n: number, one: string, many = `${one}s`): string {
   return `${n} ${n === 1 ? one : many}`
 }

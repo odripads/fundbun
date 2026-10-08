@@ -4,7 +4,7 @@ import { checkGrounding } from '../security/grounding'
 import type { ChatMessage } from '../types'
 import { guardIntent } from './offline-engine'
 import { understand } from './nlu'
-import { createAgentEngine } from './runtime'
+import { createAgentEngine, maskPinInChat } from './runtime'
 import { nluContextOf } from './support'
 
 function setup(persona: 'mei' | 'arif' = 'mei') {
@@ -210,5 +210,33 @@ describe('engine API', () => {
       expect(Array.isArray(m.cards) && Array.isArray(m.trace) && Array.isArray(m.suggestions)).toBe(true)
       expect(m.grounding?.ok).toBe(true)
     }
+  })
+})
+
+describe('maskPinInChat (F13)', () => {
+  it('masks a PIN by its wording, whatever the digits', () => {
+    expect(maskPinInChat('my pin is 2580, pay the electricity bill', false)).toEqual({ text: 'my pin is [PIN], pay the electricity bill', request: 'pay the electricity bill', masked: true })
+    expect(maskPinInChat('PIN: 1357', false).text).toBe('PIN: [PIN]')
+    expect(maskPinInChat('我的密码是2580', false).text).toBe('我的密码是[PIN]')
+    expect(maskPinInChat('pin saya 2580', false).masked).toBe(true)
+  })
+
+  it('treats a bare 4–6 digit message as a PIN only while a step-up is waiting', () => {
+    expect(maskPinInChat('2580', true)).toEqual({ text: '[PIN]', request: '', masked: true })
+    expect(maskPinInChat('2580', false).masked).toBe(false)
+    expect(maskPinInChat('Move ¥2580 to Birkin', true).masked).toBe(false)
+  })
+
+  it('never compares digits with the stored PIN (no oracle): any digits after "pin is" are masked the same way', () => {
+    expect(maskPinInChat('my pin is 9999', false).text).toBe(maskPinInChat('my pin is 2580', false).text.replace('2580', '9999'))
+    expect(maskPinInChat('what is my pin code', false).masked).toBe(false)
+  })
+
+  it('keeps the PIN out of the stored chat and warns the user', async () => {
+    const { host, engine } = setup()
+    const msg = await engine.respond('my pin is 2580, pay the electricity bill')
+    expect(JSON.stringify(host.state().chat)).not.toContain('2580')
+    expect(msg.text).toMatch(/never type your PIN in chat/)
+    expect(msg.cards?.some((c) => c.type === 'notice' && c.level === 'warn')).toBe(true)
   })
 })

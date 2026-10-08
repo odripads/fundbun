@@ -78,15 +78,15 @@
 }
 
 .over {
-  color: var(--over);
+  color: var(--over-text);
 }
 
 .under {
-  color: var(--under);
+  color: var(--under-text);
 }
 
 .accent {
-  color: var(--accent-strong);
+  color: var(--accent-text);
 }
 
 .muted {

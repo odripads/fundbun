@@ -57,10 +57,16 @@ export function makeDream(input: DreamInput, bank: SandboxBank, taken: Iterable<
   return item
 }
 
+/** Goal ids whose pot was closed when the goal was removed: never handed out again (a new goal gets a fresh pot). */
+export function closedPotGoalIds(accounts: AppState['bank']['accounts']): string[] {
+  return accounts.filter((a) => a.type === 'pot' && a.closed).map((a) => a.goalId ?? a.id.replace(/^pot_/, ''))
+}
+
 export function addDreamTo(draft: AppState, bank: SandboxBank, input: DreamInput, ts: ISODateTime): DreamItem {
   const err = dreamInputError(input)
   if (err) throw new Error(err)
-  const item = makeDream(input, bank, draft.dreams.map((d) => d.id), draft.bank.today)
+  // "Birkin" re-added after removing the old Birkin goal is a new goal: a fresh pot, no inherited history or rate
+  const item = makeDream(input, bank, [...draft.dreams.map((d) => d.id), ...closedPotGoalIds(draft.bank.accounts)], draft.bank.today)
   draft.dreams.push(item)
   appendAudit(draft, ts, 'user', 'user_action', `Dream added: ${item.name}`, { dreamId: item.id, kind: item.kind, price: item.price })
   return item
@@ -81,18 +87,22 @@ export function updateDreamIn(draft: AppState, bank: SandboxBank, id: string, pa
   return OK
 }
 
-/** Removing a goal returns its pot balance to checking (the pot account is kept for history). */
+/**
+ * Removing a goal returns its pot balance to checking and CLOSES the pot: the account stays for the ledger, but the
+ * monthly auto-save stops filling it and a goal added later never reuses it.
+ */
 export function removeDreamFrom(draft: AppState, bank: SandboxBank, id: string, ts: ISODateTime): Result {
   const item = draft.dreams.find((d) => d.id === id)
   if (!item) return fail('Dream item not found')
-  const pot = item.potAccountId ? draft.bank.accounts.find((a) => a.id === item.potAccountId) : undefined
+  const pot = draft.bank.accounts.find((a) => a.type === 'pot' && (a.id === item.potAccountId || (!item.potAccountId && a.goalId === item.id)))
   let returned: Minor = 0
   if (pot && pot.balance > 0) {
     returned = pot.balance
     bank.transferInternal(pot.id, bank.checking().id, returned, `Returned from ${item.name}`, 'user')
   }
+  if (pot) pot.closed = true
   draft.dreams = draft.dreams.filter((d) => d.id !== id)
-  appendAudit(draft, ts, 'user', 'user_action', `Dream removed: ${item.name}`, { dreamId: id, returnedToChecking: returned })
+  appendAudit(draft, ts, 'user', 'user_action', `Dream removed: ${item.name}`, { dreamId: id, returnedToChecking: returned, ...(pot ? { potClosed: pot.id } : {}) })
   return OK
 }
 

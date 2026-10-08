@@ -1,6 +1,7 @@
 import type { Result, TripwireInput } from '../app-api'
 import { CATEGORIES } from '../categories'
-import { describeTripwire, evaluateTripwires } from '../finance'
+import { ym } from '../dates'
+import { describeTripwire, evaluateTripwires, tripwireEventMonth } from '../finance'
 import { uid } from '../ids'
 import { fmt } from '../money'
 import type { AppState, Currency, ISODateTime, Transaction, Tripwire, TripwireEvent, TripwireKind } from '../types'
@@ -97,12 +98,15 @@ export function markSeen(draft: AppState, ids?: string[]): void {
 export function applyTripwires(draft: AppState, txns: Transaction[], now: ISODateTime): TripwireEvent[] {
   const ctx = ctxOf(draft)
   if (!ctx) return []
-  const out = safely('evaluateTripwires', () => evaluateTripwires(ctx, { newTxns: txns, now }), null)
+  const known = new Set(draft.tripwireEvents.map((e) => e.id))
+  const out = safely('evaluateTripwires', () => evaluateTripwires(ctx, { newTxns: txns, now, firedIds: known }), null)
   if (!out) return []
   draft.tripwires = out.tripwires
-  if (!out.events.length) return []
-  draft.tripwireEvents = [...draft.tripwireEvents, ...out.events].slice(-MAX_TRIPWIRE_EVENTS)
-  for (const ev of out.events) {
+  // one event per id, ever: the log is keyed by it (React keys, markEventsSeen)
+  const events = out.events.filter((e) => !known.has(e.id) && !!known.add(e.id))
+  if (!events.length) return []
+  draft.tripwireEvents = [...draft.tripwireEvents, ...events].slice(-MAX_TRIPWIRE_EVENTS)
+  for (const ev of events) {
     appendAudit(draft, now, 'system', 'tripwire_fired', ev.title, {
       tripwireId: ev.tripwireId,
       eventId: ev.id,
@@ -111,5 +115,25 @@ export function applyTripwires(draft: AppState, txns: Transaction[], now: ISODat
       dream: ev.dream?.label,
     })
   }
-  return out.events
+  return events
+}
+
+/**
+ * After the calendar moves into a new month: a finished month's unseen pace alert ("at this pace you'll end the month
+ * around ¥15,230") is an obsolete forecast, so it is marked seen. Month-level facts (month_pct, category_pct) stay —
+ * they carry `month`, so screens can say which month they are about. Returns the ids retired.
+ */
+export function retireStaleEvents(draft: AppState): string[] {
+  const month = ym(draft.bank.today)
+  const kindOf = new Map(draft.tripwires.map((t) => [t.id, t.kind]))
+  const retired: string[] = []
+  for (const e of draft.tripwireEvents) {
+    if (e.seen || kindOf.get(e.tripwireId) !== 'pace_over') continue
+    const about = tripwireEventMonth(e)
+    if (about && about < month) {
+      e.seen = true
+      retired.push(e.id)
+    }
+  }
+  return retired
 }

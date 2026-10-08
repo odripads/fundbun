@@ -506,3 +506,13 @@ describe('heroActions', () => {
     expect(heroActions(under(), dreams).secondary).toBeUndefined()
   })
 })
+
+describe('shortName (F62)', () => {
+  it('keeps short names and cuts long ones at a word boundary for tiles and the name plate', async () => {
+    const { shortName } = await import('./model')
+    expect(shortName('Birkin 25')).toBe('Birkin 25')
+    expect(shortName('Noise-cancelling headphones for long flights')).toBe('Noise-cancelling…')
+    expect(shortName('Noise-cancelling headphones for long flights').length).toBeLessThanOrEqual(24)
+    expect(shortName('Supercalifragilisticexpialidocious-thing')).toBe('Supercalifragilisticexp…')
+  })
+})

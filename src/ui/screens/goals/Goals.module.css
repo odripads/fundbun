@@ -156,7 +156,7 @@
 .trophyIcon {
   width: 20px;
   height: 20px;
-  color: var(--accent-strong);
+  color: var(--accent-text);
 }
 
 .list {
@@ -191,7 +191,7 @@
 }
 
 .removeBtn {
-  color: var(--over);
+  color: var(--over-text);
 }
 
 .addForm {

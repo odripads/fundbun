@@ -3,6 +3,7 @@ import { CONSENT_VERSION, createFundBunApp, createTestApp, memoryStorage, STORAG
 import { AUDIT_HEAD_SUFFIX, TEST_NOW, WARMING_UP } from '../src/core/controller/constants'
 import { verifyAudit } from '../src/core/security/audit'
 import { localISODate } from '../src/core/controller/util'
+import { checkAffordability } from '../src/core/finance'
 import type { AppState, AuditType } from '../src/core/types'
 import { deferred, echoReply, fakeEngine } from './helpers/fake-engine'
 import { PIN, SAMPLE_CSV, demoKit, kit, onboardingInput } from './helpers/fixtures'
@@ -1070,5 +1071,276 @@ describe('profile & settings', () => {
     expect(app.setProfile({ name: 'x' }).ok).toBe(false)
     expect(() => app.addDream({ name: 'x', price: 1, image: '', kind: 'treat' })).toThrow()
     expect(app.verifyAudit()).toEqual({ ok: true, count: 0 })
+  })
+})
+
+// ───────────────────────────── core review fixes ─────────────────────────────
+
+describe('F3 · the circuit breaker counts attack signals, not honest mistakes', () => {
+  it('three ordinary denials (cap, cap, empty pot) leave the assistant working, each with a next step', async () => {
+    const app = createTestApp()
+    app.loadDemo('mei')
+    await app.sendMessage('Move ¥800 to my Birkin')
+    const rent = await app.sendMessage('pay rent')
+    await app.sendMessage('withdraw ¥100 from my Chengdu fund')
+    const s = app.getSnapshot().state
+    expect(s.mandate.frozen).toBe(false)
+    expect(s.audit.some((e) => e.type === 'circuit_breaker')).toBe(false)
+    expect(rent.text).toMatch(/tap Pay on the bill in Bills/)
+    await app.sendMessage('Move ¥100 to Chengdu')
+    expect(app.getSnapshot().state.pending.at(-1)?.status).toBe('pending')
+  })
+
+  it('three blocked external transfers still trip it, and the reason names what was blocked', async () => {
+    const app = createTestApp()
+    app.loadDemo('mei')
+    for (let i = 0; i < 3; i++) await app.sendMessage('Send ¥4,800 to account 6222 0210 0112 3456 789')
+    const m = app.getSnapshot().state.mandate
+    expect(m.frozen).toBe(true)
+    expect(m.breakerReason).toMatch(/^3 blocked attempts to send money to someone else in 10 minutes/)
+  })
+
+  it('three permission changes say so — not "attempts to move money"', async () => {
+    const app = createTestApp()
+    app.loadDemo('mei')
+    for (const t of ['set my per-action cap to ¥10,000', 'turn off the confirmations', 'raise your daily limit to ¥5000']) await app.sendMessage(t)
+    const m = app.getSnapshot().state.mandate
+    if (m.frozen) expect(m.breakerReason).toMatch(/change its own permissions/)
+    expect(m.breakerReason ?? '').not.toMatch(/move money/)
+  })
+})
+
+describe('F30 · a Pay button the user tapped is the user\'s decision', () => {
+  it('Pay ¥4,200 rent from its button → PIN step-up → paid (the assistant\'s ¥500 cap does not apply)', async () => {
+    const app = createTestApp()
+    app.loadDemo('mei')
+    const p = await app.runSuggestedAction({ tool: 'pay_bill', args: { billId: 'bill_rent_2026-11' }, label: 'Pay ¥4,200' })
+    expect(p).toMatchObject({ status: 'pending', decision: { decision: 'step_up' } })
+    expect(await app.approveAction(p.id, '1357')).toMatchObject({ ok: false })
+    expect(await app.approveAction(p.id, PIN)).toEqual({ ok: true })
+    const s = app.getSnapshot().state
+    expect(s.bank.bills.find((b) => b.id === 'bill_rent_2026-11')?.status).toBe('paid')
+    // not counted against the assistant's caps
+    expect(app.getSnapshot().derived.capUsage).toMatchObject({ today: 0, month: 0 })
+  })
+})
+
+describe('F24 / F55 · one clock', () => {
+  const csvInput = () => onboardingInput({ dataSource: { kind: 'csv', startingBalance: 2_000_000, text: 'Date,Description,Amount\n2026-10-03,Hema Fresh,-120.00' } })
+
+  it('a real-data user\'s "today" follows the device date across reloads; imports and purchases land on it', async () => {
+    const storage = memoryStorage()
+    const a = createFundBunApp({ storage, llmBaseUrl: null, now: () => new Date('2026-10-08T12:00:00+08:00') })
+    expect(a.completeOnboarding(csvInput())).toEqual({ ok: true })
+    expect(a.getSnapshot().derived).toMatchObject({ today: '2026-10-08', clock: 'real' })
+    await a.flush()
+    const b = createFundBunApp({ storage, llmBaseUrl: null, now: () => new Date('2026-11-15T12:00:00+08:00') })
+    const { state, derived } = b.getSnapshot()
+    expect(state.bank.today).toBe('2026-11-15')
+    expect(derived.today).toBe('2026-11-15')
+    expect(derived.summary).toMatchObject({ month: '2026-11', dayOfMonth: 15 })
+    expect(state.audit.at(-1)).toMatchObject({ type: 'session_start', actor: 'system', data: { clock: 'real', from: '2026-10-08', to: '2026-11-15' } })
+    expect(b.importCsv('Date,Description,Amount\n2026-11-10,Taobao,-300.00\n2026-11-12,Haidilao,-250.00')).toMatchObject({ added: 2 })
+    expect(b.getSnapshot().derived.summary?.spent).toBe(55_000)
+    expect(b.simulatePurchase({ merchant: 'Luckin', amount: 1_500 }).txn.date).toBe('2026-11-15')
+    expect(b.verifyAudit().ok).toBe(true)
+  })
+
+  it('syncClock moves the calendar when the page comes back on a new day, and never backwards', () => {
+    let now = new Date('2026-10-08T10:00:00+08:00')
+    const app = createFundBunApp({ storage: memoryStorage(), llmBaseUrl: null, now: () => now })
+    app.completeOnboarding(csvInput())
+    expect(app.syncClock()).toBe(false)
+    now = new Date('2026-10-09T12:10:00+08:00')
+    expect(app.syncClock()).toBe(true)
+    expect(app.getSnapshot().derived.today).toBe('2026-10-09')
+    now = new Date('2026-10-01T09:00:00+08:00')
+    expect(app.syncClock()).toBe(false)
+    expect(app.getSnapshot().state.bank.today).toBe('2026-10-09')
+  })
+
+  it('a scheduled bill payment due while the app was closed runs on catch-up', () => {
+    let now = new Date('2026-10-08T12:00:00+08:00')
+    const storage = memoryStorage()
+    const app = createFundBunApp({ storage, llmBaseUrl: null, now: () => now })
+    app.completeOnboarding(csvInput())
+    const st = structuredClone(app.getSnapshot().state) as AppState
+    st.bank.payees.push({ id: 'payee_power', name: 'Power Co', kind: 'utility', verified: true, addedAt: '2026-10-01' })
+    st.bank.bills.push({ id: 'bill_a', payeeId: 'payee_power', name: 'Electricity', category: 'utilities', amountDue: 30_000, dueDate: '2026-10-20', period: '2026-09', status: 'scheduled', scheduledFor: '2026-10-12', source: 'import' })
+    st.bank.bills.push({ id: 'bill_b', payeeId: 'payee_power', name: 'Water', category: 'utilities', amountDue: 5_000, dueDate: '2026-10-11', period: '2026-09', status: 'upcoming', source: 'import' })
+    storage.setItem(STORAGE_KEY, JSON.stringify(st))
+    now = new Date('2026-10-15T12:00:00+08:00')
+    const b = createFundBunApp({ storage, llmBaseUrl: null, now: () => now })
+    const bills = b.getSnapshot().state.bank.bills
+    expect(bills.find((x) => x.id === 'bill_a')?.status).toBe('paid')
+    expect(bills.find((x) => x.id === 'bill_b')?.status).toBe('overdue')
+  })
+
+  it('demo personas keep the sandbox clock; events carry the sandbox day they fired on', () => {
+    const app = createFundBunApp({ storage: memoryStorage(), llmBaseUrl: null, now: () => new Date('2026-12-30T12:00:00+08:00') })
+    app.loadDemo('mei')
+    expect(app.syncClock()).toBe(false)
+    expect(app.getSnapshot().derived).toMatchObject({ today: '2026-10-22', clock: 'sandbox' })
+    app.addTripwire({ kind: 'single_over', threshold: 30_000 })
+    const { events } = app.simulatePurchase({ merchant: 'JD.com', amount: 45_900 })
+    expect(events[0]).toMatchObject({ firedOn: '2026-10-22' })
+    expect(events[0].firedAt.startsWith('2026-12-30')).toBe(true)
+    expect(app.getSnapshot().state.tripwireEvents.filter((e) => e.month).every((e) => e.month === '2026-10')).toBe(true)
+  })
+})
+
+describe('F25 / F26 / F32 / F34 · the sandbox clock behaves like a month really passing', () => {
+  it('F25: Mei keeps paying rent and utilities after the clock moves — no pile of overdue bills', () => {
+    const app = createTestApp()
+    app.loadDemo('mei')
+    app.advanceDays(65) // → 2026-12-26
+    const { state, derived } = app.getSnapshot()
+    expect(state.bank.bills.filter((b) => b.status === 'overdue')).toEqual([])
+    expect(derived.findings.some((f) => f.kind === 'overdue')).toBe(false)
+    const housing = (m: string) => state.bank.transactions.filter((t) => t.category === 'housing' && t.date.startsWith(m)).reduce((s, t) => s - t.amount, 0)
+    expect(housing('2026-11')).toBe(420_000)
+    expect(housing('2026-12')).toBe(420_000)
+    expect(derived.recurring.some((r) => r.category === 'housing')).toBe(true)
+  })
+
+  it('F26: one 10-day jump fires the same month-level alerts as ten 1-day steps', () => {
+    const run = (steps: number[]) => {
+      const app = createTestApp()
+      app.loadDemo('mei')
+      const tw = app.addTripwire({ kind: 'month_pct', threshold: 140 })
+      const ids = steps.flatMap((n) => app.advanceDays(n).events.map((e) => e.id))
+      return ids.map((id) => id.replace(tw.id, 'tw'))
+    }
+    const jump = run([10])
+    expect(jump).toContain('twe_tw_2026-10')
+    expect(jump).toEqual(run(Array.from({ length: 10 }, () => 1)))
+  })
+
+  it('F32: a finished month\'s pace forecast is retired at the rollover; month facts keep their month', () => {
+    const app = createTestApp()
+    app.loadDemo('mei')
+    expect(app.getSnapshot().derived.unseenEvents.map((e) => e.tripwireId)).toContain('tw_pace_110')
+    app.advanceDays(10) // → 2026-11-01
+    const { state, derived } = app.getSnapshot()
+    expect(state.tripwireEvents.find((e) => e.id === 'twe_tw_pace_110_2026-10')?.seen).toBe(true)
+    expect(derived.unseenEvents.some((e) => e.tripwireId === 'tw_pace_110' && e.id.endsWith('2026-10'))).toBe(false)
+    const delivery = state.tripwireEvents.find((e) => e.id === 'twe_tw_delivery_100_2026-10')
+    expect(delivery).toMatchObject({ month: '2026-10' })
+  })
+
+  it('F34: an import touching a day that already fired never duplicates the event id', () => {
+    const app = createTestApp()
+    app.loadDemo('mei')
+    const tw = app.addTripwire({ kind: 'daily_over', threshold: 5_000 })
+    app.simulatePurchase({ merchant: 'JD.com', amount: 45_900 })
+    app.advanceDays(1)
+    app.importCsv('Date,Description,Amount\n2026-10-22,Corner bookshop,-88.00')
+    const ids = app.getSnapshot().state.tripwireEvents.map((e) => e.id)
+    expect(new Set(ids).size).toBe(ids.length)
+    expect(ids.filter((id) => id === `twe_${tw.id}_2026-10-22`)).toHaveLength(1)
+  })
+
+  it('F27: on the first of the month the mirror and "Should I buy it?" agree', () => {
+    const app = createTestApp()
+    app.loadDemo('mei')
+    app.advanceDays(10) // → 2026-11-01
+    const { derived } = app.getSnapshot()
+    expect(derived.mirror?.status).toBe('on_track')
+    const r = checkAffordability(derived.ctx!, 2_000, 'coffee', 'coffee_tea')
+    expect(r.verdict).not.toBe('skip')
+    expect(r.basis).toBe('spent_and_bills')
+  })
+})
+
+describe('F33 / F36 · goal pots', () => {
+  it('F33: removing a goal closes its pot — no more auto-save into it; re-adding it starts a fresh pot', () => {
+    const app = createTestApp()
+    app.loadDemo('mei')
+    expect(app.removeDream('dream_birkin')).toEqual({ ok: true })
+    const pot = app.getSnapshot().state.bank.accounts.find((a) => a.id === 'pot_dream_birkin')
+    expect(pot).toMatchObject({ balance: 0, closed: true })
+    const { txns } = app.advanceDays(25) // past the 10th: Mei's auto-save day
+    expect(txns.filter((t) => t.accountId === 'pot_dream_birkin')).toEqual([])
+    const again = app.addDream({ name: 'Birkin', price: 9_800_000, image: 'preset:bag', kind: 'goal' })
+    expect(again.id).not.toBe('dream_birkin')
+    expect(again.potAccountId).not.toBe('pot_dream_birkin')
+    const g = app.getSnapshot().derived.goals.find((x) => x.itemId === again.id)
+    expect(g).toMatchObject({ saved: 0, monthlyRate: 0 })
+    expect(g?.etaDate).toBeUndefined()
+  })
+
+  it('F36: savedToGoals is net of money moved back out of a pot', async () => {
+    const app = createTestApp()
+    app.loadDemo('mei')
+    const base = app.getSnapshot().derived.summary!.savedToGoals
+    expect(app.contributeToGoal('dream_chengdu', 50_000)).toEqual({ ok: true })
+    expect(app.getSnapshot().derived.summary!.savedToGoals).toBe(base + 50_000)
+    await app.sendMessage('Take ¥300 out of my Chengdu fund back to checking')
+    const p = app.getSnapshot().state.pending.at(-1)!
+    expect(p.call.tool).toBe('withdraw_from_goal')
+    expect(await app.approveAction(p.id)).toEqual({ ok: true })
+    expect(app.getSnapshot().derived.summary!.savedToGoals).toBe(base + 20_000)
+  })
+})
+
+describe('F35 · damaged saves never brick boot', () => {
+  it('a profile without consent is unreadable → a clean fresh start (audited), not a crash', () => {
+    const storage = memoryStorage()
+    const a = createTestApp({ storage })
+    a.loadDemo('mei')
+    const saved = JSON.parse(storage.getItem(STORAGE_KEY)!)
+    delete saved.profile.consent
+    storage.setItem(STORAGE_KEY, JSON.stringify(saved))
+    let b!: ReturnType<typeof createTestApp>
+    expect(() => (b = createTestApp({ storage }))).not.toThrow()
+    expect(b.isOnboarded()).toBe(false)
+    expect(b.getSnapshot().derived.engine).toBe('offline')
+    expect(b.getSnapshot().state.audit.at(-1)).toMatchObject({ type: 'data_wiped' })
+  })
+
+  it('a budget without categories is dropped instead of taking the finance layer down', () => {
+    const storage = memoryStorage()
+    const a = createTestApp({ storage })
+    a.loadDemo('mei')
+    const saved = JSON.parse(storage.getItem(STORAGE_KEY)!)
+    saved.budget = { month: '2026-10', total: 0, method: 'custom', createdBy: 'user', createdAt: TEST_NOW }
+    saved.tripwires.push({ id: 'tw_bad', kind: 'nope', threshold: 1, enabled: true })
+    saved.pending.push('garbage')
+    storage.setItem(STORAGE_KEY, JSON.stringify(saved))
+    const b = createTestApp({ storage })
+    const { state, derived } = b.getSnapshot()
+    expect(b.isOnboarded()).toBe(true)
+    expect(state.budget).toBeNull()
+    expect(state.tripwires.some((t) => t.id === 'tw_bad')).toBe(false)
+    expect(derived.summary).not.toBeNull()
+    expect(derived.mirror).not.toBeNull()
+    expect(derived.insights.length).toBeGreaterThan(0)
+  })
+})
+
+describe('F38 · the vault unlock throttle survives a reload', () => {
+  it('3 wrong PINs lock unlocking for 5 min across reloads; the next lock-out doubles; the right PIN clears it', async () => {
+    let now = Date.parse(TEST_NOW)
+    const storage = memoryStorage()
+    const open = () => createTestApp({ storage, now: () => new Date(now) })
+    const first = open()
+    first.loadDemo('mei')
+    await first.enableVault(PIN)
+    await first.flush()
+
+    const a = open()
+    for (const pin of ['1111', '1112']) expect(await a.unlock(pin)).toEqual({ ok: false, error: 'Wrong PIN' })
+    expect((await a.unlock('1113')).error).toMatch(/try again in 5 min/)
+    const b = open() // reload
+    expect(await b.unlock(PIN)).toEqual({ ok: false, error: 'Too many wrong PINs. Try again in 5 min.' })
+    now += 6 * 60_000
+    for (const pin of ['1114', '1115']) await b.unlock(pin)
+    expect((await b.unlock('1116')).error).toMatch(/try again in 10 min/)
+    now += 6 * 60_000
+    expect((await open().unlock(PIN)).error).toMatch(/Try again in 4 min/)
+    now += 5 * 60_000
+    const c = open()
+    expect(await c.unlock(PIN)).toEqual({ ok: true })
+    expect(storage.getItem(`${STORAGE_KEY}.unlock`)).toBeNull()
   })
 })

@@ -4,7 +4,7 @@ import { auditToJSONL } from '../security/audit'
 import { clipForDisplay } from '../security/redact'
 import type { AppState, Mandate } from '../types'
 import { appendAudit, verifyAuditAnchored } from './audit'
-import { LOCKED_MSG, NOT_SET_UP_MSG, expirePending, userTx, userTxValue, type Core } from './core'
+import { LOCKED_MSG, NOT_SET_UP_MSG, expirePending, syncClock, userTx, userTxValue, type Core } from './core'
 import {
   advanceDaysIn,
   filterTransactions,
@@ -32,7 +32,7 @@ type UserApi = Omit<
   AppApi,
   | 'getSnapshot' | 'subscribe' | 'isOnboarded' | 'completeOnboarding' | 'loadDemo' | 'resetAll'
   | 'sendMessage' | 'xrayBill' | 'approveAction' | 'rejectAction' | 'undoAction' | 'runSuggestedAction' | 'clearChat'
-  | 'checkLlm' | 'isLocked' | 'unlock' | 'enableVault' | 'disableVault'
+  | 'checkLlm' | 'isLocked' | 'unlock' | 'enableVault' | 'disableVault' | 'syncClock'
 >
 
 /** Longest handoff summary kept in the audit log. */
@@ -70,6 +70,8 @@ export function createUserApi(core: Core, onLlmGranted: () => void): UserApi {
     if (core.lock.locked) return emptyImport(LOCKED_MSG)
     const s = store.get()
     if (!s.profile) return emptyImport(NOT_SET_UP_MSG)
+    // rows up to the device's date must count: catch the calendar up first
+    syncClock(core)
     try {
       const parsed = parseCsvImport(text, { accountId: checkingAccountId(s.bank), currency: s.profile.currency, userRules: s.categoryRules })
       return store.mutate((draft) => importParsedIn(draft, parsed, core.now()))

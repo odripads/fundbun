@@ -12,3 +12,4 @@ export {
   type Equality,
 } from './useApp'
 export { useSafeAction, type SafeActionOptions } from './useSafeAction'
+export { eventSandboxDate, localDate, onSandboxCalendar, sandboxRelative, sandboxToday, secondsOfDay, syncClockOnVisible } from './clock'

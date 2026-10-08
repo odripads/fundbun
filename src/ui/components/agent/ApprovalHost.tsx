@@ -1,17 +1,18 @@
 import { CircleCheck, LockKeyhole } from 'lucide-react'
 import { useEffect } from 'react'
 import type { AppSnapshot } from '../../../core/app-api'
-import { useSnapshot } from '../../state'
+import { sandboxToday, useSnapshot } from '../../state'
 import { BunMascot } from '../brand'
 import { Button, PinPad, Sheet } from '../ds'
 import { useToast } from '../ds/Toast'
 import { ActionCard } from './ActionCard'
 import { closeApproval, useApprovalTarget } from './approvalStore'
 import { useApprovalFlow, useNow } from './hooks'
-import { needsPin, pinLockedFor } from './logic'
+import { actionTitle, needsPin, pinLockedFor } from './logic'
 import styles from './ApprovalHost.module.css'
 
 const selectLock = (s: AppSnapshot) => s.state.mandate.pinLockedUntil
+const selectToday = (s: AppSnapshot) => sandboxToday(s)
 
 /** The single approval sheet (tap to approve; PIN for step_up). Mounted once inside the app frame. */
 export function ApprovalHost() {
@@ -19,6 +20,7 @@ export function ApprovalHost() {
   const toast = useToast()
   const p = useSnapshot((s) => (id ? s.state.pending.find((x) => x.id === id) : undefined))
   const lockedUntil = useSnapshot(selectLock)
+  const today = useSnapshot(selectToday)
   const flow = useApprovalFlow(id, () => closeApproval())
   const open = Boolean(id && p && p.status === 'pending')
   const pin = p ? needsPin(p) : false
@@ -43,7 +45,7 @@ export function ApprovalHost() {
       open={open}
       onClose={closeApproval}
       dismissible={!flow.busy}
-      title={p?.preview.title ?? 'Review'}
+      title={p ? actionTitle(p, today) : 'Review'}
       description={pin ? 'Check the details, then enter your PIN. It seals this exact action.' : 'Check the details. Nothing happens until you approve.'}
       media={<BunMascot mood="calm" size={52} />}
       footer={

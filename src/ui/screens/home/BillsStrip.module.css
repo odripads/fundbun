@@ -76,7 +76,7 @@
   margin-bottom: var(--s-1);
   border-radius: var(--r-sm);
   background: var(--accent-soft);
-  color: var(--accent-strong);
+  color: var(--accent-text);
 }
 
 .icon svg {
@@ -132,5 +132,5 @@
 .empty svg {
   width: 18px;
   height: 18px;
-  color: var(--under);
+  color: var(--under-text);
 }

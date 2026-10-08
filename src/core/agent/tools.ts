@@ -1,5 +1,5 @@
-import { CATEGORIES } from '../categories'
-import { monthLabel, ym } from '../dates'
+import { CATEGORIES, isSpendingCategory } from '../categories'
+import { addMonths, daysInMonth, diffDays, monthLabel, monthsBack, shiftMonth, ym } from '../dates'
 import {
   allGoalProgress,
   checkAffordability,
@@ -14,6 +14,7 @@ import {
   summarizeMonth,
   xrayBill,
 } from '../finance'
+import { FIXED_CATEGORIES, isSpending, spendValue } from '../finance/ledger'
 import { uid } from '../ids'
 import type { SandboxBank } from '../sandbox/bank'
 import type {
@@ -138,14 +139,60 @@ function getOverview(args: Args, host: AgentHost): ToolRun {
     hoursOfWork: mirror.hoursOfWork,
     mood: mirror.mood,
     cta: mirror.cta,
+    ...balanceData(host.state()),
+    ...paceData(s),
   })
   const f = money(host.state())
   return { outcome: ok(data, `${monthLabel(s.month)}: spent ${f(s.spent)} of ${f(s.target)} (${mirror.status})`, [{ type: 'mirror', mirror }]), untrustedTexts: [] }
 }
 
+/** Balances the user can see in the app anyway: the everyday account (masked number only) and each goal pot. */
+function balanceData(state: AppState): Record<string, unknown> {
+  const checking = checkingOf(state.bank)
+  const pots = state.bank.accounts
+    .filter((a) => a.type === 'pot')
+    .map((a) => ({ goalId: a.goalId, name: state.dreams.find((d) => d.id === a.goalId)?.name ?? a.name, balance: a.balance }))
+  return compact({
+    checkingBalance: checking?.balance,
+    checkingName: checking?.name,
+    checkingMasked: checking?.maskedNumber,
+    pots,
+    potsTotal: pots.reduce((sum, p) => sum + p.balance, 0),
+  })
+}
+
+/** Savings rate, days left and a per-day figure that keeps the rest of the month (or next month) on target. */
+function paceData(s: ReturnType<typeof summarizeMonth>): Record<string, unknown> {
+  const daysLeft = Math.max(0, s.daysInMonth - s.dayOfMonth)
+  const kept = s.income - s.spent
+  const next = shiftMonth(s.month, 1)
+  return compact({
+    daysLeft,
+    overBy: s.remaining < 0 ? -s.remaining : undefined,
+    perDayLeft: s.remaining > 0 && daysLeft > 0 ? Math.floor(s.remaining / daysLeft) : undefined,
+    nextMonthDaily: s.target > 0 ? Math.floor(s.target / daysInMonth(next)) : undefined,
+    nextMonthLabel: monthLabel(next),
+    kept: s.income > 0 ? kept : undefined,
+    savingsRate: s.income > 0 ? Math.round((kept / s.income) * 1000) / 10 : undefined,
+  })
+}
+
+/** "Food" in everyday speech: delivery + eating out + groceries. */
+export const CATEGORY_GROUPS: Record<string, { label: string; categories: CategoryId[] }> = {
+  food: { label: 'Food', categories: ['delivery', 'dining', 'groceries'] },
+}
+
 function getSpendingBreakdown(args: Args, host: AgentHost): ToolRun {
   const ctx = host.ctx()
   const s = summarizeMonth(ctx, str(args.month))
+  const groupKey = str(args.group)
+  const group = groupKey ? CATEGORY_GROUPS[groupKey] : undefined
+  const months = int(args.months)
+  const extra = compact({
+    compare: args.compare === true ? compareData(s, str(args.category)) : undefined,
+    range: months && months >= 2 ? rangeData(ctx, s.month, Math.min(6, months), str(args.category), group?.categories) : undefined,
+    group: group ? groupData(s, group) : undefined,
+  })
   const items = s.byCategory.filter((c) => c.spent > 0 || c.limit !== undefined).sort((a, b) => b.spent - a.spent)
   const rows = items.map((c) => compact({
     category: c.category,
@@ -160,12 +207,72 @@ function getSpendingBreakdown(args: Args, host: AgentHost): ToolRun {
   }))
   const category = str(args.category)
   const row = category ? rows.find((r) => r.category === category) ?? { category, label: categoryLabel(category), spent: 0, count: 0, share: 0 } : undefined
-  const focus = row ? compact({ ...row, equivalent: dreamEquivalents(row.spent, ctx.dreams, 1)[0]?.label }) : undefined
-  const data = compact({ month: s.month, monthLabel: monthLabel(s.month), total: s.spent, target: s.target, categories: rows, focus })
+  const eq = row ? dreamEquivalents(row.spent, ctx.dreams, 1)[0] : undefined
+  const prevToDate = category ? s.byCategory.find((c) => c.category === category)?.prevMonthToDate : undefined
+  const focus = row ? compact({ ...row, prevMonthToDate: prevToDate, equivalent: eq?.label, equivalentItem: eq?.itemName, equivalentFraction: eq?.fraction }) : undefined
+  const data = compact({ month: s.month, monthLabel: monthLabel(s.month), total: s.spent, target: s.target, categories: rows, focus, current: s.isCurrent, ...extra })
   const f = money(host.state())
   const top = rows[0]
   const summary = focus ? `${focus.label}: ${f(focus.spent)} in ${monthLabel(s.month)}` : top ? `Top category ${top.label} ${f(top.spent)} of ${f(s.spent)}` : 'No spending yet'
   return { outcome: ok(data, summary, [{ type: 'breakdown', month: s.month, items, total: s.spent, target: s.target }]), untrustedTexts: [] }
+}
+
+type Summary = ReturnType<typeof summarizeMonth>
+
+/** This month against last month: like-for-like to the same day while the month is running, plus the movers. */
+function compareData(s: Summary, category?: string): Record<string, unknown> {
+  const prev = shiftMonth(s.month, -1)
+  const likeForLike = s.isCurrent
+  const prevOf = (c: Summary['byCategory'][number]) => (likeForLike ? c.prevMonthToDate ?? c.prevMonth ?? 0 : c.prevMonth ?? 0)
+  const prevTotal = s.byCategory.reduce((sum, c) => sum + (c.prevMonth ?? 0), 0)
+  const prevToDate = s.byCategory.reduce((sum, c) => sum + prevOf(c), 0)
+  const movers = s.byCategory
+    .filter((c) => isSpendingCategory(c.category))
+    .map((c) => ({ category: c.category, label: categoryLabel(c.category), spent: c.spent, prev: prevOf(c), delta: c.spent - prevOf(c) }))
+    .filter((m) => m.delta !== 0)
+    .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
+    .slice(0, 3)
+  const row = category ? s.byCategory.find((c) => c.category === category) : undefined
+  return compact({
+    month: s.month,
+    monthLabel: monthLabel(s.month),
+    prevMonth: prev,
+    prevLabel: monthLabel(prev),
+    likeForLike,
+    dayOfMonth: s.dayOfMonth,
+    total: s.spent,
+    prevTotal,
+    prevToDate,
+    delta: s.spent - (likeForLike ? prevToDate : prevTotal),
+    movers,
+    category: row || category ? compact({ category, label: categoryLabel(category), spent: row?.spent ?? 0, prev: row ? prevOf(row) : 0, prevFull: row?.prevMonth ?? 0, delta: (row?.spent ?? 0) - (row ? prevOf(row) : 0) }) : undefined,
+  })
+}
+
+/** A category (or group) month by month, oldest first; the current month is "so far". */
+function rangeData(ctx: FinanceContext, month: string, n: number, category?: string, categories?: CategoryId[]): Record<string, unknown> {
+  const list = categories ?? (category ? [category as CategoryId] : undefined)
+  const rows = monthsBack(month, n).map((m) => {
+    const sm = summarizeMonth(ctx, m)
+    const spent = list ? sm.byCategory.filter((c) => list.includes(c.category)).reduce((sum, c) => sum + c.spent, 0) : sm.spent
+    return { month: m, label: monthLabel(m, 'short'), spent, current: sm.isCurrent }
+  })
+  return compact({ months: rows, total: rows.reduce((sum, r) => sum + r.spent, 0), label: categories ? undefined : category ? categoryLabel(category) : undefined })
+}
+
+function groupData(s: Summary, group: { label: string; categories: CategoryId[] }): Record<string, unknown> {
+  const parts = group.categories.map((c) => {
+    const row = s.byCategory.find((x) => x.category === c)
+    return { category: c, label: categoryLabel(c), spent: row?.spent ?? 0, prevMonth: row?.prevMonth ?? 0, count: row?.count ?? 0 }
+  })
+  return { label: group.label, spent: parts.reduce((sum, p) => sum + p.spent, 0), prevMonth: parts.reduce((sum, p) => sum + p.prevMonth, 0), parts: parts.sort((a, b) => b.spent - a.spent) }
+}
+
+function isLateNight(time: string | undefined): boolean {
+  const m = /^(\d{1,2}):(\d{2})/.exec(time ?? '')
+  if (!m) return false
+  const h = Number(m[1])
+  return h >= 22 || h < 5
 }
 
 function searchTransactions(args: Args, host: AgentHost): ToolRun {
@@ -176,29 +283,46 @@ function searchTransactions(args: Args, host: AgentHost): ToolRun {
   const month = str(args.month)
   const minAmount = int(args.minAmount)
   const limit = Math.min(25, Math.max(1, int(args.limit) ?? 10))
+  const lateNight = args.lateNight === true
+  const groupKey = str(args.group)
+  const groupCats = groupKey ? CATEGORY_GROUPS[groupKey]?.categories : undefined
+  const byAmount = args.sort === 'amount'
+  // "biggest purchase": things bought, not rent or utility bills
+  const purchasesOnly = args.purchasesOnly === true
   const matches = state.bank.transactions.filter((t) =>
     (!checking || t.accountId === checking.id) &&
     t.date <= state.bank.today &&
     (!query || t.merchant.toLowerCase().includes(query) || t.description.toLowerCase().includes(query)) &&
     (!category || t.category === category) &&
+    (!groupCats || groupCats.includes(t.category)) &&
     (!month || ym(t.date) === month) &&
+    (!lateNight || isLateNight(t.time)) &&
+    (!byAmount || isSpending(t)) &&
+    (!purchasesOnly || !FIXED_CATEGORIES.has(t.category)) &&
     (minAmount === undefined || Math.abs(t.amount) >= minAmount))
   const newest = [...matches].reverse()
-  const shown = newest.slice(0, limit)
-  const total = matches.filter((t) => t.amount < 0).reduce((s, t) => s - t.amount, 0)
-  const largest = matches.reduce<Transaction | undefined>((best, t) => (t.amount < 0 && (!best || t.amount < best.amount) ? t : best), undefined)
+  const ordered = byAmount ? [...newest].sort((a, b) => a.amount - b.amount) : newest
+  const shown = ordered.slice(0, limit)
+  // spending only: moves into the user's own pots and other transfers are not "spent" (the same rule as everywhere else)
+  const total = Math.max(0, matches.reduce((s, t) => s + spendValue(t), 0))
+  const transfersOut = matches.filter((t) => t.amount < 0 && !isSpending(t)).reduce((s, t) => s - t.amount, 0)
+  const largest = matches.filter(isSpending).reduce<Transaction | undefined>((best, t) => (!best || t.amount < best.amount ? t : best), undefined)
   const data = compact({
     count: matches.length,
     shown: shown.length,
     total,
+    transfersOut: transfersOut > 0 ? transfersOut : undefined,
     query: str(args.query),
     category,
+    group: groupKey,
+    lateNight: lateNight || undefined,
+    sort: byAmount ? 'amount' : undefined,
     month,
     largest: largest ? { merchant: largest.merchant, amount: -largest.amount, date: largest.date } : undefined,
     transactions: shown.map((t) => compact({ id: t.id, date: t.date, time: t.time, merchant: t.merchant, amount: t.amount, category: t.category, memo: t.memo, flags: t.flags })),
   })
   const untrustedTexts = shown.filter((t) => t.memo).map((t) => ({ source: `memo:${t.id}`, text: t.memo as string }))
-  const title = str(args.query) ?? (category ? categoryLabel(category) : 'Recent transactions')
+  const title = str(args.query) ?? (category ? categoryLabel(category) : groupKey ? CATEGORY_GROUPS[groupKey]?.label ?? 'Transactions' : 'Recent transactions')
   const f = money(state)
   return {
     outcome: ok(data, `${matches.length} transactions${query ? ` for "${str(args.query)}"` : ''}, ${f(total)} out`, [{ type: 'transactions', title, txns: shown }], {
@@ -232,15 +356,28 @@ function listRecurring(args: Args, host: AgentHost): ToolRun {
   return { outcome: ok(data, `${active.length} active ${onlySubs ? 'subscriptions' : 'recurring charges'}, ${f(annualTotal)} a year`, [{ type: 'recurring', series }]), untrustedTexts: [] }
 }
 
-function analyzeBills(_args: Args, host: AgentHost): ToolRun {
+function analyzeBills(args: Args, host: AgentHost): ToolRun {
   const state = host.state()
   const findings = host.findings()
   const upcoming = state.bank.bills.filter((b) => b.status !== 'paid' && !b.paidTxnId).sort((a, b) => (a.dueDate < b.dueDate ? -1 : 1))
+  const today = state.bank.today
+  const billId = str(args.billId)
+  const bill = billId ? state.bank.bills.find((b) => b.id === billId) : undefined
+  const within = int(args.withinDays)
   const data = {
+    ...compact({
+      focus: bill ? compact({ id: bill.id, name: bill.name, amountDue: bill.amountDue, dueDate: bill.dueDate, status: bill.status, period: bill.period, daysUntil: diffDays(today, bill.dueDate), scheduledFor: bill.scheduledFor }) : undefined,
+      window: within !== undefined
+        ? { days: within, bills: upcoming.filter((b) => diffDays(today, b.dueDate) <= within).map((b) => ({ id: b.id, name: b.name, amountDue: b.amountDue, dueDate: b.dueDate, overdue: b.dueDate < today })) }
+        : undefined,
+      // what needs a look vs. what is just good to know — the same split the Bills screen uses
+      actionable: findings.filter((x) => x.severity !== 'info').length,
+      fyi: findings.filter((x) => x.severity === 'info').length,
+    }),
     count: findings.length,
     findings: findings.map((x) => compact({
       id: x.id, kind: x.kind, severity: x.severity, title: x.title, detail: x.detail, amount: x.amount, billId: x.billId,
-      recurringId: x.recurringId, txnIds: x.txnIds, suggestedAction: x.suggestedAction,
+      recurringId: x.recurringId, txnIds: x.txnIds, suggestedAction: x.suggestedAction, evidence: x.evidence,
     })),
     upcoming: upcoming.map((b) => compact({ id: b.id, name: b.name, amountDue: b.amountDue, dueDate: b.dueDate, status: b.status, reminderDaysBefore: state.billReminders[b.id] })),
   }
@@ -268,22 +405,42 @@ function checkAffordabilityTool(args: Args, host: AgentHost): ToolRun {
   return { outcome: ok(data, `${result.label} ${f(result.amount)}: ${result.verdict}`, [{ type: 'affordability', result }]), untrustedTexts: [] }
 }
 
-function getGoals(_args: Args, host: AgentHost): ToolRun {
+function getGoals(args: Args, host: AgentHost): ToolRun {
   const ctx = host.ctx()
   const goals = allGoalProgress(ctx)
   const kinds = new Map(ctx.dreams.map((d) => [d.id, d.kind]))
+  const monthly = int(args.monthly)
   const data = {
+    ...compact({ whatIf: monthly && monthly > 0 ? whatIfData(goals, str(args.goalId), monthly, host.state().bank.today, kinds) : undefined }),
     count: goals.length,
     goals: goals.map((g) => compact({ id: g.itemId, name: g.name, kind: kinds.get(g.itemId), saved: g.saved, price: g.price, pct: g.pct, monthlyRate: g.monthlyRate, etaDate: g.etaDate, etaMonths: g.etaMonths })),
   }
   return { outcome: ok(data, `${goals.length} dreams`, [{ type: 'goals', goals }]), untrustedTexts: [] }
 }
 
+/** "If I save ¥3,000 a month": months to the goal at that rate vs the current pace. */
+function whatIfData(goals: ReturnType<typeof allGoalProgress>, goalId: string | undefined, monthly: number, today: string, kinds: Map<string, string>): Record<string, unknown> | undefined {
+  const g = goals.find((x) => x.itemId === goalId) ?? goals.find((x) => kinds.get(x.itemId) === 'goal' && x.pct < 100) ?? goals[0]
+  if (!g) return undefined
+  const remaining = Math.max(0, g.price - g.saved)
+  const months = remaining > 0 ? Math.ceil(remaining / monthly) : 0
+  const current = g.monthlyRate > 0 ? Math.ceil(remaining / g.monthlyRate) : undefined
+  return compact({
+    goalId: g.itemId, name: g.name, monthly, saved: g.saved, price: g.price, remaining, months,
+    etaDate: addMonths(today, months), currentMonthlyRate: g.monthlyRate > 0 ? g.monthlyRate : undefined, currentMonths: current,
+    monthsSooner: current !== undefined ? current - months : undefined,
+  })
+}
+
 function xrayBillTool(args: Args, host: AgentHost): ToolRun {
   const text = str(args.text)
   if (!text) throw new Error('Paste the bill text to X-ray it')
-  const result = xrayBill(text, host.ctx())
+  const parsed = xrayBill(text, host.ctx())
+  // no amount, no due date, no line items: this is not a bill — don't dress a guessed merchant / category up as one
+  const looksLikeBill = parsed.total !== undefined || parsed.dueDate !== undefined || parsed.lineItems.length > 0
+  const result = looksLikeBill ? parsed : { ...parsed, merchant: undefined, category: undefined, period: undefined, comparison: undefined }
   const data = compact({
+    looksLikeBill: looksLikeBill ? undefined : false,
     merchant: result.merchant,
     total: result.total,
     dueDate: result.dueDate,

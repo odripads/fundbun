@@ -1,6 +1,7 @@
 import { CircleCheck, FileSpreadsheet, TriangleAlert, Upload } from 'lucide-react'
 import { useRef, useState, type ChangeEvent } from 'react'
 import { Button, useToast } from '../../components/ds'
+import { readCsvFile } from '../../lib/csvFile'
 import { errorText, useApp } from '../../state'
 import { importSummary, MAX_CSV_BYTES, type ImportOutcome } from './billsView'
 import { SECTION_IDS } from './jump'
@@ -25,7 +26,8 @@ export function CsvImportCard() {
     }
     setBusy(true)
     try {
-      const text = await file.text()
+      // bytes, not file.text(): Alipay and many bank exports are GBK, which a UTF-8 read turns into mojibake
+      const text = await readCsvFile(file)
       const outcome = importSummary(file.name, app.importCsv(text))
       setLast(outcome)
       toast.show({ tone: outcome.tone, title: outcome.title, message: outcome.message })

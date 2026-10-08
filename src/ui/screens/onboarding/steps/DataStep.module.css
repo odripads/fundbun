@@ -45,7 +45,7 @@
   height: 44px;
   border-radius: var(--r-md);
   background: var(--accent-soft);
-  color: var(--accent-strong);
+  color: var(--accent-text);
   transition: transform var(--dur-3) var(--ease-spring);
 }
 
@@ -214,7 +214,7 @@
 .fileButton svg {
   width: 18px;
   height: 18px;
-  color: var(--accent-strong);
+  color: var(--accent-text);
 }
 
 .busy {
@@ -241,11 +241,11 @@
   width: 20px;
   height: 20px;
   margin-top: 1px;
-  color: var(--over);
+  color: var(--over-text);
 }
 
 .summary[data-ok] > svg {
-  color: var(--under);
+  color: var(--under-text);
 }
 
 .summaryText {

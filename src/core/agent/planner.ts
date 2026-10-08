@@ -1,6 +1,6 @@
 import { CATEGORIES } from '../categories'
 import { monthLabel, ym } from '../dates'
-import { computeMirror, primaryGoal, summarizeMonth } from '../finance'
+import { computeMirror, goalProgress, primaryGoal, summarizeMonth } from '../finance'
 import { roundDownTo10 } from '../finance/actions'
 import { listJoin } from '../finance/copy'
 import { uid } from '../ids'
@@ -9,46 +9,63 @@ import { newCall, refreshPlan, runGated, type GateResult } from './actions'
 import type { Choice } from './dialogue'
 import type { Facts } from './facts'
 import type { AgentHost } from './host'
-import type { Intent, NluSlots } from './nlu'
+import { entityCandidates, matchGoal, type Intent, type NluSlots } from './nlu'
 import {
   activeSubscriptions,
   categoryLabel,
   findDream,
   money,
   moneyCopy,
+  nluContextOf,
   openDreams,
+  pctLabel,
   potOf,
   shortDate,
   unpaidBills,
 } from './support'
 import { cheapestOverlapping } from './tools'
-import { trace, type Turn } from './turn'
+import { addSource, trace, type Turn } from './turn'
 
 /** Rule-based planner: an understood intent + slots → the tool call to make, or the question to ask. */
 
 export type Slots = NluSlots & Record<string, unknown>
 
+/** A one-line note the reply leads with (voice.line key + facts), e.g. "I can only pay the billed amount". */
+export interface PlanNote {
+  key: string
+  facts?: Record<string, string>
+  /** numbers the note quotes that no tool returned as such (kept as grounding sources) */
+  sources?: Record<string, unknown>
+}
+
 export type IntentPlan =
-  | { kind: 'chat'; intent: Intent }
+  | { kind: 'chat'; intent: Intent; focus?: string }
   | { kind: 'unknown'; intent: Intent }
-  | { kind: 'refusal'; intent: Intent; t4?: { tool: ToolName; args: Record<string, unknown>; store: boolean } }
-  | { kind: 'read'; intent: Intent; tool: ToolName; args: Record<string, unknown> }
-  | { kind: 'action'; intent: Intent; tool: ToolName; args: Record<string, unknown> }
-  | { kind: 'clarify'; intent: Intent; tool: ToolName; missing: string; slots: Slots; choices: Choice[]; facts: Facts }
+  | { kind: 'refusal'; intent: Intent; t4?: { tool: ToolName; args: Record<string, unknown>; store: boolean }; notes?: PlanNote[] }
+  | { kind: 'read'; intent: Intent; tool: ToolName; args: Record<string, unknown>; focus?: string }
+  | { kind: 'action'; intent: Intent; tool: ToolName; args: Record<string, unknown>; notes?: PlanNote[] }
+  | { kind: 'clarify'; intent: Intent; tool: ToolName; missing: string; slots: Slots; choices: Choice[]; facts: Facts; notes?: PlanNote[] }
   | { kind: 'ask'; intent: Intent; facts: Facts }
+  /** "Which subscriptions should I cancel?" — a recommendation built from list_recurring + analyze_bills */
+  | { kind: 'recommend'; intent: Intent }
 
 const SURPLUS_RE = /\b(?:surplus|leftover|left ?over|what'?s left|the rest|remaining|extra|underspend|spare|savings this month)\b|剩下|结余|sisa/i
 
 export function planIntent(intent: Intent, slots: Slots, text: string, host: AgentHost): IntentPlan {
+  const today = host.state().bank.today
   switch (intent) {
     case 'greeting':
     case 'help':
     case 'thanks':
-      return { kind: 'chat', intent }
+      return { kind: 'chat', intent, ...(slots.focus ? { focus: slots.focus } : {}) }
     case 'unknown':
       return { kind: 'unknown', intent }
     case 'external_transfer':
-      return { kind: 'refusal', intent, t4: { tool: 'transfer_external', args: t4Args({ to: slots.person ?? slots.account ?? 'someone else', amount: slots.amount, account: slots.account }), store: true } }
+      return {
+        kind: 'refusal', intent,
+        t4: { tool: 'transfer_external', args: t4Args({ to: slots.person ?? slots.account ?? 'someone else', amount: slots.amount, account: slots.account }), store: true },
+        ...(slots.person && /\b(?:bill|rent|invoice|tuition|fee)s?\b/i.test(text) && /['’]s\b/.test(text) ? { notes: [{ key: 'othersBill', facts: { person: slots.person } }] } : {}),
+      }
     case 'add_payee':
       return { kind: 'refusal', intent, t4: { tool: 'add_payee', args: t4Args({ name: slots.person ?? 'new payee', account: slots.account }), store: true } }
     case 'change_permissions':
@@ -60,27 +77,37 @@ export function planIntent(intent: Intent, slots: Slots, text: string, host: Age
     case 'sensitive_request':
       return { kind: 'refusal', intent }
     case 'overview':
-      return read(intent, 'get_overview', { month: slots.month })
+      return read(intent, 'get_overview', { month: slots.month }, slots.focus)
     case 'breakdown':
-      return read(intent, 'get_spending_breakdown', { month: slots.month, category: slots.category })
+      return read(intent, 'get_spending_breakdown', {
+        month: slots.month,
+        category: slots.category,
+        compare: slots.focus === 'compare' ? true : undefined,
+        months: slots.months,
+        group: slots.group,
+      }, slots.focus)
     case 'search': {
-      const filtered = Boolean(slots.merchant || slots.category || slots.month)
-      return read(intent, 'search_transactions', { query: slots.merchant, category: slots.merchant ? undefined : slots.category, month: slots.month ?? (filtered ? undefined : ym(host.state().bank.today)) })
+      if (slots.focus === 'largest') return read(intent, 'search_transactions', { sort: 'amount', limit: 5, purchasesOnly: slots.category ? undefined : true, category: slots.category, group: slots.group, month: slots.month ?? ym(today) }, 'largest')
+      if (slots.focus === 'late_night') return read(intent, 'search_transactions', { lateNight: true, category: slots.group ? undefined : slots.category, group: slots.group, month: slots.month ?? ym(today) }, 'late_night')
+      const filtered = Boolean(slots.merchant || slots.category || slots.month || slots.group)
+      return read(intent, 'search_transactions', { query: slots.merchant, category: slots.merchant ? undefined : slots.category, group: slots.merchant ? undefined : slots.group, month: slots.month ?? (filtered ? undefined : ym(today)) })
     }
     case 'subscriptions':
+      if (slots.focus === 'recommend') return { kind: 'recommend', intent }
       return read(intent, 'list_recurring', { onlySubscriptions: !/\brecurring|bills?\b/i.test(text) })
     case 'insights':
       return read(intent, 'get_insights', { month: slots.month })
     case 'goals':
-      return read(intent, 'get_goals', {})
+      return slots.focus === 'what_if' && slots.monthly
+        ? read(intent, 'get_goals', { monthly: slots.monthly, goalId: slots.goalId }, 'what_if')
+        : read(intent, 'get_goals', {})
     case 'afford':
-      return slots.amount
-        ? read(intent, 'check_affordability', { amount: slots.amount, label: slots.label, category: slots.category })
-        : clarify(intent, 'check_affordability', 'amount', slots, amountChoices(host.state(), false), { stage: 'need_amount', ...(slots.label ? { label: slots.label } : {}) })
+      return affordPlan(slots, host)
     case 'xray':
       return slots.text ? read(intent, 'xray_bill', { text: slots.text }) : { kind: 'ask', intent, facts: { stage: 'need_text' } }
     case 'bills':
-      return slots.reminder ? reminderPlan(slots, host) : read(intent, 'analyze_bills', {})
+      if (slots.reminder) return reminderPlan(slots, host)
+      return read(intent, 'analyze_bills', { billId: slots.focus === 'due' ? slots.billId : undefined, withinDays: slots.withinDays }, slots.focus)
     case 'save_to_goal':
       return savePlan(slots, text, host)
     case 'withdraw_goal':
@@ -92,9 +119,7 @@ export function planIntent(intent: Intent, slots: Slots, text: string, host: Age
     case 'tripwire':
       return tripwirePlan(slots, host)
     case 'pay_bill':
-      return slots.billId
-        ? { kind: 'action', intent, tool: 'pay_bill', args: { billId: slots.billId } }
-        : clarify(intent, 'pay_bill', 'billId', slots, billChoices(host.state()), { stage: 'need_target', options: listJoin(unpaidBills(host.state()).map((b) => b.name)) })
+      return payPlan(slots, text, host)
     case 'cancel_sub':
       return cancelPlan(slots, host)
     case 'dispute':
@@ -109,8 +134,21 @@ function t4Args(args: Record<string, unknown>): Record<string, unknown> {
   return out
 }
 
-function read(intent: Intent, tool: ToolName, args: Record<string, unknown>): IntentPlan {
-  return { kind: 'read', intent, tool, args: t4Args(args) }
+function read(intent: Intent, tool: ToolName, args: Record<string, unknown>, focus?: string): IntentPlan {
+  return { kind: 'read', intent, tool, args: t4Args(args), ...(focus ? { focus } : {}) }
+}
+
+/** "Can I afford the concert ticket?" — a dream the user already priced needs no question. */
+function affordPlan(slots: Slots, host: AgentHost): IntentPlan {
+  const state = host.state()
+  if (slots.amount) return read('afford', 'check_affordability', { amount: slots.amount, label: slots.label, category: slots.category })
+  const ctx = nluContextOf(state, [])
+  const goalId = (slots.label ? matchGoal(slots.label, ctx) : undefined) ?? slots.goalId
+  const dream = findDream(state, goalId)
+  if (dream && dream.price > 0 && !dream.achievedAt) {
+    return read('afford', 'check_affordability', { amount: dream.price, label: dream.name, category: slots.category })
+  }
+  return clarify('afford', 'check_affordability', 'amount', slots, amountChoices(state, false), { stage: 'need_amount', ...(slots.label ? { label: slots.label } : {}) })
 }
 
 function clarify(intent: Intent, tool: ToolName, missing: string, slots: Slots, choices: Choice[], facts: Facts): IntentPlan {
@@ -127,9 +165,41 @@ function potChoices(state: AppState): Choice[] {
   return state.dreams.filter((d) => (potOf(state, d)?.balance ?? 0) > 0).map((d) => ({ label: d.name, id: d.id }))
 }
 
-function billChoices(state: AppState): Choice[] {
+/** Unpaid bills as choices; bills that share a name are told apart by period ("Electricity · Sep ¥486.20 (overdue)"). */
+function billChoices(state: AppState, ids?: string[]): Choice[] {
   const f = money(state)
-  return unpaidBills(state).slice(0, 5).map((b) => ({ label: `${b.name} ${f(b.amountDue)}`, id: b.id }))
+  const today = state.bank.today
+  const bills = unpaidBills(state).filter((b) => !ids || ids.includes(b.id))
+  const names = new Map<string, number>()
+  for (const b of bills) names.set(b.name, (names.get(b.name) ?? 0) + 1)
+  return bills.slice(0, 5).map((b) => {
+    const twin = (names.get(b.name) ?? 0) > 1
+    const period = twin ? ` · ${monthLabel(b.period, 'short').split(' ')[0]}` : ''
+    const overdue = b.dueDate < today ? ' (overdue)' : ''
+    return { label: `${b.name}${period} ${f(b.amountDue)}${overdue}`, id: b.id }
+  })
+}
+
+/** Pay a bill: the one named, the oldest of several with the same name only after asking, never a different amount. */
+function payPlan(slots: Slots, text: string, host: AgentHost): IntentPlan {
+  const state = host.state()
+  const f = money(state)
+  let billId = slots.billId
+  if (!billId) {
+    const named = entityCandidates('bills', text, nluContextOf(state, []))
+    if (named.length === 1) billId = named[0]
+    else if (named.length > 1) {
+      const choices = billChoices(state, named)
+      return clarify('pay_bill', 'pay_bill', 'billId', slots, choices, { stage: 'need_target', options: listJoin(choices.map((c) => c.label)) })
+    }
+  }
+  if (!billId) {
+    const choices = billChoices(state)
+    return clarify('pay_bill', 'pay_bill', 'billId', slots, choices, { stage: 'need_target', options: listJoin(choices.map((c) => c.label)) })
+  }
+  const bill = state.bank.bills.find((b) => b.id === billId)
+  const notes: PlanNote[] = bill && slots.amount && slots.amount !== bill.amountDue ? [{ key: 'billAmountNote', facts: { bill: bill.name, due: f(bill.amountDue) } }] : []
+  return { kind: 'action', intent: 'pay_bill', tool: 'pay_bill', args: { billId }, ...(notes.length ? { notes } : {}) }
 }
 
 function subChoices(series: RecurringSeries[]): Choice[] {
@@ -155,23 +225,64 @@ function safeRecurring(host: AgentHost): RecurringSeries[] {
 
 function savePlan(slots: Slots, text: string, host: AgentHost): IntentPlan {
   const state = host.state()
+  const f = money(state)
   let { goalId, amount } = slots
-  if (!amount && SURPLUS_RE.test(text)) {
+  const notes: PlanNote[] = []
+  // "move all my money": say the limits up front — own pots only, the per-move cap, money kept for bills
+  if (slots.all) {
+    notes.push({ key: 'moveAllNote', facts: { cap: f(state.mandate.perActionCap) } })
+    amount = undefined
+  }
+  if (!amount && !slots.all && SURPLUS_RE.test(text)) {
     const stash = stashSuggestion(host, goalId)
     if (stash) {
       goalId = goalId ?? stash.goalId
       amount = stash.amount
+      const note = stashNote(host, stash)
+      if (note) notes.push(note)
     }
   }
+  if (slots.repeat && amount) notes.push({ key: 'repeatNote', facts: { amount: f(amount) } })
   const options = goalChoices(state)
+  const extra = notes.length ? { notes } : {}
   if (!goalId) {
     if (options.length === 1) goalId = options[0].id
-    else return clarify('save_to_goal', 'transfer_to_goal', 'goalId', { ...slots, ...(amount ? { amount } : {}) }, options, { stage: 'need_target', options: listJoin(options.map((o) => o.label)) })
+    else return { ...clarify('save_to_goal', 'transfer_to_goal', 'goalId', { ...slots, ...(amount ? { amount } : {}) }, options, { stage: 'need_target', options: listJoin(options.map((o) => o.label)) }), ...extra } as IntentPlan
   }
   if (!amount) {
-    return clarify('save_to_goal', 'transfer_to_goal', 'amount', { ...slots, goalId }, amountChoices(state), { stage: 'need_amount', goalName: findDream(state, goalId)?.name ?? '' })
+    const choices = slots.all ? capChoices(state) : amountChoices(state)
+    return { ...clarify('save_to_goal', 'transfer_to_goal', 'amount', { ...slots, goalId }, choices, { stage: 'need_amount', goalName: findDream(state, goalId)?.name ?? '' }), ...extra } as IntentPlan
   }
-  return { kind: 'action', intent: 'save_to_goal', tool: 'transfer_to_goal', args: { goalId, amount } }
+  return { kind: 'action', intent: 'save_to_goal', tool: 'transfer_to_goal', args: { goalId, amount }, ...extra }
+}
+
+/** For "move all my money": the per-move maximum first, then smaller steps. */
+function capChoices(state: AppState): Choice[] {
+  const f = money(state)
+  const cap = state.mandate.perActionCap
+  const values = [cap, ...[30_000, 20_000, 10_000].filter((v) => v < cap)].slice(0, 3)
+  return values.map((v) => ({ label: f(v), id: String(v) }))
+}
+
+/** Why the stash is the amount it is ("¥330 gets MacBook Air to 50% — the other ¥338 of your ¥668 surplus is yours"). */
+function stashNote(host: AgentHost, stash: { goalId: string; amount: Minor }): PlanNote | undefined {
+  try {
+    const ctx = host.ctx()
+    const state = host.state()
+    const s = summarizeMonth(ctx)
+    const surplus = s.target - s.projected
+    const dream = findDream(state, stash.goalId)
+    if (!dream || surplus <= 0) return undefined
+    const saved = potOf(state, dream)?.balance ?? 0
+    const pct = dream.price > 0 ? ((saved + stash.amount) / dream.price) * 100 : 0
+    const c = moneyCopy(state)
+    const rest = surplus - stash.amount
+    const facts: Record<string, string> = { amount: c(stash.amount), goal: dream.name, pct: pctLabel(pct) }
+    if (rest > 0) Object.assign(facts, { rest: c(rest), surplus: c(surplus) })
+    return { key: 'stashNote', facts, sources: { surplus, rest, pct, saved } }
+  } catch {
+    return undefined
+  }
 }
 
 /** Half of a projected surplus (the mirror's "Stash it" CTA), within the per-action cap. */
@@ -264,6 +375,15 @@ function cancelPlan(slots: Slots, host: AgentHost): IntentPlan {
   const series = safeRecurring(host)
   const id = slots.recurringId
   const known = id ? series.find((s) => s.id === id && s.status === 'active') : undefined
+  // "cancel Spotify" when the user has QQ Music: ask, never cancel a different service than the one named
+  if (slots.brand) {
+    const choices = known ? [{ label: known.merchant, id: known.id }] : subChoices(series)
+    const note: PlanNote = { key: 'brandMissing', facts: { brand: slots.brand, ...(known ? { merchant: known.merchant } : {}) } }
+    const { brand: _brand, recurringId: _id, ...rest } = slots
+    void _brand
+    void _id
+    return { ...clarify('cancel_sub', 'cancel_subscription', 'recurringId', rest as Slots, choices, { stage: 'need_target', ...(known ? {} : { options: listJoin(choices.map((c) => c.label)) }) }), notes: [note] } as IntentPlan
+  }
   if (known) return { kind: 'action', intent: 'cancel_sub', tool: 'cancel_subscription', args: { recurringId: known.id } }
   const choices = subChoices(series)
   return clarify('cancel_sub', 'cancel_subscription', 'recurringId', slots, choices, { stage: 'need_target', options: listJoin(choices.map((c) => c.label)) })
@@ -319,6 +439,22 @@ export interface PlanOutcome {
   plan: TaskPlan
   overview?: Record<string, unknown>
   results: Map<string, GateResult>
+  /** "Save faster for <goal>": what the fixes free up each month and how much sooner the goal arrives */
+  goalImpact?: GoalImpact
+  /** the category cap proposed, and what was already spent there this month */
+  cap?: { category: CategoryId; limit: Minor; spent: Minor }
+}
+
+export interface GoalImpact {
+  goalId: string
+  goalName: string
+  /** estimated monthly saving from the plan's fixes */
+  monthly: Minor
+  parts: { label: string; monthly: Minor }[]
+  /** weeks the goal arrives sooner at the current saving pace + the fixes */
+  weeksSooner?: number
+  /** the one-off move into the goal pot the plan proposes (pending the user's tap) */
+  transfer?: Minor
 }
 
 /** Cancel running plans: waiting steps skipped, their pending actions rejected. */
@@ -420,15 +556,64 @@ export function runRecoveryPlan(host: AgentHost, turn: Turn, opts: { goalId?: st
   const overview = runner.data(s1)
   const status = String(overview.status ?? 'no_data')
   if (!goal) retitle(host, planId, status, String(overview.monthLabel ?? monthLabel(ym(state.bank.today))))
-  if (status === 'over' || status === 'pace_over') overPlan(host, runner, s1)
+  let fixes: OverFixes | undefined
+  if (status === 'over' || status === 'pace_over') fixes = overPlan(host, runner, s1)
   else if (status === 'under') underPlan(host, runner, s1, opts.goalId)
   else if (status === 'on_track') onTrackPlan(host, runner, s1)
+  const goalImpact = goal && fixes ? goalPlan(host, runner, goal.id, fixes, s1) : undefined
+  if (goalImpact) addSource(turn, goalImpact)
+  if (fixes?.cap) addSource(turn, fixes.cap)
   host.mutate((draft) => {
     const plan = draft.plans.find((p) => p.id === planId)
     if (plan) refreshPlan(plan)
   })
   const plan = host.state().plans.find((p) => p.id === planId) as TaskPlan
-  return { plan, overview, results: runner.results }
+  return { plan, overview, results: runner.results, ...(goalImpact ? { goalImpact } : {}), ...(fixes?.cap ? { cap: fixes.cap } : {}) }
+}
+
+interface OverFixes {
+  steps: string[]
+  cap?: { category: CategoryId; limit: Minor; spent: Minor; prevMonth?: Minor }
+  sub?: RecurringSeries
+}
+
+/**
+ * "Save faster for the Birkin": price each fix per month (a cap saves what last month's spend was above it, a
+ * cancelled subscription its monthly price), turn the total into weeks gained at the goal's saving pace, and
+ * propose moving that monthly amount into the pot now — a pending card, never automatic.
+ */
+function goalPlan(host: AgentHost, runner: PlanRunner, goalId: string, fixes: OverFixes, after: string): GoalImpact | undefined {
+  const state = host.state()
+  const dream = findDream(state, goalId)
+  if (!dream) return undefined
+  const f = money(state)
+  const parts: GoalImpact['parts'] = []
+  if (fixes.cap) {
+    const typical = fixes.cap.prevMonth ?? fixes.cap.spent
+    const saving = roundDownTo10(typical - fixes.cap.limit, state.profile?.currency ?? 'CNY')
+    if (saving > 0) parts.push({ label: `the ${categoryLabel(fixes.cap.category)} cap`, monthly: saving })
+  }
+  if (fixes.sub) parts.push({ label: `cancelling ${fixes.sub.merchant}`, monthly: fixes.sub.lastAmount })
+  const monthly = parts.reduce((sum, p) => sum + p.monthly, 0)
+  if (monthly <= 0) return undefined
+  let weeksSooner: number | undefined
+  try {
+    const progress = goalProgress(dream, host.ctx())
+    const remaining = Math.max(0, progress.price - progress.saved)
+    if (progress.monthlyRate > 0 && remaining > 0) {
+      const months = remaining / progress.monthlyRate - remaining / (progress.monthlyRate + monthly)
+      weeksSooner = Math.round((months * 52) / 12)
+    }
+  } catch {
+    weeksSooner = undefined
+  }
+  const transfer = Math.min(monthly, state.mandate.perActionCap)
+  if (transfer > 0) {
+    // independent of the other fixes (a cancellation may still be waiting for the PIN): its own card, your tap
+    const step = runner.add({ tool: 'transfer_to_goal', args: { goalId, amount: transfer }, dependsOn: [after], label: `Move ${f(transfer)} into ${dream.name} — what these fixes free up each month` })
+    runner.run(step)
+  }
+  return { goalId, goalName: dream.name, monthly, parts, ...(weeksSooner && weeksSooner > 0 ? { weeksSooner } : {}), ...(transfer > 0 ? { transfer } : {}) }
 }
 
 function retitle(host: AgentHost, planId: string, status: string, month: string): void {
@@ -439,7 +624,7 @@ function retitle(host: AgentHost, planId: string, status: string, month: string)
   })
 }
 
-function overPlan(host: AgentHost, runner: PlanRunner, s1: string): void {
+function overPlan(host: AgentHost, runner: PlanRunner, s1: string): OverFixes {
   const s2 = runner.add({ tool: 'get_spending_breakdown', args: {}, dependsOn: [s1], label: 'Find what pushed you over' })
   const s3 = runner.add({ tool: 'analyze_bills', args: {}, dependsOn: [s1], label: 'Look for bill and subscription leaks' })
   const s4 = runner.add({ tool: 'get_insights', args: {}, dependsOn: [s2], label: 'Spot habits worth changing' })
@@ -456,6 +641,12 @@ function overPlan(host: AgentHost, runner: PlanRunner, s1: string): void {
   if (sub) proposals.push(runner.add({ tool: 'cancel_subscription', args: { recurringId: sub.id }, dependsOn: [s3], label: `Cancel ${sub.merchant} (overlapping video app)` }))
   if (!hasPaceWire(state)) proposals.push(runner.add({ tool: 'create_tripwire', args: { kind: 'pace_over', threshold: 100 }, dependsOn: [s2], label: 'Warn me if I’m on pace to overshoot' }))
   for (const id of proposals) runner.run(id)
+  const row = cap ? (Array.isArray(runner.data(s2).categories) ? (runner.data(s2).categories as { category: string; spent: number; prevMonth?: number }[]) : []).find((r) => r.category === cap.category) : undefined
+  return {
+    steps: proposals,
+    ...(cap ? { cap: { ...cap, spent: row?.spent ?? 0, ...(row?.prevMonth !== undefined ? { prevMonth: row.prevMonth } : {}) } } : {}),
+    ...(sub ? { sub } : {}),
+  }
 }
 
 function underPlan(host: AgentHost, runner: PlanRunner, s1: string, goalId?: string): void {
@@ -542,6 +733,13 @@ export function planReply(outcome: PlanOutcome, state: AppState, tone: Tone): st
       numbers: `Recovery plan${spent && target ? ` (spent ${spent} of ${target})` : ''}: ${list}.`,
     })
   const parts = [lead]
+  const impact = outcome.goalImpact
+  if (impact) {
+    const lead2 = `For ${impact.goalName}: these fixes free up about ${f(impact.monthly)} a month${impact.weeksSooner ? ` — roughly ${impact.weeksSooner} weeks sooner at your saving pace` : ''}.`
+    parts[0] = `${lead2} ${lead}`
+  }
+  const cap = outcome.cap
+  if (cap && cap.spent >= cap.limit) parts.push(`You’re already at ${f(cap.spent)} on ${categoryLabel(cap.category)} this month, so treat ${f(cap.limit)} as next month’s line.`)
   if (done.length) parts.push(`${countWord(done.length)} ${done.length === 1 ? 'is' : 'are'} already done — you can undo ${done.length === 1 ? 'it' : 'them'} from the card for a short while.`)
   if (waiting.length) parts.push(`${countWord(waiting.length)} ${waiting.length === 1 ? 'needs' : 'need'} your OK on the card${waiting.some((s) => s.tool === 'cancel_subscription' || s.tool === 'pay_bill' || s.tool === 'dispute_transaction') ? ' (with your PIN)' : ''}.`)
   if (blocked.length) parts.push(`${countWord(blocked.length)} couldn’t go ahead: ${lowerFirst(blocked[0].resultSummary ?? 'blocked by your permission rules')}`)

@@ -2,8 +2,18 @@
   position: fixed;
   left: max(12px, calc(50% - var(--app-max) / 2 + 12px));
   right: max(12px, calc(50% - var(--app-max) / 2 + 12px));
-  bottom: calc(var(--chrome-bottom) + 12px);
+  /* above the tab bar, or above a screen's own bottom bar (the chat composer) when it registers one */
+  bottom: max(calc(var(--chrome-bottom) + 12px), calc(var(--toast-inset, 0px) + 8px));
   z-index: 70;
+  pointer-events: none;
+}
+
+/* a sheet or dialog is open: step behind its layer (z 60) and wait — timers hold until it closes */
+.viewport[data-under-modal] {
+  z-index: 55;
+}
+
+.viewport[data-under-modal] .toast {
   pointer-events: none;
 }
 

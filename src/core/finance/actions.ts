@@ -44,16 +44,16 @@ export function categoryLimit(ctx: FinanceContext, category: CategoryId): Minor 
 }
 
 /**
- * A tightening budget cap, rounded down to ¥10: 10% under the category's current limit when it has one,
- * otherwise ~15% under `usual` (callers pass last month's spend; min ¥50). A "cap" never loosens a budget,
- * so it is always below the current limit — undefined when there is nothing left to tighten.
+ * A tightening budget cap, rounded down to ¥10: ~15% under `usual` (callers pass last month's spend; min ¥50).
+ * The amount depends only on that history — never on the current limit — so once the user sets it, the same
+ * suggestion is satisfied and disappears instead of coming back ¥50 lower ("Cap Shopping at ¥410" right after
+ * "Cap Shopping at ¥460" was done). A "cap" never loosens a budget either: undefined when the category already has a
+ * limit at or below it.
  */
 export function capCategoryAction(ctx: FinanceContext, category: CategoryId, usual: Minor): SuggestedAction | undefined {
   const currency = ctx.profile.currency
   const current = categoryLimit(ctx, category)
-  const limit = current !== undefined
-    ? roundDownTo10(current * 0.9, currency)
-    : Math.max(majorUnits(50, currency), roundDownTo10(usual * 0.85, currency))
+  const limit = Math.max(majorUnits(50, currency), roundDownTo10(usual * 0.85, currency))
   if (limit <= 0 || (current !== undefined && limit >= current)) return undefined
   return { tool: 'set_category_budget', args: { category, limit }, label: `Cap ${CATEGORIES[category].label} at ${moneyFmt(currency)(limit)}` }
 }

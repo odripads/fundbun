@@ -305,7 +305,7 @@
 .sealButton > svg {
   width: 16px;
   height: 16px;
-  color: var(--accent-strong);
+  color: var(--accent-text);
 }
 
 .hash {
@@ -361,13 +361,15 @@
   flex: 1 0 auto;
 }
 
-/* the primary takes the remaining width, or its own row when the card is narrow */
+/* the primary takes the remaining width, or — when its full label doesn't fit beside "Not now" — its own row
+ * above it (wrap-reverse); it never shrinks below its label */
 .buttons > :last-child {
-  flex: 2 1 170px;
+  flex: 2 1 auto;
+  min-width: fit-content;
 }
 
 .inlineError {
-  color: var(--over);
+  color: var(--over-text);
   font-size: var(--fs-sm);
   font-weight: 600;
 }
@@ -396,7 +398,7 @@
   flex: none;
   width: 18px;
   height: 18px;
-  color: var(--under);
+  color: var(--under-text);
 }
 
 .blockedRow {
@@ -412,7 +414,7 @@
   flex: none;
   width: 20px;
   height: 20px;
-  color: var(--over);
+  color: var(--over-text);
 }
 
 .mutedRow {

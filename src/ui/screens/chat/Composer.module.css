@@ -119,5 +119,5 @@
 .hint svg {
   width: 12px;
   height: 12px;
-  color: var(--under);
+  color: var(--under-text);
 }

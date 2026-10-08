@@ -192,3 +192,40 @@ describe('evaluateTripwires — money in prose', () => {
     expect(evaluateTripwires(one, { newTxns: [big], now: NOW }).events[0].title).toBe('Big purchase: ¥1,299.50 at Taobao')
   })
 })
+
+describe('evaluateTripwires — review fixes', () => {
+  it('F34: never re-fires an id already in the log, and a day older than the last alerted one stays quiet', () => {
+    const daily300 = tw('tw_d', 'daily_over', yuan(300), { lastFiredKey: '2026-10-22' })
+    const ctx = makeCtx({
+      today: '2026-10-23',
+      txns: [spend('2026-10-21', 'JD.com', 'shopping', 500), spend('2026-10-22', 'JD.com', 'shopping', 500)],
+      dreams: MEI_DREAMS,
+      tripwires: [daily300],
+      profile: { targetSpend: yuan(9_500) },
+    })
+    const late = spend('2026-10-22', 'Corner bookshop', 'shopping', 88)
+    const older = spend('2026-10-21', 'Corner bookshop', 'shopping', 88)
+    expect(evaluateTripwires(ctx, { newTxns: [late], now: NOW, firedIds: ['twe_tw_d_2026-10-22'] }).events).toEqual([])
+    const r = evaluateTripwires(ctx, { newTxns: [older], now: NOW })
+    expect(r.events).toEqual([])
+    expect(r.tripwires[0].lastFiredKey).toBe('2026-10-22')
+  })
+
+  it('events record the app day they fired on and, for month-level kinds, the month', () => {
+    const out = evaluateTripwires(ctxAt(350, [tw('tw_80', 'month_pct', 80), tw('tw_big', 'single_over', yuan(300))]), {
+      newTxns: [spend('2026-10-22', 'JD.com', 'shopping', 459)],
+      now: NOW,
+    })
+    expect(out.events.find((e) => e.tripwireId === 'tw_80')).toMatchObject({ firedOn: '2026-10-22', month: '2026-10' })
+    const big = out.events.find((e) => e.tripwireId === 'tw_big')!
+    expect(big.firedOn).toBe('2026-10-22')
+    expect(big.month).toBeUndefined()
+  })
+
+  it('a bill payment (rent) is not a "big purchase" for single_over', () => {
+    const ctx = ctxAt(350, [tw('tw_big', 'single_over', yuan(950))])
+    const rent = spend('2026-10-22', 'Landlord', 'housing', 4_200, { billId: 'bill_rent_2026-11' })
+    const power = spend('2026-10-22', 'Power', 'utilities', 1_000)
+    expect(evaluateTripwires(ctx, { newTxns: [rent, power], now: NOW }).events).toEqual([])
+  })
+})

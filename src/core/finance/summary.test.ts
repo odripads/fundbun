@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { BudgetPlan } from '../types'
+import type { BudgetPlan, Transaction } from '../types'
 import { checking, daily, makeBill, makeCtx, makeTxn, monthly, pay, pot, potContributions, spend, yuan } from './__fixtures__'
 import { isSpending, monthHistory, netSpend, spendingTxns, summarizeMonth, unpaidBillsDue } from './summary'
 
@@ -233,5 +233,17 @@ describe('summarizeMonth — bills vs recurring', () => {
     const withOldBill = summarizeMonth(makeCtx({ today: '2026-10-10', txns, bills: [lastMonthBill] }))
     const cancelled = summarizeMonth(makeCtx({ today: '2026-10-10', txns, bills: [lastMonthBill], cancelledMerchants: ['China Mobile'] }))
     expect(withOldBill.projected - cancelled.projected).toBe(yuan(128))
+  })
+})
+
+describe('savedToGoals — F36: net of money moved back out', () => {
+  it('pot withdrawals and money returned to checking count against what was saved; undone moves are ignored', () => {
+    const potTx = (date: string, amount: number, extra: Partial<Transaction> = {}) => makeTxn({ date, amount: yuan(amount), accountId: 'pot_dream_chengdu', category: 'savings', merchant: 'Checking', ...extra })
+    const base = { today: '2026-10-22', accounts: [checking(5_000), pot('dream_chengdu', 0)] }
+    const saved = (txns: Transaction[]) => summarizeMonth(makeCtx({ ...base, txns })).savedToGoals
+    expect(saved([potTx('2026-10-05', 2_000), potTx('2026-10-12', 500)])).toBe(yuan(2_500))
+    expect(saved([potTx('2026-10-05', 2_000), potTx('2026-10-12', 500), potTx('2026-10-15', -300)])).toBe(yuan(2_200))
+    expect(saved([potTx('2026-10-05', 500), potTx('2026-10-15', -900)])).toBe(0)
+    expect(saved([potTx('2026-10-05', 500), potTx('2026-10-06', 300, { flags: ['reversed'] }), potTx('2026-10-06', -300, { flags: ['reversed'] })])).toBe(yuan(500))
   })
 })

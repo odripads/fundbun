@@ -212,7 +212,7 @@
 }
 
 .valueOver {
-  color: var(--over);
+  color: var(--over-text);
 }
 
 .value svg {
@@ -420,7 +420,7 @@
   align-items: center;
   justify-content: center;
   gap: 3px;
-  color: var(--over);
+  color: var(--over-text);
   font-size: 10px;
   font-weight: 750;
   letter-spacing: 0.04em;
@@ -529,6 +529,6 @@
 }
 
 .lateValue {
-  color: var(--over);
+  color: var(--over-text);
   font-weight: 700;
 }

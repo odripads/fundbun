@@ -19,7 +19,7 @@
 .eyebrow svg {
   width: 14px;
   height: 14px;
-  color: var(--accent-strong);
+  color: var(--accent-text);
 }
 
 .minor {
@@ -198,16 +198,16 @@
 }
 
 .status-over svg {
-  color: var(--over);
+  color: var(--over-text);
 }
 .status-pace_over svg {
-  color: var(--warn);
+  color: var(--warn-text);
 }
 .status-on_track svg {
-  color: var(--accent-strong);
+  color: var(--accent-text);
 }
 .status-under svg {
-  color: var(--under);
+  color: var(--under-text);
 }
 .status-no_data svg {
   color: var(--text-3);
@@ -302,7 +302,8 @@
   width: 24px;
   height: 24px;
   margin-top: 1px;
-  color: var(--tone);
+  /* the tone, pulled toward the text colour: small text reaches 4.5:1 in both themes */
+  color: color-mix(in srgb, var(--tone) 65%, var(--text));
 }
 
 .verdict-warn {
@@ -594,7 +595,7 @@
   width: 16px;
   height: 16px;
   margin-top: 2px;
-  color: var(--accent-strong);
+  color: var(--accent-text);
 }
 
 /* ───────────────────────────── findings / insights ───────────────────────────── */
@@ -638,7 +639,8 @@
   height: 32px;
   border-radius: 10px;
   background: color-mix(in srgb, var(--sev) 15%, transparent);
-  color: var(--sev);
+  /* the tone, pulled toward the text colour: small text reaches 4.5:1 in both themes */
+  color: color-mix(in srgb, var(--sev) 65%, var(--text));
 }
 
 .itemIcon svg {
@@ -821,7 +823,7 @@
 .optionIcon svg {
   width: 16px;
   height: 16px;
-  color: var(--accent-strong);
+  color: var(--accent-text);
 }
 
 .optionCheck {

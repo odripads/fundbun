@@ -96,7 +96,7 @@ export function PolicyView() {
             <dd>{mandate.failedPinAttempts}</dd>
           </div>
         </dl>
-        <button type="button" className={styles.linkish} onClick={() => navigate('settings')}>Change permissions in Settings</button>
+        <button type="button" className={styles.linkish} onClick={() => navigate('settings', { query: { s: 'perms' } })}>Change permissions in Settings</button>
       </section>
 
       {total > 0 ? (

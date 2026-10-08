@@ -1,3 +1,4 @@
+import { Check } from 'lucide-react'
 import { useRef, type KeyboardEvent, type ReactNode } from 'react'
 import { cx } from './cx'
 import { rovingIndex } from './roving'
@@ -58,7 +59,11 @@ export function Segmented<T extends string>({ options, value, onChange, label, s
             className={cx(styles.option, checked && styles.checked)}
             onClick={() => onChange(o.value)}
           >
-            {o.icon ? <span className={styles.icon} aria-hidden="true">{o.icon}</span> : null}
+            {o.icon ? (
+              <span className={styles.icon} aria-hidden="true">{o.icon}</span>
+            ) : checked ? (
+              <span className={styles.check} data-check="" aria-hidden="true"><Check /></span>
+            ) : null}
             <span>{o.label}</span>
           </button>
         )

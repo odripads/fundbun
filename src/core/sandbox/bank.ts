@@ -1,10 +1,10 @@
 import { CATEGORIES } from '../categories'
 import { addDays, dayOfMonth, daysInMonth, ym } from '../dates'
-import type { Account, BankState, Bill, CategoryId, Dispute, ISODate, Initiator, Minor, Payee, Transaction } from '../types'
+import type { Account, BankState, Bill, CategoryId, Dispute, ISODate, Initiator, Minor, PayChannel, Payee, Transaction } from '../types'
 import { billPaymentDescription, billsIssuedOn, seriesOf } from './billing'
 import { defaultCategorizer, safeCategorize, type Categorizer } from './categorizer'
 import { CHECKING_ID, nextTxnId, potId, toTransaction, type Draft } from './drafts'
-import { generateDay, incomeDrafts, potContribution } from './generator'
+import { billPaymentSchedule, generateDay, incomeDrafts, potContribution } from './generator'
 import { getScript } from './scripts'
 
 export type BankErrorCode =
@@ -241,7 +241,8 @@ export class SandboxBank {
 
   /**
    * Advance the sandbox clock by n days. For each new day: next-period bills are issued on the 1st, salary
-   * lands on payday, scheduled bill payments and direct debits execute, monthly pot standing orders run,
+   * lands on payday, scheduled bill payments and direct debits execute, the persona pays its hand-paid bills
+   * (rent, utilities, phone) on its habitual day the way its history does, monthly pot standing orders run,
    * organic activity from generateDay is posted, and unpaid bills past their due date turn overdue.
    */
   advanceDays(n: number): Transaction[] {
@@ -258,7 +259,7 @@ export class SandboxBank {
         out.push(...incomeDrafts(script, date, this.checking().id).map((d) => this.post(d)))
       }
       out.push(...this.runScheduledPayments(date))
-      if (script) out.push(...this.runAutoPay(date), ...this.runStandingOrders(date))
+      if (script) out.push(...this.runAutoPay(date), ...this.runHabitPayments(date), ...this.runStandingOrders(date))
       out.push(...this.postOrganic(generateDay(this.state, date)))
       this.markOverdue(date)
     }
@@ -306,18 +307,19 @@ export class SandboxBank {
     }
   }
 
-  private executeBillPayment(bill: Bill, payee: Payee, initiatedBy: Initiator): Transaction {
+  private executeBillPayment(bill: Bill, payee: Payee, initiatedBy: Initiator, how: { time?: string; channel?: PayChannel } = {}): Transaction {
     const checking = this.checking()
     if (checking.balance < bill.amountDue) throw new BankError('INSUFFICIENT_FUNDS', `${checking.name} has insufficient funds`)
     if (initiatedBy === 'agent') this.assertAgentAllowance(bill.amountDue)
     const txn = this.post({
       accountId: checking.id,
       date: this.state.today,
+      ...(how.time && HHMM.test(how.time) ? { time: how.time } : {}),
       amount: -bill.amountDue,
       merchant: payee.name,
       description: billPaymentDescription(bill, payee.name),
       category: bill.category,
-      channel: 'bank_transfer',
+      channel: how.channel ?? 'bank_transfer',
       payeeId: payee.id,
       billId: bill.id,
       initiatedBy,
@@ -368,6 +370,31 @@ export class SandboxBank {
     return out
   }
 
+  /**
+   * The persona pays the bills it pays by hand (no direct debit) the way its generated history does: on its habitual
+   * day (billPaymentSchedule, dueDate − payLeadDays) or as soon as funds allow once that day has passed — so rent and
+   * utilities keep landing after the clock moves. Bills the user scheduled or paid are left alone (status 'scheduled'
+   * / 'paid'); a bill the account can't cover stays unpaid (and turns overdue) until it can.
+   */
+  private runHabitPayments(date: ISODate): Transaction[] {
+    const script = getScript(this.state.personaId)
+    if (!script) return []
+    const out: Transaction[] = []
+    for (const bill of this.state.bills) {
+      if (bill.status !== 'upcoming' && bill.status !== 'overdue') continue
+      const series = seriesOf(script, bill)
+      if (!series || series.autoPay) continue
+      const plan = billPaymentSchedule(script, this.state.seed, series, bill)
+      if (plan.date > date) continue
+      try {
+        out.push(this.executeBillPayment(bill, this.verifiedPayee(bill.payeeId), 'user', { time: plan.time, channel: series.channel }))
+      } catch (e) {
+        if (!(e instanceof BankError)) throw e
+      }
+    }
+    return out
+  }
+
   private runStandingOrders(date: ISODate): Transaction[] {
     const script = getScript(this.state.personaId)
     if (!script) return []
@@ -375,7 +402,8 @@ export class SandboxBank {
     const out: Transaction[] = []
     for (const plan of script.pots) {
       const pot = this.state.accounts.find((a) => a.id === potId(plan.goalId))
-      if (!plan.monthly || !pot || dayOfMonth(date) !== Math.min(plan.day, daysInMonth(ym(date)))) continue
+      // a pot whose goal was removed is closed: the standing order stops with it
+      if (!plan.monthly || !pot || pot.closed || dayOfMonth(date) !== Math.min(plan.day, daysInMonth(ym(date)))) continue
       const amount = potContribution(script, this.state.seed, plan, ym(date))
       if (amount <= 0 || checking.balance < amount) continue
       out.push(...this.transferInternal(checking.id, pot.id, amount, 'Monthly auto-save 每月自动转存', 'user'))

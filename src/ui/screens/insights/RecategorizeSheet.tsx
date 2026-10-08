@@ -71,8 +71,10 @@ function Picker({ txn, currency, onSave, onClose, open }: RecategorizeSheetProps
                 className={styles.radio}
               />
               <span className={styles.optionEmoji} aria-hidden="true">{c.emoji}</span>
-              <span className={styles.optionLabel}>{c.label}</span>
-              {id === txn.category ? <span className={styles.nowTag}>now</span> : null}
+              <span className={styles.optionText}>
+                <span className={styles.optionLabel}>{c.label}</span>
+                {id === txn.category ? <span className={styles.nowTag}>now</span> : null}
+              </span>
               {checked ? <Check aria-hidden="true" className={styles.optionCheck} /> : null}
             </label>
           )

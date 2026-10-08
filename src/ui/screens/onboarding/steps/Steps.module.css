@@ -65,7 +65,7 @@
   display: flex;
   align-items: flex-start;
   gap: 6px;
-  color: var(--over);
+  color: var(--over-text);
   font-size: var(--fs-sm);
   font-weight: 650;
   line-height: 1.4;
@@ -112,7 +112,7 @@
   border-radius: 50%;
   background: var(--surface);
   box-shadow: inset 0 0 0 1px var(--border);
-  color: var(--accent-strong);
+  color: var(--accent-text);
 }
 
 .factIcon svg {
@@ -149,12 +149,12 @@
   width: 16px;
   height: 16px;
   margin-top: 2px;
-  color: var(--under);
+  color: var(--under-text);
   stroke-width: 2.2;
 }
 
 .never .bullet svg {
-  color: var(--over);
+  color: var(--over-text);
 }
 
 /* "What we never do" — a link-style disclosure */
@@ -222,7 +222,7 @@
   width: 14px;
   height: 14px;
   margin-top: 1px;
-  color: var(--under);
+  color: var(--under-text);
 }
 
 /* a native <select> dressed like a TextField */

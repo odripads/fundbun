@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createTestApp, memoryStorage, type FundBunApp } from '../core/app'
 import type { OnboardingInput } from '../core/app-api'
 import { App, SCREENS } from './App'
+import { agentPillName } from './components/layout/ShellActions'
 import type { EngineStatus } from './state'
 import { byLabel, byText, cleanup, click, flush, key, render } from './components/ds/testing'
 
@@ -118,14 +119,20 @@ describe('App shell — onboarded', () => {
   it('the kill switch pauses the agent instantly and points to Settings', async () => {
     const app = onboardedApp()
     const { container } = await renderAt('#/home', app)
-    const pill = byLabel(container, 'Agent is on. Pause the agent now (kill switch)')!
+    const pill = byLabel(container, agentPillName('active'))!
+    // F49: a switch, not a status badge — the visible word is the action, and the spoken name starts with it
+    expect(pill.textContent).toBe('Pause')
+    expect(pill.getAttribute('aria-label')!.startsWith(pill.textContent!)).toBe(true)
     await click(pill)
     expect(app.getSnapshot().state.mandate.frozen).toBe(true)
     expect(document.body.textContent).toContain('Agent paused')
-    const paused = byLabel(container, 'Agent is paused. Open settings to resume')!
+    const paused = byLabel(container, agentPillName('paused'))!
+    expect(paused.textContent).toBe('Paused')
+    expect(paused.getAttribute('aria-label')!.startsWith('Paused')).toBe(true)
     await click(paused)
     await flush()
-    expect(window.location.hash).toBe('#/settings')
+    // straight to the kill switch (and its Unfreeze with PIN), not just the top of Settings
+    expect(window.location.hash).toBe('#/settings?s=kill')
   })
 
   it('settings has a back button and compact actions', async () => {

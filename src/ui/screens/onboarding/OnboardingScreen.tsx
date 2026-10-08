@@ -190,6 +190,8 @@ export function OnboardingScreen() {
       tone: 'success',
       title: `Welcome, ${built.input.name}`,
       message: mirrored && mirrored !== 'no_data' ? 'Here’s your month, mirrored.' : 'Your mirror fills in as this month’s spending arrives.',
+      // a greeting, not a task: brief, so it doesn't sit on the first Home's tiles and CTA (F39)
+      duration: 3500,
     })
     navigate('home', { replace: true })
   }

@@ -2,12 +2,27 @@ import type { AppApi, Result } from '../app-api'
 import { MAX_PIN_ATTEMPTS, PIN_LOCK_MINUTES } from '../security/pin'
 import { decryptJSON } from '../security/vault'
 import { appendAudit, verifyAuditAnchored } from './audit'
-import { LOCKED_MSG, NOT_SET_UP_MSG, expirePending, type Core } from './core'
+import { LOCKED_MSG, NOT_SET_UP_MSG, expirePending, syncClock, type Core } from './core'
 import { stepUp } from './safety'
+import type { UnlockThrottle } from './persistence'
 import { parseState } from './state'
 import { OK, attempt, fail } from './util'
 
 type VaultApi = Pick<AppApi, 'isLocked' | 'unlock' | 'enableVault' | 'disableVault'>
+
+/** Longest single unlock lock-out (the delay doubles with each lock-out in a row: 5, 10, 20 … minutes). */
+export const MAX_UNLOCK_LOCK_MINUTES = 24 * 60
+
+/**
+ * One more wrong vault PIN: every MAX_PIN_ATTEMPTS wrong tries lock unlocking for PIN_LOCK_MINUTES × 2^(lock-outs so
+ * far), capped at MAX_UNLOCK_LOCK_MINUTES. Only a successful unlock (or wiping the data) resets it.
+ */
+export function nextThrottle(t: UnlockThrottle, nowMs: number): UnlockThrottle {
+  const failures = t.failures + 1
+  if (failures < MAX_PIN_ATTEMPTS) return { ...t, failures }
+  const minutes = Math.min(MAX_UNLOCK_LOCK_MINUTES, PIN_LOCK_MINUTES * 2 ** Math.min(t.lockouts, 20))
+  return { failures: 0, lockedUntil: nowMs + minutes * 60_000, lockouts: t.lockouts + 1 }
+}
 
 export function createVaultApi(core: Core, onUnlocked: () => void): VaultApi {
   const { store, persistence, lock } = core
@@ -15,24 +30,26 @@ export function createVaultApi(core: Core, onUnlocked: () => void): VaultApi {
   async function unlock(pin: string): Promise<Result> {
     if (!lock.locked || !lock.blob) return OK
     const nowMs = core.clock().getTime()
-    if (lock.lockedUntil > nowMs) {
-      const mins = Math.ceil((lock.lockedUntil - nowMs) / 60_000)
+    // the throttle lives outside the encrypted blob, so reloading the page doesn't reset it
+    const throttle = persistence.unlockThrottle()
+    const lockedUntil = Math.max(lock.lockedUntil, throttle.lockedUntil)
+    if (lockedUntil > nowMs) {
+      const mins = Math.ceil((lockedUntil - nowMs) / 60_000)
       return fail(`Too many wrong PINs. Try again in ${mins} min.`)
     }
     let data: unknown
     try {
       data = await decryptJSON<unknown>(lock.blob, pin)
     } catch {
-      lock.failures++
-      if (lock.failures >= MAX_PIN_ATTEMPTS) {
-        lock.failures = 0
-        lock.lockedUntil = nowMs + PIN_LOCK_MINUTES * 60_000
-      }
-      return fail('Wrong PIN')
+      const t = nextThrottle(persistence.unlockThrottle(), nowMs)
+      persistence.setUnlockThrottle(t)
+      Object.assign(lock, { failures: t.failures, lockedUntil: t.lockedUntil })
+      return fail(t.lockedUntil > nowMs ? `Wrong PIN. Too many wrong PINs — try again in ${Math.ceil((t.lockedUntil - nowMs) / 60_000)} min.` : 'Wrong PIN')
     }
     if (!lock.locked) return OK // a concurrent unlock already finished
     const state = parseState(data)
     if (!state) return fail('Your saved data could not be read')
+    persistence.setUnlockThrottle(null)
     Object.assign(lock, { locked: false, blob: null, failures: 0, lockedUntil: 0 })
     state.settings.vault = true
     persistence.setVaultPin(pin)
@@ -42,6 +59,7 @@ export function createVaultApi(core: Core, onUnlocked: () => void): VaultApi {
       vault: true, auditIntact: check.ok, auditEntries: check.count, ...(check.ok ? {} : { brokenAt: check.brokenAt ?? null }),
     })
     store.replace(state)
+    syncClock(core)
     expirePending(core)
     onUnlocked()
     return OK

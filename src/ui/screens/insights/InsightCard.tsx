@@ -2,8 +2,8 @@ import { Check, ChevronDown, Lightbulb, MessageCircle, PartyPopper, TriangleAler
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import type { AppSnapshot } from '../../../core/app-api'
 import { CATEGORIES } from '../../../core/categories'
-import type { Currency, Insight, YearMonth } from '../../../core/types'
-import { useProposeAction } from '../../components/agent'
+import type { Currency, Insight, SuggestedAction, YearMonth } from '../../../core/types'
+import { suggestionReceipt, suggestionTarget, useProposeAction } from '../../components/agent'
 import { DreamImage } from '../../components/brand'
 import { AiBadge, Button, cx } from '../../components/ds'
 import { shallowEqual, useSnapshot } from '../../state'
@@ -46,14 +46,22 @@ export function InsightCard({ insight, month, currency, featured = false, action
   }, [focused])
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
-  // the PendingAction this card proposed: follow it so the button turns into "Done" (and back after an undo)
+  // the PendingAction this card proposed (or the last one that ran on the same target): follow it so the button
+  // turns into a receipt of what actually ran — and back into the suggestion after an undo
   const [pid, setPid] = useState<string | null>(null)
+  const action = actionable ? insight.suggestedAction : undefined
+  // what this card acts on — kept even when the suggestion disappears once it ran (a cap that's set isn't re-offered)
+  const target: SuggestedAction | undefined = action ?? (actionable && insight.category ? { tool: 'set_category_budget', args: { category: insight.category }, label: '' } : undefined)
+  // insights are recomputed on every snapshot: key the selector on what the action targets, not its identity
+  const targetRef = useRef(target)
+  targetRef.current = target
+  const targetKey = target ? suggestionTarget(target) : null
   const selectProposal = useCallback(
     (snap: AppSnapshot) => {
-      const p = pid ? snap.state.pending.find((x) => x.id === pid) : undefined
-      return { status: p?.status, tier: p?.decision.tier }
+      const p = suggestionReceipt(snap.state.pending, targetKey ? targetRef.current : undefined, pid)
+      return { status: p?.status, tier: p?.decision.tier, title: p?.preview.title }
     },
-    [pid],
+    [pid, targetKey],
   )
   const proposal = useSnapshot(selectProposal, shallowEqual)
   const done = proposal.status === 'executed' && (proposal.tier ?? 0) > 0
@@ -62,7 +70,6 @@ export function InsightCard({ insight, month, currency, featured = false, action
   const sev = severityView(insight.severity)
   const rows = evidenceRows(insight.evidence, currency)
   const category = insight.category ? CATEGORIES[insight.category] : null
-  const action = actionable ? insight.suggestedAction : undefined
 
   async function run() {
     if (!action) return
@@ -120,11 +127,11 @@ export function InsightCard({ insight, month, currency, featured = false, action
         </p>
       ) : null}
 
-      {action && done ? (
+      {done && proposal.title ? (
         <p className={styles.done} role="status">
           <Check aria-hidden="true" />
           <span>
-            <strong>Done</strong> · {action.label}
+            <strong>Done</strong> · {proposal.title}
           </span>
         </p>
       ) : action ? (

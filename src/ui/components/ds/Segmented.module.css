@@ -23,8 +23,10 @@
   left: 4px;
   width: calc((100% - 8px) / var(--seg-n));
   border-radius: var(--r-pill);
+  /* the selected state can't rest on the surface colour alone: in dark mode surface and track are the same
+   * brown (1:1). A gold ring marks it in both themes (≥ 3:1 against the dark track) and the label gets a ✓. */
   background: var(--surface);
-  box-shadow: var(--shadow-1), inset 0 0 0 1px var(--border);
+  box-shadow: var(--shadow-1), inset 0 0 0 1.5px var(--accent);
   transform: translateX(calc(100% * var(--seg-i)));
   transition: transform var(--dur-3) var(--ease-spring);
 }
@@ -69,6 +71,19 @@
 
 .checked {
   color: var(--text);
+  font-weight: 700;
+}
+
+.check {
+  display: inline-flex;
+  flex: none;
+  color: var(--accent-text);
+}
+
+.check svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 3;
 }
 
 .icon {

@@ -2,6 +2,7 @@ import { uid } from '../ids'
 import { clipForDisplay, maskDigitRuns } from '../security/redact'
 import type { ChatCard, DialogueState, ISODateTime, TraceKind, TraceStep } from '../types'
 import type { AgentHost } from './host'
+import type { Lang } from './lang'
 import { profileFacts } from './support'
 
 /**
@@ -33,6 +34,10 @@ export interface Turn {
   dialogue: DialoguePatch
   /** dedupe for injection notices */
   noticeKeys: Set<string>
+  /** reply language for this turn (the user's message language; default English) */
+  lang?: Lang
+  /** the user typed their PIN into the message; it was masked before anything was stored or understood */
+  pinMasked?: boolean
   now(): ISODateTime
 }
 

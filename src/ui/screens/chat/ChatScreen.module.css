@@ -204,7 +204,7 @@
 .starterIcon svg {
   width: 18px;
   height: 18px;
-  color: var(--accent-strong);
+  color: var(--accent-text);
 }
 
 .starterText {
@@ -238,7 +238,7 @@
 .handoffTitle svg {
   width: 16px;
   height: 16px;
-  color: var(--accent-strong);
+  color: var(--accent-text);
 }
 
 .handoffList {
@@ -278,7 +278,7 @@
   flex: none;
   width: 14px;
   height: 14px;
-  color: var(--under);
+  color: var(--under-text);
 }
 
 @keyframes turn {

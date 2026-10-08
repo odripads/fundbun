@@ -8,12 +8,12 @@ import type { AppSnapshot } from '../../../core/app-api'
 import { ActionCard } from '../../components/agent'
 import { Badge, Button, Callout, Card, Chip, EmptyState, SectionHeader, Sheet, Stat, useToast } from '../../components/ds'
 import { navigate } from '../../router'
-import { shallowEqual, useApp, useSnapshot } from '../../state'
+import { sandboxToday, shallowEqual, useApp, useSnapshot } from '../../state'
 import { GlassBoxContent } from '../glassbox/GlassBoxContent'
 import { downloadText, exportFileName } from '../settings/download'
 import { AuditEntryRow } from './AuditEntry'
 import { ChainBanner } from './ChainBanner'
-import { FILTERS, PAGE_SIZE, activityStats, filterCounts, groupByDay, matchesFilter, type ActivityFilter } from './logic'
+import { FILTERS, PAGE_SIZE, activityStats, filterCounts, groupByDay, matchesFilter, plural, type ActivityFilter } from './logic'
 import styles from './Activity.module.css'
 
 const EMPTY_COPY: Record<ActivityFilter, { title: string; body: string }> = {
@@ -30,6 +30,9 @@ function selectHeader(s: AppSnapshot) {
 }
 
 const selectAudit = (s: AppSnapshot) => s.state.audit
+const selectToday = (s: AppSnapshot) => sandboxToday(s)
+/** demo personas run on a sandbox calendar; real-data users' "today" is the device's own */
+const selectSandboxClock = (s: AppSnapshot) => (s.derived as { clock?: string }).clock !== 'real'
 const selectAwaiting = (s: AppSnapshot) => s.derived.awaiting
 
 export function ActivityScreen() {
@@ -37,6 +40,8 @@ export function ActivityScreen() {
   const toast = useToast()
   const audit = useSnapshot(selectAudit)
   const awaiting = useSnapshot(selectAwaiting)
+  const today = useSnapshot(selectToday)
+  const sandboxClock = useSnapshot(selectSandboxClock)
   const { frozen, breakerReason } = useSnapshot(selectHeader, shallowEqual)
   const [filter, setFilter] = useState<ActivityFilter>('all')
   const [limit, setLimit] = useState(PAGE_SIZE)
@@ -47,7 +52,7 @@ export function ActivityScreen() {
   const counts = useMemo(() => filterCounts(audit), [audit])
   const stats = useMemo(() => activityStats(audit), [audit])
   const filtered = useMemo(() => audit.filter((e) => matchesFilter(e, filter)).sort((a, b) => b.seq - a.seq), [audit, filter])
-  const groups = useMemo(() => groupByDay(filtered.slice(0, limit)), [filtered, limit])
+  const groups = useMemo(() => groupByDay(filtered.slice(0, limit), new Date(), today), [filtered, limit, today])
   const hidden = Math.max(0, filtered.length - limit)
 
   function exportAudit() {
@@ -76,8 +81,8 @@ export function ActivityScreen() {
       <ChainBanner />
 
       <Card padding="none" className={styles.stats}>
-        <Stat size="sm" icon={<Sparkles />} label="Bun did" value={<span className={styles.statValue}>{stats.agentActions}</span>} hint="actions" />
-        <Stat size="sm" icon={<Ban />} label="Blocked" value={<span className={styles.statValue}>{stats.blocked}</span>} hint="attempts" />
+        <Stat size="sm" icon={<Sparkles />} label="Bun did" value={<span className={styles.statValue}>{stats.agentActions}</span>} hint={plural(stats.agentActions, 'action')} />
+        <Stat size="sm" icon={<Ban />} label="Blocked" value={<span className={styles.statValue}>{stats.blocked}</span>} hint={plural(stats.blocked, 'attempt')} />
         <Stat size="sm" icon={<Hand />} label="Approved" value={<span className={styles.statValue}>{stats.approvals}</span>} hint="by you" />
       </Card>
 
@@ -114,6 +119,9 @@ export function ActivityScreen() {
           eyebrow="Everything, hash-chained"
           action={<Button size="sm" variant="ghost" iconStart={<Download />} onClick={exportAudit}>Export</Button>}
         />
+        {sandboxClock ? (
+          <p className={styles.clockNote}>Dates follow the sandbox clock; times are this device’s. The export keeps the exact timestamps.</p>
+        ) : null}
         <div className={styles.filters} role="group" aria-label="Filter the timeline">
           {FILTERS.map((f) => (
             <Chip key={f.id} size="sm" selected={filter === f.id} onClick={() => { setFilter(f.id); setLimit(PAGE_SIZE) }}>

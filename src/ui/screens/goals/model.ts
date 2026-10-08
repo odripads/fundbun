@@ -81,7 +81,16 @@ export function quickAmounts(remaining: Minor, available: Minor, currency: Curre
 }
 
 /** Validation for a user-typed contribution; null when it's fine to move. */
-export function contributionError(amount: Minor | null, available: Minor, currency: Currency): string | null {
+/** True when the typed amount carries a minus sign (parseAmount alone would silently drop it). */
+export function isNegativeInput(text: string): boolean {
+  return /^\s*[-−–]/.test(text)
+}
+
+export const NEGATIVE_AMOUNT_ERROR = 'Amounts go into the pot — to take money out, ask Bun to move it back to checking'
+
+/** Why a contribution can't go ahead (null when it can). Pass the typed `text` so a minus sign is caught. */
+export function contributionError(amount: Minor | null, available: Minor, currency: Currency, text?: string): string | null {
+  if (text !== undefined && isNegativeInput(text)) return NEGATIVE_AMOUNT_ERROR
   if (amount === null || !Number.isFinite(amount)) return 'Type an amount, like 300'
   if (amount <= 0) return 'The amount needs to be more than zero'
   if (amount > available) return `That’s more than your checking balance (${fmtWhole(available, currency)})`

@@ -9,11 +9,11 @@ import { CATEGORIES } from '../../../core/categories'
 import { dateLabel } from '../../../core/dates'
 import { CURRENCY_SYMBOL } from '../../../core/money'
 import type { CategoryId, Currency } from '../../../core/types'
-import { shallowEqual, useApp, useSafeAction, useSnapshot } from '../../state'
+import { sandboxToday, shallowEqual, useApp, useSafeAction, useSnapshot } from '../../state'
 import type { AppSnapshot } from '../../../core/app-api'
 import { DreamImage } from '../brand'
 import { Badge, Button, Money, Segmented, TextField, cx, useToast } from '../ds'
-import { PERSONAS, PRESETS, PURCHASE_CATEGORIES, advanceTotals, checkPurchase, type SandboxPreset, type SandboxResult } from './logic'
+import { DEMO_PIN, PERSONAS, PRESETS, PURCHASE_CATEGORIES, advanceTotals, checkPurchase, type SandboxPreset, type SandboxResult } from './logic'
 import styles from './Sandbox.module.css'
 
 export interface SandboxPanelProps {
@@ -29,7 +29,7 @@ export interface SandboxPanelProps {
 function selectSandbox(s: AppSnapshot) {
   return {
     currency: (s.state.profile?.currency ?? 'CNY') as Currency,
-    today: s.state.bank.today,
+    today: sandboxToday(s),
     personaId: s.state.bank.personaId ?? s.state.profile?.personaId ?? null,
   }
 }
@@ -77,7 +77,7 @@ export function SandboxPanel({ compact = false, onDone }: SandboxPanelProps) {
   async function advance(days: number) {
     const from = today
     const out = await run(() => app.advanceDays(days), { errorTitle: 'The clock is stuck' })
-    if (out) show({ kind: 'advance', days, from, to: app.getSnapshot().state.bank.today, txns: out.txns, events: out.events })
+    if (out) show({ kind: 'advance', days, from, to: sandboxToday(app.getSnapshot()), txns: out.txns, events: out.events })
   }
 
   async function loadPersona(id: string) {
@@ -87,7 +87,7 @@ export function SandboxPanel({ compact = false, onDone }: SandboxPanelProps) {
     }, { errorTitle: 'That persona didn’t load' })
     if (!ok) return
     const label = PERSONAS.find((p) => p.id === id)?.label ?? id
-    toast.show({ id: 'sandbox-persona', tone: 'neutral', title: `${label}’s sandbox is loaded`, message: 'Fresh data, demo PIN 2580.' })
+    toast.show({ id: 'sandbox-persona', tone: 'neutral', title: `${label}’s sandbox is loaded`, message: `Fresh data, demo PIN ${DEMO_PIN}.` })
     show({ kind: 'persona', personaId: id })
   }
 
@@ -201,6 +201,11 @@ export function SandboxPanel({ compact = false, onDone }: SandboxPanelProps) {
           options={PERSONAS.map((p) => ({ value: p.id, label: p.label }))}
         />
         <p className={styles.personaBlurb}>{PERSONAS.find((p) => p.id === personaValue)?.blurb}</p>
+        {personaId ? (
+          <p className={styles.demoPin}>
+            Demo PIN <strong className={styles.demoPinValue}>{DEMO_PIN}</strong> — approves payments and loosens permissions in this sandbox.
+          </p>
+        ) : null}
         <Button
           size="sm"
           variant={armedReset ? 'danger' : 'ghost'}

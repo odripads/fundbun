@@ -147,7 +147,10 @@ describe('ChatScreen — actions go through the policy engine', () => {
     await flush()
     const pending = app.getSnapshot().state.pending.at(-1)!
     expect(pending.status).toBe('executed')
-    expect(document.body.textContent).toContain('Stashed — nice one')
+    // the card is the receipt (F39): it says Done with its own Undo countdown, so no toast repeats it over the composer
+    expect(document.body.textContent).not.toContain('Stashed — nice one')
+    const done = container.querySelector(`article[data-phase="undoable"]`)!
+    expect(done.querySelector('[role="status"]')!.textContent).toBe('Move ¥300 to Weekend in Chengdu: Done. You can undo it from this card.')
     const undo = container.querySelector<HTMLButtonElement>('button[aria-label^="Undo Move ¥300"]')!
     expect(undo).not.toBeNull()
     await click(undo)

@@ -22,6 +22,12 @@
   --chrome-bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 36px);
 }
 
+/* WCAG 2.4.11: keyboard focus never lands under the fixed tab bar (the phone layout scrolls the document;
+ * html can't see --chrome-bottom, so the same sum is spelled out here) */
+:global(html:has([data-tabbar])) {
+  scroll-padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 36px);
+}
+
 .screen {
   position: relative;
   z-index: 1;
@@ -127,6 +133,9 @@
     inset: 0;
     min-height: 0;
     overflow-y: auto;
+    /* the device screen is the scroller here: keep focus clear of the sticky top bar and the tab bar */
+    scroll-padding-top: calc(var(--topbar-h) + var(--safe-top) + 8px);
+    scroll-padding-bottom: calc(var(--chrome-bottom) + 8px);
     overscroll-behavior: contain;
     scrollbar-width: none;
   }

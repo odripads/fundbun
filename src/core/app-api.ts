@@ -12,6 +12,7 @@ import type {
   DreamItem,
   FinanceContext,
   GoalProgress,
+  ISODate,
   Insight,
   Mandate,
   Minor,
@@ -46,6 +47,13 @@ export interface LlmStatus {
 }
 
 export interface DerivedState {
+  /**
+   * The app's "today" (bank.today) — the one date every screen should use: the sandbox clock for demo personas
+   * (moved by advanceDays), the device's date for real-data users (kept in step by syncClock).
+   */
+  today: ISODate
+  /** which clock `today` follows */
+  clock: 'sandbox' | 'real'
   /** null until onboarded */
   ctx: FinanceContext | null
   /** current month */
@@ -67,8 +75,17 @@ export interface DerivedState {
   busy: boolean
   /** the engine that will answer the next message */
   engine: 'offline' | 'llm'
-  /** "Could've collection": cumulative over/under across the last 6 months in dream items */
-  couldve?: { totalOver: Minor; totalUnder: Minor; equivalents: DreamEquivalent[] }
+  /**
+   * "Could've collection": the NET over/under target across the finished months of the last 6 (finishedMonths, usually
+   * 5) in dream items; the current month is reported separately in `soFar` and is not part of the totals.
+   */
+  couldve?: {
+    totalOver: Minor
+    totalUnder: Minor
+    equivalents: DreamEquivalent[]
+    finishedMonths?: number
+    soFar?: { month: YearMonth; status: MirrorState['status']; delta: Minor }
+  }
   /** per-month mirror verdicts for the last 6 months (oldest first) */
   mirrorHistory?: { month: YearMonth; status: MirrorState['status']; delta: Minor; item?: DreamEquivalent }[]
   /**
@@ -229,6 +246,14 @@ export interface AppApi {
   /** Bill X-ray via the agent (xray_bill tool) — returns the assistant message with the xray card */
   xrayBill(text: string): Promise<ChatMessage>
   transactions(filter?: { month?: YearMonth; category?: CategoryId; query?: string }): Transaction[]
+
+  // ── clock ──
+  /**
+   * Real-data users: move the app's "today" forward to the device's date (scheduled payments, overdue bills and
+   * tripwires catch up). Call it when the page becomes visible again; boot, unlock, every user action and agent turn
+   * call it too. Demo personas keep their sandbox clock. Returns true when the calendar moved.
+   */
+  syncClock(): boolean
 
   // ── sandbox / demo controls ──
   simulatePurchase(p: SandboxPurchase): { txn: Transaction; events: TripwireEvent[] }

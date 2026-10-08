@@ -233,7 +233,7 @@
 }
 
 .injKicker {
-  color: var(--over);
+  color: var(--over-text);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.1em;
@@ -335,7 +335,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: var(--warn);
+  color: var(--warn-text);
   font-size: var(--fs-sm);
   font-weight: 650;
 }
@@ -351,7 +351,7 @@
 }
 
 .receipt li[data-ok] svg {
-  color: var(--under);
+  color: var(--under-text);
 }
 
 /* ───────────── parsed bill card ───────────── */
@@ -649,7 +649,7 @@
   width: 16px;
   height: 16px;
   margin-top: 2px;
-  color: var(--warn);
+  color: var(--warn-text);
 }
 
 .cardActions {
@@ -673,7 +673,7 @@
   width: 17px;
   height: 17px;
   margin-top: 1px;
-  color: var(--under);
+  color: var(--under-text);
 }
 
 .payNote strong {
@@ -694,7 +694,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: var(--accent-strong);
+  color: var(--accent-text);
   font-size: var(--fs-sm);
   font-weight: 700;
 }

@@ -187,7 +187,7 @@
 .tileLabel svg {
   width: 14px;
   height: 14px;
-  color: var(--accent-strong);
+  color: var(--accent-text);
 }
 
 .tileValue {

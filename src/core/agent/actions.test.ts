@@ -268,3 +268,30 @@ describe('caps, rate limit and circuit breaker', () => {
     expect(host.state().mandate.frozen).toBe(false)
   })
 })
+
+describe('runGated: an identical waiting proposal is reused (F21)', () => {
+  it('shows the same card again instead of creating a second one', () => {
+    const host = fakeHost()
+    const first = gate(host, 'transfer_to_goal', { goalId: 'dream_birkin', amount: 20_000 })
+    const second = gate(host, 'transfer_to_goal', { goalId: 'dream_birkin', amount: 20_000 })
+    expect(second.r).toMatchObject({ status: 'pending', reused: true })
+    expect(second.r.pending?.id).toBe(first.r.pending?.id)
+    expect(host.state().pending.filter((p) => p.status === 'pending')).toHaveLength(1)
+    expect(second.turn.cards).toEqual([{ type: 'action', pendingId: first.r.pending?.id }])
+  })
+
+  it('a different amount or an already-decided proposal is a new proposal', () => {
+    const host = fakeHost()
+    const first = gate(host, 'transfer_to_goal', { goalId: 'dream_birkin', amount: 20_000 })
+    expect(gate(host, 'transfer_to_goal', { goalId: 'dream_birkin', amount: 30_000 }).r.reused).toBeUndefined()
+    rejectPending(host, first.r.pending!.id)
+    expect(gate(host, 'transfer_to_goal', { goalId: 'dream_birkin', amount: 20_000 }).r.reused).toBeUndefined()
+  })
+
+  it('breaker records carry the denial rule ids and the proposer', () => {
+    const host = fakeHost()
+    gate(host, 'transfer_external', { to: 'x', amount: 100 })
+    const rec = agentRecords(host.state()).at(-1)
+    expect(rec).toMatchObject({ ruleIds: ['P-T4-PROHIBITED'], proposedBy: 'offline' })
+  })
+})

@@ -1,4 +1,4 @@
-import { History, Settings } from 'lucide-react'
+import { History, Pause, Settings } from 'lucide-react'
 import { navigate } from '../../router'
 import { useApp, useSnapshot } from '../../state/useApp'
 import { cx } from '../ds/cx'
@@ -13,10 +13,38 @@ export function agentStatus(frozen: boolean, breakerTrippedAt?: string): AgentSt
   return breakerTrippedAt ? 'breaker' : 'paused'
 }
 
+/** What the pill says: while the agent runs it is a switch ("Pause"), once frozen a status ("Paused"). */
 const STATUS_TEXT: Record<AgentStatus, string> = {
-  active: 'Agent on',
+  active: 'Pause',
   paused: 'Paused',
   breaker: 'Breaker',
+}
+
+/**
+ * The pill's accessible name starts with its visible word (WCAG 2.5.3 — "click Pause" works for voice users) and
+ * then says what it means and what a tap does.
+ */
+export function agentPillName(status: AgentStatus): string {
+  if (status === 'active') return 'Pause the agent: it is on — one tap freezes it now (kill switch, no PIN)'
+  if (status === 'breaker') return 'Breaker: the circuit breaker stopped the agent. Open the kill switch in Settings to resume'
+  return 'Paused: the agent is frozen. Open the kill switch in Settings to resume'
+}
+
+/** Settings › kill switch: on Settings already, scroll to it and focus it; elsewhere navigate there. */
+function openKillSwitch(): void {
+  if (typeof document !== 'undefined' && /^#\/settings(\?|$)/.test(window.location.hash)) {
+    const el = document.getElementById('set-kill')
+    if (el) {
+      el.scrollIntoView?.({ block: 'start' })
+      const h = el.querySelector<HTMLElement>('h2')
+      if (h) {
+        h.tabIndex = -1
+        h.focus({ preventScroll: true })
+      }
+      return
+    }
+  }
+  navigate('settings', { query: { s: 'kill' } })
 }
 
 /**
@@ -32,10 +60,11 @@ export function AgentStatusPill() {
     <button
       type="button"
       className={cx(styles.pill, styles[status])}
-      aria-label={active ? 'Agent is on. Pause the agent now (kill switch)' : `Agent is ${status === 'breaker' ? 'stopped by the circuit breaker' : 'paused'}. Open settings to resume`}
+      aria-label={agentPillName(status)}
+      title={active ? 'Bun is on — tap to pause it' : 'Bun is frozen — resume in Settings'}
       onClick={() => {
         if (!active) {
-          navigate('settings')
+          openKillSwitch()
           return
         }
         app.freeze()
@@ -44,11 +73,12 @@ export function AgentStatusPill() {
           tone: 'warn',
           title: 'Agent paused',
           message: 'Bun can only read now. Resume any time in Settings with your PIN.',
-          actions: [{ label: 'Open Settings', onClick: () => navigate('settings') }],
+          actions: [{ label: 'Resume…', onClick: openKillSwitch }],
         })
       }}
     >
       <span className={styles.dot} aria-hidden="true" />
+      {active ? <Pause className={styles.pauseIcon} aria-hidden="true" /> : null}
       <span aria-hidden="true">{STATUS_TEXT[status]}</span>
     </button>
   )

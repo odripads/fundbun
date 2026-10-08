@@ -28,6 +28,16 @@ const CADENCES: CadenceRule[] = [
 /** Utility bills swing with the seasons, so their amounts get a much wider band. */
 const VARIABLE_BILL_CATEGORIES = new Set<CategoryId>(['utilities'])
 const EXCLUDED_CATEGORIES = new Set<CategoryId>(['income', 'transfer', 'savings'])
+/** Everyday habits: buying groceries, coffee, a ride or a takeaway about once a week is a habit, not a weekly bill. */
+const EVERYDAY_CATEGORIES = new Set<CategoryId>(['groceries', 'coffee_tea', 'transport', 'delivery'])
+/** Categories a provider bills on a schedule — extra one-off charges from the same merchant don't make them less real. */
+const BILLED_CATEGORIES = new Set<CategoryId>(['housing', 'utilities', 'phone_internet', 'insurance', 'subscriptions', 'education'])
+/**
+ * Share of a merchant's charges the series must account for. Keeping only the near-median purchases of an irregular
+ * merchant can leave an artificially regular subset (35 of 56 corner-shop visits looked "weekly"); a real series is
+ * most of what that merchant charges you — unless it is a billed or subscription series.
+ */
+const MIN_SERIES_SHARE = 0.75
 const SUBSCRIPTION_TEXT = /会员|订阅|自动续费|连续包月|\bvip\b|subscription|premium|membership/i
 const MIN_HIKE: Minor = 100
 
@@ -85,12 +95,12 @@ function seriesEvents(events: ChargeEvent[], band: number): ChargeEvent[] {
   return tailPersisted ? [...body, ...tail] : body
 }
 
-function matchCadence(events: ChargeEvent[]): { rule: CadenceRule; gapMad: number } | undefined {
+function matchCadence(events: ChargeEvent[], allowWeekly = true): { rule: CadenceRule; gapMad: number } | undefined {
   if (events.length < 2) return undefined
   const gaps = events.slice(1).map((e, i) => diffDays(events[i].date, e.date))
   const g = median(gaps)
   const gapMad = mad(gaps, g)
-  const rule = CADENCES.find((r) => Math.abs(g - r.days) <= r.tol && gapMad <= r.madTol && events.length >= r.minOccurrences)
+  const rule = CADENCES.find((r) => (allowWeekly || r.cadence !== 'weekly') && Math.abs(g - r.days) <= r.tol && gapMad <= r.madTol && events.length >= r.minOccurrences)
   return rule ? { rule, gapMad } : undefined
 }
 
@@ -140,9 +150,12 @@ function buildSeries(
 ): RecurringSeries | undefined {
   const category = mostCommonCategory(txns)
   const band = VARIABLE_BILL_CATEGORIES.has(category) ? 0.6 : 0.25
-  const events = seriesEvents(toEvents(txns), band)
-  const match = matchCadence(events)
+  const all = toEvents(txns)
+  const events = seriesEvents(all, band)
+  const match = matchCadence(events, !EVERYDAY_CATEGORIES.has(category))
   if (!match) return undefined
+  const billed = BILLED_CATEGORIES.has(category) || isSubscriptionLike(merchant, category, txns)
+  if (!billed && events.length < all.length * MIN_SERIES_SHARE) return undefined
   const { rule, gapMad } = match
   const amounts = events.map((e) => e.amount)
   const med = median(amounts)
@@ -182,6 +195,10 @@ function buildSeries(
  * quarterly 91±10, yearly 365±20) and amounts within ±25% of the median (larger deviations become
  * price-change candidates when they persist). Marks isSubscription for subscription-like merchants /
  * category 'subscriptions'. Status 'cancelled' for merchants in cancelledMerchants. Sorted by annualCost desc.
+ *
+ * Everyday habits (groceries, coffee & tea, transport, delivery) are never a WEEKLY series, and outside billed /
+ * subscription categories the series must account for at least 75% of the merchant's charges — so a regular-looking
+ * subset of irregular purchases is not reported as a recurring bill.
  *
  * Series whose next charge is overdue by more than a grace period are dropped (Plaid's "tombstoned"),
  * unless the merchant was cancelled — those stay visible with status 'cancelled'.

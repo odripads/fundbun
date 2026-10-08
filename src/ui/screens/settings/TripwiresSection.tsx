@@ -7,10 +7,10 @@ import { useId, useState, type FormEvent, type ReactNode } from 'react'
 import type { AppSnapshot, TripwireInput } from '../../../core/app-api'
 import { CATEGORIES, SPENDING_CATEGORIES } from '../../../core/categories'
 import { CURRENCY_SYMBOL } from '../../../core/money'
-import type { CategoryId, Currency, Tripwire, TripwireEvent, TripwireKind } from '../../../core/types'
+import type { CategoryId, Currency, Tripwire, TripwireKind } from '../../../core/types'
 import { Button, Card, Chip, EmptyState, SectionHeader, Sheet, TextField, Toggle, useToast } from '../../components/ds'
-import { shallowEqual, useApp, useSafeAction, useSnapshot } from '../../state'
-import { TRIPWIRE_KINDS, TRIPWIRE_KIND_ORDER, isBudgetCategory, parseThreshold, thresholdInput, tripwireFires, tripwireSentence } from './logic'
+import { sandboxToday, shallowEqual, useApp, useSafeAction, useSnapshot } from '../../state'
+import { TRIPWIRE_KINDS, TRIPWIRE_KIND_ORDER, firedText, isBudgetCategory, parseThreshold, thresholdInput, tripwireSentence } from './logic'
 import styles from './Settings.module.css'
 
 const KIND_ICON: Record<TripwireKind, ReactNode> = {
@@ -27,23 +27,19 @@ function selectTripwires(s: AppSnapshot) {
     events: s.state.tripwireEvents,
     budget: s.state.budget,
     currency: (s.state.profile?.currency ?? 'CNY') as Currency,
+    today: sandboxToday(s),
+    txns: s.state.bank.transactions,
   }
 }
 
 type EditorState = { mode: 'add' } | { mode: 'edit'; tripwire: Tripwire } | null
 
-function firedText(events: readonly TripwireEvent[], id: string): string {
-  const f = tripwireFires(events, id)
-  if (!f.total) return 'Hasn’t fired yet'
-  const when = f.last ? new Date(f.last.firedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''
-  return `Fired ${f.total}×${when ? ` · last ${when}` : ''}`
-}
 
 export function TripwiresSection() {
   const app = useApp()
   const run = useSafeAction()
   const toast = useToast()
-  const { tripwires, events, budget, currency } = useSnapshot(selectTripwires, shallowEqual)
+  const { tripwires, events, budget, currency, today, txns } = useSnapshot(selectTripwires, shallowEqual)
   const [editor, setEditor] = useState<EditorState>(null)
   const on = tripwires.filter((t) => t.enabled).length
 
@@ -80,7 +76,7 @@ export function TripwiresSection() {
                   <span className={styles.twText}>
                     <span className={styles.twTitle}>{t.label}</span>
                     <span className={styles.twSub}>
-                      {TRIPWIRE_KINDS[t.kind].label} · {firedText(events, t.id)}
+                      {TRIPWIRE_KINDS[t.kind].label} · {firedText(events, t.id, today, txns)}
                       {t.createdBy === 'agent' ? (
                         <span className={styles.twAgent}>
                           <Sparkles aria-hidden="true" /> set by Bun

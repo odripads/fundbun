@@ -64,7 +64,7 @@ export function MirrorWhy() {
 
       <p className={styles.tone}>
         Written in your <strong>{TONE_LABEL[mirror.tone]}</strong> voice.{' '}
-        <a href={href('settings')} className={styles.link}>
+        <a href={href('settings', [], { s: 'profile' })} className={styles.link}>
           <Settings2 aria-hidden="true" />
           Change it in Settings
         </a>

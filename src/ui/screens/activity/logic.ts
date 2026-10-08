@@ -2,8 +2,10 @@
  * Pure view logic for the audit timeline (Activity screen + the glass box's audit tail): filters, actor and
  * type labels, day grouping and hash chips. Unit-tested in logic.test.ts.
  */
-import type { AuditActor, AuditEntry, AuditType } from '../../../core/types'
+import { dateLabel, diffDays, parseDate } from '../../../core/dates'
+import type { AuditActor, AuditEntry, AuditType, ISODate } from '../../../core/types'
 import type { BadgeVariant } from '../../components/ds'
+import { onSandboxCalendar } from '../../state/clock'
 
 export type ActivityFilter = 'all' | 'agent' | 'blocked' | 'security' | 'tripwires' | 'you'
 
@@ -125,10 +127,22 @@ function localDayKey(d: Date): string {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
 }
 
-/** "Today" / "Yesterday" / "Wed 7 Oct" for a timestamp, relative to `now`. */
-export function dayLabel(ts: string, now: Date = new Date()): string {
+/**
+ * "Today" / "Yesterday" / "Wed 7 Oct" for a timestamp, relative to `now`. With `sandboxToday`, days are placed on
+ * the sandbox calendar (the device's today = the sandbox's today) and labelled with that date: "Today · Oct 22",
+ * "Yesterday · Oct 21", "Tue · Oct 20" — so the log never contradicts the bank's clock.
+ */
+export function dayLabel(ts: string, now: Date = new Date(), sandboxToday?: ISODate): string {
   const d = new Date(ts)
   if (Number.isNaN(d.getTime())) return 'Unknown date'
+  if (sandboxToday) {
+    const day = onSandboxCalendar(d, sandboxToday, now)
+    if (!day) return 'Unknown date'
+    const back = diffDays(day, sandboxToday)
+    const lead = back === 0 ? 'Today' : back === 1 ? 'Yesterday' : parseDate(day).toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' })
+    const year = day.slice(0, 4) === sandboxToday.slice(0, 4) ? '' : `, ${day.slice(0, 4)}`
+    return `${lead} · ${dateLabel(day)}${year}`
+  }
   const key = localDayKey(d)
   if (key === localDayKey(now)) return 'Today'
   const y = new Date(now)
@@ -149,21 +163,26 @@ export interface DayGroup {
   entries: AuditEntry[]
 }
 
-/** Newest first, grouped by local calendar day. */
-export function groupByDay(entries: readonly AuditEntry[], now: Date = new Date()): DayGroup[] {
+/** Newest first, grouped by calendar day (the sandbox calendar when `sandboxToday` is given). */
+export function groupByDay(entries: readonly AuditEntry[], now: Date = new Date(), sandboxToday?: ISODate): DayGroup[] {
   const sorted = [...entries].sort((a, b) => b.seq - a.seq)
   const groups: DayGroup[] = []
   for (const e of sorted) {
     const d = new Date(e.ts)
-    const key = Number.isNaN(d.getTime()) ? 'unknown' : localDayKey(d)
+    const key = Number.isNaN(d.getTime()) ? 'unknown' : sandboxToday ? (onSandboxCalendar(d, sandboxToday, now) ?? 'unknown') : localDayKey(d)
     let g = groups[groups.length - 1]
     if (!g || g.key !== key) {
-      g = { key, label: dayLabel(e.ts, now), entries: [] }
+      g = { key, label: dayLabel(e.ts, now, sandboxToday), entries: [] }
       groups.push(g)
     }
     g.entries.push(e)
   }
   return groups
+}
+
+/** "1 action" / "3 actions" — the unit after a count. */
+export function plural(n: number, one: string, many = `${one}s`): string {
+  return n === 1 ? one : many
 }
 
 /** Pretty JSON for the details panel; never throws on odd data. */

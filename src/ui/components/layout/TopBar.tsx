@@ -24,7 +24,11 @@ function useScrolledPast(sentinel: RefObject<HTMLElement | null>): boolean {
   useEffect(() => {
     const el = sentinel.current
     if (!el || typeof IntersectionObserver === 'undefined') return
-    const io = new IntersectionObserver(([entry]) => setScrolled(!entry.isIntersecting))
+    // the newest entry decides: a page that jumps on open (#/settings?s=…) gets "at top" and "scrolled" in one batch
+    const io = new IntersectionObserver((entries) => {
+      const last = entries[entries.length - 1]
+      if (last) setScrolled(!last.isIntersecting)
+    })
     io.observe(el)
     return () => io.disconnect()
   }, [sentinel])

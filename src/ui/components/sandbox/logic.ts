@@ -66,6 +66,9 @@ export function advanceTotals(txns: readonly Transaction[]): { out: number; in: 
   return { out, in: inn, count: txns.length }
 }
 
+/** The sandbox personas' step-up PIN. Shown here, in the demo controls — never inside a PIN prompt it guards. */
+export const DEMO_PIN = '2580'
+
 export const PERSONAS: { id: 'mei' | 'arif'; label: string; blurb: string }[] = [
   { id: 'mei', label: 'Mei', blurb: 'Over target — the Dream Mirror story' },
   { id: 'arif', label: 'Arif', blurb: 'Under target — the stash-it story' },

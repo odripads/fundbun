@@ -20,8 +20,9 @@ import { isSpending } from './ledger'
 import { summarizeMonth } from './summary'
 
 /** Early-month projections are mostly noise (research note §5): no pace verdicts before this day. */
-const PACE_FROM_DAY = 5
-const PACE_OVER = 1.05
+export const PACE_FROM_DAY = 5
+/** A projection within ±5% of the target is "on track" — the band every pace verdict (mirror, affordability) shares. */
+export const PACE_OVER = 1.05
 const PACE_UNDER = 0.95
 
 export function mirrorStatus(s: MonthSummary): MirrorStatus {
@@ -395,18 +396,41 @@ export function mirrorHistory(ctx: FinanceContext, months: number): MirrorHistor
   })
 }
 
+/** The "could've" tally of the last few months (DerivedState.couldve). */
+export interface CouldveCollection {
+  /** net amount over target across the FINISHED months of the window (0 when they net out under) */
+  totalOver: Minor
+  /** net amount kept under target across the same finished months (0 when they net out over) */
+  totalUnder: Minor
+  /** dream items totalOver adds up to */
+  equivalents: DreamEquivalent[]
+  /** how many finished months the totals cover ("in 5 finished months") */
+  finishedMonths?: number
+  /** the current month, shown separately: a verdict "so far", not part of the totals */
+  soFar?: { month: YearMonth; status: MirrorStatus; delta: Minor }
+}
+
 /**
- * "Could've collection": what the overspend of the last `months` months adds up to in dream items.
- * Only realised amounts count — finished months, plus the current month once it is actually over target
- * (a projected surplus or overshoot hasn't happened yet).
+ * "Could've collection": one definition for every story — the NET over/under target across the finished months of
+ * the last `months` months (an over month and an under month cancel out), with the current month reported separately
+ * as `soFar` (a projected surplus or an overshoot still in progress hasn't happened yet). `finishedMonths` says how
+ * many months the totals cover.
  */
-export function couldveCollection(ctx: FinanceContext, months: number): { totalOver: Minor; totalUnder: Minor; equivalents: DreamEquivalent[] } {
+export function couldveCollection(ctx: FinanceContext, months: number): CouldveCollection {
   const current = ym(ctx.bank.today)
-  let totalOver = 0
-  let totalUnder = 0
+  let net = 0
+  let finished = 0
+  let soFar: CouldveCollection['soFar']
   for (const p of mirrorHistory(ctx, months)) {
-    if (p.status === 'over') totalOver += p.delta
-    if (p.status === 'under' && p.month !== current) totalUnder += p.delta
+    if (p.month === current) {
+      soFar = { month: p.month, status: p.status, delta: p.delta }
+      continue
+    }
+    finished++
+    if (p.status === 'over') net += p.delta
+    else if (p.status === 'under' || p.status === 'on_track') net -= p.delta
   }
-  return { totalOver, totalUnder, equivalents: dreamEquivalents(totalOver, ctx.dreams, 3) }
+  const totalOver = Math.max(0, net)
+  const totalUnder = Math.max(0, -net)
+  return { totalOver, totalUnder, equivalents: dreamEquivalents(totalOver, ctx.dreams, 3), finishedMonths: finished, ...(soFar ? { soFar } : {}) }
 }

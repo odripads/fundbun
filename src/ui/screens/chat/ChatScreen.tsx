@@ -2,7 +2,7 @@ import { ArrowDown, Ellipsis } from 'lucide-react'
 import { useCallback, useMemo, useRef, useState } from 'react'
 import type { AppSnapshot } from '../../../core/app-api'
 import type { ChatMessage } from '../../../core/types'
-import { IconButton, cx } from '../../components/ds'
+import { IconButton, cx, useToastClearance } from '../../components/ds'
 import { AgentStatusPill, ScreenTopBar } from '../../components/layout'
 import { navigate } from '../../router'
 import { useApp, useSnapshot } from '../../state'
@@ -36,6 +36,8 @@ export function ChatScreen() {
   const currency = useSnapshot(selectCurrency)
   const [overlay, setOverlay] = useState<ChatOverlay>(null)
   const [composerH, setComposerH] = useState(96)
+  // toasts (e.g. "Stashed — nice one" after an approval) sit above the composer, never over the field or Send
+  useToastClearance(composerH)
   const sending = useRef(false)
   // messages present when the screen opened don't replay their entrance animation
   const initialIds = useRef(new Set(messages.map((m) => m.id)))

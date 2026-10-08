@@ -18,7 +18,7 @@ import {
   OnboardingScreen,
   SettingsScreen,
 } from './screens'
-import { AppProvider, shallowEqual, useEngineStatus, useRetryEngine, useSnapshot, type EngineStatus } from './state'
+import { AppProvider, shallowEqual, syncClockOnVisible, useEngineStatus, useRetryEngine, useSnapshot, type EngineStatus } from './state'
 
 const LazyGallery = lazy(() => import('./screens/Gallery'))
 
@@ -100,6 +100,10 @@ function ReadyShell({ app, loc }: { app: FundBunApp; loc: Location }) {
   useEffect(() => {
     if (redirectTo && !locked) setHash(redirectTo, true)
   }, [redirectTo, locked])
+
+  // real-data users: a tab left open overnight catches up with the device's date when it comes back into view
+  // (demo personas keep their sandbox clock — the controller decides)
+  useEffect(() => syncClockOnVisible(app), [app])
 
   if (locked) {
     return (

@@ -159,3 +159,16 @@ describe('with the demo personas', () => {
     expect(etaFact(g.goals[0].progress).value).toMatch(/20\d\d$/)
   })
 })
+
+describe('a minus sign is never dropped silently (F59)', () => {
+  it('"-50" is an error that points to moving money back, not "Stash ¥50"', async () => {
+    const { contributionError: check, isNegativeInput, NEGATIVE_AMOUNT_ERROR } = await import('./model')
+    expect(isNegativeInput('-50')).toBe(true)
+    expect(isNegativeInput(' −50')).toBe(true)
+    expect(isNegativeInput('50')).toBe(false)
+    expect(check(5000, 1_000_000, 'CNY', '-50')).toBe(NEGATIVE_AMOUNT_ERROR)
+    expect(check(5000, 1_000_000, 'CNY', '50')).toBeNull()
+    // without the typed text the old contract is unchanged
+    expect(check(5000, 1_000_000, 'CNY')).toBeNull()
+  })
+})

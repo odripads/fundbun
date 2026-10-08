@@ -4,7 +4,7 @@ import type { AppSnapshot } from '../../../core/app-api'
 import { useProposeAction } from '../../components/agent'
 import { Badge, Button, Money, buttonClass } from '../../components/ds'
 import { href } from '../../router'
-import { shallowEqual, useSnapshot } from '../../state'
+import { sandboxToday, shallowEqual, useSnapshot } from '../../state'
 import { billIcon, dueLabel, dueTone, nextBills, payAction, shortDate, type BillIcon } from './model'
 import styles from './BillsStrip.module.css'
 
@@ -20,13 +20,14 @@ const ICON: Record<BillIcon, ReactNode> = {
 
 const selectBills = (s: AppSnapshot) => ({
   bills: s.derived.upcomingBills,
-  today: s.state.bank.today,
+  hasAnyBill: s.state.bank.bills.length > 0,
+  today: sandboxToday(s),
   currency: s.state.profile?.currency ?? 'CNY',
 })
 
 /** The next three unpaid bills; Pay goes through the policy gate (T3: tap + PIN). */
 export function BillsStrip() {
-  const { bills, today, currency } = useSnapshot(selectBills, shallowEqual)
+  const { bills, hasAnyBill, today, currency } = useSnapshot(selectBills, shallowEqual)
   const propose = useProposeAction()
   const headingId = useId()
   const [paying, setPaying] = useState<string | null>(null)
@@ -43,7 +44,8 @@ export function BillsStrip() {
       {next.length === 0 ? (
         <p className={styles.empty}>
           <CircleCheck aria-hidden="true" />
-          Nothing due — every bill is paid.
+          {/* a brand-new user has no bills at all — "every bill is paid" would be a claim about nothing */}
+          {hasAnyBill ? 'Nothing due — every bill is paid.' : 'No bills yet — import a statement and Bun will spot them.'}
         </p>
       ) : (
         <ul className={styles.strip} role="list">

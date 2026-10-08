@@ -1,8 +1,8 @@
-import { ArrowRight, BellRing, CircleHelp, Clock3, FlaskConical, Gauge, MessageCircleHeart, PiggyBank, ShieldCheck, Sparkles, Target, TrendingDown, TrendingUp, type LucideIcon } from 'lucide-react'
+import { ArrowRight, BellRing, Check, CircleHelp, Clock3, FlaskConical, Gauge, MessageCircleHeart, PiggyBank, ShieldCheck, Sparkles, Target, TrendingDown, TrendingUp, type LucideIcon } from 'lucide-react'
 import { useId, useState, type CSSProperties, type ReactNode } from 'react'
 import type { AppSnapshot } from '../../../core/app-api'
 import type { Minor, MirrorStatus, SuggestedAction } from '../../../core/types'
-import { useProposeAction } from '../../components/agent'
+import { suggestionReceipt, useProposeAction } from '../../components/agent'
 import { BunMascot, DreamImage } from '../../components/brand'
 import { AiBadge, Badge, Button, Chip, Sheet, cx, type BadgeVariant } from '../../components/ds'
 import { navigate } from '../../router'
@@ -19,6 +19,7 @@ import {
   mirrorEyebrow,
   mirrorStats,
   pctAfter,
+  shortName,
   splitHeadline,
   stashAmount,
   type CtaIcon,
@@ -36,6 +37,8 @@ export interface MirrorHeroProps {
   onCheck: (req: CheckRequest) => void
   onSandbox: () => void
 }
+
+const selectPending = (s: AppSnapshot) => s.state.pending
 
 const selectHero = (s: AppSnapshot) => ({
   mirror: s.derived.mirror,
@@ -116,6 +119,9 @@ export function MirrorHero({ onCheck, onSandbox }: MirrorHeroProps) {
   const headingId = useId()
   const [why, setWhy] = useState(false)
   const [busy, setBusy] = useState<'primary' | 'secondary' | null>(null)
+  // what each button proposed: once it ran, the button becomes a receipt of what ran (undo brings it back)
+  const [pids, setPids] = useState<{ primary?: string; secondary?: string }>({})
+  const pending = useSnapshot(selectPending)
 
   if (!mirror) {
     return (
@@ -144,7 +150,8 @@ export function MirrorHero({ onCheck, onSandbox }: MirrorHeroProps) {
 
   const plate = hero.item
     ? {
-        name: hero.item.name,
+        name: shortName(hero.item.name),
+        full: hero.item.name,
         detail: hero.role === 'goal' && mirror.goal ? `${Math.floor(goalNow)}% saved` : fmtWhole(hero.item.price, currency),
       }
     : null
@@ -152,10 +159,17 @@ export function MirrorHero({ onCheck, onSandbox }: MirrorHeroProps) {
   async function run(action: SuggestedAction, which: 'primary' | 'secondary') {
     setBusy(which)
     try {
-      await propose(action)
+      const p = await propose(action)
+      if (p) setPids((x) => ({ ...x, [which]: p.id }))
     } finally {
       setBusy(null)
     }
+  }
+
+  function receiptFor(a: HeroAction, which: 'primary' | 'secondary') {
+    if (a.kind !== 'action') return undefined
+    const p = suggestionReceipt(pending, a.action, pids[which])
+    return p && p.status === 'executed' && p.decision.tier > 0 ? p : undefined
   }
 
   function askBun(text: string) {
@@ -179,6 +193,17 @@ export function MirrorHero({ onCheck, onSandbox }: MirrorHeroProps) {
       )
     }
     if (a.kind === 'action') {
+      const receipt = receiptFor(a, which)
+      if (receipt) {
+        return (
+          <p className={styles.done} role="status">
+            <Check aria-hidden="true" />
+            <span>
+              <strong>Done</strong> · {receipt.preview.title}
+            </span>
+          </p>
+        )
+      }
       return (
         <Button
           size={primary ? 'lg' : 'md'}
@@ -244,7 +269,7 @@ export function MirrorHero({ onCheck, onSandbox }: MirrorHeroProps) {
         </div>
         {plate ? (
           <figcaption className={styles.plate}>
-            <span className={styles.plateName}>{plate.name}</span>
+            <span className={styles.plateName} title={plate.full !== plate.name ? plate.full : undefined}>{plate.name}</span>
             <span className={styles.plateDot} aria-hidden="true">·</span>
             <span className={styles.plateDetail}>{plate.detail}</span>
           </figcaption>
@@ -256,7 +281,7 @@ export function MirrorHero({ onCheck, onSandbox }: MirrorHeroProps) {
           <p className={styles.eyebrow}>{mirrorEyebrow(mirror)}</p>
           <Badge size="sm" variant={BADGE[meta.tone]} icon={<StatusIcon />}>{meta.label}</Badge>
         </div>
-        <h2 id={headingId} className={styles.headline} data-long={mirror.headline.length > 42 || undefined}>
+        <h2 id={headingId} className={styles.headline} data-long={mirror.headline.length > 64 ? 'xl' : mirror.headline.length > 42 || undefined}>
           {parts ? (
             <>
               {parts[0]}

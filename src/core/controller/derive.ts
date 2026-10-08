@@ -98,7 +98,8 @@ export function upcomingBills(bills: Bill[]): Bill[] {
 
 /** 'llm' only when the user enabled it, consented to LLM processing, and the gateway is reachable. */
 export function engineFor(state: AppState, llm: LlmStatus): 'offline' | 'llm' {
-  const consented = state.profile?.consent.llmProcessing === true
+  // defensive: a damaged save without consent must never crash the snapshot
+  const consented = state.profile?.consent?.llmProcessing === true
   return state.settings.llmEnabled && consented && llm.available ? 'llm' : 'offline'
 }
 
@@ -123,6 +124,8 @@ export function createDerived(state: AppState, rt: RuntimeFlags, now: () => stri
   const fin = financeFor(state)
   let caps: CapUsage | undefined
   return Object.freeze({
+    today: state.bank.today,
+    clock: state.bank.personaId ? 'sandbox' as const : 'real' as const,
     get ctx() { return fin.ctx },
     get summary() { return fin.summary },
     get mirror() { return fin.mirror },

@@ -287,12 +287,13 @@ function overlaps(series: RecurringSeries[], f: Fmt, c: Fmt): BillFinding[] {
       kind: 'subscription_overlap',
       severity: 'warn',
       title: `${group.length} ${NICHE_LABEL[niche]} services`,
-      detail: `${listJoin(names)} cost ${c(total)}/month together (${c(total * 12)}/year). Dropping ${drop.merchant} saves ${f(monthly(drop))} a month.`,
+      detail: `${listJoin(names)} cost ${c(total)}/month together (${c(total * 12)}/year). Dropping ${drop.merchant} saves ${f(monthly(drop))} a month (${c(monthly(drop) * 12)} a year).`,
       amount: total,
       recurringId: drop.id,
       txnIds: group.flatMap((s) => s.txnIds),
       suggestedAction: { tool: 'cancel_subscription', args: { recurringId: drop.id }, label: `Cancel ${drop.merchant}` },
-      evidence: { niche, services: names.join(', '), count: group.length, monthlyTotal: total, annualTotal: total * 12 },
+      // savesPerYear is what the CTA delivers — the basis for any "every year, that's …" picture (not annualTotal)
+      evidence: { niche, services: names.join(', '), count: group.length, monthlyTotal: total, annualTotal: total * 12, savesPerMonth: monthly(drop), savesPerYear: monthly(drop) * 12 },
     })
   }
   return out

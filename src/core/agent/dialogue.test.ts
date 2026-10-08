@@ -101,3 +101,28 @@ describe('slot hints and clarification filling', () => {
     expect(thresholdFromChoice('dream_birkin')).toBeUndefined()
   })
 })
+
+describe('detectDialogueAct · undo and recategorize', () => {
+  it.each(['undo', 'undo that', 'Undo it please', 'revert that', 'take it back', 'cancel that payment', 'cancel the transfer', 'cancel my last transfer', '撤销', '撤销刚才的转账', 'batalkan yang tadi'])(
+    'undo: %s',
+    (t) => expect(detectDialogueAct(t)).toEqual({ act: 'undo' }),
+  )
+
+  it('keeps "cancel that" an interrupt and "cancel youku" a request', () => {
+    expect(detectDialogueAct('cancel that')).toEqual({ act: 'interrupt', soft: false })
+    expect(detectDialogueAct('cancel youku')).toBeNull()
+  })
+
+  it.each([
+    ['Recategorize the Tony Hair Studio charge as personal care', 'the Tony Hair Studio charge', 'personal care'],
+    ['mark the Heytea purchase as groceries', 'the Heytea purchase', 'groceries'],
+    ['move the Taobao order to the gifts category', 'the Taobao order', 'gifts'],
+  ])('recategorize: %s', (t, subject, target) => {
+    expect(detectDialogueAct(t)).toEqual({ act: 'recategorize', subject, target })
+  })
+
+  it('does not read a money move as a recategorisation', () => {
+    expect(detectDialogueAct('move 300 to birkin')).toBeNull()
+    expect(detectDialogueAct('put ¥200 into the Chengdu pot')).toBeNull()
+  })
+})

@@ -69,15 +69,21 @@ export function potAccounts(accounts: Account[]): Account[] {
   return accounts.filter((a) => a.type === 'pot')
 }
 
-/** Money moved into goal pots in a month (pot inflows; without pots, 'savings' outflows from checking). */
+/**
+ * Money kept in goal pots in a month: the NET pot flow — inflows minus withdrawals and money returned to checking
+ * (e.g. a removed goal) — floored at 0; reversed (undone) transfers are ignored. Without pots: net 'savings'
+ * outflows from checking.
+ */
 export function savedInMonth(txns: Transaction[], accounts: Account[], month: YearMonth): Minor {
   const pots = new Set(potAccounts(accounts).map((a) => a.id))
   let s = 0
   for (const t of txns) {
     if (!inMonth(t, month) || isReversed(t)) continue
-    if (pots.size > 0 ? pots.has(t.accountId) && t.amount > 0 : t.category === 'savings' && t.amount < 0) s += Math.abs(t.amount)
+    if (pots.size > 0) {
+      if (pots.has(t.accountId)) s += t.amount
+    } else if (t.category === 'savings') s -= t.amount
   }
-  return s
+  return Math.max(0, s)
 }
 
 export function upTo(txns: Transaction[], today: ISODate): Transaction[] {

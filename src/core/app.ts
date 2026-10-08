@@ -7,7 +7,7 @@ import { createUserApi } from './controller/api-user'
 import { createVaultApi } from './controller/api-vault'
 import { appendAudit, verifyAuditAnchored } from './controller/audit'
 import { STORAGE_KEY, TEST_NOW } from './controller/constants'
-import { LOCKED_MSG, expirePending, type Core, type LockState } from './controller/core'
+import { LOCKED_MSG, expirePending, syncClock, type Core, type LockState } from './controller/core'
 import { buildDemoState } from './controller/demo'
 import { createEngineHolder } from './controller/engine'
 import { createHost } from './controller/host'
@@ -117,6 +117,8 @@ export function createFundBunApp(opts: CreateAppOptions = {}): FundBunApp {
   }
   const userApi = createUserApi(core, recheckLlm)
   const vaultApi = createVaultApi(core, recheckLlm)
+  // one clock: a real-data user's calendar catches up with the device date (persona sandboxes keep theirs)
+  syncClock(core)
   expirePending(core)
   if (store.get().profile) recheckLlm()
 
@@ -171,6 +173,7 @@ export function createFundBunApp(opts: CreateAppOptions = {}): FundBunApp {
     ...agentApi,
     ...userApi,
     ...vaultApi,
+    syncClock: () => syncClock(core),
     flush: async () => void (await persistence.flush()),
   }
 }

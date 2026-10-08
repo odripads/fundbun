@@ -142,7 +142,7 @@
 }
 
 .eyebrow {
-  color: var(--accent-strong);
+  color: var(--accent-text);
   font-size: var(--fs-xs);
   font-weight: 750;
   letter-spacing: 0.08em;
@@ -200,7 +200,7 @@
 }
 
 .footNote {
-  color: var(--over);
+  color: var(--over-text);
   font-size: var(--fs-sm);
   font-weight: 650;
   text-align: center;

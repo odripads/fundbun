@@ -137,17 +137,22 @@ describe('generateInsights — suggested caps never loosen a budget', () => {
       .filter((x) => x.suggestedAction?.tool === 'set_category_budget')
       .map((x) => ({ kind: x.kind, category: x.suggestedAction!.args.category as CategoryId, limit: x.suggestedAction!.args.limit as number, label: x.suggestedAction!.label }))
 
-  it('with a small budget, category_up and late_night caps sit 10% under the current limit (not above it)', () => {
-    const ctx = { ...meiLike(), budget: budget({ delivery: 520, shopping: 520, dining: 520 }) }
-    const out = caps(ctx)
-    expect(out.length).toBeGreaterThan(0)
-    for (const c of out) {
-      const current = ctx.budget!.categories.find((b) => b.category === c.category)!.limit
-      expect(c.limit).toBeLessThan(current)
-      expect(c.limit).toBe(yuan(460))
-      expect(c.label).toMatch(/at ¥460$/)
+  it('F41: a cap the user just set is satisfied — it is never re-suggested ¥50 lower (no ratchet)', () => {
+    const before = caps(meiLike())
+    expect(before.length).toBeGreaterThan(0)
+    for (const c of before) {
+      // the user taps "Cap Shopping at ¥460" → the budget now holds exactly that limit
+      const tapped = { ...meiLike(), budget: budget({ [c.category]: c.limit / 100 }) }
+      const after = caps(tapped).filter((x) => x.category === c.category)
+      expect(after, `${c.label} came back as ${after.map((x) => x.label).join(', ')}`).toEqual([])
     }
-    expect(out.map((c) => c.kind)).toEqual(expect.arrayContaining(['late_night']))
+  })
+
+  it('a loose existing limit still gets the history-based cap (and the cap does not depend on that limit)', () => {
+    const out = caps({ ...meiLike(), budget: budget({ delivery: 5_000, shopping: 5_000, dining: 5_000 }) })
+    expect(out.length).toBeGreaterThan(0)
+    const none = caps(meiLike())
+    for (const c of out) expect(none.find((x) => x.category === c.category && x.kind === c.kind)?.limit ?? c.limit).toBe(c.limit)
   })
 
   it('every suggested cap on the Mei-like month is below its existing limit, whatever the budget', () => {
@@ -203,5 +208,18 @@ describe('generateInsights — money in prose', () => {
       const text = `${x.title} ${x.body}`
       for (const m of text.matchAll(/¥([\d,]+)\.(\d\d)/g)) expect(Number(m[1].replace(/,/g, '')), `${x.kind}: ${text}`).toBeLessThan(100)
     }
+  })
+})
+
+describe('generateInsights — F31: a bill not yet paid is not a "Nice one"', () => {
+  it('rent due later this month than last month is no category_down (nor up) for housing', () => {
+    const txns: Transaction[] = [
+      spend('2026-09-01', 'Landlord', 'housing', 4_200),
+      ...daily('2026-09-01', '2026-09-30', 'Canteen', 'dining', 150),
+      ...daily('2026-10-01', '2026-10-05', 'Canteen', 'dining', 150),
+    ]
+    const xs = generateInsights(makeCtx({ today: '2026-10-05', txns, dreams: MEI_DREAMS, profile: { targetSpend: yuan(9_500) } }))
+    expect(xs.some((x) => (x.kind === 'category_down' || x.kind === 'category_up') && x.category === 'housing')).toBe(false)
+    expect(xs.some((x) => /Rent & housing down/.test(x.title))).toBe(false)
   })
 })

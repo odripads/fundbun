@@ -450,6 +450,12 @@
   font-size: clamp(1.7rem, 8.2cqi, 2.3rem);
 }
 
+/* a very long dream name ("Noise-cancelling headphones for long flights") would wrap to five lines */
+.headline[data-long='xl'] {
+  font-size: clamp(1.45rem, 6.8cqi, 1.9rem);
+  line-height: 1.08;
+}
+
 .itemName {
   font-style: italic;
   font-variation-settings: var(--fv-display-wonk);
@@ -494,19 +500,19 @@
 }
 
 .stat[data-tone='over'] {
-  --stat-tone: var(--over);
+  --stat-tone: var(--over-text);
 }
 
 .stat[data-tone='warn'] {
-  --stat-tone: var(--warn);
+  --stat-tone: var(--warn-text);
 }
 
 .stat[data-tone='under'] {
-  --stat-tone: var(--under);
+  --stat-tone: var(--under-text);
 }
 
 .stat[data-tone='accent'] {
-  --stat-tone: var(--accent-strong);
+  --stat-tone: var(--accent-text);
 }
 
 .statValue {
@@ -557,7 +563,7 @@
   flex: none;
   width: 14px;
   height: 14px;
-  color: var(--under);
+  color: var(--under-text);
 }
 
 /* the quieter second choice: a hairline "or" divider, then the button */
@@ -592,6 +598,53 @@
   justify-content: space-between;
   gap: var(--s-2);
   margin-top: var(--s-3);
+}
+
+/* ───────────── short screens ─────────────
+ * Phones ≤ ~800px tall (and the desktop device frame, whose status bar and home indicator take 72px more, on
+ * screens ≤ 940px tall): a smaller mirror and tighter rhythm, so the primary CTA and its hint end above the tab bar
+ * and the raised "Ask Bun" button on the first view. */
+@media (max-height: 808px), (min-width: 1024px) and (max-height: 940px) {
+  .stage {
+    margin-top: var(--s-2);
+    gap: var(--s-2);
+  }
+
+  .mirrorWrap {
+    width: min(148px, 42cqi);
+  }
+
+  .copy {
+    margin-top: var(--s-3);
+  }
+
+  .subline {
+    margin-top: var(--s-2);
+  }
+
+  .stats,
+  .actions {
+    margin-top: var(--s-3);
+  }
+}
+
+/* very short (iPhone SE, 768px laptops): the CTA moves above the evidence tiles — still on the first view */
+@media (max-height: 700px), (min-width: 1024px) and (max-height: 820px) {
+  .mirrorWrap {
+    width: min(124px, 36cqi);
+  }
+
+  .actions {
+    order: 1;
+  }
+
+  .stats {
+    order: 2;
+  }
+
+  .meta {
+    order: 3;
+  }
 }
 
 /* ───────────── fallback (no mirror) ───────────── */
@@ -648,4 +701,31 @@
   .mirror {
     border: 2px solid CanvasText;
   }
+}
+
+/* a hero action that already ran: what ran, from the executed action itself */
+.done {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  min-height: 48px;
+  padding: var(--s-2) var(--s-4);
+  border-radius: var(--r-pill);
+  background: var(--under-soft);
+  color: var(--text);
+  font-size: var(--fs-sm);
+  text-align: center;
+}
+
+.done strong {
+  color: var(--under-strong, var(--under));
+}
+
+.done svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--under-text);
+  stroke-width: 3;
 }

@@ -45,7 +45,7 @@
 }
 
 .overText {
-  color: var(--over);
+  color: var(--over-text);
   font-weight: 700;
 }
 
@@ -137,14 +137,24 @@
   line-height: 1;
 }
 
-.optionLabel {
+.optionText {
+  display: grid;
   flex: 1;
+  justify-items: start;
+  gap: 2px;
   min-width: 0;
+}
+
+.optionLabel {
+  min-width: 0;
+  max-width: 100%;
   font-size: var(--fs-sm);
   font-weight: 620;
   line-height: 1.2;
+  overflow-wrap: break-word;
 }
 
+/* under the label, not beside it: a long label ("Transport") keeps its full width */
 .nowTag {
   flex: none;
   padding: 1px 6px;
@@ -159,7 +169,7 @@
   flex: none;
   width: 16px;
   height: 16px;
-  color: var(--accent-strong);
+  color: var(--accent-text);
   stroke-width: 3;
 }
 

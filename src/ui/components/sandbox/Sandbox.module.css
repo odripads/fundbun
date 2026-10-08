@@ -26,7 +26,7 @@
   flex: none;
   width: 16px;
   height: 16px;
-  color: var(--accent-strong);
+  color: var(--accent-text);
 }
 
 .blockTitle {
@@ -213,6 +213,16 @@
   font-size: var(--fs-xs);
 }
 
+.demoPin {
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+}
+
+.demoPinValue {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+}
+
 /* ── result ── */
 
 .resultSlot:empty {
@@ -267,7 +277,7 @@
 .resultTitle svg {
   width: 16px;
   height: 16px;
-  color: var(--accent-strong);
+  color: var(--accent-text);
 }
 
 .resultMeta {
@@ -303,7 +313,7 @@
   height: 40px;
   border-radius: 12px;
   background: var(--warn-soft);
-  color: var(--warn);
+  color: var(--warn-text);
 }
 
 .eventIcon svg {

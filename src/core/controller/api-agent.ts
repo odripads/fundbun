@@ -2,7 +2,7 @@ import { pastedBillLine } from '../agent/support'
 import type { AppApi, LlmStatus, Result } from '../app-api'
 import type { ChatMessage, SuggestedAction } from '../types'
 import { STATIC_BUILD_REASON } from './constants'
-import { LOCKED_MSG, NOT_SET_UP_MSG, type Core } from './core'
+import { LOCKED_MSG, NOT_SET_UP_MSG, syncClock, type Core } from './core'
 import { WELCOME_SUGGESTIONS, assistantMessage, turnErrorMessage, unavailablePending, userMessage } from './messages'
 import { OK, attempt, errorMessage, fail, safely } from './util'
 
@@ -44,6 +44,7 @@ export function createAgentApi(core: Core): AgentApi {
     if (typeof text !== 'string' || !text.trim()) {
       return assistantMessage('What would you like to know?', ts, { suggestions: WELCOME_SUGGESTIONS })
     }
+    syncClock(core)
     const chatStart = store.get().chat.length
     busy(+1)
     try {
@@ -83,6 +84,7 @@ export function createAgentApi(core: Core): AgentApi {
     xrayBill: (text) => turn(text, 'xray'),
     async approveAction(pendingId, pin): Promise<Result> {
       if (core.lock.locked) return fail(LOCKED_MSG)
+      syncClock(core)
       try {
         const r = await engines.get().approve(pendingId, pin)
         return r.ok ? OK : fail(r.error ?? 'Action was not approved')
@@ -104,6 +106,7 @@ export function createAgentApi(core: Core): AgentApi {
     async runSuggestedAction(action: SuggestedAction) {
       const reason = core.lock.locked ? LOCKED_MSG : !store.get().profile ? NOT_SET_UP_MSG : null
       if (reason) return unavailablePending(action, 'user', reason, core.now())
+      syncClock(core)
       try {
         return await engines.get().propose(action, 'user')
       } catch (e) {

@@ -13,6 +13,7 @@ import {
   hashHead,
   isBlocked,
   matchesFilter,
+  plural,
   prettyData,
   shortHash,
   timeLabel,
@@ -161,5 +162,32 @@ describe('chain', () => {
     expect(check.ok).toBe(true)
     expect(chainHeadline(check, s.audit.at(-1)?.hash).title).toBe('Chain intact')
     expect(filterCounts(s.audit).blocked).toBeGreaterThan(0)
+  })
+})
+
+describe('the timeline on the sandbox clock (F55) and its copy (F67)', () => {
+  it('labels days with the sandbox date: the device’s today is the sandbox’s today', () => {
+    const now = new Date(2026, 9, 8, 15, 0)
+    expect(dayLabel(new Date(2026, 9, 8, 7, 36).toISOString(), now, '2026-10-22')).toBe('Today · Oct 22')
+    expect(dayLabel(new Date(2026, 9, 7, 23).toISOString(), now, '2026-10-22')).toBe('Yesterday · Oct 21')
+    expect(dayLabel(new Date(2026, 9, 5, 12).toISOString(), now, '2026-10-22')).toMatch(/^Mon · Oct 19$/)
+    expect(dayLabel('nope', now, '2026-10-22')).toBe('Unknown date')
+  })
+
+  it('groups by sandbox day, so "Today" never sits beside a different date than the bank’s', () => {
+    const now = new Date(2026, 9, 8, 18)
+    const a = entry({ ts: new Date(2026, 9, 7, 10).toISOString() })
+    const b = entry({ ts: new Date(2026, 9, 8, 9).toISOString() })
+    const groups = groupByDay([a, b], now, '2026-10-22')
+    expect(groups.map((g) => [g.key, g.label])).toEqual([
+      ['2026-10-22', 'Today · Oct 22'],
+      ['2026-10-21', 'Yesterday · Oct 21'],
+    ])
+  })
+
+  it('pluralises the stat units ("Bun did 1 action")', () => {
+    expect(plural(1, 'action')).toBe('action')
+    expect(plural(0, 'action')).toBe('actions')
+    expect(plural(3, 'attempt')).toBe('attempts')
   })
 })

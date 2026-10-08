@@ -4,6 +4,7 @@
  */
 import { TOOL_SPECS, isToolName } from '../../../core/agent/specs'
 import { CATEGORIES } from '../../../core/categories'
+import { dateLabel } from '../../../core/dates'
 import { computeMirror } from '../../../core/finance/mirror'
 import { fmt, MINOR_PER_MAJOR, parseAmount, toMajor } from '../../../core/money'
 import { isValidPinFormat } from '../../../core/security/pin'
@@ -14,6 +15,7 @@ import type {
   CategoryId,
   Currency,
   FinanceContext,
+  ISODate,
   Mandate,
   Minor,
   MirrorStatus,
@@ -23,10 +25,12 @@ import type {
   Tone,
   ToolName,
   ToolSpec,
+  Transaction,
   Tripwire,
   TripwireEvent,
   TripwireKind,
 } from '../../../core/types'
+import { eventSandboxDate } from '../../state/clock'
 
 // ───────────────────────────── autonomy & the tier matrix ─────────────────────────────
 
@@ -248,27 +252,98 @@ export function profileDraft(p: Profile): ProfileDraft {
 export interface DraftCheck {
   patch: ProfilePatch
   errors: Partial<Record<keyof ProfileDraft, string>>
+  /** both amounts are valid and the target is above the income (saving needs an explicit OK) */
+  aboveIncome?: boolean
 }
 
-/** Validate a draft against the saved profile: the changed fields as a patch, plus per-field errors. */
-export function checkProfileDraft(d: ProfileDraft, p: Profile): DraftCheck {
+/** A monthly income or spending target above this is almost certainly a typo (an extra zero or two). */
+export const MAX_MONTHLY_MAJOR = 10_000_000
+
+export interface DraftCheckOptions {
+  /** the user ticked "I plan to spend more than I earn" */
+  allowAboveIncome?: boolean
+}
+
+/**
+ * Validate a draft against the saved profile: the changed fields as a patch, plus per-field errors (an invalid edit
+ * is never "saved": callers treat patch OR errors as unsaved changes). A newly entered target above the income needs
+ * `allowAboveIncome` (one typo would otherwise rewrite the whole Mirror story); amounts over
+ * MAX_MONTHLY_MAJOR a month are rejected as typos.
+ */
+export function checkProfileDraft(d: ProfileDraft, p: Profile, opts: DraftCheckOptions = {}): DraftCheck {
   const errors: DraftCheck['errors'] = {}
   const patch: ProfilePatch = {}
+  const max = MAX_MONTHLY_MAJOR * MINOR_PER_MAJOR[p.currency]
+  const tooBig = `That’s more than ${fmt(max, p.currency).replace(/\.00$/, '')} a month — check for an extra zero`
   const name = d.name.trim()
   if (!name) errors.name = 'Tell Bun what to call you'
   else if (name.length > 40) errors.name = 'Keep it under 40 characters'
   else if (name !== p.name) patch.name = name
   const income = parseMoneyInput(d.income, p.currency)
   if (income === null) errors.income = 'Enter your monthly income, like 18500'
+  else if (income > max) errors.income = tooBig
   else if (income !== p.monthlyIncome) patch.monthlyIncome = income
   const target = parseMoneyInput(d.target, p.currency)
+  let aboveIncome = false
   if (target === null) errors.target = 'Enter what you’re happy to spend, like 9500'
-  else if (target !== p.targetSpend) patch.targetSpend = target
+  else if (target > max) errors.target = tooBig
+  else {
+    // an above-income target that is already saved (onboarding allows it, with a warning) stays as it is
+    const unchanged = target === p.targetSpend && income === p.monthlyIncome
+    aboveIncome = !errors.income && income !== null && target > income && !unchanged
+    if (aboveIncome && !opts.allowAboveIncome) {
+      errors.target = `That’s above your ${fmt(income as number, p.currency).replace(/\.00$/, '')} income — lower it, or confirm below that you plan to spend more than you earn`
+    } else if (target !== p.targetSpend) patch.targetSpend = target
+  }
   const day = Number(d.payday)
   if (!/^\d{1,2}$/.test(d.payday.trim()) || day < 1 || day > 28) errors.payday = 'Pick a day from 1 to 28'
   else if (day !== p.payday) patch.payday = day
   if (d.tone !== p.tone) patch.tone = d.tone
-  return { patch, errors }
+  return aboveIncome ? { patch, errors, aboveIncome } : { patch, errors }
+}
+
+// ───────────────────────────── privacy ─────────────────────────────
+
+/** "consent-2026-10" → "Consent version 2026-10" (the stored id is an internal key, not copy). */
+export function consentVersionLabel(version: string | undefined): string {
+  const v = (version ?? '').trim().replace(/^v(?=\d)/i, '').replace(/^consent[-_\s]*/i, '')
+  return v ? `Consent version ${v}` : ''
+}
+
+export interface EngineCopy {
+  /** which engine answers */
+  line: string
+  /** why, in plain words */
+  why: string
+  /** the raw technical reason (a gateway status, …) for a collapsed "Details" row; never the headline */
+  detail?: string
+}
+
+/** What the Privacy section says about the answering engine — consumer words first, the technical reason tucked away. */
+export function engineCopy(s: {
+  engine: 'offline' | 'llm'
+  llm: { checked: boolean; available: boolean; provider?: string; model?: string; reason?: string }
+  llmConsent: boolean
+  llmEnabled: boolean
+}): EngineCopy {
+  if (s.engine === 'llm' && s.llm.available) {
+    return {
+      line: `${s.llm.provider ?? 'Cloud AI'}${s.llm.model ? ` · ${s.llm.model}` : ''}`,
+      why: 'Answers use the cloud AI; permissions are still decided on this device.',
+    }
+  }
+  const line = 'On-device Bun Engine'
+  if (!s.llmConsent) return { line, why: 'Cloud AI is off — nothing is sent to an LLM.' }
+  if (!s.llmEnabled) return { line, why: 'Cloud AI is switched off in settings — Bun answers on-device.' }
+  if (!s.llm.checked) return { line, why: 'Checking whether the cloud AI is reachable…' }
+  return { line, why: 'Cloud AI unavailable right now — Bun answers on-device.', ...(s.llm.reason ? { detail: s.llm.reason } : {}) }
+}
+
+/** The patch that puts back what `patch` changed (the save toast's Undo). */
+export function restorePatch(before: Profile, patch: ProfilePatch): ProfilePatch {
+  const out: ProfilePatch = {}
+  for (const k of Object.keys(patch) as (keyof ProfilePatch)[]) (out as Record<string, unknown>)[k] = before[k]
+  return out
 }
 
 export const TONE_OPTIONS: { value: Tone; label: string; blurb: string }[] = [
@@ -349,6 +424,14 @@ export function tripwireFires(events: readonly TripwireEvent[], tripwireId: stri
   const mine = events.filter((e) => e.tripwireId === tripwireId)
   const last = mine.reduce<TripwireEvent | undefined>((a, e) => (!a || e.firedAt > a.firedAt ? e : a), undefined)
   return { total: mine.length, last }
+}
+
+/** "Fired 2× · last Oct 22" — on the sandbox calendar, like every other date in the app (not the device's). */
+export function firedText(events: readonly TripwireEvent[], tripwireId: string, today: ISODate, txns: readonly Pick<Transaction, 'id' | 'date'>[] = []): string {
+  const f = tripwireFires(events, tripwireId)
+  if (!f.total) return 'Hasn’t fired yet'
+  const when = f.last ? dateLabel(eventSandboxDate(f.last, today, txns)) : ''
+  return `Fired ${f.total}×${when ? ` · last ${when}` : ''}`
 }
 
 /** The plain-language promise shown while setting a tripwire ("Bun nudges you on any single purchase over ¥800."). */

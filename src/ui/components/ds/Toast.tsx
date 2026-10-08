@@ -1,6 +1,7 @@
 import { Bell, CircleCheck, OctagonAlert, Sparkles, TriangleAlert, X } from 'lucide-react'
-import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from 'react'
 import { cx } from './cx'
+import { modalDepth, subscribeModals } from './modalStack'
 import { Portal } from './overlay'
 import { announcement, normalizeToast, toastReducer, type Toast, type ToastOptions, type ToastTone } from './toastStore'
 import styles from './Toast.module.css'
@@ -60,6 +61,46 @@ export function useToast(): ToastApi {
   return api
 }
 
+// ───────── bottom clearance: screens with their own fixed bottom bar (the chat composer) lift the toasts ─────────
+
+const insets = new Map<symbol, number>()
+const insetListeners = new Set<() => void>()
+
+function subscribeInsets(l: () => void): () => void {
+  insetListeners.add(l)
+  return () => {
+    insetListeners.delete(l)
+  }
+}
+
+/** The tallest registered bottom bar, in px (0 when none). */
+export function toastInset(): number {
+  let max = 0
+  for (const v of insets.values()) max = Math.max(max, v)
+  return max
+}
+
+function setInset(id: symbol, px: number | null): void {
+  if (px === null) insets.delete(id)
+  else insets.set(id, Math.max(0, Math.round(px)))
+  for (const l of [...insetListeners]) l()
+}
+
+/**
+ * Keep toasts clear of a fixed bar at the bottom of the screen that isn't the tab bar (e.g. the chat composer):
+ * while mounted, toasts sit `px` above the bottom edge (or higher, if the tab bar needs more).
+ */
+export function useToastClearance(px: number): void {
+  const id = useRef(Symbol('toast-inset')).current
+  useEffect(() => {
+    setInset(id, px)
+  }, [id, px])
+  useEffect(() => () => setInset(id, null), [id])
+}
+
+const modalOpen = () => modalDepth() > 0
+const never = () => false
+
 const TONE_ICON: Record<ToastTone, ReactNode> = {
   neutral: <Bell />,
   success: <CircleCheck />,
@@ -68,16 +109,27 @@ const TONE_ICON: Record<ToastTone, ReactNode> = {
   ai: <Sparkles />,
 }
 
-/** Renders the toast stack + live regions. AppFrame mounts one inside the phone frame. */
+/**
+ * Renders the toast stack + live regions. AppFrame mounts one inside the phone frame.
+ * While a sheet or dialog is open the stack steps behind it and every timer holds, so a toast never covers a
+ * PIN pad or a sheet's buttons and none expires unseen; screen readers still hear each one as it arrives.
+ */
 export function ToastViewport({ className }: { className?: string }) {
   const toasts = useContext(ToastStateContext)
+  const underModal = useSyncExternalStore(subscribeModals, modalOpen, never)
+  const inset = useSyncExternalStore(subscribeInsets, toastInset, toastInset)
   const latest = toasts.filter((t) => !t.leaving).at(-1)
   const urgent = latest?.tone === 'danger'
   return (
     <Portal>
-      <section className={cx(styles.viewport, className)} aria-label="Notifications">
-        <ol className={styles.list}>
-          {toasts.map((t) => <ToastItem key={t.id} toast={t} />)}
+      <section
+        className={cx(styles.viewport, className)}
+        aria-label="Notifications"
+        data-under-modal={underModal || undefined}
+        style={inset > 0 ? ({ '--toast-inset': `${inset}px` } as CSSProperties) : undefined}
+      >
+        <ol className={styles.list} aria-hidden={underModal || undefined}>
+          {toasts.map((t) => <ToastItem key={t.id} toast={t} held={underModal} />)}
         </ol>
         {/* persistent live regions: announcements land reliably because the regions pre-exist */}
         <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
@@ -91,11 +143,12 @@ export function ToastViewport({ className }: { className?: string }) {
   )
 }
 
-function ToastItem({ toast: t }: { toast: Toast }) {
+function ToastItem({ toast: t, held = false }: { toast: Toast; held?: boolean }) {
   const api = useToast()
   const remove = useContext(RemoveContext)
-  const [paused, setPaused] = useState(false)
+  const [hovered, setHovered] = useState(false)
   const remaining = useRef(t.duration)
+  const paused = hovered || held
 
   useEffect(() => {
     remaining.current = t.duration
@@ -120,11 +173,14 @@ function ToastItem({ toast: t }: { toast: Toast }) {
   return (
     <li
       className={cx(styles.toast, styles[t.tone], t.leaving && styles.leaving)}
-      onPointerEnter={() => setPaused(true)}
-      onPointerLeave={() => setPaused(false)}
-      onFocus={() => setPaused(true)}
+      // a mouse resting on a toast holds it; a finger tap must not (touch "hover" can stick until the next tap)
+      onPointerEnter={(e) => {
+        if (e.pointerType === 'mouse') setHovered(true)
+      }}
+      onPointerLeave={() => setHovered(false)}
+      onFocus={() => setHovered(true)}
       onBlur={(e) => {
-        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setPaused(false)
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setHovered(false)
       }}
     >
       {t.image ? <div className={styles.image}>{t.image}</div> : <span className={styles.icon} aria-hidden="true">{t.icon ?? TONE_ICON[t.tone]}</span>}

@@ -186,3 +186,55 @@ describe('evidence formatting', () => {
     expect(capitalize('')).toBe('')
   })
 })
+
+describe('step-up copy matches the action (F66)', () => {
+  const bill = (date?: string) =>
+    ({
+      call: { id: 'c', tool: 'pay_bill', args: { billId: 'bill_cm', ...(date ? { date } : {}) }, proposedBy: 'user' },
+      preview: { title: 'Pay China Mobile plan ¥128', summary: '', reversible: false, risk: 'high', effects: [] },
+    }) as unknown as Parameters<typeof import('./logic').actionTitle>[0]
+
+  it('a payment dated after today is titled as a schedule', async () => {
+    const { actionTitle } = await import('./logic')
+    expect(actionTitle(bill('2026-10-24'), '2026-10-22')).toBe('Schedule China Mobile plan ¥128 for Oct 24')
+    expect(actionTitle(bill('2026-10-22'), '2026-10-22')).toBe('Pay China Mobile plan ¥128')
+    expect(actionTitle(bill(), '2026-10-22')).toBe('Pay China Mobile plan ¥128')
+  })
+
+  it('the user-proposed chip doesn’t read like "only a tap is needed"', async () => {
+    const { USER_PROPOSED_LABEL } = await import('./logic')
+    expect(USER_PROPOSED_LABEL).toBe('You started this')
+  })
+})
+
+describe('suggestion receipts (F41)', () => {
+  const pa = (id: string, status: string, tool: string, args: Record<string, unknown>, title: string, tier = 1) =>
+    ({ id, status, call: { id, tool, args, proposedBy: 'user' }, decision: { tier }, preview: { title } }) as never
+
+  it('follows the button’s own proposal first', async () => {
+    const { suggestionReceipt } = await import('./logic')
+    const pending = [pa('a', 'executed', 'set_category_budget', { category: 'shopping', limit: 46000 }, 'Set Shopping budget to ¥460 a month')]
+    const next = { tool: 'set_category_budget' as const, args: { category: 'shopping', limit: 41000 } }
+    expect((suggestionReceipt(pending, next, 'a') as unknown as { preview: { title: string } }).preview.title).toBe('Set Shopping budget to ¥460 a month')
+  })
+
+  it('finds the last executed setting on the same target, and lets an undo bring the suggestion back', async () => {
+    const { suggestionReceipt, suggestionTarget } = await import('./logic')
+    const next = { tool: 'set_category_budget' as const, args: { category: 'shopping', limit: 41000 } }
+    expect(suggestionTarget(next)).toBe('set_category_budget:shopping')
+    const ran = [pa('a', 'executed', 'set_category_budget', { category: 'shopping', limit: 46000 }, 'Set ¥460')]
+    expect(suggestionReceipt(ran, next)).toBe(ran[0])
+    const undone = [...ran, pa('b', 'undone', 'set_category_budget', { category: 'shopping', limit: 45000 }, 'Set ¥450')]
+    expect(suggestionReceipt(undone, next)).toBeUndefined()
+    const other = [pa('c', 'executed', 'set_category_budget', { category: 'groceries' }, 'Set groceries')]
+    expect(suggestionReceipt(other, next)).toBeUndefined()
+  })
+
+  it('money moves never borrow an older receipt (stashing again is legitimate)', async () => {
+    const { suggestionReceipt } = await import('./logic')
+    const stash = { tool: 'transfer_to_goal' as const, args: { goalId: 'dream_macbook', amount: 33000 } }
+    const ran = [pa('a', 'executed', 'transfer_to_goal', { goalId: 'dream_macbook', amount: 33000 }, 'Move ¥330', 2)]
+    expect(suggestionReceipt(ran, stash)).toBeUndefined()
+    expect(suggestionReceipt(ran, stash, 'a')).toBe(ran[0])
+  })
+})

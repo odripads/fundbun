@@ -106,7 +106,8 @@
   flex: none;
   width: 18px;
   height: 18px;
-  color: var(--tone);
+  /* the tone, pulled toward the text colour: small text reaches 4.5:1 in both themes */
+  color: color-mix(in srgb, var(--tone) 65%, var(--text));
   stroke-width: 2.2;
 }
 

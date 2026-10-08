@@ -2,7 +2,10 @@ import { describe, expect, it, vi } from 'vitest'
 import type { BankState, Transaction } from '../types'
 import { BANK_AGENT_DAILY_LIMIT, BankError, MAX_ADVANCE_DAYS, SandboxBank, type BankErrorCode } from './bank'
 import type { Categorizer } from './categorizer'
+import { billPaymentSchedule } from './generator'
+import { seriesOf } from './billing'
 import { loadPersona } from './personas'
+import { getScript } from './scripts'
 
 const TODAY = '2026-10-22'
 const shoppingCategorizer: Categorizer = () => ({ category: 'shopping', source: 'rule', confidence: 0.92 })
@@ -449,15 +452,45 @@ describe('advanceDays', () => {
     expectConsistent(bank)
   })
 
-  it('direct-debits broadband on its due date and marks unpaid bills overdue', () => {
+  it('direct-debits broadband on its due date; the persona pays its hand-paid bills on its habitual day (F25)', () => {
     const bank = meiBank()
+    const script = getScript('mei')!
     bank.advanceDays(11) // → 2026-11-02
-    const bills = Object.fromEntries(bank.state.bills.map((b) => [b.id, b.status]))
-    expect(bills['bill_broadband_2026-11']).toBe('paid')
-    expect(bills['bill_mobile_2026-09']).toBe('overdue')
-    expect(bills['bill_electricity_2026-09']).toBe('overdue')
-    expect(bills['bill_rent_2026-11']).toBe('overdue')
-    expect(bills['bill_water_2026-09']).toBe('overdue')
+    const bills = Object.fromEntries(bank.state.bills.map((b) => [b.id, b]))
+    expect(bills['bill_broadband_2026-11'].status).toBe('paid')
+    for (const id of ['bill_mobile_2026-09', 'bill_electricity_2026-09', 'bill_water_2026-09', 'bill_rent_2026-11']) {
+      const bill = bills[id]
+      expect(bill.status, id).toBe('paid')
+      const txn = bank.state.transactions.find((t) => t.id === bill.paidTxnId)!
+      const series = seriesOf(script, bill)!
+      const plan = billPaymentSchedule(script, bank.state.seed, series, bill)
+      // the same habit as the generated history: on the planned day (never after the due date), by hand, its usual channel
+      expect(txn).toMatchObject({ date: plan.date, time: plan.time, initiatedBy: 'user', channel: series.channel, billId: id, amount: -bill.amountDue })
+      expect(txn.date <= bill.dueDate).toBe(true)
+    }
+    expect(Object.values(bills).filter((b) => b.status === 'overdue')).toEqual([])
+    expectConsistent(bank)
+  })
+
+  it('a hand-paid bill the account cannot cover turns overdue, and is paid once money arrives (F25)', () => {
+    const bank = meiBank()
+    const checking = bank.checking()
+    bank.transferInternal('chk_main', 'pot_dream_birkin', checking.balance, 'park it', 'user')
+    bank.advanceDays(4) // → 2026-10-26: China Mobile (due 10-25) can't be paid
+    expect(bank.state.bills.find((b) => b.id === 'bill_mobile_2026-09')!.status).toBe('overdue')
+    bank.transferInternal('pot_dream_birkin', 'chk_main', 300_000, 'top up', 'user')
+    const posted = bank.advanceDays(1)
+    expect(bank.state.bills.find((b) => b.id === 'bill_mobile_2026-09')!.status).toBe('paid')
+    expect(posted.some((t) => t.billId === 'bill_mobile_2026-09' && t.date === '2026-10-27')).toBe(true)
+    expectConsistent(bank)
+  })
+
+  it('after a year the persona has no pile of overdue bills and pays rent every month (F25)', () => {
+    const bank = meiBank()
+    bank.advanceDays(366)
+    expect(bank.state.bills.filter((b) => b.status === 'overdue')).toEqual([])
+    const rentMonths = new Set(bank.state.transactions.filter((t) => t.category === 'housing' && t.date > TODAY).map((t) => t.date.slice(0, 7)))
+    expect(rentMonths.size).toBe(12)
   })
 
   it('declines organic purchases the account cannot cover', () => {

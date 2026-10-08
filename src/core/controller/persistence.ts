@@ -21,6 +21,18 @@ export interface AuditHead {
   seq: number
 }
 
+/**
+ * Vault unlock throttle, kept OUTSIDE the encrypted blob (`<key>.unlock`) so a page reload can't reset it: the count of
+ * wrong PINs since the last lock-out, when the current lock-out ends, and how many lock-outs in a row (each doubles).
+ */
+export interface UnlockThrottle {
+  failures: number
+  lockedUntil: number
+  lockouts: number
+}
+
+export const UNLOCK_THROTTLE_SUFFIX = '.unlock'
+
 export type LoadResult =
   | { kind: 'empty' }
   | { kind: 'plain'; state: AppState }
@@ -42,6 +54,10 @@ export interface Persistence {
   auditHead(): AuditHead | null
   /** forget the anchor — only when a NEW audit chain intentionally starts (demo load, unreadable data) */
   resetAuditHead(): void
+  /** the persisted vault unlock throttle (zeros when none or unreadable) */
+  unlockThrottle(): UnlockThrottle
+  /** persist it; null clears it (after a successful unlock, a wipe or turning the vault off) */
+  setUnlockThrottle(t: UnlockThrottle | null): void
 }
 
 export function looksEncrypted(raw: string): boolean {
@@ -64,8 +80,37 @@ export function extendsHead(audit: readonly AuditEntry[], head: AuditHead): bool
   return audit.length >= head.count && audit[head.count - 1]?.hash === head.hash
 }
 
+const NO_THROTTLE: UnlockThrottle = { failures: 0, lockedUntil: 0, lockouts: 0 }
+
+function nonNeg(x: unknown): number {
+  return typeof x === 'number' && Number.isFinite(x) && x >= 0 ? x : 0
+}
+
 export function createPersistence(storage: StorageLike, key: string): Persistence {
   const headKey = `${key}${AUDIT_HEAD_SUFFIX}`
+  const throttleKey = `${key}${UNLOCK_THROTTLE_SUFFIX}`
+
+  function unlockThrottle(): UnlockThrottle {
+    try {
+      const raw = storage.getItem(throttleKey)
+      if (!raw) return { ...NO_THROTTLE }
+      const t: unknown = JSON.parse(raw)
+      if (!t || typeof t !== 'object') return { ...NO_THROTTLE }
+      const r = t as Record<string, unknown>
+      return { failures: nonNeg(r.failures), lockedUntil: nonNeg(r.lockedUntil), lockouts: nonNeg(r.lockouts) }
+    } catch {
+      return { ...NO_THROTTLE }
+    }
+  }
+
+  function setUnlockThrottle(t: UnlockThrottle | null) {
+    try {
+      if (!t || (t.failures === 0 && t.lockedUntil === 0 && t.lockouts === 0)) storage.removeItem(throttleKey)
+      else storage.setItem(throttleKey, JSON.stringify({ failures: t.failures, lockedUntil: t.lockedUntil, lockouts: t.lockouts }))
+    } catch (e) {
+      console.error('[fundbun] unlock throttle write failed:', e)
+    }
+  }
   let vaultPin: string | null = null
   // bumped by plaintext saves / wipes so in-flight encrypted writes never land afterwards
   let generation = 0
@@ -197,6 +242,7 @@ export function createPersistence(storage: StorageLike, key: string): Persistenc
       console.error('[fundbun] storage remove failed:', e)
     }
     resetAuditHead()
+    setUnlockThrottle(null)
   }
 
   return {
@@ -208,6 +254,8 @@ export function createPersistence(storage: StorageLike, key: string): Persistenc
     hasVaultPin: () => vaultPin !== null,
     auditHead,
     resetAuditHead,
+    unlockThrottle,
+    setUnlockThrottle,
   }
 }
 

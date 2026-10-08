@@ -125,7 +125,7 @@ export function validateConsent(d: OnboardingDraft): Errors {
 export function validateMoney(d: OnboardingDraft): Errors {
   const e: Errors = {}
   const name = d.name.trim()
-  if (!name) e.name = 'What should Bun call you?'
+  if (!name) e.name = 'Add a first name (or nickname) so Bun can greet you'
   else if (name.length > 40) e.name = 'Keep it under 40 characters'
   const income = parseIncome(d)
   if (!income.ok) e.income = income.error
@@ -469,19 +469,8 @@ export function summarizeCsv(text: string, currency: Currency): CsvSummary {
   }
 }
 
-/** Decode a CSV file's bytes: UTF-8 first; Alipay and many bank exports are GBK, so fall back to GB18030. */
-export function decodeCsvBytes(bytes: ArrayBuffer | Uint8Array): string {
-  const view = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes)
-  try {
-    return new TextDecoder('utf-8', { fatal: true }).decode(view).replace(/^﻿/, '')
-  } catch {
-    try {
-      return new TextDecoder('gb18030').decode(view)
-    } catch {
-      return new TextDecoder('utf-8').decode(view)
-    }
-  }
-}
+/** Decode a CSV file's bytes (moved to ui/lib/csvFile so every importer shares the GBK fallback). */
+export { decodeCsvBytes } from '../../lib/csvFile'
 
 export function parseBalance(d: OnboardingDraft): MoneyParse {
   return parseMoney(d.data.balance, d.currency, { what: 'your current balance', example: '6,500', allowZero: true })

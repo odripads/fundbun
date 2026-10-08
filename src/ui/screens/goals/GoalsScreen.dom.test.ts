@@ -79,6 +79,20 @@ describe('GoalsScreen', () => {
     expect(dialog()!.textContent).toContain('more than your checking balance')
   })
 
+  it('F59: "-50" is refused with a message, never turned into "Stash ¥50"', async () => {
+    const app = demo('mei')
+    const spy = vi.spyOn(app, 'contributeToGoal')
+    const { container } = await renderGoals(app)
+    await click(byText(container, 'Add money', 'button'))
+    await changeValue(dialog()!.querySelector('input'), '-50')
+    expect(dialog()!.textContent).toContain('Amounts go into the pot')
+    expect(byText(document.body, 'Stash ¥50', 'button')).toBeNull()
+    const stash = byText(document.body, 'Stash it', 'button') as HTMLButtonElement
+    expect(stash.disabled).toBe(true)
+    expect(dialog()!.textContent).not.toContain('→')
+    expect(spy).not.toHaveBeenCalled()
+  })
+
   it('marks a treat as enjoyed after a confirm, then celebrates', async () => {
     const app = demo('arif')
     const { container } = await renderGoals(app)

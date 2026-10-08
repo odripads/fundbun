@@ -1,5 +1,6 @@
 import { CATEGORIES } from '../categories'
 import { fmt, MINOR_PER_MAJOR } from '../money'
+import { ym } from '../dates'
 import type {
   Currency,
   DreamEquivalent,
@@ -12,10 +13,11 @@ import type {
   Transaction,
   Tripwire,
   TripwireEvent,
+  YearMonth,
 } from '../types'
 import { byTone, copyFmt, type Fmt, moneyFmt, plural } from './copy'
 import { goalEquivalent, hoursOfWork } from './dreams'
-import { isSpending, upTo } from './ledger'
+import { FIXED_CATEGORIES, isSpending, upTo } from './ledger'
 import { summarizeMonth } from './summary'
 
 /** Projections before this day are mostly noise, so pace tripwires stay quiet until then. */
@@ -69,7 +71,8 @@ interface Firing {
 
 interface EvalInput {
   ctx: FinanceContext
-  s: MonthSummary
+  /** this month's summary — computed on first use (only month-level kinds need it) */
+  readonly s: MonthSummary
   /** prose money (totals, targets): whole yuan from ¥100 */
   f: Fmt
   /** exact money: one purchase */
@@ -134,8 +137,9 @@ function categoryPct(t: Tripwire, { ctx, s, f }: EvalInput): Firing[] {
 
 function singleOver(t: Tripwire, { ctx, f, fx, newTxns }: EvalInput): Firing[] {
   const tone = ctx.profile.tone
+  // a purchase, not a bill: rent, utilities and other scheduled payments aren't "big purchases" to reconsider
   return newTxns
-    .filter((x) => isSpending(x) && -x.amount >= t.threshold)
+    .filter((x) => isSpending(x) && -x.amount >= t.threshold && !x.billId && !FIXED_CATEGORIES.has(x.category))
     .map((x) => {
       const amount = -x.amount
       const dream = goalEquivalent(amount, ctx.dreams)
@@ -223,6 +227,14 @@ const EVALUATORS: Record<Tripwire['kind'], (t: Tripwire, input: EvalInput) => Fi
   pace_over: paceOver,
 }
 
+/** Kinds judged on the whole month (one firing per month): their events carry `month`. */
+export const MONTH_LEVEL_KINDS: readonly Tripwire['kind'][] = ['month_pct', 'category_pct', 'pace_over']
+
+/** The month a month-level event is about: its `month`, or (older saves) the `_YYYY-MM` its id ends with. */
+export function tripwireEventMonth(e: Pick<TripwireEvent, 'id' | 'month'>): YearMonth | undefined {
+  return e.month ?? /_(\d{4}-\d{2})$/.exec(e.id)?.[1]
+}
+
 function mergeTxns(existing: Transaction[], extra: Transaction[]): Transaction[] {
   const ids = new Set(existing.map((t) => t.id))
   return [...existing, ...extra.filter((t) => !ids.has(t.id))]
@@ -235,18 +247,37 @@ function mergeTxns(existing: Transaction[], extra: Transaction[]): Transaction[]
  * Every event message is tangible: includes a DreamEquivalent ("…that's 12% of your Birkin") using the
  * tone in ctx.profile.tone.
  *
- * Event ids are deterministic (`twe_<tripwireId>_<key>`), so a replayed evaluation is easy to dedupe.
- * daily_over checks the days touched by `newTxns` (today when none are given).
+ * Event ids are deterministic (`twe_<tripwireId>_<key>`). Pass the ids already in the log as `firedIds` and an
+ * event is never produced twice (e.g. an import touching a day that already fired); a daily_over day older than the
+ * last day it fired for is stale and stays quiet too. daily_over checks the days touched by `newTxns` (today when
+ * none are given). Each event records the sandbox day it fired on (`firedOn`, ctx.bank.today — the clock every
+ * screen shows) and, for month-level kinds, the `month` it is about.
  */
 export function evaluateTripwires(
   ctx: FinanceContext,
-  opts: { newTxns?: Transaction[]; now: ISODateTime },
+  opts: { newTxns?: Transaction[]; now: ISODateTime; firedIds?: Iterable<string> },
 ): { events: TripwireEvent[]; tripwires: Tripwire[] } {
   const newTxns = (opts.newTxns ?? []).filter((t) => t.date <= ctx.bank.today)
   const txns = upTo(mergeTxns(ctx.bank.transactions, newTxns), ctx.bank.today)
   const evalCtx: FinanceContext = { ...ctx, bank: { ...ctx.bank, transactions: txns } }
-  const input: EvalInput = { ctx: evalCtx, s: summarizeMonth(evalCtx), f: copyFmt(ctx.profile.currency), fx: moneyFmt(ctx.profile.currency), txns, newTxns }
-  const firings = new Map(ctx.tripwires.map((t) => [t.id, t.enabled ? EVALUATORS[t.kind](t, input).filter((x) => x.key !== t.lastFiredKey) : []]))
+  let summary: MonthSummary | undefined
+  const input: EvalInput = {
+    ctx: evalCtx,
+    get s() { return (summary ??= summarizeMonth(evalCtx)) },
+    f: copyFmt(ctx.profile.currency),
+    fx: moneyFmt(ctx.profile.currency),
+    txns,
+    newTxns,
+  }
+  const fired = new Set(opts.firedIds ?? [])
+  const month = ym(ctx.bank.today)
+  const isFresh = (t: Tripwire, x: Firing) =>
+    x.key !== t.lastFiredKey &&
+    !fired.has(`twe_${t.id}_${x.key}`) &&
+    !(t.kind === 'daily_over' && t.lastFiredKey !== undefined && x.key < t.lastFiredKey)
+  // a month-level tripwire that already fired this month can't fire again: skip it (and the month summary) entirely
+  const quiet = (t: Tripwire) => MONTH_LEVEL_KINDS.includes(t.kind) && t.lastFiredKey === month
+  const firings = new Map(ctx.tripwires.map((t) => [t.id, t.enabled && !quiet(t) ? EVALUATORS[t.kind](t, input).filter((x) => isFresh(t, x)) : []]))
   const loudest = loudestMonthPct(ctx.tripwires, firings)
   const events: TripwireEvent[] = []
   const tripwires = ctx.tripwires.map((t) => {
@@ -259,6 +290,8 @@ export function evaluateTripwires(
         id: `twe_${t.id}_${x.key}`,
         tripwireId: t.id,
         firedAt: opts.now,
+        firedOn: ctx.bank.today,
+        ...(MONTH_LEVEL_KINDS.includes(t.kind) ? { month: x.key } : {}),
         ...(x.txnId ? { txnId: x.txnId } : {}),
         title: x.title,
         message: x.message,
@@ -267,7 +300,10 @@ export function evaluateTripwires(
         seen: false,
       })
     }
-    return { ...t, lastFiredKey: fresh[fresh.length - 1].key }
+    const keys = fresh.map((x) => x.key)
+    // lastFiredKey only moves forward for date-keyed kinds (an older day re-checked later must not rewind it)
+    const last = t.kind === 'daily_over' && t.lastFiredKey !== undefined ? [t.lastFiredKey, ...keys].sort().at(-1)! : keys[keys.length - 1]
+    return { ...t, lastFiredKey: last }
   })
   return { events, tripwires }
 }
