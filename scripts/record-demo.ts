@@ -1,12 +1,12 @@
 /**
- * Records the FundBun demo video from the REAL app → International-FundBun-DemoVideo.mp4 (+ .srt + narration script).
+ * Records the FundBun demo video from the REAL app → InternationalAI-FundBun-DemoVideo.mp4 (+ .srt + narration script).
  * Storyboard: docs/DEMO_VIDEO_SCRIPT.md (scene by scene, ≤ 5:00, 1920×1080, English subtitles).
  *
  *   npm run demo:record                                   starts its own Vite (HMR off) on :5503 and records
  *   npm run demo:record -- --base http://localhost:5503/  records against a server that is already running
  *   options:
- *     --out <file.mp4>      final video        (default: $TMPDIR/fundbun-demo/International-FundBun-DemoVideo.mp4)
- *                           the .srt and DemoVideo-Narration-Script.txt are written next to it
+ *     --out <file.mp4>      final video        (default: $TMPDIR/fundbun-demo/InternationalAI-FundBun-DemoVideo.mp4)
+ *                           the .srt and InternationalAI-FundBun-DemoVideo-NarrationScript.txt are written next to it
  *     --narration <audio>   a recorded voice-over to mux (music is ducked under it)
  *     --tests <n>           automated test count for the results card (default: runs `vitest run` once to count)
  *     --stills <dir>        no video: drive the scenes and save a PNG at every checkpoint (layout/QA pass)
@@ -61,7 +61,7 @@ function args(): Record<string, string> {
 
 const opts = args()
 const WORK = join(tmpdir(), 'fundbun-demo')
-const OUT = resolve(opts.out ?? join(WORK, 'International-FundBun-DemoVideo.mp4'))
+const OUT = resolve(opts.out ?? join(WORK, 'InternationalAI-FundBun-DemoVideo.mp4'))
 const STILLS = opts.stills ? resolve(opts.stills) : null
 const FROM = Number(opts.from ?? 1)
 const TO = Number(opts.to ?? 99)
@@ -1255,7 +1255,7 @@ function writeNarration(file: string, cues: Cue[], total: number) {
     'FundBun — demo video narration script',
     'FinTechathon 2026 · International Track (AI) · Topic A: Personal Finance Assistant',
     'Team: Odri Prince Sembiring (leader, Universitas Gadjah Mada) · Nadine Griselda (Universitas Airlangga)',
-    `Video: International-FundBun-DemoVideo.mp4 · ${mmss(total)} · 1920×1080 · burned-in English subtitles (same text as the .srt)`,
+    `Video: InternationalAI-FundBun-DemoVideo.mp4 · ${mmss(total)} · 1920×1080 · burned-in English subtitles (same text as the .srt)`,
     '',
     'How to record the voice-over',
     '- Read each line as it appears; start on its timestamp. Every line fits its window at a relaxed ~150 words per minute.',
@@ -1414,7 +1414,7 @@ async function main() {
   encodeFinal(rawFile, music, OUT, seconds, opts.narration ? resolve(opts.narration) : undefined)
   const srt = OUT.replace(/\.mp4$/, '.srt')
   writeSrt(srt, d.cues)
-  const script = join(dirname(OUT), 'DemoVideo-Narration-Script.txt')
+  const script = join(dirname(OUT), 'InternationalAI-FundBun-DemoVideo-NarrationScript.txt')
   writeNarration(script, d.cues, seconds)
   writeFileSync(join(WORK, 'marks.json'), JSON.stringify(d.marks, null, 2))
   if (!opts.keep) {

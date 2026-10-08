@@ -3,7 +3,7 @@
 Recorded automatically by `npm run demo:record` (Playwright + system Chrome) on the desktop layout: the phone-sized app
 on the left, the Glass Box (live agent trace, policy decisions, audit chain) on the right. Subtitles are rendered on
 screen as a caption bar; the sandbox date/time is visible in the Glass Box (execution evidence). Fictional sandbox data
-only; no brand logos. Target file name: `International-FundBun-DemoVideo.mp4`.
+only; no brand logos. Target file name: `InternationalAI-FundBun-DemoVideo.mp4`.
 
 | # | Time | Scene (what happens on screen) | Subtitle (one line at a time) |
 |---|------|--------------------------------|-------------------------------|

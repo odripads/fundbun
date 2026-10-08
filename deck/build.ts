@@ -1,7 +1,7 @@
 /**
  * Builds the FundBun pitch deck from deck/slides.html (+ deck.css, notes.json).
  *
- *   npm run deck                       → ../submission/International-FundBun-Deck.{pdf,pptx}
+ *   npm run deck                       → ../submission/InternationalAI-FundBun-Deck.{pdf,pptx}
  *   npx tsx deck/build.ts --out /tmp/x --png /tmp/fundbun-deck-png --only pdf|pptx|png
  *
  * 1. Serves the repo over a throw-away local HTTP server (fonts and images load by relative URL).
@@ -31,7 +31,7 @@ function arg(name: string, fallback: string): string {
 const outDir = resolve(arg('out', resolve(root, '../submission')))
 const pngDir = resolve(arg('png', '/tmp/fundbun-deck-png'))
 const only = arg('only', 'all') // all | png | pdf | pptx
-const baseName = 'International-FundBun-Deck'
+const baseName = 'InternationalAI-FundBun-Deck'
 const SCALE = 1.5
 
 interface SlideNote {
