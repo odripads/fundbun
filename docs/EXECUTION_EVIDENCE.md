@@ -9,6 +9,8 @@
 | Team name | FundBun — Odri Prince Sembiring (leader, Universitas Gadjah Mada) · Nadine Griselda (Universitas Airlangga) |
 | Competition track | International AI Track — Topic A: Personal Finance Assistant |
 | Submission date | 2026-10-20 |
+| Source code | [github.com/odripads/fundbun](https://github.com/odripads/fundbun) |
+| Demo video | [youtu.be/Se5TD4KQ35A](https://youtu.be/Se5TD4KQ35A) (4:47, English subtitles) |
 
 *How to read this document.* Every number below comes from `evidence/latest/` in the repository ([github.com/odripads/fundbun](https://github.com/odripads/fundbun)), which `npm run evidence` regenerates byte for byte. The same folder is attached as **InternationalAI-FundBun-ExecutionEvidence-Logs.zip**. Topic A is not an on-chain topic, so this evidence consists of sandbox operation logs and the demo video, not transaction hashes.
 
@@ -64,7 +66,7 @@
 | Audit chain verification | **44/44 runs intact** · tampering detected | `verifyAudit()` on every run's final hash chain. C10 deliberately edits its chain, and the edit is caught at entry #7 |
 | Reproducibility | Byte-identical reruns | Two runs give identical files apart from the git-commit line in `SUMMARY.md` |
 
-**The demo video is execution evidence too.** Attachment 2 defines this item for non-on-chain topics as "simulated-account/sandbox operation logs and demo video". The demo video submitted with this package runs the same sandbox in the real app. Its Glass Box panel shows the sandbox time, every tool call and policy decision, and the audit chain as they happen. It covers Mei's Mirror, the recovery plan, a PIN-approved cancellation, the blocked bill injection, blocked transfer and escalation attempts, the kill switch, and Arif stashing his surplus.
+**The demo video is execution evidence too.** Attachment 2 defines this item for non-on-chain topics as "simulated-account/sandbox operation logs and demo video". The demo video submitted with this package ([youtu.be/Se5TD4KQ35A](https://youtu.be/Se5TD4KQ35A), 4:47, English subtitles) runs the same sandbox in the real app. Its Glass Box panel shows the sandbox time, every tool call and policy decision, and the audit chain as they happen. It covers Mei's Mirror, the recovery plan, a PIN-approved cancellation, the blocked bill injection, blocked transfer and escalation attempts, the kill switch, and Arif stashing his surplus.
 
 ---
 

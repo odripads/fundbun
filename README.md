@@ -4,6 +4,7 @@
 
 <h1 align="center">FundBun</h1>
 <p align="center"><em>"You could've gotten a Birkin."</em><br/>An AI money buddy that shows you the dream you could've had — and an agent you can trust inside your bank.</p>
+<p align="center"><a href="https://youtu.be/Se5TD4KQ35A"><b>▶ Watch the 5-minute demo</b></a> · <a href="docs/TECHNICAL.md">Technical document</a> · <a href="docs/SECURITY_SELF_ASSESSMENT.md">Security self-assessment</a> · <a href="evidence/latest/SUMMARY.md">Evidence</a></p>
 
 ---
 
@@ -110,6 +111,7 @@ npm run evidence       # replays all scripted scenarios → evidence/latest (log
 ## 6. Repository and Deployment
 
 - **Repository:** https://github.com/odripads/fundbun
+- **Demo video:** https://youtu.be/Se5TD4KQ35A (4:47, English subtitles)
 - **Live demo:** static on-device build via the *Deploy demo to GitHub Pages* workflow (Actions tab) once the repository
   is public
 - **Deployment:** Docker image (app + gateway on one port) or `npm run build && npm start` behind any HTTPS reverse

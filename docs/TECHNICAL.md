@@ -8,6 +8,8 @@
 | Team name | FundBun — Odri Prince Sembiring (leader, Universitas Gadjah Mada) · Nadine Griselda (Universitas Airlangga) |
 | Competition track | International AI Track — Topic A: Personal Finance Assistant |
 | Submission date | 2026-10-20 |
+| Source code | [github.com/odripads/fundbun](https://github.com/odripads/fundbun) |
+| Demo video | [youtu.be/Se5TD4KQ35A](https://youtu.be/Se5TD4KQ35A) (4:47, English subtitles) |
 
 *How to read this document.* Each technical claim names the file that implements it (paths are relative to the repository root). Results come from `evidence/latest/SUMMARY.md`, which `npm run evidence` regenerates byte for byte, and from a Vitest run on 2026-10-08 (`npx vitest run`). Anything not yet built is labelled **Roadmap**.
 
