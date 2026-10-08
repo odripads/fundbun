@@ -2,7 +2,7 @@ import { CATEGORIES } from '../categories'
 import { monthLabel, ym } from '../dates'
 import { computeMirror, goalProgress, primaryGoal, summarizeMonth } from '../finance'
 import { roundDownTo10 } from '../finance/actions'
-import { listJoin } from '../finance/copy'
+import { durationText, listJoin } from '../finance/copy'
 import { uid } from '../ids'
 import type { AppState, CategoryId, Minor, PendingAction, PlanStep, RecurringSeries, TaskPlan, Tone, ToolName } from '../types'
 import { newCall, refreshPlan, runGated, type GateResult } from './actions'
@@ -451,8 +451,8 @@ export interface GoalImpact {
   /** estimated monthly saving from the plan's fixes */
   monthly: Minor
   parts: { label: string; monthly: Minor }[]
-  /** weeks the goal arrives sooner at the current saving pace + the fixes */
-  weeksSooner?: number
+  /** days the goal arrives sooner at the current saving pace + the fixes (shown via finance/copy.durationText) */
+  daysSooner?: number
   /** the one-off move into the goal pot the plan proposes (pending the user's tap) */
   transfer?: Minor
 }
@@ -579,7 +579,7 @@ interface OverFixes {
 
 /**
  * "Save faster for the Birkin": price each fix per month (a cap saves what last month's spend was above it, a
- * cancelled subscription its monthly price), turn the total into weeks gained at the goal's saving pace, and
+ * cancelled subscription its monthly price), turn the total into time gained at the goal's saving pace, and
  * propose moving that monthly amount into the pot now — a pending card, never automatic.
  */
 function goalPlan(host: AgentHost, runner: PlanRunner, goalId: string, fixes: OverFixes, after: string): GoalImpact | undefined {
@@ -596,16 +596,16 @@ function goalPlan(host: AgentHost, runner: PlanRunner, goalId: string, fixes: Ov
   if (fixes.sub) parts.push({ label: `cancelling ${fixes.sub.merchant}`, monthly: fixes.sub.lastAmount })
   const monthly = parts.reduce((sum, p) => sum + p.monthly, 0)
   if (monthly <= 0) return undefined
-  let weeksSooner: number | undefined
+  let daysSooner: number | undefined
   try {
     const progress = goalProgress(dream, host.ctx())
     const remaining = Math.max(0, progress.price - progress.saved)
     if (progress.monthlyRate > 0 && remaining > 0) {
       const months = remaining / progress.monthlyRate - remaining / (progress.monthlyRate + monthly)
-      weeksSooner = Math.round((months * 52) / 12)
+      daysSooner = Math.round(months * 30.4)
     }
   } catch {
-    weeksSooner = undefined
+    daysSooner = undefined
   }
   const transfer = Math.min(monthly, state.mandate.perActionCap)
   if (transfer > 0) {
@@ -613,7 +613,7 @@ function goalPlan(host: AgentHost, runner: PlanRunner, goalId: string, fixes: Ov
     const step = runner.add({ tool: 'transfer_to_goal', args: { goalId, amount: transfer }, dependsOn: [after], label: `Move ${f(transfer)} into ${dream.name} — what these fixes free up each month` })
     runner.run(step)
   }
-  return { goalId, goalName: dream.name, monthly, parts, ...(weeksSooner && weeksSooner > 0 ? { weeksSooner } : {}), ...(transfer > 0 ? { transfer } : {}) }
+  return { goalId, goalName: dream.name, monthly, parts, ...(daysSooner && daysSooner > 0 ? { daysSooner } : {}), ...(transfer > 0 ? { transfer } : {}) }
 }
 
 function retitle(host: AgentHost, planId: string, status: string, month: string): void {
@@ -735,7 +735,7 @@ export function planReply(outcome: PlanOutcome, state: AppState, tone: Tone): st
   const parts = [lead]
   const impact = outcome.goalImpact
   if (impact) {
-    const lead2 = `For ${impact.goalName}: these fixes free up about ${f(impact.monthly)} a month${impact.weeksSooner ? ` — roughly ${impact.weeksSooner} weeks sooner at your saving pace` : ''}.`
+    const lead2 = `For ${impact.goalName}: these fixes free up about ${f(impact.monthly)} a month${impact.daysSooner ? ` — roughly ${durationText(impact.daysSooner)} sooner at your saving pace` : ''}.`
     parts[0] = `${lead2} ${lead}`
   }
   const cap = outcome.cap

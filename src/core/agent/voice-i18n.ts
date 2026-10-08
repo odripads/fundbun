@@ -1,3 +1,4 @@
+import { delayPhrase } from '../finance/copy'
 import type { CategoryId, ISODate, YearMonth } from '../types'
 import type { Lang } from './lang'
 import type { Intent } from './nlu'
@@ -98,7 +99,7 @@ export const I18N_TEMPLATES: Record<LocalLang, Partial<Record<Intent, I18nVarian
       v('{month}的目标还剩{remaining}[，剩下{daysLeft}天大约每天{perDayLeft}]。[今天可以放心花：{safeToSpend}。]', { focus: 'safe_to_spend' }),
       v('这个月你留住了收入的{savingsRate}（收入{income}，已花{spent}）。[其中{savedToGoals}存进了储蓄罐。]', { focus: 'savings_rate' }),
       v('这个月收入{income}，已花{spent}。', { focus: 'savings_rate' }),
-      v('{month}你已花了{spent}，目标是{target}，超出了{delta}。[{goalName}会因此推迟约{goalDelayDays}天。]要不要看看哪些类别花得最多？', { status: 'over' }),
+      v('{month}你已花了{spent}，目标是{target}，超出了{delta}。[{goalName}会因此推迟{goalDelay}。]要不要看看哪些类别花得最多？', { status: 'over' }),
       v('{month}目前已花{spent}，目标{target}。[照这个速度，月底会花到约{projected}。][每天控制在{safeToSpend}以内就能回到正轨。]', { status: 'pace_over' }),
       v('做得好：{month}已花{spent}，目标{target}[，预计月底约{projected}]。[有望结余{delta}。][要把它存进{goalName}吗？]', { status: 'under' }),
       v('进展顺利：{month}已花{spent}，目标{target}[，还剩{remaining}][，大约每天{safeToSpend}]。', { status: 'on_track' }),
@@ -132,8 +133,8 @@ export const I18N_TEMPLATES: Record<LocalLang, Partial<Record<Intent, I18nVarian
       v('{label}多少钱？告诉我价格，我帮你对照这个月的预算。', { stage: 'need_amount' }),
       v('多少钱？告诉我价格，我帮你算算。', { stage: 'need_amount' }),
       v('{label}（{amount}）：在预算内——买完这个月还剩{remainingAfter}。[相当于{hoursOfWork}小时的工作。]买不买，你决定。', { verdict: 'go' }),
-      v('{label}（{amount}）勉强可以，但这个月只剩{remainingAfter}了。[{goalName}会推迟约{goalDelayDays}天。]要不再考虑一下？', { verdict: 'think' }),
-      v('建议先缓一缓：{label}（{amount}）会让你超出目标{overTargetBy}。[{goalName}会再晚约{goalDelayDays}天。]', { verdict: 'skip' }),
+      v('{label}（{amount}）勉强可以，但这个月只剩{remainingAfter}了。[{goalName}会推迟{goalDelay}。]要不再考虑一下？', { verdict: 'think' }),
+      v('建议先缓一缓：{label}（{amount}）会让你超出目标{overTargetBy}。[{goalName}会再晚{goalDelay}。]', { verdict: 'skip' }),
       v('在预算内：买完这个月还剩{remainingAfter}。', { verdict: 'go' }),
       v('勉强可以，但这个月只剩{remainingAfter}了。要不再考虑一下？', { verdict: 'think' }),
       v('建议先缓一缓：这会让你超出目标{overTargetBy}。', { verdict: 'skip' }),
@@ -200,7 +201,7 @@ export const I18N_TEMPLATES: Record<LocalLang, Partial<Record<Intent, I18nVarian
       v('Sisa target {month}: {remaining}[ — sekitar {perDayLeft} per hari untuk {daysLeft} hari lagi].[ Aman dibelanjakan hari ini: {safeToSpend}.]', { focus: 'safe_to_spend' }),
       v('Bulan ini kamu menyisihkan {savingsRate} dari pemasukan ({income} masuk, {spent} keluar).[ {savedToGoals} di antaranya masuk ke celengan.]', { focus: 'savings_rate' }),
       v('Bulan ini pemasukanmu {income}, pengeluaran {spent}.', { focus: 'savings_rate' }),
-      v('Di {month} kamu sudah belanja {spent} dari target {target} — lebih {delta}.[ {goalName} jadi mundur sekitar {goalDelayDays} hari.] Mau lihat kategori mana yang paling boros?', { status: 'over' }),
+      v('Di {month} kamu sudah belanja {spent} dari target {target} — lebih {delta}.[ {goalName} jadi mundur {goalDelay}.] Mau lihat kategori mana yang paling boros?', { status: 'over' }),
       v('Sejauh ini kamu sudah belanja {spent} dari {target}.[ Dengan kecepatan ini, akhir bulan kira-kira {projected}.][ Jaga di bawah {safeToSpend} per hari supaya kembali aman.]', { status: 'pace_over' }),
       v('Mantap: {spent} dari target {target} sejauh ini[, perkiraan akhir bulan {projected}].[ Kamu bisa hemat {delta}.][ Mau disimpan ke {goalName}?]', { status: 'under' }),
       v('Aman: {spent} dari {target} untuk {month}[, sisa {remaining}][ — sekitar {safeToSpend} per hari].', { status: 'on_track' }),
@@ -234,8 +235,8 @@ export const I18N_TEMPLATES: Record<LocalLang, Partial<Record<Intent, I18nVarian
       v('Berapa harga {label}? Kasih tahu harganya, nanti aku cek dengan budget bulan ini.', { stage: 'need_amount' }),
       v('Berapa harganya? Kasih tahu, nanti aku hitung.', { stage: 'need_amount' }),
       v('{label} seharga {amount}: masih masuk budget — sisa {remainingAfter} untuk bulan ini.[ Itu setara {hoursOfWork} jam kerja.] Keputusan di tanganmu.', { verdict: 'go' }),
-      v('{label} seharga {amount} masih bisa, tapi pas-pasan — sisa {remainingAfter} untuk sisa bulan.[ {goalName} mundur sekitar {goalDelayDays} hari.] Mungkin dipikir dulu?', { verdict: 'think' }),
-      v('Mending tahan dulu: {label} seharga {amount} bikin kamu lewat target {overTargetBy}.[ {goalName} jadi mundur sekitar {goalDelayDays} hari.]', { verdict: 'skip' }),
+      v('{label} seharga {amount} masih bisa, tapi pas-pasan — sisa {remainingAfter} untuk sisa bulan.[ {goalName} mundur {goalDelay}.] Mungkin dipikir dulu?', { verdict: 'think' }),
+      v('Mending tahan dulu: {label} seharga {amount} bikin kamu lewat target {overTargetBy}.[ {goalName} jadi mundur {goalDelay}.]', { verdict: 'skip' }),
       v('Masih masuk budget: sisa {remainingAfter} bulan ini.', { verdict: 'go' }),
       v('Masih bisa, tapi pas-pasan — sisa {remainingAfter}. Mungkin dipikir dulu?', { verdict: 'think' }),
       v('Mending tahan dulu: ini bikin kamu lewat target {overTargetBy}.', { verdict: 'skip' }),
@@ -516,6 +517,18 @@ export const CHIPS_I18N: Record<LocalLang, Partial<Record<Intent, string[]>>> = 
 }
 
 /** Words for "in N days" / "overdue by N days" in a bill line. */
+/**
+ * A goal delay in the reply language, on the one unit convention every surface shares (finance/copy.durationText):
+ * days under two weeks, then weeks, then months. 35 → "about 5 weeks" · "约5周" · "sekitar 5 minggu"; 9 → "9 days".
+ */
+export function delayIn(days: number, lang: Lang): string {
+  const d = Math.max(1, Math.round(days))
+  if (lang === 'en') return delayPhrase(d)
+  const [n, unit] = d < 14 ? [d, 0] : d < 60 ? [Math.round(d / 7), 1] : [Math.round(d / 30.4), 2]
+  if (lang === 'zh') return `${d < 14 ? '' : '约'}${n}${['天', '周', '个月'][unit]}`
+  return `${d < 14 ? '' : 'sekitar '}${n} ${['hari', 'minggu', 'bulan'][unit]}`
+}
+
 export function dueInPhrase(days: number, lang: Lang): string {
   if (lang === 'zh') return days === 0 ? '今天到期' : days > 0 ? `还有${days}天` : `已逾期${-days}天`
   if (lang === 'id') return days === 0 ? 'hari ini' : days > 0 ? `${days} hari lagi` : `telat ${-days} hari`

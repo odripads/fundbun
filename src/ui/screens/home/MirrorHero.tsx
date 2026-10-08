@@ -243,92 +243,97 @@ export function MirrorHero({ onCheck, onSandbox }: MirrorHeroProps) {
         Sandbox
       </Chip>
 
-      <figure className={styles.stage} data-role={hero.role}>
-        <div className={styles.mirrorWrap}>
-          <Steam />
-          <div className={styles.mirror}>
-            <span className={styles.glass} aria-hidden="true" />
-            <span className={styles.sheen} aria-hidden="true" />
+      {/* the first view: everything up to the primary action, sized to the screen with the band under the tab bar
+          and the raised "Ask Bun" button left empty (the second choice and the "why" chip start below it) */}
+      <div className={styles.fold}>
+        <figure className={styles.stage} data-role={hero.role}>
+          <div className={styles.mirrorWrap}>
+            <Steam />
+            <div className={styles.mirror}>
+              <span className={styles.glass} aria-hidden="true" />
+              <span className={styles.sheen} aria-hidden="true" />
+              {hero.item ? (
+                <span className={styles.float}>
+                  {hero.role === 'goal' ? <GoalRing now={goalNow} after={goalAfter} /> : null}
+                  <DreamImage image={hero.item.image} alt={hero.item.name} size={hero.role === 'goal' ? 118 : 136} glow={!noData} className={styles.dream} />
+                </span>
+              ) : (
+                <span className={styles.float}>
+                  <BunMascot mood={mirror.mood} size={132} title={`Bun looks ${mirror.mood}`} />
+                </span>
+              )}
+              <span className={styles.floor} aria-hidden="true" />
+            </div>
             {hero.item ? (
-              <span className={styles.float}>
-                {hero.role === 'goal' ? <GoalRing now={goalNow} after={goalAfter} /> : null}
-                <DreamImage image={hero.item.image} alt={hero.item.name} size={hero.role === 'goal' ? 118 : 136} glow={!noData} className={styles.dream} />
+              <span className={styles.bun} data-mood={mirror.mood}>
+                <BunMascot mood={mirror.mood} size={78} title={`Bun looks ${mirror.mood}`} />
               </span>
-            ) : (
-              <span className={styles.float}>
-                <BunMascot mood={mirror.mood} size={132} title={`Bun looks ${mirror.mood}`} />
-              </span>
-            )}
-            <span className={styles.floor} aria-hidden="true" />
+            ) : null}
           </div>
-          {hero.item ? (
-            <span className={styles.bun} data-mood={mirror.mood}>
-              <BunMascot mood={mirror.mood} size={78} title={`Bun looks ${mirror.mood}`} />
-            </span>
+          {plate ? (
+            <figcaption className={styles.plate}>
+              <span className={styles.plateName} title={plate.full !== plate.name ? plate.full : undefined}>{plate.name}</span>
+              <span className={styles.plateDot} aria-hidden="true">·</span>
+              <span className={styles.plateDetail}>{plate.detail}</span>
+            </figcaption>
+          ) : null}
+        </figure>
+
+        <div className={styles.copy}>
+          <div className={styles.eyebrowRow}>
+            <p className={styles.eyebrow}>{mirrorEyebrow(mirror)}</p>
+            <Badge size="sm" variant={BADGE[meta.tone]} icon={<StatusIcon />}>{meta.label}</Badge>
+          </div>
+          <h2 id={headingId} className={styles.headline} data-long={mirror.headline.length > 64 ? 'xl' : mirror.headline.length > 42 || undefined}>
+            {parts ? (
+              <>
+                {parts[0]}
+                <em className={styles.itemName}>{parts[1]}</em>
+                {parts[2]}
+              </>
+            ) : (
+              mirror.headline
+            )}
+          </h2>
+          <p className={styles.subline}>{mirror.subline}</p>
+        </div>
+
+        {stats.length > 0 ? (
+          <ul className={styles.stats} aria-label="The numbers behind it" style={{ '--cols': stats.length } as CSSProperties}>
+            {stats.map((s, i) => (
+              <li key={s.id} className={styles.stat} data-tone={s.tone} style={{ '--i': i } as CSSProperties}>
+                <span className={styles.statValue} aria-hidden="true">{s.value}</span>
+                <span className={styles.statLabel} aria-hidden="true">{s.label}</span>
+                <span className="sr-only">{s.description}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
+        <div className={styles.actions}>
+          {actions.primary ? (
+            <>
+              {heroButton(actions.primary, 'primary')}
+              {heroHint(actions.primary)}
+            </>
+          ) : noData ? (
+            <>
+              <Button size="lg" fullWidth iconStart={<FlaskConical />} onClick={onSandbox}>
+                Try a sandbox purchase
+              </Button>
+              <p className={styles.hint}>Or import a bank CSV in Settings — it stays on this device.</p>
+            </>
           ) : null}
         </div>
-        {plate ? (
-          <figcaption className={styles.plate}>
-            <span className={styles.plateName} title={plate.full !== plate.name ? plate.full : undefined}>{plate.name}</span>
-            <span className={styles.plateDot} aria-hidden="true">·</span>
-            <span className={styles.plateDetail}>{plate.detail}</span>
-          </figcaption>
-        ) : null}
-      </figure>
+      </div>
 
-      <div className={styles.copy}>
-        <div className={styles.eyebrowRow}>
-          <p className={styles.eyebrow}>{mirrorEyebrow(mirror)}</p>
-          <Badge size="sm" variant={BADGE[meta.tone]} icon={<StatusIcon />}>{meta.label}</Badge>
+      {actions.secondary ? (
+        <div className={styles.secondary} data-kind={actions.secondary.kind}>
+          {actions.primary && actions.secondary.kind === 'action' ? <span className={styles.or} aria-hidden="true">or</span> : null}
+          {heroButton(actions.secondary, 'secondary')}
+          {actions.primary?.kind === 'prompt' ? heroHint(actions.secondary) : null}
         </div>
-        <h2 id={headingId} className={styles.headline} data-long={mirror.headline.length > 64 ? 'xl' : mirror.headline.length > 42 || undefined}>
-          {parts ? (
-            <>
-              {parts[0]}
-              <em className={styles.itemName}>{parts[1]}</em>
-              {parts[2]}
-            </>
-          ) : (
-            mirror.headline
-          )}
-        </h2>
-        <p className={styles.subline}>{mirror.subline}</p>
-      </div>
-
-      {stats.length > 0 ? (
-        <ul className={styles.stats} aria-label="The numbers behind it" style={{ '--cols': stats.length } as CSSProperties}>
-          {stats.map((s, i) => (
-            <li key={s.id} className={styles.stat} data-tone={s.tone} style={{ '--i': i } as CSSProperties}>
-              <span className={styles.statValue} aria-hidden="true">{s.value}</span>
-              <span className={styles.statLabel} aria-hidden="true">{s.label}</span>
-              <span className="sr-only">{s.description}</span>
-            </li>
-          ))}
-        </ul>
       ) : null}
-
-      <div className={styles.actions}>
-        {actions.primary ? (
-          <>
-            {heroButton(actions.primary, 'primary')}
-            {heroHint(actions.primary)}
-          </>
-        ) : noData ? (
-          <>
-            <Button size="lg" fullWidth iconStart={<FlaskConical />} onClick={onSandbox}>
-              Try a sandbox purchase
-            </Button>
-            <p className={styles.hint}>Or import a bank CSV in Settings — it stays on this device.</p>
-          </>
-        ) : null}
-        {actions.secondary ? (
-          <div className={styles.secondary} data-kind={actions.secondary.kind}>
-            {actions.primary && actions.secondary.kind === 'action' ? <span className={styles.or} aria-hidden="true">or</span> : null}
-            {heroButton(actions.secondary, 'secondary')}
-            {actions.primary?.kind === 'prompt' ? heroHint(actions.secondary) : null}
-          </div>
-        ) : null}
-      </div>
 
       <div className={styles.meta}>
         <Chip tone="ai" icon={<CircleHelp />} onClick={() => setWhy(true)}>

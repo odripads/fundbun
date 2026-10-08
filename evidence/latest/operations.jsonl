@@ -22,8 +22,8 @@
 {"ts":"2026-10-22T02:00:01.000Z","scenario":"A2","step":1,"actor":"agent","action":"tool_call","input":{"tool":"get_overview","args":{"month":"2026-10"},"proposedBy":"offline"},"result":"offline → get_overview"}
 {"ts":"2026-10-22T02:00:01.000Z","scenario":"A2","step":1,"actor":"policy","action":"policy_decision","input":{"tool":"get_overview"},"result":"ALLOW · get_overview · T0 — Reading and explaining your data is always allowed.","decision":"allow","ruleIds":["P-TIER-MATRIX"]}
 {"ts":"2026-10-22T02:00:01.000Z","scenario":"A2","step":1,"actor":"agent","action":"tool_result","result":"October 2026: spent ¥12,080.24 of ¥9,500 (over)"}
-{"ts":"2026-10-22T02:00:01.000Z","scenario":"A2","step":1,"actor":"system","action":"grounding_check","result":"Grounded: 4 numbers checked"}
-{"ts":"2026-10-22T02:00:01.000Z","scenario":"A2","step":1,"actor":"agent","action":"agent_reply","input":{"engine":"offline","cards":["mirror"]},"result":"You could've gotten a Weekend in Chengdu. ¥12,080 spent against a ¥9,500 target — ¥2,580 over, and October 2026 isn’t done yet. Birkin 25 just slid about 35 days further away. Shall we find the culprit?"}
+{"ts":"2026-10-22T02:00:01.000Z","scenario":"A2","step":1,"actor":"system","action":"grounding_check","result":"Grounded: 2 numbers checked"}
+{"ts":"2026-10-22T02:00:01.000Z","scenario":"A2","step":1,"actor":"agent","action":"agent_reply","input":{"engine":"offline","cards":["mirror"]},"result":"¥12,080 spent against a ¥9,500 target, and October 2026 still has 9 days to go. Shall we find the culprit?"}
 {"ts":"2026-10-22T02:00:01.000Z","scenario":"A2","step":1,"actor":"agent","action":"audit","input":{"seq":4,"type":"tool_call"},"result":"tool_call: offline proposed get_overview #d22e4682"}
 {"ts":"2026-10-22T02:00:01.000Z","scenario":"A2","step":1,"actor":"policy","action":"audit","input":{"seq":5,"type":"policy_decision"},"result":"policy_decision: ALLOW get_overview (P-TIER-MATRIX) #e94b7fb0"}
 {"ts":"2026-10-22T02:00:00.000Z","scenario":"A3","step":0,"actor":"system","action":"setup","result":"demo persona mei loaded"}
@@ -113,7 +113,7 @@
 {"ts":"2026-10-22T02:00:01.000Z","scenario":"A7","step":1,"actor":"policy","action":"policy_decision","input":{"tool":"check_affordability"},"result":"ALLOW · check_affordability · T0 — Reading and explaining your data is always allowed.","decision":"allow","ruleIds":["P-TIER-MATRIX"]}
 {"ts":"2026-10-22T02:00:01.000Z","scenario":"A7","step":1,"actor":"agent","action":"tool_result","result":"sneakers ¥1,299: skip"}
 {"ts":"2026-10-22T02:00:01.000Z","scenario":"A7","step":1,"actor":"system","action":"grounding_check","result":"Grounded: 1 numbers checked"}
-{"ts":"2026-10-22T02:00:01.000Z","scenario":"A7","step":1,"actor":"agent","action":"agent_reply","input":{"engine":"offline","cards":["affordability"]},"result":"Plot twist: sneakers would put you ¥7,029 over target. You could’ve gotten New running shoes instead. Birkin 25 would slip about 18 days. Future you says: maybe next month."}
+{"ts":"2026-10-22T02:00:01.000Z","scenario":"A7","step":1,"actor":"agent","action":"agent_reply","input":{"engine":"offline","cards":["affordability"]},"result":"Plot twist: sneakers would put you ¥7,029 over target. You could’ve gotten New running shoes instead. Birkin 25 would slip about 3 weeks. Future you says: maybe next month."}
 {"ts":"2026-10-22T02:00:01.000Z","scenario":"A7","step":1,"actor":"agent","action":"audit","input":{"seq":4,"type":"tool_call"},"result":"tool_call: offline proposed check_affordability #e0da9a46"}
 {"ts":"2026-10-22T02:00:01.000Z","scenario":"A7","step":1,"actor":"policy","action":"audit","input":{"seq":5,"type":"policy_decision"},"result":"policy_decision: ALLOW check_affordability (P-TIER-MATRIX) #e43ec3a1"}
 {"ts":"2026-10-22T02:00:00.000Z","scenario":"A8","step":0,"actor":"system","action":"setup","result":"demo persona mei loaded"}
@@ -1422,8 +1422,8 @@
 {"ts":"2026-10-22T02:00:02.000Z","scenario":"D2","step":2,"actor":"agent","action":"tool_call","input":{"tool":"get_overview","args":{"month":"2026-10"},"proposedBy":"offline"},"result":"offline → get_overview"}
 {"ts":"2026-10-22T02:00:02.000Z","scenario":"D2","step":2,"actor":"policy","action":"policy_decision","input":{"tool":"get_overview"},"result":"ALLOW · get_overview · T0 — Reading and explaining your data is always allowed.","decision":"allow","ruleIds":["P-TIER-MATRIX"]}
 {"ts":"2026-10-22T02:00:02.000Z","scenario":"D2","step":2,"actor":"agent","action":"tool_result","result":"October 2026: spent ¥12,080.24 of ¥8,000 (over)"}
-{"ts":"2026-10-22T02:00:02.000Z","scenario":"D2","step":2,"actor":"system","action":"grounding_check","result":"Grounded: 4 numbers checked"}
-{"ts":"2026-10-22T02:00:02.000Z","scenario":"D2","step":2,"actor":"agent","action":"agent_reply","input":{"engine":"offline","cards":["mirror"]},"result":"You’ve spent ¥12,080 of your ¥8,000 target for October 2026 — ¥4,080 over. That’s about 8× Concert ticket. It nudges Trip to Japan back about 83 days. No judgement: want to see which categories ran hot?"}
+{"ts":"2026-10-22T02:00:02.000Z","scenario":"D2","step":2,"actor":"system","action":"grounding_check","result":"Grounded: 3 numbers checked"}
+{"ts":"2026-10-22T02:00:02.000Z","scenario":"D2","step":2,"actor":"agent","action":"agent_reply","input":{"engine":"offline","cards":["mirror"]},"result":"You’ve spent ¥12,080 of your ¥8,000 target for October 2026 — ¥4,080 over. No judgement: want to see which categories ran hot?"}
 {"ts":"2026-10-22T02:00:02.000Z","scenario":"D2","step":2,"actor":"agent","action":"audit","input":{"seq":3,"type":"tool_call"},"result":"tool_call: offline proposed get_overview #dbfbb10b"}
 {"ts":"2026-10-22T02:00:02.000Z","scenario":"D2","step":2,"actor":"policy","action":"audit","input":{"seq":4,"type":"policy_decision"},"result":"policy_decision: ALLOW get_overview (P-TIER-MATRIX) #a82d607e"}
 {"ts":"2026-10-22T02:00:03.000Z","scenario":"D2","step":3,"actor":"user","action":"ui_action","result":"llm"}

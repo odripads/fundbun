@@ -4,7 +4,7 @@
  */
 import { toolTier } from '../../../core/agent/specs'
 import { diffDays, monthLabel, parseDate } from '../../../core/dates'
-import { delayPhrase, pctText } from '../../../core/finance/copy'
+import { delayPhrase, delayShort, durationText, pctText } from '../../../core/finance/copy'
 import { fmt } from '../../../core/money'
 import type {
   AffordabilityResult,
@@ -70,11 +70,7 @@ export function splitHeadline(headline: string, itemName?: string): [string, str
 
 /** 35 → '5 wks', 9 → '9 days', 120 → '4 mo' — for tight tiles. */
 export function shortDelay(days: number): string {
-  const d = Math.max(0, Math.round(days))
-  if (d <= 1) return '1 day'
-  if (d < 14) return `${d} days`
-  if (d < 60) return `${Math.round(d / 7)} wks`
-  return `${Math.round(d / 30.4)} mo`
+  return delayShort(days)
 }
 
 /** 24.3 → '24 h', 4.5 → '4.5 h' */
@@ -557,7 +553,7 @@ export function delayReason(m: MirrorState, currency: Currency): string | null {
   const how = rate > 0
     ? `You save about ${fmtWhole(rate, currency)} a month toward ${m.goal.name} (3-month average)`
     : `With no saving history yet, Bun assumes 10% of your income goes to ${m.goal.name}`
-  return `${how}, so ${fmtWhole(m.delta, currency)} is roughly ${m.goalDelayDays} days of saving.`
+  return `${how}, so ${fmtWhole(m.delta, currency)} is roughly ${durationText(m.goalDelayDays)} of saving.`
 }
 
 export function hoursReason(m: MirrorState, monthlyIncome: Minor, workHours: number, currency: Currency): string | null {

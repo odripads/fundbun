@@ -22,7 +22,7 @@ const INTENTS = Object.keys(TRAINING) as Intent[]
 const SAMPLE: Record<string, string> = {
   name: 'Mei', headline: 'You could’ve gotten a Weekend in Chengdu.', status: 'over', month: 'October', spent: '¥12,180',
   target: '¥9,500', delta: '¥2,680', remaining: '¥0', projected: '¥15,200', safeToSpend: '¥120', itemName: 'a Weekend in Chengdu',
-  goalName: 'Birkin 25', goalDelayDays: '35', total: '¥12,180', topCategory: 'Food delivery', topAmount: '¥2,140', topShare: '18%',
+  goalName: 'Birkin 25', goalDelay: 'about 5 weeks', total: '¥12,180', topCategory: 'Food delivery', topAmount: '¥2,140', topShare: '18%',
   category: 'Food delivery', categorySpent: '¥2,140', categoryLimit: '¥1,500', categoryPct: '143%', categoryPrev: '¥1,620',
   count: '4', itemEquivalent: '89% of a Weekend in Chengdu', query: 'Meituan', largest: '¥85 at Meituan on Oct 3',
   monthlyTotal: '¥545', annualTotal: '¥6,540', priceHike: 'iQIYI went from ¥25 to ¥30', overlap: 'you pay for 3 video apps',

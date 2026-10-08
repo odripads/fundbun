@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <base href="$base-url$">
+  <title>$pagetitle$</title>
+  <meta name="author" content="$for(author)$$author$$sep$; $endfor$">
+  <meta name="dcterms.date" content="$date$">
+  <link rel="stylesheet" href="$css-href$">
+  <style>@page { @bottom-left { content: 'FundBun  ·  $footer-title$  ·  FinTechathon 2026 · International AI Track'; } }</style>
+</head>
+<body>
+<section class="cover">
+  <img class="cover-wordmark" src="assets/brand/fundbun-wordmark.png" alt="FundBun">
+  <div class="cover-main">
+    <p class="cover-kicker">$kicker$</p>
+    <p class="cover-track">$track$</p>
+    <h1 class="cover-title">$title$</h1>
+    <p class="cover-sub">$subtitle$</p>
+    <p class="cover-note">$note$</p>
+    <div class="cover-table">
+$cover-table$
+    </div>
+  </div>
+  <div class="cover-foot">
+    <div class="cover-team">
+      $for(author)$<p>$author$</p>$endfor$
+    </div>
+    <div class="cover-repo">
+      <p>Source code</p>
+      <p><a href="$repo$">$repo-label$</a></p>
+      <p>$date$</p>
+    </div>
+  </div>
+  <img class="cover-bun" src="assets/brand/fundbun-logo-512.png" alt="">
+</section>
+$if(toc)$
+<nav class="toc" id="$idprefix$TOC" role="doc-toc">
+  <h2 class="toc-title">Contents</h2>
+$table-of-contents$
+</nav>
+$endif$
+<main>
+$body$
+</main>
+</body>
+</html>

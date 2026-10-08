@@ -128,6 +128,22 @@
   -webkit-backdrop-filter: blur(8px);
 }
 
+/* ───────────── the first view ─────────────
+ * The hero up to the primary action and its hint fills the screen, and the band the tab bar and the raised
+ * "Ask Bun" button cover (--chrome-bottom) stays empty, so nothing tappable sits under them on the first view.
+ * Spare height goes round the mirror; the second choice and the "why" chip start just below the fold. */
+.fold {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(var(--viewport-h, 100dvh) - var(--topbar-h) - var(--safe-top) - var(--s-2));
+  padding-bottom: calc(var(--chrome-bottom) + var(--s-2));
+}
+
+.fold > .stage {
+  flex-grow: 1;
+  justify-content: center;
+}
+
 /* ───────────── the mirror ───────────── */
 
 .stage {
@@ -570,6 +586,8 @@
 .secondary {
   display: grid;
   gap: var(--s-2);
+  margin-top: var(--s-2);
+  animation: rise-in 520ms var(--ease-out) 320ms both;
 }
 
 .or {
@@ -598,6 +616,13 @@
   justify-content: space-between;
   gap: var(--s-2);
   margin-top: var(--s-3);
+}
+
+/* tall phones (430×932) and tablets: a larger mirror takes some of the spare first-view height */
+@media (min-height: 900px) and (max-width: 1023.98px) {
+  .mirrorWrap {
+    width: min(228px, 60cqi);
+  }
 }
 
 /* ───────────── short screens ─────────────
@@ -640,10 +665,6 @@
 
   .stats {
     order: 2;
-  }
-
-  .meta {
-    order: 3;
   }
 }
 

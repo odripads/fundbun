@@ -850,7 +850,8 @@ describe.each(DRIVERS)('review fixes · actions, corrections and undo (%s)', (_n
   it('F14 "help me save for the Birkin faster" prices the fixes for the Birkin and proposes the move (pending a tap)', async () => {
     const d = make('mei')
     const msg = await d.send('help me save for the Birkin faster')
-    expect(textOf(msg)).toMatch(/^For Birkin 25: these fixes free up about ¥\d+ a month — roughly \d+ weeks sooner/)
+    // the time gained reads on the shared unit convention (days under two weeks, then weeks, then months)
+    expect(textOf(msg)).toMatch(/^For Birkin 25: these fixes free up about ¥\d+ a month — roughly \d+ (?:days|weeks|months) sooner/)
     expect(textOf(msg)).toMatch(/next month’s line/)
     const plan = d.state().plans.at(-1)!
     const move = plan.steps.find((s) => s.tool === 'transfer_to_goal')!

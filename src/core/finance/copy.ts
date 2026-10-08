@@ -43,12 +43,23 @@ export function pctText(fraction: number): string {
   return `${Math.round(p)}%`
 }
 
-/** 9 → "9 days", 37 → "about 5 weeks", 120 → "about 4 months" */
+/**
+ * A span of days on the one unit convention every surface shares: days under two weeks, then weeks, then months.
+ * 9 → "9 days", 37 → "5 weeks", 120 → "4 months"
+ */
+export function durationText(days: number): string {
+  const d = Math.max(0, Math.round(days))
+  if (d <= 1) return '1 day'
+  if (d < 14) return `${d} days`
+  if (d < 60) return `${Math.round(d / 7)} weeks`
+  return `${Math.round(d / 30.4)} months`
+}
+
+/** 9 → "9 days", 37 → "about 5 weeks", 120 → "about 4 months" (durationText; rounded spans say "about") */
 export function delayPhrase(days: number): string {
   if (days <= 1) return 'a day'
   if (days < 14) return `${days} days`
-  if (days < 60) return `about ${Math.round(days / 7)} weeks`
-  return `about ${Math.round(days / 30.4)} months`
+  return `about ${durationText(days)}`
 }
 
 /**

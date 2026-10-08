@@ -1,0 +1,83 @@
+{
+  "talk": "FundBun · FinTechathon 2026 International Track (AI) · Topic A · 13 slides, about 9:45 including a 2-minute live demo",
+  "slides": [
+    {
+      "id": "s01",
+      "title": "You could've gotten a Birkin.",
+      "alt": "Title slide. FundBun: an AI money buddy that shows you the dream you could've had. A gold Dream Mirror shows Mei's Birkin 25 (¥98,000) with a burnt Bun peeking in. FinTechathon 2026 International Track, AI Track, Topic A Personal Finance Assistant. Team: Odri Prince Sembiring (Universitas Gadjah Mada, team lead) and Nadine Griselda (Universitas Airlangga).",
+      "notes": "[~30 s] Every budgeting app tells you a number. Numbers don't hurt. Missing out on the thing you actually want does. FundBun is a personal-finance agent that turns your spending into the dreams it costs you — and then actually helps, safely, inside your bank. I'm Odri from Universitas Gadjah Mada, presenting with Nadine from Universitas Airlangga."
+    },
+    {
+      "id": "s02",
+      "title": "Overspending is invisible until it's too late.",
+      "alt": "The problem, in three numbers. ¥2,580 over target is just a number: budgets speak in numbers, and numbers don't hurt. 39 studies show people neglect what a purchase displaces (opportunity cost). Alipay's Huabei bill assistant, which warns at the moment of paying, was linked to 19.6% lower monthly spending. Sources: Frederick et al. 2009; Maguire, Persson and Tinghög 2023; Tsinghua PBCSF study reported by Cailian Press, 2023.",
+      "notes": "[~45 s] We don't feel ¥2,580 of extra food delivery. We would feel losing a weekend away. Three things are true. First, budgets speak in abstract numbers, and numbers don't hurt. Second, people neglect what a purchase displaces — opportunity cost. That finding holds across 39 studies; the effect is modest but robust, so we treat it as a nudge, not a cure. Third, the moment of spending is when a nudge matters: Alipay's Huabei bill assistant warns at the moment of payment, and a Tsinghua PBCSF study linked it to 19.6% lower monthly spending."
+    },
+    {
+      "id": "s03",
+      "title": "The Dream Mirror: overspend, and you see the dream it cost.",
+      "alt": "Two FundBun home screens. Mei, over target: 'You could've gotten a Weekend in Chengdu.' She is ¥2,580 over her ¥9,500 target and her Birkin 25 moved about 5 weeks further away. Arif, under target: '¥668 closer to your MacBook Air (46% there)', with the option to stash ¥330 or keep it. Stay under, and you see how much closer you are; any treat is your call, never a push. Your own dream items, photos and words.",
+      "notes": "[~50 s] At onboarding you tell FundBun your income, what you're willing to spend, and your dreams — a Birkin, new shoes, a flight home. Overspend, and the home screen mirrors it back. Mei is ¥2,580 over her ¥9,500 target: you could've gotten a weekend in Chengdu — and her Birkin just moved about five weeks further away. Stay under, like Arif, and it shows how much closer you are: ¥668 closer to his MacBook Air. Stashing the surplus or keeping a guilt-free treat is his choice — never a push."
+    },
+    {
+      "id": "s04",
+      "title": "Tripwires: cross a line you set, and Bun shows what it costs.",
+      "alt": "Tripwires, the crux. You set four kinds: 80% or 100% of target, a category limit, any purchase over an amount you choose, and projected overspend. Crossing one shows a tangible reminder: a toast reading 'Whoa, ¥1,299 at JD.com. That ¥1,299 = 1.3% of your Birkin 25.' Bun's tone is your choice: Gentle (default), Cheeky (opt-in) or Just numbers. Shame backfires (Gladstone et al. 2021), so the blunt voice is opt-in.",
+      "notes": "[~40 s] Tripwires are the crux. You set the thresholds: 80 or 100 percent of your target, a category limit, any single purchase over an amount you choose, or a projected overspend. When you cross one, Bun reminds you with something tangible — here, that ¥1,299 is 1.3% of Mei's Birkin — not a red number. Shame backfires in the research, so the cheeky voice is opt-in and gentle is the default."
+    },
+    {
+      "id": "s05",
+      "title": "Live demo: Mei's October, end to end.",
+      "alt": "Product tour in four screens. 1 Home mirror: the cost, made visible. 2 Should I buy it?: ¥1,299 sneakers, verdict skip, 12 hours of work, Birkin 3 weeks later. 3 Ask Bun: a 7-step plan to get October back on track, with the Youku cancellation waiting for the PIN. 4 Bills X-ray: a prompt injection hidden in the electricity bill is flagged and ¥0 moves. Run with npm run dev, then /?demo=mei or /?demo=arif, demo PIN 2580.",
+      "notes": "[~2 min · live demo, or play the 5-minute video] Open /?demo=mei. Home: the Dream Mirror — ¥2,580 over, 'You could've gotten a weekend in Chengdu', Birkin about five weeks away. Mei is eyeing ¥1,299 sneakers, so she taps 'Should I buy it?' — Bun answers in her own terms: skip for now, about 12 hours of work, her Birkin roughly three weeks later; the decision stays hers. In the sandbox she buys anyway, and a tripwire fires with her Birkin on it. Then she asks Bun: 'Help me get back on track this month.' Bun plans seven steps as a dependency graph — the read steps run on their own, the delivery cap and a pace tripwire are reversible, and cancelling Youku waits for her. She approves it with her PIN, 2580, bound to that exact action. Last, Bills: she X-rays her electricity bill. It hides an instruction telling the AI to wire ¥4,800 to a stranger. Bun flags it, and nothing moves."
+    },
+    {
+      "id": "s06",
+      "title": "Not just chat: Bun plans, then acts.",
+      "alt": "AI as a financial participant. Four tiers of tasks: T0 Read (overview, bills, subscriptions, affordability); T1 Organise (budgets, category caps, tripwires, reminders); T2 Move own money (stash surplus into goal pots); T3 Pay and cancel (verified bills, subscriptions, disputes). Bun clarifies, takes corrections and stops on 'stop'. Task plan 'Get October back on track', 7 steps as a dependency graph: check the month, find the overspend, find bill leaks, spot habits, cap delivery at ¥840, pace tripwire (all done) and cancel Youku (T3, needs your PIN). 6 of 7 done, 1 waits for you.",
+      "notes": "[~45 s] Bun doesn't just chat — it acts as a financial participant across four tiers. It reads and explains your money; it organises budgets, caps, tripwires and reminders; it moves your own money into goal pots; and it pays verified bills, cancels subscriptions and disputes duplicates. 'Get October back on track' becomes a seven-step plan as a dependency graph: read steps run on their own, the reversible organising steps apply, and the Youku cancellation waits for Mei. It asks when you're ambiguous, accepts corrections like 'make it ¥150', and stops when you say stop."
+    },
+    {
+      "id": "s07",
+      "title": "Architecture: local-first, LLM-optional.",
+      "alt": "Architecture diagram: one local-first TypeScript core (AppApi controller) drives the React app, the evidence runner and the test suites. Modules: agent (Bun Engine: dialogue, TF-IDF intent model, planner, policy gate), security (policy, binding, PIN, audit hash chain, injection, redaction, grounding, vault), finance (pure functions) and sandbox (the bank). Off the device, optional: an LLM gateway with redacted context and T0 to T3 tool specs, proposals decided by the on-device policy gate. Your data stays on your device; an optional LLM, with separate consent, sees only redacted context and can only propose.",
+      "notes": "[~35 s] Your data stays on your phone. One TypeScript core powers the app, the tests and the evidence runner — so what you see in the demo is exactly what we measured. An on-device engine works fully offline. With separate consent, an LLM gateway adds open-ended dialogue: it only ever sees redacted, minimised context, it's only offered tools up to tier 3, and it can only propose. The on-device policy gate decides."
+    },
+    {
+      "id": "s08",
+      "title": "Safety model: the model proposes, the policy engine decides.",
+      "alt": "Permission tiers by user-chosen autonomy (Observe, Suggest, Co-pilot default, Autopilot). T0 Read: always allowed. T1 Organise: denied in Observe, confirm in Suggest, allowed in Co-pilot and Autopilot. T2 Move own money: confirm with a tap, allowed within caps only in Autopilot. T3 Pay, cancel, dispute: step-up with tap and PIN. T4 Prohibited (add payee, external transfer, invest, credit, change mandate): always denied. Safeguards: caps of ¥500 an action, ¥1,000 a day, ¥5,000 a month; PIN bound to the exact amount and payee; 30-second undo; circuit breaker after 3 blocked attacks in 10 minutes; one-tap kill switch.",
+      "notes": "[~50 s] Five tiers. Reading is free. Organising is reversible. Moving your own money is capped — ¥500 an action, ¥1,000 a day, ¥5,000 a month. Paying needs your PIN, bound to the exact amount and payee: what you see is exactly what runs. And some things Bun can never do: send money to other people, add payees, invest, borrow, or change its own limits. The tier comes from the tool's spec and the decision from deterministic policy code — the model decides neither. On top of that: a 30-second undo, a circuit breaker that freezes Bun after three blocked attacks, and a one-tap kill switch."
+    },
+    {
+      "id": "s09",
+      "title": "Red team: four attack classes, nothing moved.",
+      "alt": "Red-team results: 24 of 24 attacks blocked, ¥0 moved in every attack, 0 of 26 false refusals of legitimate requests. Attack classes: induced transfer, data extraction, privilege escalation, prompt injection. Screenshot: 'Prompt injection blocked. Hidden instructions ignored.' Mei's electricity bill hides an order to wire ¥4,800 to a stranger; Bun flags it and nothing moves.",
+      "notes": "[~40 s] We red-teamed the four attack classes judges ask about: induced transfers, data extraction, privilege escalation and prompt injection — 24 attempts across 14 security scenarios. All 24 were blocked and ¥0 moved. And there were zero false refusals across 26 legitimate requests, so the safety doesn't cost usefulness. Mei's electricity bill hides an instruction telling the AI to wire ¥4,800 to a stranger. Bun reads the bill, flags the injection, and nothing moves — because the decision isn't the model's to make."
+    },
+    {
+      "id": "s10",
+      "title": "Privacy and compliance, by design.",
+      "alt": "Privacy and compliance by design: separate consent for financial data (PIPL Art. 29), nothing pre-ticked; local-first with an optional AES-GCM vault; PII redacted before any LLM call; AI content labelled on every reply; no inducement to consume, the user sets tone and tripwires (CAC algorithmic recommendation rules); export or delete everything in one tap; hash-chained, tamper-evident audit log. Screenshot: Activity screen showing 'Chain intact'.",
+      "notes": "[~35 s] Privacy is designed in, not bolted on. Under China's PIPL, financial data is sensitive personal information, so it gets its own separate consent — nothing pre-ticked. Data is local-first, with an optional AES-GCM vault. Personal identifiers are redacted before any LLM call, and every AI reply is labelled. Following the algorithm-recommendation rules, Bun never pushes you to consume — you control the tone and the tripwires. You can export everything or delete it in one tap, and every action lands in a hash-chained audit log you can verify."
+    },
+    {
+      "id": "s11",
+      "title": "Evidence: measured, reproducible, one command.",
+      "alt": "Execution evidence: 45 of 45 scripted scenarios pass; 233 of 233 assertions; 3,065 automated tests, all passing; 44 of 44 audit chains intact and tampering detected; 1.35 user turns per task; reruns identical byte for byte. Screenshot of the Glass Box showing a live task plan, tool calls and policy decisions. Command: npm run evidence; judges can reproduce everything.",
+      "notes": "[~40 s] Everything we've claimed is measured. 45 of 45 scripted scenarios pass, with 233 of 233 assertions, on top of 3,065 automated tests. 44 of 44 audit chains verify intact, and deliberate tampering is detected. A task takes 1.35 user turns on average. Runs use a fixed seed and a fixed clock, so reruns are byte-identical. The Glass Box shows every intent, tool call, policy decision and audit entry live. Run npm run evidence and you can reproduce all of it in under ten minutes."
+    },
+    {
+      "id": "s12",
+      "title": "Why WeBank and what's next: built for Better Banking for All.",
+      "alt": "Why it fits WeBank: young users and international students; local-first privacy; explainable agent actions. Roadmap: 1 bank-side mandate enforcement via WeBank APIs; 2 WeChat mini-program; 3 federated learning with FATE for categorisation without pooling raw data; 4 in-region LLMs through the OpenAI-compatible gateway; 5 a consented pilot.",
+      "notes": "[~40 s] Why WeBank? Your mission is Better Banking for All, and FundBun is built for the people that's about: young users and international students managing their own money for the first time — with local-first privacy and agent actions you can explain line by line. What's next: enforce Bun's spending mandate on the bank side as well, through WeBank APIs; ship it as a WeChat mini-program; use FATE federated learning to improve categorisation without pooling raw data; run in-region LLMs through our OpenAI-compatible gateway; and start a consented pilot."
+    },
+    {
+      "id": "s13",
+      "title": "Show me my mirror.",
+      "alt": "Closing slide: 'Show me my mirror.' The Dream Mirror shows the Birkin 25, 24% saved, with a happy Bun. Repository: github.com/odripads/fundbun. Try it: npm run dev, then /?demo=mei or /?demo=arif, demo PIN 2580. Team: Odri Prince Sembiring (Universitas Gadjah Mada) and Nadine Griselda (Universitas Airlangga). FinTechathon 2026, International Track, Topic A.",
+      "notes": "[~15 s] FundBun makes the cost of spending something you can see — and gives you an agent you can actually trust with your money. Show me my mirror. Thank you."
+    }
+  ]
+}

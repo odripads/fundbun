@@ -15,7 +15,8 @@ mirrors their month back at them in dream items:
 * **Over target** → full-bleed dream item + *"You could've gotten a weekend in Chengdu."* (the biggest dream item the
   overspend would have bought; otherwise the fraction of the main goal and how many days it got pushed back).
 * **Pace over** → *"Careful — at this pace you'll trade away your AirPods."*
-* **Under target** → *"You're ¥620 under — that's a concert ticket, guilt-free!"* or *"¥620 closer to your MacBook (46% there)."*
+* **Under target** → *"¥668 closer to your MacBook Air (46% there)."* — goal progress first, "Stash it in <goal>" as the primary
+  action; a treat is named only when the rest of the surplus fully covers it, and always as the user's choice.
 * **Tripwires** (the crux): user-set spending thresholds (80% of target, a category limit, any single purchase over ¥X,
   a day over ¥Y, projected overspend) fire tangible reminders with the dream picture: *"That ¥1,299 = 1.3% of your Birkin."*
 
@@ -31,11 +32,17 @@ src/core/            framework-free TypeScript (NO DOM, NO React) — runs in br
   finance/           budgeting, summaries, recurring, bills, x-ray, anomalies, insights, dreams, mirror, tripwires, affordability
   sandbox/           SandboxBank, deterministic generator, personas, CSV import
   security/          policy engine, permission tiers, PIN, audit hash-chain, redaction, injection scan, grounding, vault
-  agent/             tool specs + executors, offline NLU ("Bun Engine"), voice templates, LLM client, runtime loop
-  app.ts             createFundBunApp() implements AppApi
+  consent.ts         CONSENT_VERSION — the consent text version recorded by onboarding AND the demo personas
+  agent/             tool specs + executors, dialogue acts (dialogue.ts), offline NLU ("Bun Engine"), reply language
+                     (lang.ts), voice templates EN (voice.ts) + ZH/ID (voice-i18n.ts), LLM client, runtime loop
+  controller/        the AppApi implementation split by concern: api-agent / api-user / api-vault, core (user
+                     transactions, syncClock), store, persistence (+ audit-head anchor), audit, onboarding, safety, derive
+  app.ts             createFundBunApp() implements AppApi (wires the controller modules)
 src/ui/              React 19 app (mobile-first), consumes AppApi via useSyncExternalStore
 server/              LLM gateway (Node http): /api/health, /api/llm; holds API keys, re-redacts, rate-limits; serves dist/
-scripts/             run-scenarios.ts (execution evidence), record-demo.ts (Playwright video), shot.ts (screenshots)
+scripts/             run-scenarios.ts (execution evidence), record-demo.ts (Playwright video), shot.ts (screenshots),
+                     capture-screens.ts (canonical screenshot set → docs/assets/screens/)
+docs/export/         build.ts (`npm run docs:export`: Markdown → DOCX + PDF), reference.docx, print.css
 ```
 
 Data stays on the device (local-first). Only minimised + redacted context is sent to the LLM gateway, and only when
@@ -50,7 +57,8 @@ entity checks. The sandbox bank independently enforces its own agent limit (defe
 
 * Money is **integer minor units** (`Minor`, fen). Format only at the edge with `money.fmt`. Never floats for money math.
 * "Today" is **always** `ctx.bank.today` (sandbox clock), never `new Date()` inside finance/sandbox code. Timestamps
-  (`ISODateTime`) are passed in as `now` by the controller.
+  (`ISODateTime`) are passed in as `now` by the controller. One clock: demo personas keep their sandbox date (moved
+  only by `advanceDays`); for real-data users `syncClock()` (controller/core.ts) moves `bank.today` to the device date.
 * Deterministic: generator + personas use `createRng(seed)`; same seed → identical data (evidence must reproduce).
 * Pure functions where possible; no hidden global state. `SandboxBank` mutates the state it wraps — the controller
   clones for snapshots.
@@ -136,7 +144,8 @@ bob) that respects `prefers-reduced-motion`. Mobile-first (390×844), desktop sh
   show *intent understanding, task planning, safe execution, user control and measurable value*.
 * Innovation & interaction explicitly scores **dialogue efficiency, clarification, correction and fallback**.
 * The brief asks for **task plans as a DAG** with **interrupt, rollback and human takeover**.
-  → `TaskPlan` / `PlanStep` / `DialogueState` types (types.ts) and NLU intents `plan_recovery`, `interrupt`,
-  `correction`, `affirm` (nlu.ts). NLU builders: add training utterances for these four intents.
+  → `TaskPlan` / `PlanStep` / `DialogueState` types (types.ts). The dialogue acts — `interrupt`, `affirm`,
+  `correction`, `plan_recovery`, `explain_bill`, `undo`, `recategorize` — live in `agent/dialogue.ts` and run before
+  the NLU (anchored patterns, inputs ≤ 200 chars); they are not classifier intents.
 * Indirect injection can arrive through *any* user content (wishlist names, photo text, bill memos) — wrap all
   user-authored free text as untrusted when sending to the LLM.

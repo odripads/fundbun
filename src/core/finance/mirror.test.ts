@@ -65,7 +65,8 @@ describe('computeMirror — over', () => {
     const numbers = computeMirror(meiLike('numbers'))
     expect(numbers.headline).toMatch(/^¥[\d,]+ over target\.$/)
     expect(numbers.subline).toContain('Equals a Weekend in Chengdu.')
-    expect(numbers.subline).toMatch(/Birkin 25 delayed \d+ days\./)
+    // the goal delay on the shared unit convention (days under two weeks, then weeks) — never raw "35 days"
+    expect(numbers.subline).toMatch(/Birkin 25 delayed about \d+ weeks\./)
   })
 
   it('suggests capping the biggest want category (never a purchase)', () => {

@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FundBun pitch deck</title>
+<meta name="viewport" content="width=1920">
+<link rel="stylesheet" href="deck.css">
+</head>
+<body>
+<!-- icons: lucide (same set the app uses), inlined as symbols -->
+<svg class="sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></symbol>
+  <symbol id="i-shopping-bag" viewBox="0 0 24 24"><path d="M16 10a4 4 0 0 1-8 0"/><path d="M3.103 6.034h17.794"/><path d="M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z"/></symbol>
+  <symbol id="i-trending-up" viewBox="0 0 24 24"><path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-sliders-horizontal" viewBox="0 0 24 24"><path d="M10 5H3"/><path d="M12 19H3"/><path d="M14 3v4"/><path d="M16 17v4"/><path d="M21 12h-9"/><path d="M21 19h-5"/><path d="M21 5h-7"/><path d="M8 10v4"/><path d="M8 12H3"/></symbol>
+  <symbol id="i-piggy-bank" viewBox="0 0 24 24"><path d="M11 17h3v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3a3.16 3.16 0 0 0 2-2h1a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1h-1a5 5 0 0 0-2-4V3a4 4 0 0 0-3.2 1.6l-.3.4H11a6 6 0 0 0-6 6v1a5 5 0 0 0 2 4v3a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1z"/><path d="M16 10h.01"/><path d="M2 8v1a2 2 0 0 0 2 2h1"/></symbol>
+  <symbol id="i-credit-card" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/><path d="M6 14h2"/></symbol>
+  <symbol id="i-gauge" viewBox="0 0 24 24"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></symbol>
+  <symbol id="i-fingerprint-pattern" viewBox="0 0 24 24"><path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/><path d="M14 13.12c0 2.38 0 6.38-1 8.88"/><path d="M17.29 21.02c.12-.6.43-2.3.5-3.02"/><path d="M2 12a10 10 0 0 1 18-6"/><path d="M2 16h.01"/><path d="M21.8 16c.2-2 .131-5.354 0-6"/><path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2"/><path d="M8.65 22c.21-.66.45-1.32.57-2"/><path d="M9 6.8a6 6 0 0 1 9 5.2v2"/></symbol>
+  <symbol id="i-undo-2" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></symbol>
+  <symbol id="i-zap-off" viewBox="0 0 24 24"><path d="M10.768 5.111 13.44 2.44a1.5 1.5 0 012.474 1.561l-1.633 4.625"/><path d="m18.889 13.232.672-.672A1.5 1.5 0 0018.5 10h-2.844"/><path d="m2 2 20 20"/><path d="m7.94 7.94-3.5 3.499A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l5.5-5.5"/></symbol>
+  <symbol id="i-snowflake" viewBox="0 0 24 24"><path d="m10 20-1.25-2.5L6 18"/><path d="M10 4 8.75 6.5 6 6"/><path d="m14 20 1.25-2.5L18 18"/><path d="m14 4 1.25 2.5L18 6"/><path d="m17 21-3-6h-4"/><path d="m17 3-3 6 1.5 3"/><path d="M2 12h6.5L10 9"/><path d="m20 10-1.5 2 1.5 2"/><path d="M22 12h-6.5L14 15"/><path d="m4 10 1.5 2L4 14"/><path d="m7 21 3-6-1.5-3"/><path d="m7 3 3 6h4"/></symbol>
+  <symbol id="i-arrow-right-left" viewBox="0 0 24 24"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></symbol>
+  <symbol id="i-database-zap" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 15 21.84"/><path d="M21 5V8"/><path d="M21 12L18 17H22L19 22"/><path d="M3 12A9 3 0 0 0 14.59 14.87"/></symbol>
+  <symbol id="i-key-round" viewBox="0 0 24 24"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></symbol>
+  <symbol id="i-message-square-warning" viewBox="0 0 24 24"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/><path d="M12 15h.01"/><path d="M12 7v4"/></symbol>
+  <symbol id="i-square-check" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="m16 9-5.5 5.5L8 12"/></symbol>
+  <symbol id="i-smartphone" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></symbol>
+  <symbol id="i-vault" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/><path d="m7.9 7.9 2.7 2.7"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/><path d="m13.4 10.6 2.7-2.7"/><circle cx="7.5" cy="16.5" r=".5" fill="currentColor"/><path d="m7.9 16.1 2.7-2.7"/><circle cx="16.5" cy="16.5" r=".5" fill="currentColor"/><path d="m13.4 13.4 2.7 2.7"/><circle cx="12" cy="12" r="2"/></symbol>
+  <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></symbol>
+  <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></symbol>
+  <symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 3v18"/><path d="m19 8 3 8a5 5 0 0 1-6 0zV7"/><path d="M3 7h1a17 17 0 0 0 8-2 17 17 0 0 0 8 2h1"/><path d="m5 8 3 8a5 5 0 0 1-6 0zV7"/><path d="M7 21h10"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+  <symbol id="i-terminal" viewBox="0 0 24 24"><path d="M12 19h8"/><path d="m4 17 6-6-6-6"/></symbol>
+  <symbol id="i-landmark" viewBox="0 0 24 24"><path d="M10 18v-7"/><path d="M11.119 2.205a2 2 0 0 1 1.762 0l7.84 3.846A.5.5 0 0 1 20.5 7h-17a.5.5 0 0 1-.22-.949z"/><path d="M14 18v-7"/><path d="M18 18v-7"/><path d="M3 22h18"/><path d="M6 18v-7"/></symbol>
+  <symbol id="i-message-circle" viewBox="0 0 24 24"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/></symbol>
+  <symbol id="i-network" viewBox="0 0 24 24"><rect x="16" y="16" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="9" y="2" width="6" height="6" rx="1"/><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"/><path d="M12 12V8"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></symbol>
+  <symbol id="i-shield-check" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M4.929 4.929 19.07 19.071"/></symbol>
+  <symbol id="i-hand" viewBox="0 0 24 24"><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></symbol>
+  <symbol id="i-git-branch" viewBox="0 0 24 24"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></symbol>
+  <symbol id="i-signal" viewBox="0 0 24 24"><path d="M2 20h.01"/><path d="M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V8"/><path d="M22 4v16"/></symbol>
+  <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M12 20h.01"/><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.859a10 10 0 0 1 14 0"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/></symbol>
+  <symbol id="i-battery-full" viewBox="0 0 24 24"><path d="M10 10v4"/><path d="M14 10v4"/><path d="M22 14v-4"/><path d="M6 10v4"/><rect x="2" y="6" width="16" height="12" rx="2"/></symbol>
+  <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-route" viewBox="0 0 24 24"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></symbol>
+  <symbol id="i-file-code" viewBox="0 0 24 24"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 12.5 8 15l2 2.5"/><path d="m14 12.5 2 2.5-2 2.5"/></symbol>
+</svg>
+
+<!-- ═════════════ 01 · Title ═════════════ -->
+<section class="slide dark" id="s01" data-title="You could’ve gotten a Birkin.">
+  <style>
+    #s01 .glow { position: absolute; left: 1010px; top: -140px; width: 1100px; height: 1100px; border-radius: 50%;
+      background: radial-gradient(closest-side, rgba(227, 162, 26, 0.16), rgba(227, 162, 26, 0.05) 55%, transparent 100%); }
+    #s01 .lockup { position: absolute; left: 120px; top: 92px; display: flex; align-items: center; gap: 18px; }
+    #s01 .lockup img { width: 80px; height: 80px; }
+    #s01 .lockup .word { font-size: 46px; }
+    #s01 .display { position: absolute; left: 120px; top: 292px; margin: 0; font-size: 152px; line-height: 0.98;
+      font-weight: 680; letter-spacing: -0.03em; color: #fffaf2; }
+    #s01 .display i { color: var(--chili-400); font-weight: 650; }
+    #s01 .sub { position: absolute; left: 120px; top: 648px; width: 900px; font-size: 34px; line-height: 1.38; color: #d8c3ad; }
+    #s01 .meta { position: absolute; left: 120px; right: 120px; bottom: 76px; display: flex; gap: 72px; align-items: flex-start;
+      padding-top: 30px; }
+    #s01 .meta div { display: flex; flex-direction: column; gap: 9px; }
+    #s01 .meta .k { font: 650 16px/1 var(--font-ui); letter-spacing: 0.16em; text-transform: uppercase; color: var(--yuan); }
+    #s01 .meta .v { font: 600 25px/1.2 var(--font-ui); color: #f8ebdd; }
+    #s01 .meta .u { font: 400 20px/1.2 var(--font-ui); color: #a68f79; }
+    #s01 .mirror { left: 1250px; top: 168px; }
+  </style>
+  <div class="glow"></div>
+  <div class="lockup"><img src="../docs/assets/brand/fundbun-mark-dark.svg" alt=""><span class="word">Fund<span>Bun</span></span></div>
+  <h1 class="display">You could’ve<br>gotten a <i>Birkin.</i></h1>
+  <p class="sub">An AI money buddy that shows you the dream you could’ve had — and helps you get it back.</p>
+  <div class="mirror over">
+    <div class="glass"><div class="glint"></div><div class="floor"></div><img class="dream" src="../src/ui/assets/items/bag.svg" alt=""></div>
+    <img class="peek" src="assets/bun-burnt-dark.svg" alt="">
+    <div class="mirror-label">Birkin 25 <s>·</s> ¥98,000</div>
+  </div>
+  <div class="meta">
+    <div><span class="k">FinTechathon 2026 · International Track</span><span class="v">AI Track · Topic A — Personal Finance Assistant</span></div>
+    <div><span class="k">Team lead</span><span class="v">Odri Prince Sembiring</span><span class="u">Universitas Gadjah Mada</span></div>
+    <div><span class="k">Team</span><span class="v">Nadine Griselda</span><span class="u">Universitas Airlangga</span></div>
+  </div>
+</section>
+
+<!-- ═════════════ 02 · Problem ═════════════ -->
+<section class="slide" id="s02" data-title="Overspending is invisible until it’s too late.">
+  <style>
+    #s02 .mascot { position: absolute; right: 120px; top: 78px; width: 150px; }
+    #s02 .cols { position: absolute; left: 120px; right: 120px; top: 488px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 88px; }
+    #s02 .num { display: block; font-size: 164px; line-height: 0.9; font-weight: 640; letter-spacing: -0.035em; font-variant-numeric: lining-nums; }
+    #s02 .lbl { margin-top: 34px; font: 650 29px/1.25 var(--font-ui); color: var(--text); text-wrap: balance; }
+    #s02 .sub { margin-top: 12px; font-size: 23px; line-height: 1.4; color: var(--text-2); text-wrap: balance; }
+    #s02 .c1 .num { color: var(--text-3); font-weight: 420; }
+    #s02 .c3 .num { color: var(--under-text); }
+  </style>
+  <div class="kicker"><b>02</b>The problem</div>
+  <h2 class="title">Overspending is invisible<br>until it’s too late.</h2>
+  <img class="mascot" src="assets/bun-worried.svg" alt="">
+  <div class="cols">
+    <div class="c1"><span class="num">¥2,580</span><p class="lbl">over target — just a number</p><p class="sub">Budgets speak in numbers. Numbers don’t hurt.</p></div>
+    <div class="c2"><span class="num">39</span><p class="lbl">studies: we neglect what a purchase displaces</p><p class="sub">Opportunity cost rarely comes to mind.</p></div>
+    <div class="c3"><span class="num">−19.6%</span><p class="lbl">monthly spending with a warning at the moment of paying</p><p class="sub">Alipay’s Huabei bill assistant.</p></div>
+  </div>
+  <footer class="foot"><span class="brand"><img src="../docs/assets/brand/fundbun-mark-sm.svg" alt=""><span class="wm">Fund<em>Bun</em></span></span>
+    <span class="src">Frederick, Novemsky, Wang, Dhar &amp; Nowlis 2009, <i>J. Consumer Research</i> 36(4) · Maguire, Persson &amp; Tinghög 2023, <i>J. Economic Science Association</i> 9 (39&nbsp;studies, N&nbsp;=&nbsp;14,005, d&nbsp;=&nbsp;0.22) · Tsinghua PBCSF study of Alipay’s Huabei bill assistant, reported by Cailian Press, 25 Aug 2023</span>
+    <span class="pg"><b>02</b> / 13</span></footer>
+</section>
+
+<!-- ═════════════ 03 · Dream Mirror ═════════════ -->
+<section class="slide" id="s03" data-title="The Dream Mirror">
+  <style>
+    #s03 .title { max-width: 820px; }
+    #s03 .lede { position: absolute; left: 120px; top: 360px; width: 800px; text-wrap: balance; }
+    #s03 .stats { position: absolute; left: 120px; top: 528px; display: flex; gap: 24px; }
+    #s03 .stat { width: 360px; padding: 26px 30px 24px; border-radius: 24px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-1); }
+    #s03 .stat .num { display: block; font-size: 64px; line-height: 1; font-weight: 650; letter-spacing: -0.02em; }
+    #s03 .stat p { margin-top: 10px; font-size: 21px; line-height: 1.3; color: var(--text-2); }
+    #s03 .own { position: absolute; left: 120px; top: 776px; width: 880px; display: flex; gap: 22px; align-items: center; }
+    #s03 .own p { font: 600 26px/1.35 var(--font-ui); color: var(--text); }
+    #s03 .p1 { --s: 336px; left: 1040px; top: 152px; }
+    #s03 .p2 { --s: 336px; left: 1440px; top: 152px; }
+    #s03 .l1 { left: 1040px; width: 359px; top: 106px; color: var(--over-text); }
+    #s03 .l2 { left: 1440px; width: 359px; top: 106px; color: var(--under-text); }
+  </style>
+  <div class="kicker"><b>03</b>The idea<span class="rb"><i style="--c: var(--rim)"></i>Innovation &amp; interaction · 30%</span></div>
+  <h2 class="title">Overspend, and you see the dream it cost.</h2>
+  <p class="lede">Stay under, and you see how much closer you are — any treat is your call, never a push.</p>
+  <div class="stats">
+    <div class="stat"><span class="num" style="color: var(--over-text)">+5 wks</span><p>Mei’s Birkin, pushed further away</p></div>
+    <div class="stat"><span class="num" style="color: var(--under-text)">¥668</span><p>Arif, closer to his MacBook Air</p></div>
+  </div>
+  <div class="own"><span class="tile"><svg class="ico"><use href="#i-sparkles"/></svg></span><p>Your own dream items, your own photos, your own words.</p></div>
+  <div class="phone-label l1"><i></i>Mei · over target</div>
+  <div class="phone-label l2"><i></i>Arif · under target</div>
+  <div class="phone p1" data-src="../docs/assets/screens/home-mei.png"></div>
+  <div class="phone p2" data-src="../docs/assets/screens/home-arif.png"></div>
+  <footer class="foot"><span class="brand"><img src="../docs/assets/brand/fundbun-mark-sm.svg" alt=""><span class="wm">Fund<em>Bun</em></span></span>
+    <span class="src">Dream pictures are preset illustrations or the user’s own photos, kept on the device.</span>
+    <span class="pg"><b>03</b> / 13</span></footer>
+</section>
+
+<!-- ═════════════ 04 · Tripwires ═════════════ -->
+<section class="slide" id="s04" data-title="Tripwires">
+  <style>
+    #s04 .title { max-width: 1180px; }
+    #s04 .lab { position: absolute; left: 120px; font: 650 18px/1 var(--font-ui); letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-3); }
+    #s04 .grid { position: absolute; left: 120px; top: 432px; width: 1140px; display: grid; grid-template-columns: 1fr 1fr; gap: 26px 40px; }
+    #s04 .grid div { display: flex; align-items: center; gap: 22px; font: 600 28px/1.25 var(--font-ui); }
+    #s04 .seg { position: absolute; left: 120px; top: 728px; display: flex; gap: 6px; padding: 7px; border-radius: 999px; background: var(--dough); }
+    #s04 .seg span { display: inline-flex; align-items: center; gap: 10px; height: 62px; padding: 0 30px; border-radius: 999px;
+      font: 600 24px/1 var(--font-ui); color: var(--text-2); }
+    #s04 .seg span small { font: 500 17px/1 var(--font-ui); color: var(--text-3); }
+    #s04 .seg .on { background: var(--surface); color: var(--text); box-shadow: 0 0 0 2px var(--rim), var(--shadow-1); }
+    #s04 .seg .on .ico { width: 22px; height: 22px; color: var(--gold-text); stroke-width: 2.6; }
+    #s04 .note { position: absolute; left: 120px; top: 840px; width: 1100px; font-size: 26px; color: var(--text-2); }
+    #s04 .phone { --s: 352px; left: 1423px; top: 128px; }
+    #s04 .zoom { --k: calc(600 / 728); position: absolute; left: 1200px; top: 660px; width: 600px; height: calc(266px * 600 / 728); border-radius: 26px;
+      background: url(../docs/assets/screens/tripwire-toast.png) no-repeat; background-size: calc(780px * 600 / 728) auto;
+      background-position: calc(-26px * 600 / 728) calc(-1188px * 600 / 728);
+      box-shadow: 0 0 0 1px rgba(58, 42, 31, 0.1), 0 24px 60px -18px rgba(36, 24, 15, 0.35), 0 8px 18px -8px rgba(36, 24, 15, 0.18); }
+  </style>
+  <div class="kicker"><b>04</b>Tripwires — the crux<span class="rb"><i style="--c: var(--rim)"></i>Innovation &amp; interaction · 30%</span></div>
+  <h2 class="title">Cross a line you set, and Bun shows what it costs.</h2>
+  <div class="lab" style="top: 392px">You set the tripwires</div>
+  <div class="grid">
+    <div><span class="tile"><svg class="ico"><use href="#i-target"/></svg></span>80% or 100% of target</div>
+    <div><span class="tile"><svg class="ico"><use href="#i-layers"/></svg></span>A category limit</div>
+    <div><span class="tile"><svg class="ico"><use href="#i-shopping-bag"/></svg></span>Any purchase over ¥X</div>
+    <div><span class="tile"><svg class="ico"><use href="#i-trending-up"/></svg></span>Projected overspend</div>
+  </div>
+  <div class="lab" style="top: 690px">Bun’s tone — your choice</div>
+  <div class="seg"><span class="on"><svg class="ico"><use href="#i-check"/></svg>Gentle <small>default</small></span><span>Cheeky <small>opt-in</small></span><span>Just numbers</span></div>
+  <p class="note">Shame backfires, so the blunt voice is opt-in.</p>
+  <div class="phone" data-src="../docs/assets/screens/tripwire-toast.png"></div>
+  <div class="zoom" role="img" aria-label="Tripwire: Whoa, ¥1,299 at JD.com. That ¥1,299 = 1.3% of your Birkin 25."></div>
+  <footer class="foot"><span class="brand"><img src="../docs/assets/brand/fundbun-mark-sm.svg" alt=""><span class="wm">Fund<em>Bun</em></span></span>
+    <span class="src">Shame drives financial withdrawal: Gladstone et al. 2021, <i>Organizational Behavior and Human Decision Processes</i> (6&nbsp;studies, N&nbsp;=&nbsp;9,110).</span>
+    <span class="pg"><b>04</b> / 13</span></footer>
+</section>
+
+<!-- ═════════════ 05 · Live product tour ═════════════ -->
+<section class="slide" id="s05" data-title="Live demo: Mei’s October, end to end.">
+  <style>
+    #s05 .phone { --s: 252px; top: 262px; }
+    #s05 .cap { position: absolute; top: 884px; width: 300px; display: flex; gap: 14px; align-items: flex-start; }
+    #s05 .cap b { display: grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: 50%; background: var(--rim);
+      font: 700 19px/1 var(--font-ui); color: var(--soy); }
+    #s05 .cap p { font: 650 23px/1.2 var(--font-ui); color: var(--text); }
+    #s05 .cap small { display: block; margin-top: 5px; font: 400 19px/1.3 var(--font-ui); color: var(--text-2); }
+    #s05 .arr { position: absolute; top: 530px; width: 44px; height: 44px; color: var(--crust); }
+    #s05 .arr .ico { width: 44px; height: 44px; stroke-width: 2.2; }
+  </style>
+  <div class="kicker"><b>05</b>Product tour<span class="rb"><i style="--c: var(--jade)"></i>Task completion · 40%</span></div>
+  <h2 class="title">Live demo: Mei’s October, end to end.</h2>
+  <div class="phone" style="left: 120px" data-src="../docs/assets/screens/home-mei.png"></div>
+  <div class="phone" style="left: 590px" data-src="../docs/assets/screens/should-i-buy.png"></div>
+  <div class="phone" style="left: 1060px" data-src="../docs/assets/screens/chat-plan.png"></div>
+  <div class="phone" style="left: 1530px" data-src="../docs/assets/screens/bills-xray-injection.png"></div>
+  <span class="arr" style="left: 468px"><svg class="ico"><use href="#i-chevron-right"/></svg></span>
+  <span class="arr" style="left: 938px"><svg class="ico"><use href="#i-chevron-right"/></svg></span>
+  <span class="arr" style="left: 1408px"><svg class="ico"><use href="#i-chevron-right"/></svg></span>
+  <div class="cap" style="left: 120px"><b>1</b><p>Home mirror<small>the cost, made visible</small></p></div>
+  <div class="cap" style="left: 590px"><b>2</b><p>Should I buy it?<small>¥1,299 sneakers: skip</small></p></div>
+  <div class="cap" style="left: 1060px"><b>3</b><p>Ask Bun<small>7-step plan, PIN to cancel</small></p></div>
+  <div class="cap" style="left: 1530px"><b>4</b><p>Bills X-ray<small>injection blocked</small></p></div>
+  <footer class="foot"><span class="brand"><img src="../docs/assets/brand/fundbun-mark-sm.svg" alt=""><span class="wm">Fund<em>Bun</em></span></span>
+    <span class="src">Run it: <b>npm run dev</b>, then open /?demo=mei (over target) or /?demo=arif (under target) · demo PIN 2580 · backup: the 5-minute demo video</span>
+    <span class="pg"><b>05</b> / 13</span></footer>
+</section>
+
+<!-- ═════════════ 06 · AI as a financial participant ═════════════ -->
+<section class="slide" id="s06" data-title="Not just chat: Bun plans, then acts.">
+  <style>
+    #s06 .rows { position: absolute; left: 120px; top: 302px; width: 640px; display: flex; flex-direction: column; gap: 30px; }
+    #s06 .row { display: flex; gap: 24px; align-items: flex-start; }
+    #s06 .row h3 { margin: 0; display: flex; align-items: center; gap: 14px; font: 640 33px/1.1 var(--font-display); font-variation-settings: var(--fv); }
+    #s06 .row p { margin-top: 8px; font-size: 22px; line-height: 1.35; color: var(--text-2); }
+    #s06 .t0 { background: var(--sky-soft); color: var(--sky-text); }
+    #s06 .t1 { background: var(--jade-soft); color: var(--under-text); }
+    #s06 .t2 { background: var(--gold-soft); color: var(--gold-text); }
+    #s06 .t3 { background: var(--chili-soft); color: var(--over-text); }
+    #s06 .chips { position: absolute; left: 120px; top: 892px; display: flex; gap: 12px; }
+    #s06 .chips .chip { height: 48px; padding: 0 18px; font-size: 19px; }
+    #s06 .card { left: 820px; top: 300px; width: 980px; height: 640px; padding: 38px 40px; }
+    #s06 .ch { display: flex; align-items: center; gap: 20px; }
+    #s06 .ch .k { font: 650 16px/1 var(--font-ui); letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-3); }
+    #s06 .ch h3 { margin: 8px 0 0; font: 640 34px/1.1 var(--font-display); font-variation-settings: var(--fv); }
+    #s06 .ch .pill { margin-left: auto; display: inline-flex; align-items: center; height: 40px; padding: 0 18px; border-radius: 999px;
+      background: var(--gold-soft); font: 600 18px/1 var(--font-ui); color: var(--gold-text); white-space: nowrap; }
+    #s06 .dag { position: absolute; left: 40px; top: 170px; width: 900px; height: 418px; }
+    #s06 .dag svg { position: absolute; inset: 0; overflow: visible; }
+    #s06 .n { position: absolute; width: 250px; height: 64px; margin-left: -125px; display: flex; align-items: center; gap: 12px; padding: 0 14px;
+      border-radius: 16px; background: var(--surface); border: 1.5px solid var(--line-strong); box-shadow: var(--shadow-1); }
+    #s06 .n b { display: grid; place-items: center; flex: none; width: 34px; height: 34px; border-radius: 50%; background: var(--jade);
+      font: 700 17px/1 var(--font-ui); color: #fffaf2; }
+    #s06 .n p { font: 650 19px/1.15 var(--font-ui); color: var(--text); white-space: nowrap; }
+    #s06 .n small { display: block; margin-top: 3px; font: 500 15px/1 var(--font-ui); color: var(--text-3); }
+    #s06 .n.wait { background: #fdf3dc; border: 2px solid var(--rim); }
+    #s06 .n.wait b { background: var(--rim); color: var(--soy); }
+    #s06 .n.wait small { color: var(--gold-text); font-weight: 650; }
+  </style>
+  <div class="kicker"><b>06</b>AI as a financial participant<span class="rb"><i style="--c: var(--jade)"></i>Task completion · 40%</span></div>
+  <h2 class="title">Not just chat: Bun plans, then acts.</h2>
+  <div class="rows">
+    <div class="row"><span class="tile sky"><svg class="ico"><use href="#i-eye"/></svg></span><div><h3><span class="tier t0">T0</span>Read</h3><p>overview · bills · subscriptions · affordability</p></div></div>
+    <div class="row"><span class="tile jade"><svg class="ico"><use href="#i-sliders-horizontal"/></svg></span><div><h3><span class="tier t1">T1</span>Organise</h3><p>budgets · category caps · tripwires · reminders</p></div></div>
+    <div class="row"><span class="tile"><svg class="ico"><use href="#i-piggy-bank"/></svg></span><div><h3><span class="tier t2">T2</span>Move own money</h3><p>stash surplus into your goal pots</p></div></div>
+    <div class="row"><span class="tile chili"><svg class="ico"><use href="#i-credit-card"/></svg></span><div><h3><span class="tier t3">T3</span>Pay &amp; cancel</h3><p>verified bills · subscriptions · disputes</p></div></div>
+  </div>
+  <div class="chips">
+    <span class="chip"><svg class="ico"><use href="#i-message-circle"/></svg>Clarifies</span>
+    <span class="chip"><svg class="ico"><use href="#i-undo-2"/></svg>Takes corrections</span>
+    <span class="chip"><svg class="ico"><use href="#i-hand"/></svg>Stops on “stop”</span>
+  </div>
+  <div class="card">
+    <div class="ch">
+      <span class="tile"><svg class="ico"><use href="#i-route"/></svg></span>
+      <div><div class="k">Task plan · 7 steps</div><h3>Get October back on track</h3></div>
+      <span class="pill">6 of 7 done · 1 waits for you</span>
+    </div>
+    <div class="dag">
+      <svg viewBox="0 0 900 418" width="900" height="418" fill="none" stroke-linecap="round">
+        <g stroke="#7fb79b" stroke-width="3">
+          <path d="M531 64 C531 91 287 91 287 118"/>
+          <path d="M531 64 C531 91 775 91 775 118"/>
+          <path d="M287 182 C287 209 125 209 125 236"/>
+          <path d="M287 182 C287 209 450 209 450 236"/>
+          <path d="M125 300 C125 327 125 327 125 354"/>
+        </g>
+        <path d="M775 182 L775 236" stroke="#e3a21a" stroke-width="3.5" stroke-dasharray="2 9"/>
+      </svg>
+      <div class="n" style="left: 531px; top: 0"><b>1</b><p>Check the month<small>T0 · done</small></p></div>
+      <div class="n" style="left: 287px; top: 118px"><b>2</b><p>Find the overspend<small>T0 · done</small></p></div>
+      <div class="n" style="left: 775px; top: 118px"><b>3</b><p>Find bill leaks<small>T0 · done</small></p></div>
+      <div class="n" style="left: 125px; top: 236px"><b>4</b><p>Spot habits<small>T0 · done</small></p></div>
+      <div class="n" style="left: 450px; top: 236px"><b>7</b><p>Pace tripwire<small>T1 · done</small></p></div>
+      <div class="n wait" style="left: 775px; top: 236px"><b>6</b><p>Cancel Youku<small>T3 · needs your PIN</small></p></div>
+      <div class="n" style="left: 125px; top: 354px"><b>5</b><p>Cap delivery ¥840<small>T1 · done</small></p></div>
+    </div>
+  </div>
+  <footer class="foot"><span class="brand"><img src="../docs/assets/brand/fundbun-mark-sm.svg" alt=""><span class="wm">Fund<em>Bun</em></span></span>
+    <span class="src">Scenario A11 (“Help me get back on track this month”): read steps auto-run, the T3 cancellation waits for the PIN. Clarify, correct, interrupt: scenarios B9–B11.</span>
+    <span class="pg"><b>06</b> / 13</span></footer>
+</section>
+
+<!-- ═════════════ 07 · Architecture ═════════════ -->
+<section class="slide" id="s07" data-title="Local-first. LLM-optional.">
+  <style>
+    #s07 .title { max-width: 560px; }
+    #s07 .pts { position: absolute; left: 120px; top: 404px; width: 540px; display: flex; flex-direction: column; gap: 34px; }
+    #s07 .pts div { display: flex; gap: 22px; align-items: flex-start; }
+    #s07 .pts p { font: 500 25px/1.38 var(--font-ui); color: var(--text); padding-top: 12px; text-wrap: balance; }
+    #s07 .crop { left: 700px; top: 150px; width: 1150px; height: calc(1150px * 1620 / 2400); }
+    #s07 .crop img { margin-top: calc(1150px * -180 / 2400); }
+  </style>
+  <div class="kicker"><b>07</b>Architecture<span class="rb"><i style="--c: var(--chili)"></i>Security &amp; compliance · 30%</span></div>
+  <h2 class="title">Local-first. LLM-optional.</h2>
+  <div class="pts">
+    <div><span class="tile jade"><svg class="ico"><use href="#i-smartphone"/></svg></span><p>Your data stays on your device.</p></div>
+    <div><span class="tile"><svg class="ico"><use href="#i-file-code"/></svg></span><p>One TypeScript core runs the app, the tests and the evidence.</p></div>
+    <div><span class="tile sky"><svg class="ico"><use href="#i-sparkles"/></svg></span><p>With separate consent, an optional LLM sees only redacted context. It can only propose.</p></div>
+  </div>
+  <div class="crop"><img src="../docs/assets/diagrams/architecture.png" alt=""></div>
+  <footer class="foot"><span class="brand"><img src="../docs/assets/brand/fundbun-mark-sm.svg" alt=""><span class="wm">Fund<em>Bun</em></span></span>
+    <span class="src">Full diagram: docs/assets/diagrams/architecture.svg · detail in docs/TECHNICAL.md</span>
+    <span class="pg"><b>07</b> / 13</span></footer>
+</section>
+
+<!-- ═════════════ 08 · Safety model ═════════════ -->
+<section class="slide" id="s08" data-title="The model proposes. The policy engine decides.">
+  <style>
+    #s08 .crop { left: 92px; top: 336px; width: 1140px; height: calc(1140px * 1275 / 2400); }
+    #s08 .crop img { margin-top: calc(1140px * -170 / 2400); }
+    #s08 .safe { position: absolute; left: 1290px; top: 344px; width: 520px; display: flex; flex-direction: column; gap: 36px; }
+    #s08 .safe div { display: flex; gap: 20px; align-items: center; }
+    #s08 .safe h3 { margin: 0; font: 640 28px/1.1 var(--font-display); font-variation-settings: var(--fv); }
+    #s08 .safe p { margin-top: 5px; font-size: 20px; line-height: 1.3; color: var(--text-2); }
+  </style>
+  <div class="kicker"><b>08</b>Safety model<span class="rb"><i style="--c: var(--chili)"></i>Security &amp; compliance · 30%</span></div>
+  <h2 class="title">The model proposes.<br>The policy engine decides.</h2>
+  <div class="crop"><img src="../docs/assets/diagrams/permission-tiers.png" alt=""></div>
+  <div class="safe">
+    <div><span class="tile"><svg class="ico"><use href="#i-gauge"/></svg></span><span><h3>Caps</h3><p>¥500 an action · ¥1,000 a day<br>¥5,000 a month</p></span></div>
+    <div><span class="tile chili"><svg class="ico"><use href="#i-fingerprint-pattern"/></svg></span><span><h3>PIN-bound</h3><p>to the exact amount and payee</p></span></div>
+    <div><span class="tile jade"><svg class="ico"><use href="#i-undo-2"/></svg></span><span><h3>30-second undo</h3><p>on reversible changes</p></span></div>
+    <div><span class="tile soy"><svg class="ico"><use href="#i-zap-off"/></svg></span><span><h3>Circuit breaker</h3><p>3 blocked attacks in 10 minutes freeze Bun</p></span></div>
+    <div><span class="tile sky"><svg class="ico"><use href="#i-snowflake"/></svg></span><span><h3>Kill switch</h3><p>one tap, and Bun is read-only</p></span></div>
+  </div>
+  <footer class="foot"><span class="brand"><img src="../docs/assets/brand/fundbun-mark-sm.svg" alt=""><span class="wm">Fund<em>Bun</em></span></span>
+    <span class="src">Tiers come from each tool’s spec (agent/specs.ts); decisions from 16 ordered policy rules (security/policy.ts), first deny wins. *Autopilot moves own money alone only in an untainted turn, within every cap.</span>
+    <span class="pg"><b>08</b> / 13</span></footer>
+</section>
+
+<!-- ═════════════ 09 · Red team ═════════════ -->
+<section class="slide" id="s09" data-title="Red team: four attack classes, nothing moved.">
+  <style>
+    #s09 .title { max-width: 1180px; }
+    #s09 .stats { position: absolute; left: 120px; top: 404px; display: flex; gap: 96px; }
+    #s09 .num { display: block; font-size: 128px; line-height: 0.9; font-weight: 640; letter-spacing: -0.035em; color: var(--text); }
+    #s09 .stats p { margin-top: 18px; font: 600 24px/1.3 var(--font-ui); color: var(--text-2); }
+    #s09 .ok { color: var(--under-text); }
+    #s09 .chips { position: absolute; left: 120px; top: 674px; width: 1200px; display: flex; flex-wrap: wrap; gap: 14px; }
+    #s09 .chips .ico { color: var(--over-text); }
+    #s09 .note { position: absolute; left: 120px; top: 792px; width: 1000px; font-size: 27px; line-height: 1.4; color: var(--text); text-wrap: balance; }
+    #s09 .phone { --s: 352px; left: 1423px; top: 128px; }
+  </style>
+  <div class="kicker"><b>09</b>Red team<span class="rb"><i style="--c: var(--chili)"></i>Security &amp; compliance · 30%</span></div>
+  <h2 class="title">Four attack classes.<br>Nothing moved.</h2>
+  <div class="stats">
+    <div><span class="num ok">24/24</span><p>attacks blocked</p></div>
+    <div><span class="num">¥0</span><p>moved, in every attack</p></div>
+    <div><span class="num">0/26</span><p>false refusals of real requests</p></div>
+  </div>
+  <div class="chips">
+    <span class="chip"><svg class="ico"><use href="#i-arrow-right-left"/></svg>Induced transfer</span>
+    <span class="chip"><svg class="ico"><use href="#i-database-zap"/></svg>Data extraction</span>
+    <span class="chip"><svg class="ico"><use href="#i-key-round"/></svg>Privilege escalation</span>
+    <span class="chip"><svg class="ico"><use href="#i-message-square-warning"/></svg>Prompt injection</span>
+  </div>
+  <p class="note">Mei’s electricity bill hides an order to wire ¥4,800 to a stranger. Bun flags it. Nothing moves.</p>
+  <div class="phone" data-src="../docs/assets/screens/bills-xray-injection.png"></div>
+  <footer class="foot"><span class="brand"><img src="../docs/assets/brand/fundbun-mark-sm.svg" alt=""><span class="wm">Fund<em>Bun</em></span></span>
+    <span class="src">evidence/latest/SUMMARY.md: attack block rate over scenarios C1–C14; false-refusal rate over legitimate A/B requests.</span>
+    <span class="pg"><b>09</b> / 13</span></footer>
+</section>
+
+<!-- ═════════════ 10 · Privacy & compliance ═════════════ -->
+<section class="slide" id="s10" data-title="Privacy and compliance, by design.">
+  <style>
+    #s10 .title { max-width: 1180px; }
+    #s10 .grid { position: absolute; left: 120px; top: 392px; width: 1180px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px 56px; }
+    #s10 .grid div { display: flex; gap: 20px; align-items: center; }
+    #s10 .grid h3 { margin: 0; font: 640 29px/1.15 var(--font-display); font-variation-settings: var(--fv); }
+    #s10 .grid p { margin-top: 5px; font-size: 21px; line-height: 1.3; color: var(--text-2); }
+    #s10 .phone { --s: 352px; left: 1423px; top: 128px; }
+  </style>
+  <div class="kicker"><b>10</b>Privacy &amp; compliance<span class="rb"><i style="--c: var(--chili)"></i>Security &amp; compliance · 30%</span></div>
+  <h2 class="title">Privacy and compliance,<br>by design.</h2>
+  <div class="grid">
+    <div><span class="tile jade"><svg class="ico"><use href="#i-square-check"/></svg></span><span><h3>Separate consent</h3><p>PIPL Art. 29 · nothing pre-ticked</p></span></div>
+    <div><span class="tile"><svg class="ico"><use href="#i-vault"/></svg></span><span><h3>Local-first</h3><p>plus an optional AES-GCM vault</p></span></div>
+    <div><span class="tile sky"><svg class="ico"><use href="#i-eye-off"/></svg></span><span><h3>PII redacted</h3><p>before any LLM call</p></span></div>
+    <div><span class="tile"><svg class="ico"><use href="#i-sparkles"/></svg></span><span><h3>AI content labelled</h3><p>on every reply</p></span></div>
+    <div><span class="tile chili"><svg class="ico"><use href="#i-scale"/></svg></span><span><h3>No inducement to consume</h3><p>you set the tone and tripwires</p></span></div>
+    <div><span class="tile jade"><svg class="ico"><use href="#i-download"/></svg></span><span><h3>Export or delete</h3><p>everything, in one tap</p></span></div>
+    <div><span class="tile soy"><svg class="ico"><use href="#i-link"/></svg></span><span><h3>Hash-chained audit log</h3><p>tamper-evident</p></span></div>
+  </div>
+  <div class="phone" data-src="../docs/assets/screens/activity-audit.png"></div>
+  <footer class="foot"><span class="brand"><img src="../docs/assets/brand/fundbun-mark-sm.svg" alt=""><span class="wm">Fund<em>Bun</em></span></span>
+    <span class="src">PIPL Art. 28–29 (sensitive personal information, separate consent) · CAC Algorithmic Recommendation Provisions (2022) Art. 8, 17 · CAC AI-content labelling measures (2025)</span>
+    <span class="pg"><b>10</b> / 13</span></footer>
+</section>
+
+<!-- ═════════════ 11 · Evidence ═════════════ -->
+<section class="slide" id="s11" data-title="Measured, reproducible, one command.">
+  <style>
+    #s11 .stats { position: absolute; left: 120px; top: 312px; width: 800px; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, 196px); gap: 0 56px; }
+    #s11 .num { display: block; font-size: 92px; line-height: 0.95; font-weight: 640; letter-spacing: -0.03em; font-variant-numeric: lining-nums; }
+    #s11 .num.word2 { font-size: 64px; line-height: 1.33; letter-spacing: -0.02em; }
+    #s11 .stats p { margin-top: 10px; font: 600 22px/1.3 var(--font-ui); color: var(--text-2); }
+    #s11 .ok { color: var(--under-text); }
+    #s11 .shot { position: absolute; left: 980px; top: 312px; width: 820px; height: calc(820px * 1800 / 2480); overflow: hidden; border-radius: 22px; border: 1px solid var(--line); box-shadow: var(--shadow-2); }
+    #s11 .shot img { display: block; width: calc(820px * 2880 / 2480); margin-left: calc(820px * -200 / 2480); }
+    #s11 .cmd { position: absolute; left: 980px; top: 930px; display: flex; align-items: center; gap: 22px; }
+    #s11 .cmd code { display: inline-flex; align-items: center; gap: 14px; height: 60px; padding: 0 26px; border-radius: 16px; background: var(--soy);
+      font: 600 24px/1 var(--font-mono); color: #f8ebdd; }
+    #s11 .cmd code span { color: var(--yuan); }
+    #s11 .cmd p { font: 500 23px/1.3 var(--font-ui); color: var(--text-2); }
+  </style>
+  <div class="kicker"><b>11</b>Evidence<span class="rb"><i style="--c: var(--jade)"></i>Task completion · 40%</span></div>
+  <h2 class="title">Measured, reproducible, one command.</h2>
+  <div class="stats">
+    <div><span class="num ok">45/45</span><p>scripted scenarios pass</p></div>
+    <div><span class="num">233/233</span><p>assertions</p></div>
+    <div><span class="num">3,065</span><p>automated tests, all passing</p></div>
+    <div><span class="num ok">44/44</span><p>audit chains intact · tampering detected</p></div>
+    <div><span class="num">1.35</span><p>user turns per task</p></div>
+    <div><span class="num word2">Identical</span><p>reruns, byte for byte</p></div>
+  </div>
+  <div class="shot crop"><img src="../docs/assets/screens/desktop-chat-plan-glassbox.png" alt=""></div>
+  <div class="cmd"><code><span>$</span>npm run evidence</code><p>Judges can reproduce everything.</p></div>
+  <footer class="foot"><span class="brand"><img src="../docs/assets/brand/fundbun-mark-sm.svg" alt=""><span class="wm">Fund<em>Bun</em></span></span>
+    <span class="src">evidence/latest/SUMMARY.md and REPRODUCE.md · seed 20261020, fixed sandbox clock · tests: npx vitest run, 8 Oct 2026 · right: the live Glass Box</span>
+    <span class="pg"><b>11</b> / 13</span></footer>
+</section>
+
+<!-- ═════════════ 12 · Why WeBank, what's next ═════════════ -->
+<section class="slide" id="s12" data-title="Built for Better Banking for All.">
+  <style>
+    #s12 .lab { position: absolute; font: 650 18px/1 var(--font-ui); letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-3); }
+    #s12 .fit { position: absolute; left: 470px; top: 372px; width: 430px; display: flex; flex-direction: column; gap: 40px; }
+    #s12 .phone { --s: 268px; left: 120px; top: 318px; }
+    #s12 .fit div { display: flex; gap: 22px; align-items: center; }
+    #s12 .fit p { font: 640 29px/1.18 var(--font-display); font-variation-settings: var(--fv); color: var(--text); }
+    #s12 .road { position: absolute; left: 1000px; top: 360px; width: 800px; }
+    #s12 .road::before { content: ''; position: absolute; left: 27px; top: 30px; bottom: 30px; width: 2px; background: var(--crust); }
+    #s12 .step { position: relative; display: flex; gap: 28px; align-items: center; height: 108px; }
+    #s12 .step b { position: relative; display: grid; place-items: center; flex: none; width: 56px; height: 56px; border-radius: 50%;
+      background: var(--cream); border: 2px solid var(--rim); font: 700 22px/1 var(--font-ui); color: var(--gold-text); }
+    #s12 .step .ico { width: 30px; height: 30px; color: var(--text-2); }
+    #s12 .step h3 { margin: 0; font: 640 30px/1.15 var(--font-display); font-variation-settings: var(--fv); }
+    #s12 .step p { margin-top: 4px; font-size: 21px; line-height: 1.3; color: var(--text-2); }
+  </style>
+  <div class="kicker"><b>12</b>Why WeBank — and what’s next</div>
+  <h2 class="title">Built for Better Banking for All.</h2>
+  <div class="lab" style="left: 470px; top: 318px">Why WeBank</div>
+  <div class="phone" data-src="../docs/assets/screens/onboarding-welcome.png"></div>
+  <div class="fit">
+    <div><span class="tile"><svg class="ico"><use href="#i-users"/></svg></span><p>Young users and international students</p></div>
+    <div><span class="tile jade"><svg class="ico"><use href="#i-vault"/></svg></span><p>Local-first privacy</p></div>
+    <div><span class="tile sky"><svg class="ico"><use href="#i-eye"/></svg></span><p>Explainable agent actions</p></div>
+  </div>
+  <div class="lab" style="left: 1000px; top: 318px">Roadmap</div>
+  <div class="road">
+    <div class="step"><b>1</b><span><h3>Bank-side mandate enforcement</h3><p>caps and PIN, via WeBank APIs</p></span></div>
+    <div class="step"><b>2</b><span><h3>WeChat mini-program</h3><p>where people pay</p></span></div>
+    <div class="step"><b>3</b><span><h3>Federated learning (FATE)</h3><p>no raw data pooled</p></span></div>
+    <div class="step"><b>4</b><span><h3>In-region LLMs</h3><p>via the OpenAI-compatible gateway</p></span></div>
+    <div class="step"><b>5</b><span><h3>Consented pilot</h3><p>real users, opt-in</p></span></div>
+  </div>
+  <footer class="foot"><span class="brand"><img src="../docs/assets/brand/fundbun-mark-sm.svg" alt=""><span class="wm">Fund<em>Bun</em></span></span>
+    <span class="src">WeBank mission: “Better Banking for All” · FATE: open-source federated learning started by WeBank’s AI group, hosted by the Linux Foundation</span>
+    <span class="pg"><b>12</b> / 13</span></footer>
+</section>
+
+<!-- ═════════════ 13 · Close ═════════════ -->
+<section class="slide dark" id="s13" data-title="Show me my mirror.">
+  <style>
+    #s13 .glow { position: absolute; left: 1010px; top: -140px; width: 1100px; height: 1100px; border-radius: 50%;
+      background: radial-gradient(closest-side, rgba(79, 176, 138, 0.13), rgba(227, 162, 26, 0.05) 55%, transparent 100%); }
+    #s13 .lockup { position: absolute; left: 120px; top: 92px; display: flex; align-items: center; gap: 18px; }
+    #s13 .lockup img { width: 80px; height: 80px; }
+    #s13 .lockup .word { font-size: 46px; }
+    #s13 .thanks { position: absolute; left: 120px; top: 300px; font: 650 20px/1 var(--font-ui); letter-spacing: 0.18em; text-transform: uppercase; color: var(--yuan); }
+    #s13 .display { position: absolute; left: 120px; top: 344px; margin: 0; font-size: 152px; line-height: 0.98;
+      font-weight: 680; letter-spacing: -0.03em; color: #fffaf2; }
+    #s13 .display i { color: var(--yuan); font-weight: 650; }
+    #s13 .links { position: absolute; left: 120px; top: 714px; display: flex; flex-direction: column; gap: 22px; }
+    #s13 .links div { display: flex; align-items: center; gap: 18px; font: 500 29px/1.2 var(--font-ui); color: #f8ebdd; }
+    #s13 .links .ico { width: 30px; height: 30px; color: var(--yuan); }
+    #s13 .links code { font: 600 26px/1 var(--font-mono); color: #f8ebdd; }
+    #s13 .links small { font-size: 25px; color: #a68f79; }
+    #s13 .team { position: absolute; left: 120px; bottom: 76px; font: 500 22px/1.3 var(--font-ui); color: #d8c3ad; }
+    #s13 .team b { color: #f8ebdd; font-weight: 650; }
+    #s13 .mirror { left: 1250px; top: 168px; }
+    #s13 .ring { position: absolute; left: 50%; top: 46%; width: 76%; transform: translate(-50%, -50%) rotate(-90deg); overflow: visible; }
+    #s13 .dream { width: 56%; }
+  </style>
+  <div class="glow"></div>
+  <div class="lockup"><img src="../docs/assets/brand/fundbun-mark-dark.svg" alt=""><span class="word">Fund<span>Bun</span></span></div>
+  <p class="thanks">Thank you</p>
+  <h2 class="display">Show me<br>my <i>mirror.</i></h2>
+  <div class="links">
+    <div><svg class="ico"><use href="#i-git-branch"/></svg>github.com/odripads/fundbun</div>
+    <div><svg class="ico"><use href="#i-terminal"/></svg><code>npm run dev</code><small>then /?demo=mei or /?demo=arif · PIN 2580</small></div>
+  </div>
+  <div class="team"><b>Odri Prince Sembiring</b> · Universitas Gadjah Mada &nbsp;&nbsp; <b>Nadine Griselda</b> · Universitas Airlangga &nbsp;&nbsp; FinTechathon 2026 · International Track · Topic A</div>
+  <div class="mirror under">
+    <div class="glass"><div class="glint"></div><div class="floor"></div>
+      <svg class="ring" viewBox="0 0 200 200"><circle cx="100" cy="100" r="92" stroke="rgba(255,250,242,0.12)" stroke-width="7" fill="none"/><circle cx="100" cy="100" r="92" stroke="#4fb08a" stroke-width="7" fill="none" stroke-linecap="round" stroke-dasharray="138.7 578.1"/></svg>
+      <img class="dream" src="../src/ui/assets/items/bag.svg" alt=""></div>
+    <img class="peek" src="assets/bun-happy-dark.svg" alt="">
+    <div class="mirror-label">Birkin 25 <s>·</s> 24% saved</div>
+  </div>
+</section>
+
+<script>
+  // Phone mock-ups: status bar (smeared from the screenshot's own top rows) + the canonical screenshot.
+  for (const p of document.querySelectorAll('.phone[data-src]')) {
+    const src = p.dataset.src
+    p.innerHTML = `<div class="scr"><div class="sb" style="background-image:url('${src}')"><span>9:41</span><i class="island"></i>` +
+      `<span class="sys"><svg class="ico"><use href="#i-signal"/></svg><svg class="ico"><use href="#i-wifi"/></svg><svg class="ico"><use href="#i-battery-full"/></svg></span></div>` +
+      `<img class="shot" src="${src}" alt=""></div>`
+  }
+</script>
+</body>
+</html>

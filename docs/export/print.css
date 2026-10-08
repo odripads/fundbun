@@ -1,0 +1,347 @@
+/*
+ * FundBun print stylesheet for the PDF exports (docs/export/build.ts → Playwright page.pdf, A4).
+ * Brand: cream dough, soy ink, yuan gold, chili, jade, bamboo (src/ui/styles/tokens.css).
+ * Fonts are the app's own self-hosted variable fonts (no CDN): Fraunces for display, DM Sans for text.
+ */
+
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 100 900;
+  src: url('../../node_modules/@fontsource-variable/fraunces/files/fraunces-latin-full-normal.woff2') format('woff2-variations');
+}
+@font-face {
+  font-family: 'Fraunces';
+  font-style: italic;
+  font-weight: 100 900;
+  src: url('../../node_modules/@fontsource-variable/fraunces/files/fraunces-latin-full-italic.woff2') format('woff2-variations');
+}
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 100 1000;
+  src: url('../../node_modules/@fontsource-variable/dm-sans/files/dm-sans-latin-opsz-normal.woff2') format('woff2-variations');
+}
+@font-face {
+  font-family: 'DM Sans';
+  font-style: italic;
+  font-weight: 100 1000;
+  src: url('../../node_modules/@fontsource-variable/dm-sans/files/dm-sans-latin-opsz-italic.woff2') format('woff2-variations');
+}
+
+:root {
+  --cream-50: #fffaf2;
+  --cream-100: #fff4e3;
+  --dough-200: #f6e7cc;
+  --dough-300: #efd7ad;
+  --bamboo-500: #b9874b;
+  --bamboo-600: #8f6232;
+  --soy-700: #5b4636;
+  --soy-900: #24180f;
+  --yuan-400: #f2bd3d;
+  --yuan-500: #e3a21a;
+  --yuan-600: #b97f09;
+  --chili-500: #d9472b;
+  --jade-500: #2e8b66;
+  --rule: #e6d3b3;
+  --display: 'Fraunces', Georgia, 'Songti SC', serif;
+  --text: 'DM Sans', 'Helvetica Neue', 'PingFang SC', 'Hiragino Sans GB', sans-serif;
+  --mono: 'SF Mono', Menlo, Consolas, 'PingFang SC', monospace;
+}
+
+/* ───────────── pages ───────────── */
+
+@page {
+  size: A4;
+  margin: 20mm 18mm 21mm 18mm;
+  @bottom-left {
+    content: 'FundBun  ·  FinTechathon 2026 · International AI Track';
+    font-family: var(--text);
+    font-size: 7.5pt;
+    color: #5b4636;
+    vertical-align: top;
+    padding-top: 5mm;
+  }
+  @bottom-right {
+    content: counter(page) ' / ' counter(pages);
+    font-family: var(--text);
+    font-size: 7.5pt;
+    font-weight: 700;
+    color: #24180f;
+    vertical-align: top;
+    padding-top: 5mm;
+  }
+}
+@page cover {
+  margin: 0;
+  @bottom-left { content: none; }
+  @bottom-right { content: none; }
+}
+
+html {
+  font-family: var(--text);
+  font-size: 9.6pt;
+  line-height: 1.52;
+  color: var(--soy-900);
+  background: #fff;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  font-kerning: normal;
+  font-variant-numeric: lining-nums;
+}
+body { margin: 0; }
+
+/* ───────────── cover ───────────── */
+
+.cover {
+  page: cover;
+  position: relative;
+  box-sizing: border-box;
+  width: 210mm;
+  height: 296.6mm;
+  padding: 22mm 20mm 18mm 22mm;
+  background:
+    radial-gradient(120mm 120mm at 100% 100%, rgba(242, 189, 61, 0.22), transparent 70%),
+    linear-gradient(180deg, var(--cream-50), var(--cream-100));
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  break-after: page;
+}
+.cover::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 7mm;
+  background: linear-gradient(180deg, var(--yuan-400), var(--yuan-500) 60%, var(--bamboo-500));
+}
+.cover-wordmark { width: 62mm; height: auto; display: block; }
+.cover-main { margin-top: 34mm; max-width: 150mm; position: relative; z-index: 1; }
+.cover-kicker {
+  margin: 0 0 2mm;
+  font-size: 8.5pt;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--yuan-600);
+}
+.cover-track { margin: 0 0 9mm; font-size: 10.5pt; color: var(--soy-700); }
+.cover-title {
+  margin: 0 0 5mm;
+  font-family: var(--display);
+  font-variation-settings: 'SOFT' 100, 'WONK' 0, 'opsz' 144;
+  font-weight: 560;
+  font-size: 40pt;
+  line-height: 1.02;
+  letter-spacing: -0.01em;
+  color: var(--soy-900);
+  break-before: avoid;
+}
+.cover-sub {
+  margin: 0 0 3mm;
+  font-family: var(--display);
+  font-style: italic;
+  font-variation-settings: 'SOFT' 100, 'WONK' 1;
+  font-size: 15pt;
+  line-height: 1.25;
+  color: var(--bamboo-600);
+}
+.cover-note { margin: 0 0 9mm; font-size: 9.5pt; font-style: italic; color: var(--soy-700); }
+.cover-table table { width: 150mm; font-size: 9pt; background: rgba(255, 255, 255, 0.72); }
+.cover-table thead { display: none; }
+.cover-table td:first-child { width: 38mm; font-weight: 700; color: var(--soy-700); }
+.cover-foot {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 10mm;
+  font-size: 9pt;
+  color: var(--soy-700);
+  position: relative;
+  z-index: 1;
+}
+.cover-foot p { margin: 0 0 1mm; }
+.cover-team p:first-child { font-weight: 700; color: var(--soy-900); }
+.cover-repo { text-align: right; margin-right: 52mm; }
+.cover-repo p:first-child { font-size: 7.5pt; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; color: var(--yuan-600); }
+.cover-repo a { color: var(--soy-900); text-decoration: none; font-weight: 600; white-space: nowrap; overflow-wrap: normal; }
+.cover-team { flex: 1; max-width: 95mm; }
+.cover-bun {
+  position: absolute;
+  right: 12mm;
+  bottom: 12mm;
+  width: 46mm;
+  height: auto;
+}
+
+/* ───────────── contents ───────────── */
+
+.toc { margin-bottom: 8mm; }
+.toc-title {
+  font-family: var(--display);
+  font-variation-settings: 'SOFT' 100, 'WONK' 0;
+  font-weight: 520;
+  font-size: 24pt;
+  color: var(--soy-900);
+  margin: 0 0 7mm;
+  padding-bottom: 3mm;
+  border-bottom: 1.4pt solid var(--yuan-500);
+}
+.toc ul { list-style: none; margin: 0; padding: 0; }
+.toc > ul > li { margin: 0 0 3.2mm; }
+.toc > ul > li > a { font-weight: 700; font-size: 11pt; }
+.toc ul ul { margin: 1.2mm 0 0 7mm; }
+.toc ul ul li { margin: 0 0 0.8mm; font-size: 9.6pt; }
+.toc a {
+  color: var(--soy-900);
+  text-decoration: none;
+  display: flex;
+  align-items: baseline;
+  gap: 2mm;
+}
+.toc a::after {
+  content: '';
+  flex: 1;
+  border-bottom: 0.6pt dotted var(--dough-300);
+  transform: translateY(-0.8mm);
+  order: 1;
+}
+.toc a .toc-page { order: 2; font-variant-numeric: tabular-nums; color: var(--soy-700); font-weight: 600; }
+.toc ul ul a { color: var(--soy-700); }
+.toc .num { color: var(--yuan-600); margin-right: 1mm; }
+
+/* ───────────── headings ───────────── */
+
+h1, h2, h3, h4 {
+  font-family: var(--display);
+  font-variation-settings: 'SOFT' 100, 'WONK' 0;
+  color: var(--soy-900);
+  break-after: avoid;
+  break-inside: avoid;
+  line-height: 1.18;
+}
+main h1 {
+  break-before: page;
+  font-size: 23pt;
+  font-weight: 540;
+  margin: 0 0 6mm;
+  padding-bottom: 3mm;
+  border-bottom: 1.4pt solid var(--yuan-500);
+}
+main h1 .num, .toc .num {
+  font-variation-settings: 'SOFT' 100, 'WONK' 1;
+  color: var(--yuan-600);
+  font-weight: 600;
+}
+h2 { font-size: 14.5pt; font-weight: 560; color: var(--bamboo-600); margin: 7mm 0 2.5mm; }
+h3 { font-size: 11.5pt; font-weight: 650; margin: 5mm 0 1.6mm; }
+h4 { font-family: var(--text); font-size: 9.8pt; font-weight: 750; color: var(--soy-700); margin: 4mm 0 1.2mm; letter-spacing: 0.01em; }
+h1 + h2 { margin-top: 2mm; }
+
+/* ───────────── text ───────────── */
+
+p { margin: 0 0 2.4mm; orphans: 3; widows: 3; }
+strong { font-weight: 700; }
+em { font-style: italic; }
+a { color: var(--bamboo-600); text-decoration: underline; text-decoration-color: var(--dough-300); text-underline-offset: 0.18em; overflow-wrap: anywhere; }
+ul, ol { margin: 0 0 2.6mm; padding-left: 5.5mm; }
+li { margin: 0 0 0.9mm; }
+li > ul, li > ol { margin-top: 0.9mm; }
+li::marker { color: var(--yuan-600); }
+hr { display: none; }
+blockquote {
+  margin: 3mm 0;
+  padding: 1mm 0 1mm 4mm;
+  border-left: 2pt solid var(--yuan-500);
+  color: var(--soy-700);
+}
+code {
+  font-family: var(--mono);
+  font-size: 0.86em;
+  background: var(--cream-100);
+  border-radius: 1mm;
+  padding: 0.05em 0.28em;
+  color: #4a3628;
+  overflow-wrap: anywhere;
+}
+pre {
+  font-family: var(--mono);
+  font-size: 7.8pt;
+  line-height: 1.45;
+  background: var(--cream-100);
+  border-left: 2pt solid var(--yuan-500);
+  border-radius: 0 1.5mm 1.5mm 0;
+  padding: 2.6mm 3.4mm;
+  margin: 2mm 0 3.4mm;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  break-inside: avoid;
+}
+pre code { background: none; padding: 0; font-size: inherit; color: var(--soy-900); }
+
+/* ───────────── tables ───────────── */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 2mm 0 4mm;
+  font-size: 8.3pt;
+  line-height: 1.4;
+  break-inside: auto;
+}
+thead { display: table-header-group; }
+tr { break-inside: avoid; }
+th {
+  text-align: left;
+  font-weight: 700;
+  background: var(--cream-100);
+  border-bottom: 1pt solid var(--yuan-500);
+  padding: 1.5mm 1.8mm;
+  vertical-align: bottom;
+}
+td {
+  padding: 1.4mm 1.8mm;
+  border-bottom: 0.5pt solid var(--rule);
+  vertical-align: top;
+}
+td code, th code { font-size: 0.9em; }
+table p { margin: 0; }
+caption { caption-side: bottom; font-size: 8pt; font-style: italic; color: var(--soy-700); padding-top: 1.5mm; text-align: left; }
+
+/* ───────────── figures ───────────── */
+
+figure { margin: 4mm 0 5mm; text-align: center; break-inside: avoid; }
+figure img { max-width: 100%; height: auto; border: 0.5pt solid var(--rule); border-radius: 2mm; }
+figcaption, .figure-caption {
+  margin: 1.8mm auto 0;
+  max-width: 150mm;
+  font-size: 8pt;
+  line-height: 1.4;
+  font-style: italic;
+  color: var(--soy-700);
+  text-align: center;
+}
+.figure-row {
+  display: flex;
+  justify-content: center;
+  gap: 5mm;
+  margin: 4mm 0 0;
+  break-inside: avoid;
+  break-after: avoid;
+}
+.figure-row p { margin: 0; display: flex; justify-content: center; gap: 5mm; width: 100%; }
+.figure-row img {
+  /* phone screenshots: a fixed height so two rows and their captions share a page */
+  width: auto !important;
+  height: 86mm;
+  border: 0.5pt solid var(--rule);
+  border-radius: 3mm;
+  box-shadow: 0 0.6mm 2mm rgba(36, 24, 15, 0.08);
+}
+.figure-caption { margin-bottom: 5mm; break-before: avoid; }
+.figure-caption p { margin: 0; }
+img.diagram, figure.diagram img { border: none; border-radius: 0; }
+
+/* keep a lead-in paragraph with the table or figure it introduces */
+p:has(+ table), p:has(+ .figure-row), p:has(+ figure) { break-after: avoid; }

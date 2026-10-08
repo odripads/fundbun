@@ -1,11 +1,11 @@
 import { monthLabel, ym } from '../dates'
-import { listJoin, withArticle } from '../finance/copy'
+import { listJoin } from '../finance/copy'
 import type { AppState, Minor, RecurringSeries, ToolName } from '../types'
 import type { Lang } from './lang'
 import type { Intent } from './nlu'
 import type { ActionStage } from './voice'
 import { categoryLabel, findBill, findDream, money, moneyCopy, pctLabel, shortDate } from './support'
-import { categoryName, dateName, dueInPhrase, groupName, joinList, monthName } from './voice-i18n'
+import { categoryName, dateName, delayIn, dueInPhrase, groupName, joinList, monthName } from './voice-i18n'
 
 /**
  * Tool outcomes → the pre-formatted fact strings voice.composeReply expects (see voice.FACT_KEYS).
@@ -103,11 +103,10 @@ function overviewFacts(d: D, state: AppState, o: Required<FactOptions>): Facts {
   put(facts, 'remaining', positive(f, d.remaining))
   put(facts, 'projected', positive(f, d.projected))
   put(facts, 'safeToSpend', positive(f, d.safeToSpendToday))
-  put(facts, 'itemName', itemPhrase(d))
   put(facts, 'goalName', text(obj(d.goal).name))
+  // the dream framing (headline, item) is on the mirror card this reply comes with: the text complements it, never repeats it
   const delay = num(d.goalDelayDays)
-  if (delay !== undefined && delay > 0) facts.goalDelayDays = String(delay)
-  if (o.lang === 'en') put(facts, 'headline', text(d.headline))
+  if (delay !== undefined && delay > 0) facts.goalDelay = delayIn(delay, o.lang)
   // balance (focus 'balance'): the everyday account — masked number only — and each pot
   const checking = num(d.checkingBalance)
   if (checking !== undefined) {
@@ -135,16 +134,6 @@ function overviewFacts(d: D, state: AppState, o: Required<FactOptions>): Facts {
 function nextMonthOf(month: string): string {
   const [y, m] = month.split('-').map(Number)
   return m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, '0')}`
-}
-
-function itemPhrase(d: D): string | undefined {
-  const name = text(d.itemName)
-  if (!name) return undefined
-  const q = num(d.quantity)
-  if (q !== undefined && q >= 2) return `${q}× ${name}`
-  if (q === 1) return withArticle(name)
-  const fr = num(d.fraction)
-  return fr !== undefined && fr > 0 ? `${pctLabel(fr * 100)} of your ${name}` : withArticle(name)
 }
 
 function breakdownFacts(d: D, state: AppState, o: Required<FactOptions>): Facts {
@@ -328,7 +317,7 @@ function insightFacts(d: D, _state: AppState, _o: Required<FactOptions>): Facts 
   return facts
 }
 
-function affordFacts(d: D, state: AppState, _o: Required<FactOptions>): Facts {
+function affordFacts(d: D, state: AppState, o: Required<FactOptions>): Facts {
   const f = money(state)
   const c = moneyCopy(state)
   const facts: Facts = {}
@@ -343,7 +332,7 @@ function affordFacts(d: D, state: AppState, _o: Required<FactOptions>): Facts {
   if (hours) facts.hoursOfWork = String(hours)
   put(facts, 'goalName', text(d.goalName))
   const delay = num(d.goalDelayDays)
-  if (delay) facts.goalDelayDays = String(delay)
+  if (delay) facts.goalDelay = delayIn(delay, o.lang)
   // never "you could've gotten AirPods Pro" about the AirPods Pro themselves
   const eq = arr(d.equivalents).find((e) => !label || (text(e.itemName) ?? '').toLowerCase() !== label.toLowerCase())
   put(facts, 'equivalent', text(eq?.label))

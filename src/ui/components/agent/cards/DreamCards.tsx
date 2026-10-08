@@ -1,6 +1,7 @@
 import { CalendarClock, CircleCheck, Clock3, Gauge, Hourglass, CirclePause, PiggyBank, Scale, Sparkles, Target, TrendingDown, TrendingUp, type LucideIcon } from 'lucide-react'
 import type { AppSnapshot } from '../../../../core/app-api'
 import { monthLabel } from '../../../../core/dates'
+import { delayShort } from '../../../../core/finance/copy'
 import { fmt } from '../../../../core/money'
 import type { AffordabilityResult, DreamItem, GoalProgress, MirrorStatus } from '../../../../core/types'
 import { useSnapshot } from '../../../state'
@@ -61,7 +62,7 @@ export function MirrorCard({ card }: CardProps<'mirror'>) {
             <li><Gauge aria-hidden="true" />Heading for {fmt(m.projected, currency)}</li>
           ) : null}
           {m.hoursOfWork ? <li><Clock3 aria-hidden="true" />≈ {Math.round(m.hoursOfWork)} h of work</li> : null}
-          {m.goal && m.goalDelayDays ? <li><CalendarClock aria-hidden="true" />{m.goal.name} +{m.goalDelayDays} days</li> : null}
+          {m.goal && m.goalDelayDays ? <li><CalendarClock aria-hidden="true" />{m.goal.name} +{delayShort(m.goalDelayDays)}</li> : null}
           {m.goal && !over ? <li><PiggyBank aria-hidden="true" />{m.goal.name} {Math.round(m.goal.pct)}% saved</li> : null}
         </ul>
         {m.cta ? (
@@ -114,7 +115,7 @@ export function AffordabilityCard({ card }: CardProps<'affordability'>) {
         {r.goalName && r.goalDelayDays ? (
           <div>
             <dt>{r.goalName}</dt>
-            <dd>+{r.goalDelayDays} days</dd>
+            <dd>+{r.delayText ?? delayShort(r.goalDelayDays)}</dd>
           </div>
         ) : null}
         <div>

@@ -442,7 +442,7 @@ describe('"Why am I seeing this?"', () => {
       cta: { tool: 'transfer_to_goal', args: { goalId: 'dream_macbook', amount: 33_000 }, label: 'Stash ¥330 in MacBook Air' },
     })
     expect(itemReason(under, 'CNY')).toBe('Under target, Bun leads with your main goal, MacBook Air (¥7,999): stashing ¥330 of the ¥668 takes it to 50%.')
-    expect(delayReason(m, 'CNY')).toBe('You save about ¥2,233 a month toward Birkin 25 (3-month average), so ¥2,580 is roughly 35 days of saving.')
+    expect(delayReason(m, 'CNY')).toBe('You save about ¥2,233 a month toward Birkin 25 (3-month average), so ¥2,580 is roughly 5 weeks of saving.')
     expect(delayReason(mirror({ goal: goal({ monthlyRate: 0 }), goalDelayDays: 12 }), 'CNY')).toContain('10% of your income')
     expect(delayReason(mirror(), 'CNY')).toBeNull()
     expect(hoursReason(m, 1_850_000, 174, 'CNY')).toBe('At ¥18,500 a month over 174 work hours, ¥2,580 is about 24.3 hours of work.')

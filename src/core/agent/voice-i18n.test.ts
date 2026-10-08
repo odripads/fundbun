@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { REFUSAL_INTENTS, understand, type Intent } from './nlu'
 import { ARIF_CTX, MEI_CTX } from './nlu.fixtures'
-import { CHIPS_I18N, I18N_TEMPLATES, LINES, REFUSALS_I18N, categoryName, dateName, dueInPhrase, joinList, monthName, topicOf } from './voice-i18n'
+import { CHIPS_I18N, I18N_TEMPLATES, LINES, REFUSALS_I18N, categoryName, dateName, delayIn, dueInPhrase, joinList, monthName, topicOf } from './voice-i18n'
 import { composeReply, line, refusal } from './voice'
 
 const LOCAL = ['zh', 'id'] as const
 
 const SAMPLE: Record<string, string> = {
   name: 'Mei', status: 'over', month: '2026年10月', spent: '¥12,080', target: '¥9,500', delta: '¥2,580', remaining: '¥1,000', projected: '¥15,230',
-  safeToSpend: '¥120', goalName: 'Birkin 25', goalDelayDays: '35', total: '¥12,080', topCategory: '外卖', topAmount: '¥1,007', topShare: '8%',
+  safeToSpend: '¥120', goalName: 'Birkin 25', goalDelay: '约5周', total: '¥12,080', topCategory: '外卖', topAmount: '¥1,007', topShare: '8%',
   category: '外卖', categorySpent: '¥1,007', categoryLimit: '¥940', categoryPct: '107%', categoryPrev: '¥1,285', count: '6', nextBill: 'Rent (¥4,200)',
   verdict: 'skip', label: '手机', amount: '¥3,000', remainingAfter: '¥0', overTargetBy: '¥8,730', hoursOfWork: '16', saved: '¥23,300', price: '¥98,000',
   pct: '24%', eta: '2029年8月', others: 'AirPods Pro (0%)', stage: 'confirm', options: 'Birkin 25', merchant: 'iQIYI', annualCost: '¥360', billName: 'Electricity',
@@ -40,6 +40,15 @@ describe('localized templates', () => {
 
   it('fall back to English for intents without hand-written copy', () => {
     expect(composeReply('budget_plan', { stage: 'done', total: '¥9,500' }, 'gentle', 'zh')).toMatch(/budget/)
+  })
+})
+
+describe('delayIn', () => {
+  it('puts a goal delay on the shared unit convention in every language', () => {
+    expect([9, 35, 120].map((d) => delayIn(d, 'en'))).toEqual(['9 days', 'about 5 weeks', 'about 4 months'])
+    expect([9, 35, 120].map((d) => delayIn(d, 'zh'))).toEqual(['9天', '约5周', '约4个月'])
+    expect([9, 35, 120].map((d) => delayIn(d, 'id'))).toEqual(['9 hari', 'sekitar 5 minggu', 'sekitar 4 bulan'])
+    expect(composeReply('overview', SAMPLE, 'gentle', 'zh')).toContain('Birkin 25会因此推迟约5周。')
   })
 })
 

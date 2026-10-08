@@ -47,7 +47,23 @@ describe('readFacts', () => {
   it('overview facts describe the over story', () => {
     const facts = readFacts('get_overview', executeTool({ id: 'c', tool: 'get_overview', args: {}, proposedBy: 'offline' }, host).data, host.state())
     expect(facts).toMatchObject({ status: 'over', month: 'October 2026', goalName: 'Birkin 25' })
-    expect(facts.headline).toContain('Weekend in Chengdu')
+    // the headline is on the mirror card that comes with the reply — the text never repeats it
+    expect(facts.headline).toBeUndefined()
+    // the goal delay on the shared unit convention (weeks from 14 days), never raw "35 days"
+    expect(facts.goalDelay).toMatch(/^about \d+ weeks$/)
+  })
+
+  it('the overview reply complements the mirror card: no repeated headline, one unit for the goal delay', () => {
+    const data = executeTool({ id: 'c', tool: 'get_overview', args: {}, proposedBy: 'offline' }, host).data as { headline: string; goalDelayDays: number }
+    expect(data.goalDelayDays).toBeGreaterThanOrEqual(14)
+    const facts = readFacts('get_overview', data, host.state())
+    for (const tone of ['gentle', 'cheeky', 'numbers'] as const) {
+      const text = composeReply('overview', facts, tone)
+      expect(text, tone).not.toContain(data.headline)
+      expect(text, tone).not.toMatch(/could[’']ve|\d+ days further|about \d+ days/)
+    }
+    expect(composeReply('overview', facts, 'cheeky')).toMatch(/^¥[\d,]+ spent against a ¥9,500 target, and October 2026 still has \d+ days to go\. Shall we find the culprit\?$/)
+    expect(composeReply('overview', facts, 'numbers')).toMatch(/Goal delay: about \d+ weeks\.$/)
   })
 
   it('xray facts flag the injection and the comparison', () => {

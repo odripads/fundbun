@@ -32,7 +32,7 @@ const JUMPS = [
 function jump(id: string, behavior: ScrollBehavior = 'smooth') {
   const el = document.getElementById(id)
   if (!el) return
-  el.scrollIntoView({ behavior, block: 'start' })
+  el.scrollIntoView?.({ behavior, block: 'start' })
   const heading = el.querySelector<HTMLElement>('h2')
   if (heading) {
     heading.tabIndex = -1

@@ -5,7 +5,9 @@
   "description": "FundBun — an AI personal-finance agent that turns overspending into something you can see: the dream you could've had.",
   "type": "module",
   "license": "MIT",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "concurrently -k -n web,api -c yellow,cyan \"vite\" \"tsx watch server/index.ts\"",
     "dev:web": "vite",
@@ -18,7 +20,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "evidence": "tsx scripts/run-scenarios.ts",
-    "demo:record": "tsx scripts/record-demo.ts"
+    "demo:record": "tsx scripts/record-demo.ts",
+    "screens": "tsx scripts/capture-screens.ts",
+    "deck": "tsx deck/build.ts",
+    "docs:export": "tsx docs/export/build.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.132.0",
@@ -38,6 +43,7 @@
     "concurrently": "^9.2.0",
     "jsdom": "^26.0.0",
     "playwright": "^1.63.0",
+    "pptxgenjs": "^4.0.1",
     "typescript": "~5.9.3",
     "vite": "^8.3.3",
     "vitest": "^5.0.3"

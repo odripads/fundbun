@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { FinanceContext } from '../types'
 import { arifLike, checking, daily, makeBill, makeCtx, MEI_DREAMS, meiLike, monthly, spend, yuan } from './__fixtures__'
 import { checkAffordability } from './affordability'
-import { delayShort } from './copy'
+import { delayPhrase, delayShort, durationText } from './copy'
 import { computeMirror } from './mirror'
 import { summarizeMonth } from './summary'
 
@@ -119,6 +119,20 @@ describe('checkAffordability', () => {
       expect(delayShort(9)).toBe('9 days')
       expect(delayShort(18)).toBe('3 wks')
       expect(delayShort(120)).toBe('4 mo')
+    })
+
+    it('every delay form shares one unit convention: days under two weeks, then weeks, then months', () => {
+      for (const [days, long, phrase, short] of [
+        [9, '9 days', '9 days', '9 days'],
+        [13, '13 days', '13 days', '13 days'],
+        [14, '2 weeks', 'about 2 weeks', '2 wks'],
+        [35, '5 weeks', 'about 5 weeks', '5 wks'],
+        [120, '4 months', 'about 4 months', '4 mo'],
+      ] as const) {
+        expect(durationText(days), `${days}`).toBe(long)
+        expect(delayPhrase(days), `${days}`).toBe(phrase)
+        expect(delayShort(days), `${days}`).toBe(short)
+      }
     })
   })
 

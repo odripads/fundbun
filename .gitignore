@@ -19,3 +19,6 @@ playwright-report/
 # iCloud conflict copies ("file 2.md")
 * [0-9]
 * [0-9].*
+
+# docs:export default output (the submission copies live outside the repo)
+docs/export/out/

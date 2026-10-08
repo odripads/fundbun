@@ -105,7 +105,7 @@ function daysToGo(s: MonthSummary): number {
 }
 
 function delayedNote(c: CopyInput): string {
-  return c.goal && c.delayDays > 0 ? ` ${c.goal.name} delayed ${plural(c.delayDays, 'day')}.` : ''
+  return c.goal && c.delayDays > 0 ? ` ${c.goal.name} delayed ${delayPhrase(c.delayDays)}.` : ''
 }
 
 function monthName(s: MonthSummary): string {
