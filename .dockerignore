@@ -1,0 +1,7 @@
+node_modules
+dist
+evidence
+.git
+.env
+*.log
+docs/assets/logo-concepts
