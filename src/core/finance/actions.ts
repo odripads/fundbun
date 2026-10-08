@@ -31,10 +31,23 @@ export function stashAction(ctx: FinanceContext, s: MonthSummary, surplus: Minor
   return { tool: 'transfer_to_goal', args: { goalId: goal.id, amount }, label: `Stash ${moneyFmt(currency)(amount)} in ${goal.name}` }
 }
 
-/** A budget cap ~15% under the category's usual level (min ¥50), rounded down to ¥10. */
-export function capCategoryAction(ctx: FinanceContext, category: CategoryId, usual: Minor): SuggestedAction {
+/** The category's limit in the active budget plan, if it has one. */
+export function categoryLimit(ctx: FinanceContext, category: CategoryId): Minor | undefined {
+  return ctx.budget?.categories.find((c) => c.category === category)?.limit
+}
+
+/**
+ * A tightening budget cap, rounded down to ¥10: 10% under the category's current limit when it has one,
+ * otherwise ~15% under `usual` (callers pass last month's spend; min ¥50). A "cap" never loosens a budget,
+ * so it is always below the current limit — undefined when there is nothing left to tighten.
+ */
+export function capCategoryAction(ctx: FinanceContext, category: CategoryId, usual: Minor): SuggestedAction | undefined {
   const currency = ctx.profile.currency
-  const limit = Math.max(majorUnits(50, currency), roundDownTo10(usual * 0.85, currency))
+  const current = categoryLimit(ctx, category)
+  const limit = current !== undefined
+    ? roundDownTo10(current * 0.9, currency)
+    : Math.max(majorUnits(50, currency), roundDownTo10(usual * 0.85, currency))
+  if (limit <= 0 || (current !== undefined && limit >= current)) return undefined
   return { tool: 'set_category_budget', args: { category, limit }, label: `Cap ${CATEGORIES[category].label} at ${moneyFmt(currency)(limit)}` }
 }
 
@@ -48,7 +61,7 @@ export function overspendAction(ctx: FinanceContext, s: MonthSummary): Suggested
     return { tool: 'create_tripwire', args: { kind: 'category_pct', threshold: 80, category: row.category }, label: `Alert me at 80% of ${label}` }
   }
   const usual = row.limit ?? (s.isCurrent ? Math.max(row.prevMonth ?? 0, row.spent) : row.spent)
-  return capCategoryAction(ctx, row.category, usual)
+  return capCategoryAction(ctx, row.category, usual) ?? { tool: 'create_tripwire', args: { kind: 'pace_over', threshold: 100 }, label: 'Warn me before I overshoot' }
 }
 
 /** "Alert me on days over ¥X", where X is an even share of the monthly target. */

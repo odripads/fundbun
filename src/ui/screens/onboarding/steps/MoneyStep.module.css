@@ -1,0 +1,118 @@
+.targetGroup {
+  display: grid;
+  gap: var(--s-3);
+}
+
+.split {
+  --tone: var(--under);
+  display: grid;
+  gap: var(--s-2);
+  padding: var(--s-3) var(--s-4) var(--s-4);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--tone) 8%, var(--surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tone) 26%, transparent);
+  animation: grow var(--dur-3) var(--ease-out) both;
+}
+
+.split[data-tone='tight'] {
+  --tone: var(--warn);
+}
+
+.split[data-tone='over'] {
+  --tone: var(--over);
+}
+
+.bar {
+  display: flex;
+  gap: 3px;
+  height: 10px;
+}
+
+.spend,
+.save {
+  height: 100%;
+  border-radius: var(--r-pill);
+  transition:
+    width 600ms var(--ease-spring),
+    background-color var(--dur-2) var(--ease-out);
+}
+
+.spend {
+  width: var(--spend);
+  background: var(--accent);
+}
+
+.save {
+  flex: 1;
+  min-width: 0;
+  background: var(--under);
+}
+
+.split[data-tone='over'] .spend {
+  /* hatched, so "over" never relies on colour alone */
+  background: repeating-linear-gradient(135deg, var(--over) 0 6px, color-mix(in srgb, var(--over) 60%, var(--surface)) 6px 10px);
+}
+
+.split[data-tone='over'] .save {
+  display: none;
+}
+
+.legend {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s-3);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.key {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dotSpend,
+.dotSave {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.dotSave {
+  background: var(--under);
+}
+
+.split[data-tone='over'] .dotSpend {
+  background: var(--over);
+}
+
+.split[data-tone='over'] .dotSave {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--over);
+}
+
+.text {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-2);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.text svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--tone);
+  stroke-width: 2.2;
+}
+
+@keyframes grow {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}

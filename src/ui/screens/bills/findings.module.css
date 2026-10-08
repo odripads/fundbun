@@ -1,0 +1,262 @@
+/* "What Bun found": finding cards with a severity spine, evidence drawer and one action. */
+
+.card {
+  --sev: var(--info);
+  position: relative;
+  display: grid;
+  gap: var(--s-3);
+  padding: var(--s-4) var(--s-4) var(--s-4) calc(var(--s-4) + 4px);
+  overflow: hidden;
+  border-radius: var(--r-lg);
+  background:
+    radial-gradient(120% 80% at 100% 0%, color-mix(in srgb, var(--sev) 9%, transparent) 0%, transparent 55%),
+    var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border), var(--shadow-1);
+}
+
+/* the severity spine: a coloured edge, always paired with the badge text */
+.card::before {
+  content: '';
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  left: 0;
+  width: 4px;
+  border-radius: 0 4px 4px 0;
+  background: var(--sev);
+}
+
+.card[data-severity='alert'] {
+  --sev: var(--over);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--over) 28%, transparent), var(--shadow-1);
+}
+
+.card[data-severity='warn'] {
+  --sev: var(--warn);
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+}
+
+.icon {
+  position: relative;
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--sev) 14%, var(--surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sev) 26%, transparent);
+  color: var(--sev);
+}
+
+.icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* urgent findings send out a slow, quiet ping — noticeable, never flashing */
+.card[data-severity='alert'] .icon::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--over) 40%, transparent);
+  animation: ping 3.6s var(--ease-out) infinite;
+}
+
+@keyframes ping {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--over) 38%, transparent);
+  }
+  60%,
+  100% {
+    box-shadow: 0 0 0 9px color-mix(in srgb, var(--over) 0%, transparent);
+  }
+}
+
+.titles {
+  display: grid;
+  flex: 1;
+  gap: 6px;
+  min-width: 0;
+}
+
+.kicker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 650;
+}
+
+.title {
+  font-size: var(--fs-lg);
+  font-weight: 620;
+  line-height: 1.25;
+}
+
+.detail {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+
+.dream {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-md);
+  background: var(--accent-soft);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+.dreamText {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.dreamCap {
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+
+.dream strong {
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  font-variation-settings: var(--fv-display);
+  font-weight: 620;
+  line-height: 1.25;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2) var(--s-3);
+}
+
+.why {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: var(--tap);
+  margin-left: auto;
+  padding: 0 var(--s-2);
+  border: 0;
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--text-2) 35%, transparent);
+  text-decoration-style: dotted;
+  text-underline-offset: 4px;
+}
+
+.why:hover {
+  color: var(--text);
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+}
+
+.why svg {
+  width: 16px;
+  height: 16px;
+  transition: transform var(--dur-2) var(--ease-out);
+}
+
+.why[aria-expanded='true'] svg {
+  transform: rotate(180deg);
+}
+
+/* the evidence drawer: animates its height with a 0fr → 1fr grid row */
+.whyPanel {
+  display: grid;
+  grid-template-rows: 0fr;
+  margin-top: calc(var(--s-3) * -1);
+  opacity: 0;
+  transition:
+    grid-template-rows var(--dur-3) var(--ease-out),
+    opacity var(--dur-2) var(--ease-out),
+    margin-top var(--dur-3) var(--ease-out);
+}
+
+.whyPanel[data-open] {
+  grid-template-rows: 1fr;
+  margin-top: 0;
+  opacity: 1;
+}
+
+.whyInner {
+  display: grid;
+  gap: var(--s-2);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.whyPanel[data-open] .whyInner {
+  padding: var(--s-3);
+  border-radius: var(--r-md);
+  background: var(--bg-sunken);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.whyTitle {
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.evidence {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-2) var(--s-3);
+  margin: 0;
+}
+
+.row {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.row dt {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+
+.row dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--text);
+  font-size: var(--fs-sm);
+  font-weight: 680;
+  font-variant-numeric: tabular-nums;
+}
+
+.whyNote {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+
+.calm {
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border);
+}

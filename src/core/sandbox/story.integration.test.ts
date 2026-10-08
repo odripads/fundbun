@@ -46,6 +46,18 @@ describe('story — Mei is over target', () => {
     expect(findings.find((f) => f.kind === 'bill_spike')!.billId).toBe('bill_electricity_2026-09')
   })
 
+  it('keeps exactly the Tencent Video duplicate when Mei repeats a metro ride and a Luckin coffee minutes apart', () => {
+    const bundle = loadPersona('mei', TODAY)
+    const bank = new SandboxBank(bundle.bank)
+    for (const time of ['08:41', '08:47']) bank.simulatePurchase({ merchant: 'Shenzhen Metro', amount: 700, category: 'transport', time })
+    for (const time of ['15:02', '15:05']) bank.simulatePurchase({ merchant: 'Luckin Coffee', amount: 1390, category: 'coffee_tea', time })
+    const next = { ...ctxOf(bundle), bank: bank.state }
+    const duplicates = analyzeBills(next, detectRecurring(bank.state.transactions, TODAY, [])).filter((f) => f.kind === 'duplicate_charge')
+    expect(duplicates.map((f) => [f.title, f.evidence.firstDate, f.evidence.secondDate, f.amount])).toEqual([
+      ['Tencent Video charged you twice', '2026-10-03', '2026-10-03', 3000],
+    ])
+  })
+
   it('fires the delivery category tripwire', () => {
     const { events } = evaluateTripwires(ctx, { now: NOW })
     expect(events.some((e) => e.tripwireId === 'tw_delivery_100')).toBe(true)

@@ -1,0 +1,379 @@
+.hero {
+  --tint: var(--accent);
+  --tint-soft: var(--accent-soft);
+  position: relative;
+  display: grid;
+  gap: var(--s-4);
+  padding: var(--s-5) var(--s-5) var(--s-4);
+  overflow: hidden;
+  border-radius: var(--r-xl);
+  background:
+    radial-gradient(120% 90% at 100% 0%, var(--tint-soft) 0%, transparent 58%),
+    radial-gradient(90% 70% at 0% 100%, color-mix(in srgb, var(--accent) 7%, transparent) 0%, transparent 70%),
+    var(--surface);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tint) 22%, var(--border)), var(--shadow-1);
+  isolation: isolate;
+}
+
+.hero[data-status='over'] {
+  --tint: var(--over);
+  --tint-soft: var(--over-soft);
+}
+
+.hero[data-status='pace_over'] {
+  --tint: var(--warn);
+  --tint-soft: var(--warn-soft);
+}
+
+.hero[data-status='under'] {
+  --tint: var(--under);
+  --tint-soft: var(--under-soft);
+}
+
+/* ───────── ambient: two soft orbs drifting very slowly ───────── */
+
+.ambient {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(28px);
+  opacity: 0.55;
+}
+
+.orbA {
+  top: -40px;
+  right: -30px;
+  width: 180px;
+  height: 180px;
+  background: var(--tint-soft);
+  animation: drift 16s ease-in-out infinite alternate;
+}
+
+.orbB {
+  bottom: -60px;
+  left: 20%;
+  width: 160px;
+  height: 120px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  animation: drift 21s ease-in-out -6s infinite alternate-reverse;
+}
+
+@keyframes drift {
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+  to {
+    transform: translate(-26px, 18px) scale(1.12);
+  }
+}
+
+/* ───────── figure ───────── */
+
+.top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+.figure {
+  display: grid;
+  gap: var(--s-1);
+  min-width: 0;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-2);
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.eyebrow svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+.big {
+  margin-top: var(--s-1);
+  animation: rise var(--dur-3) var(--ease-out) both;
+}
+
+.of {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+.of strong {
+  color: var(--text);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.bun {
+  position: relative;
+  flex: none;
+  margin: -6px -6px 0 0;
+}
+
+.bunGlow {
+  position: absolute;
+  inset: 14% 10% 4%;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--tint-soft) 0%, transparent 70%);
+  animation: breathe 5s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scale(0.9);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+}
+
+/* ───────── meter: one shared scale for spent, target and pace ───────── */
+
+.meter {
+  display: grid;
+  gap: var(--s-2);
+}
+
+.track {
+  position: relative;
+  height: 14px;
+  border-radius: var(--r-pill);
+  background: var(--chart-track);
+}
+
+.fill,
+.overFill,
+.pace {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  transform-origin: left center;
+  animation: grow 900ms var(--ease-out) both;
+}
+
+.fill {
+  border-radius: var(--r-pill);
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent-strong) 100%);
+}
+
+.hero[data-status='under'] .fill {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--under) 70%, var(--accent)) 0%, var(--under) 100%);
+}
+
+.overFill {
+  border-radius: 0 var(--r-pill) var(--r-pill) 0;
+  background: repeating-linear-gradient(-45deg, var(--over) 0 5px, color-mix(in srgb, var(--over) 70%, var(--surface)) 5px 8px);
+  animation-delay: 350ms;
+}
+
+.pace {
+  border-radius: 0 var(--r-pill) var(--r-pill) 0;
+  background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--tint) 45%, transparent) 0 6px, transparent 6px 10px);
+  background-size: 20px 100%;
+  opacity: 0.85;
+  animation:
+    grow 900ms var(--ease-out) 550ms both,
+    march 1.6s linear infinite;
+}
+
+@keyframes grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes march {
+  to {
+    background-position: 20px 0;
+  }
+}
+
+.tick {
+  position: absolute;
+  top: -5px;
+  bottom: -5px;
+  width: 3px;
+  margin-left: -1.5px;
+  border-radius: 2px;
+  background: var(--text);
+  box-shadow: 0 0 0 2px var(--surface);
+}
+
+.meterKey {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--s-1) var(--s-3);
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.keyItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.keyItem svg {
+  width: 13px;
+  height: 13px;
+}
+
+.keyPace,
+.keyOver {
+  margin-left: auto;
+}
+
+.paceSwatch,
+.overSwatch {
+  display: inline-block;
+  width: 16px;
+  height: 8px;
+  border-radius: 4px;
+}
+
+.paceSwatch {
+  background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--tint) 60%, transparent) 0 4px, transparent 4px 6px);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tint) 40%, transparent);
+}
+
+.overSwatch {
+  background: repeating-linear-gradient(-45deg, var(--over) 0 3px, color-mix(in srgb, var(--over) 60%, var(--surface)) 3px 5px);
+}
+
+.headline {
+  font-family: var(--font-display);
+  font-variation-settings: var(--fv-display);
+  font-size: var(--fs-lg);
+  font-weight: 560;
+  line-height: 1.3;
+  color: var(--text);
+  text-wrap: balance;
+}
+
+/* ───────── headline stats ───────── */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s-2);
+  margin: 0;
+}
+
+.tile {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--s-3) 10px;
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  box-shadow: inset 0 0 0 1px var(--border);
+  animation: rise var(--dur-3) var(--ease-out) both;
+}
+
+.tileLabel {
+  overflow: hidden;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 620;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tileValue {
+  margin: 0;
+  min-width: 0;
+}
+
+/* scale with the viewport so ¥10,081 still fits three-up on a 360px phone */
+.tileValue > .tileMoney {
+  font-size: clamp(1.0625rem, 4.8vw, 1.375rem);
+}
+
+.tileNote {
+  display: flex;
+  align-items: flex-start;
+  gap: 2px;
+  margin: 0;
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  font-weight: 620;
+  line-height: 1.3;
+}
+
+.tileArrow {
+  display: inline-flex;
+  flex: none;
+  margin-top: 1px;
+}
+
+.tileArrow svg {
+  width: 13px;
+  height: 13px;
+  stroke-width: 2.4;
+}
+
+.good {
+  color: var(--under);
+}
+
+.bad {
+  color: var(--over);
+}
+
+.flat {
+  color: var(--text-2);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (max-width: 379.98px) {
+  .hero {
+    padding: var(--s-4);
+  }
+
+  .stats {
+    gap: 6px;
+  }
+
+  .tile {
+    padding: 10px 8px;
+  }
+}

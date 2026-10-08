@@ -1,0 +1,467 @@
+/* "Coming up": two-week calendar + bill cards. */
+
+/* ───────────── calendar ───────────── */
+
+.calendar {
+  padding: var(--s-3) var(--s-2) var(--s-2);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border), var(--shadow-1);
+}
+
+.calHead,
+.calGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.calHead {
+  margin-bottom: var(--s-1);
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+.calHead [data-weekend] {
+  color: color-mix(in srgb, var(--text-3) 70%, var(--accent-strong));
+}
+
+.cell {
+  position: relative;
+  display: grid;
+  grid-template-rows: 12px auto 18px;
+  justify-items: center;
+  align-content: center;
+  gap: 2px;
+  min-width: 0;
+  min-height: 64px;
+  padding: 4px 0 6px;
+  border: 0;
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--text-2);
+  font: inherit;
+  transition:
+    background-color var(--dur-2) var(--ease-out),
+    transform var(--dur-1) var(--ease-out),
+    box-shadow var(--dur-2) var(--ease-out);
+}
+
+.calTop {
+  color: var(--text-3);
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 12px;
+  text-transform: uppercase;
+}
+
+.calDay {
+  font-size: var(--fs-md);
+  font-weight: 620;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.calAmtEmpty {
+  height: 18px;
+}
+
+.calAmt {
+  --amt-c: var(--text-3);
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  height: 18px;
+  padding: 0 5px;
+  overflow: hidden;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--amt-c) 16%, var(--surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--amt-c) 34%, transparent);
+  color: var(--text);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.calAmt svg {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  color: var(--amt-c);
+  stroke-width: 2.6;
+}
+
+.calAmt[data-status='upcoming'] {
+  --amt-c: var(--accent-strong);
+}
+
+.calAmt[data-soon] {
+  --amt-c: var(--warn);
+}
+
+.calAmt[data-status='overdue'] {
+  --amt-c: var(--over);
+}
+
+.calAmt[data-status='scheduled'] {
+  --amt-c: var(--info);
+}
+
+.calAmt[data-status='paid'] {
+  --amt-c: var(--under);
+}
+
+.calCount {
+  position: absolute;
+  z-index: 1;
+  top: -5px;
+  right: -4px;
+  display: grid;
+  place-items: center;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
+  border-radius: var(--r-pill);
+  background: var(--text);
+  color: var(--bg);
+  font-size: 9.5px;
+  font-weight: 800;
+}
+
+.hasBills {
+  cursor: pointer;
+  background: color-mix(in srgb, var(--accent) 9%, var(--surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent);
+  color: var(--text);
+}
+
+.hasBills:hover {
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+}
+
+.hasBills:active {
+  transform: scale(0.96);
+}
+
+.hasBills:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+/* today: a gold ring that breathes slowly */
+.today {
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+}
+
+.today::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 45%, transparent);
+  animation: breathe 3.2s var(--ease-out) infinite;
+  pointer-events: none;
+}
+
+.today .calTop {
+  color: var(--accent-strong);
+}
+
+@keyframes breathe {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 40%, transparent);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 7px color-mix(in srgb, var(--accent) 0%, transparent);
+  }
+}
+
+.selected,
+.selected:hover {
+  background: var(--text);
+  color: var(--bg);
+  box-shadow: none;
+}
+
+.selected .calTop {
+  color: color-mix(in srgb, var(--bg) 70%, transparent);
+}
+
+.selected .calAmt {
+  background: var(--bg);
+  box-shadow: none;
+}
+
+/* ───────────── notes & filter ───────────── */
+
+.overdueNote {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-2);
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-md);
+  background: var(--over-soft);
+  color: var(--text);
+  font-size: var(--fs-sm);
+  font-weight: 560;
+}
+
+.overdueNote svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  color: var(--over);
+}
+
+.filterBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.empty {
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+/* ───────────── bill card ───────────── */
+
+.bill {
+  display: grid;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border), var(--shadow-1);
+  animation: rise var(--dur-3) var(--ease-out) both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.bill[data-status='paid'] {
+  background: color-mix(in srgb, var(--surface) 88%, var(--under-soft));
+}
+
+.bill[data-status='overdue'] {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--over) 40%, transparent), var(--shadow-1);
+}
+
+.billMain {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+}
+
+.billIcon {
+  --ic: var(--accent-strong);
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--ic) 14%, var(--surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ic) 24%, transparent);
+  color: var(--ic);
+}
+
+.billIcon svg {
+  width: 21px;
+  height: 21px;
+}
+
+.billIcon[data-icon='water'] {
+  --ic: var(--info);
+}
+
+.billIcon[data-icon='phone'],
+.billIcon[data-icon='wifi'] {
+  --ic: var(--chart-6);
+}
+
+.billIcon[data-icon='home'] {
+  --ic: var(--under);
+}
+
+.billText {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+}
+
+.billName {
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  font-variation-settings: var(--fv-display);
+  font-weight: 620;
+  line-height: 1.2;
+}
+
+.billPayee {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 6px;
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  line-height: 1.35;
+}
+
+.payeeName {
+  min-width: 0;
+}
+
+.verified,
+.unverified {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.verified {
+  color: var(--under);
+}
+
+.verified svg {
+  width: 13px;
+  height: 13px;
+}
+
+.unverified {
+  color: var(--warn);
+}
+
+.billDue {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 560;
+}
+
+.reminderOn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--accent-strong);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+
+.reminderOn svg {
+  width: 13px;
+  height: 13px;
+  animation: ring 4s ease-in-out infinite;
+  transform-origin: 50% 10%;
+}
+
+@keyframes ring {
+  0%,
+  86%,
+  100% {
+    transform: rotate(0);
+  }
+  89% {
+    transform: rotate(14deg);
+  }
+  92% {
+    transform: rotate(-12deg);
+  }
+  95% {
+    transform: rotate(6deg);
+  }
+}
+
+.billEnd {
+  display: grid;
+  flex: none;
+  justify-items: end;
+  gap: 6px;
+  text-align: end;
+}
+
+.flag {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-sm);
+  background: var(--warn-soft);
+  color: var(--text);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.flag svg {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  color: var(--warn);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.grow {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.later summary {
+  display: flex;
+  align-items: center;
+  min-height: var(--tap);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.later[open] summary {
+  margin-bottom: var(--s-2);
+}
+
+@media (max-width: 374px) {
+  .calendar {
+    padding-inline: 4px;
+  }
+
+  .calHead,
+  .calGrid {
+    gap: 3px;
+  }
+
+  .bill {
+    padding: var(--s-4) var(--s-3);
+  }
+
+  .billIcon {
+    width: 36px;
+    height: 36px;
+  }
+}

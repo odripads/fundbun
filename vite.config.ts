@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => ({
   },
   build: { outDir: 'dist', sourcemap: true, target: 'es2022' },
   test: {
-    include: ['src/**/*.test.ts', 'tests/**/*.test.ts', 'server/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'tests/**/*.test.ts', 'server/**/*.test.ts'],
     environment: 'node',
     testTimeout: 20000,
   },

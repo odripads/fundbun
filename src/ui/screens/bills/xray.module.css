@@ -1,0 +1,705 @@
+/* Bill X-ray: input panel, scan beam, the injection banner and the parsed-bill card. */
+
+.panel {
+  display: grid;
+  gap: var(--s-4);
+  padding: var(--s-4);
+  border-radius: var(--r-lg);
+  background:
+    radial-gradient(140% 100% at 0% 0%, color-mix(in srgb, var(--info) 8%, transparent) 0%, transparent 55%),
+    var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border), var(--shadow-1);
+}
+
+.samples {
+  display: grid;
+  gap: var(--s-2);
+}
+
+.samplesLabel {
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+/* the demo's star: a slow shimmer across the featured sample */
+.featured {
+  overflow: hidden;
+  font-weight: 700;
+}
+
+.featured::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--accent) 28%, transparent) 50%, transparent 70%);
+  background-size: 250% 100%;
+  animation: shimmer 4.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 120% 0;
+  }
+  60%,
+  100% {
+    background-position: -120% 0;
+  }
+}
+
+.form {
+  display: grid;
+  gap: var(--s-3);
+}
+
+.fieldWrap {
+  position: relative;
+}
+
+.field textarea {
+  min-height: 132px;
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+
+/* the X-ray beam: a gold scan line sweeping the pasted text while Bun reads it */
+.beam {
+  position: absolute;
+  top: 28px;
+  right: 2px;
+  left: 2px;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.fieldWrap[data-scanning] .beam {
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  box-shadow:
+    0 0 12px 2px color-mix(in srgb, var(--accent) 55%, transparent),
+    0 -18px 24px -6px color-mix(in srgb, var(--accent) 18%, transparent);
+  opacity: 1;
+  animation: scan 1.1s var(--ease-out) infinite alternate;
+}
+
+@keyframes scan {
+  from {
+    transform: translateY(6px);
+  }
+  to {
+    transform: translateY(118px);
+  }
+}
+
+.formActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.go {
+  flex: 1 1 auto;
+}
+
+/* ───────────── outcome ───────────── */
+
+.outcome {
+  scroll-margin-top: calc(var(--topbar-h) + var(--safe-top) + var(--s-6));
+}
+
+.outcome:empty {
+  display: none;
+}
+
+.outcomeInner {
+  display: grid;
+  gap: var(--s-3);
+  animation: rise var(--dur-3) var(--ease-out) both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.reply {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--s-2);
+}
+
+.replyBun {
+  flex: none;
+  margin-bottom: -4px;
+}
+
+.bubble {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+  min-width: 0;
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-lg) var(--r-lg) var(--r-lg) 6px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border), var(--shadow-1);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+
+/* ───────────── injection banner: unmissable, but calm ───────────── */
+
+.inject {
+  position: relative;
+  display: grid;
+  gap: var(--s-3);
+  padding: var(--s-5) var(--s-4) var(--s-4);
+  overflow: hidden;
+  border-radius: var(--r-xl);
+  background:
+    radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--over) 14%, transparent) 0%, transparent 60%),
+    color-mix(in srgb, var(--surface) 94%, var(--over));
+  box-shadow:
+    inset 0 0 0 1.5px color-mix(in srgb, var(--over) 45%, transparent),
+    0 10px 30px -14px color-mix(in srgb, var(--over) 55%, transparent);
+}
+
+.injHead {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.shield {
+  position: relative;
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--over);
+  color: var(--c-cream-50);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--c-cream-50) 30%, transparent);
+}
+
+.shield svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* two soft ripples — a steady heartbeat that says "handled", not an alarm */
+.shield::before,
+.shield::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--over) 40%, transparent);
+  animation: ripple 3.2s var(--ease-out) infinite;
+}
+
+.shield::after {
+  animation-delay: 1.6s;
+}
+
+@keyframes ripple {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--over) 36%, transparent);
+  }
+  80%,
+  100% {
+    box-shadow: 0 0 0 14px color-mix(in srgb, var(--over) 0%, transparent);
+  }
+}
+
+.injTitles {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.injKicker {
+  color: var(--over);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.injTitle {
+  font-size: var(--fs-xl);
+  line-height: 1.15;
+}
+
+.injTitle:focus-visible {
+  outline-offset: 4px;
+}
+
+.injBody {
+  color: var(--text);
+  font-size: var(--fs-md);
+  font-weight: 560;
+  line-height: 1.5;
+}
+
+.quote {
+  display: grid;
+  gap: var(--s-2);
+  margin: 0;
+  padding: var(--s-3);
+  border-radius: var(--r-md);
+  /* quarantine tape: the untrusted text sits on a faint hatch, clearly "not Bun's words" */
+  background:
+    repeating-linear-gradient(-45deg, color-mix(in srgb, var(--over) 6%, transparent) 0 6px, transparent 6px 12px),
+    var(--bg-sunken);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--over) 22%, transparent);
+}
+
+.quote figcaption {
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.quote blockquote {
+  margin: 0;
+  padding-left: var(--s-3);
+  border-left: 3px solid color-mix(in srgb, var(--over) 60%, transparent);
+  color: var(--text-2);
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.signals {
+  display: grid;
+  gap: var(--s-2);
+}
+
+.signalsLabel {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 650;
+}
+
+.signals ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.signals li {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--over) 10%, var(--surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--over) 28%, transparent);
+  color: var(--text);
+  font-size: var(--fs-xs);
+  font-weight: 650;
+}
+
+.receipt {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-4);
+  margin: 0;
+  padding: var(--s-3) 0 0;
+  border-top: 1px dashed color-mix(in srgb, var(--over) 30%, transparent);
+  list-style: none;
+}
+
+.receipt li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--warn);
+  font-size: var(--fs-sm);
+  font-weight: 650;
+}
+
+.receipt li[data-ok] {
+  color: var(--text);
+}
+
+.receipt svg {
+  flex: none;
+  width: 17px;
+  height: 17px;
+}
+
+.receipt li[data-ok] svg {
+  color: var(--under);
+}
+
+/* ───────────── parsed bill card ───────────── */
+
+.card {
+  display: grid;
+  gap: var(--s-4);
+  padding: var(--s-4);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border), var(--shadow-1);
+}
+
+.cardHead {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+}
+
+.cardIcon {
+  --ic: var(--accent-strong);
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--ic) 14%, var(--surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ic) 24%, transparent);
+  color: var(--ic);
+}
+
+.cardIcon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.cardIcon[data-icon='water'] {
+  --ic: var(--info);
+}
+
+.cardIcon[data-icon='phone'],
+.cardIcon[data-icon='wifi'] {
+  --ic: var(--chart-6);
+}
+
+.cardIcon[data-icon='home'] {
+  --ic: var(--under);
+}
+
+.cardTitles {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cardKicker {
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cardTitle {
+  font-size: var(--fs-xl);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.cardMeta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  font-weight: 560;
+}
+
+.cardMeta svg {
+  width: 12px;
+  height: 12px;
+  color: var(--text-3);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: var(--s-3);
+  margin: 0;
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--accent) 9%, var(--surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.fact {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  min-width: 0;
+}
+
+.fact + .fact {
+  padding-left: var(--s-3);
+  border-left: 1px solid var(--border);
+}
+
+.fact dt {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 650;
+}
+
+.fact dd {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+}
+
+.factBig {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-variation-settings: var(--fv-display);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.factSub {
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+
+.missing {
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  font-style: italic;
+}
+
+/* comparison bars */
+.compare {
+  --cmp: var(--accent);
+  display: grid;
+  gap: var(--s-3);
+}
+
+.compare[data-tone='over'] {
+  --cmp: var(--over);
+}
+
+.compare[data-tone='warn'] {
+  --cmp: var(--warn);
+}
+
+.compare[data-tone='under'] {
+  --cmp: var(--under);
+}
+
+.compareHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
+}
+
+.compareLabel {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 650;
+}
+
+.bars {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--s-2) var(--s-3);
+}
+
+.barLabel {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+
+.track {
+  position: relative;
+  height: 10px;
+  overflow: hidden;
+  border-radius: var(--r-pill);
+  background: var(--chart-track);
+}
+
+.barUsual,
+.barThis {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: inherit;
+  transform-origin: left;
+  animation: grow 700ms var(--ease-out) both;
+}
+
+.barUsual {
+  background: color-mix(in srgb, var(--text-3) 70%, transparent);
+}
+
+.barThis {
+  background: var(--cmp);
+  animation-delay: 120ms;
+}
+
+@keyframes grow {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.barValue {
+  font-size: var(--fs-sm);
+  font-weight: 680;
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+/* line items */
+.items {
+  display: grid;
+  gap: var(--s-2);
+}
+
+.itemsLabel {
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.items table {
+  width: 100%;
+  font-size: var(--fs-sm);
+}
+
+.items th,
+.items td {
+  padding: var(--s-2) 0;
+  border-top: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.items tbody tr:first-child th,
+.items tbody tr:first-child td {
+  border-top: 0;
+}
+
+.items th {
+  padding-right: var(--s-3);
+  color: var(--text-2);
+  font-weight: 500;
+  line-height: 1.4;
+  text-align: start;
+}
+
+.items td {
+  white-space: nowrap;
+  text-align: end;
+}
+
+.items tfoot th,
+.items tfoot td {
+  border-top: 1.5px solid var(--border-strong);
+  color: var(--text);
+  font-weight: 700;
+}
+
+.warnings {
+  display: grid;
+  gap: var(--s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.warnings li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-2);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+.warnings svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  color: var(--warn);
+}
+
+.cardActions {
+  display: grid;
+  gap: var(--s-3);
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--border);
+}
+
+.payNote {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-2);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+
+.payNote svg {
+  flex: none;
+  width: 17px;
+  height: 17px;
+  margin-top: 1px;
+  color: var(--under);
+}
+
+.payNote strong {
+  color: var(--text);
+}
+
+.actionRow {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.grow {
+  flex: 1 1 auto;
+}
+
+.reminderOn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent-strong);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+
+.reminderOn svg {
+  width: 16px;
+  height: 16px;
+}

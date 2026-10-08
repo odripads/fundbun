@@ -4,8 +4,9 @@ import { sortDrafts, type Draft } from './drafts'
 import type { MerchantSpec } from './script-types'
 
 /**
- * Covers the analysis layer's duplicate rules: 48h for billed categories and "within half the cadence" for
- * habitual purchases it reads as weekly or monthly series.
+ * Keeps generated purchases clear of anything that could read as a double charge (finance/bills.ts: 48h for
+ * billed categories, half the cadence for billed series, 10 minutes for card charges) — conservatively, the
+ * same price is never repeated at one merchant within this window.
  */
 export const REPEAT_WINDOW_DAYS = 15
 

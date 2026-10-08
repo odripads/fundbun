@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { TOOL_SPECS } from './specs'
 import {
+  ACTION_VERB_RE,
   INTENT_TOOL,
   REFUSAL_INTENTS,
+  VERB_GATED_INTENTS,
   UNKNOWN_THRESHOLD,
   classify,
   createClassifier,
@@ -596,5 +598,42 @@ describe('intent catalogue', () => {
 
   it('lists exactly the refusal intents', () => {
     expect([...REFUSAL_INTENTS].sort()).toEqual(['add_payee', 'change_permissions', 'credit', 'external_transfer', 'invest', 'sensitive_request'])
+  })
+})
+
+describe('understand — no action verb, no action', () => {
+  it.each([
+    ['Youku', 'subscriptions'],
+    ['iQIYI', 'subscriptions'],
+    ['Tencent Video', 'subscriptions'],
+    ['the gym', 'subscriptions'],
+    ['Rent', 'bills'],
+    ['my rent', 'bills'],
+    ['electricity', 'bills'],
+    ['water bill', 'bills'],
+    ['explain my electricity bill', 'bills'],
+    ['Chengdu', 'goals'],
+    ['Chengdu pot', 'goals'],
+    ['Birkin', 'goals'],
+  ])('%s → %s (read-only twin, decided in NLU)', (text, intent) => {
+    const r = understand(text, MEI_CTX)
+    expect(r.intent).toBe(intent)
+    expect(VERB_GATED_INTENTS).not.toContain(r.intent)
+  })
+
+  it.each([
+    ['Cancel Youku', 'cancel_sub'],
+    ['pay rent', 'pay_bill'],
+    ['Move ¥300 to Chengdu', 'save_to_goal'],
+    ['take 200 out of Chengdu', 'withdraw_goal'],
+    ['dispute the Tencent charge', 'dispute'],
+    ['取消优酷', 'cancel_sub'],
+  ])('keeps the action when the verb is there: %s → %s', (text, intent) => {
+    expect(intentOf(text)).toBe(intent)
+  })
+
+  it('ACTION_VERB_RE covers English, Chinese and Indonesian verbs but not bare names', () => {
+    for (const t of ['pay', 'cancel', 'top up', 'withdraw', 'bayar', '缴费', '转账']) expect(ACTION_VERB_RE.test(t), t).toBe(true)
+    for (const t of ['youku', 'rent', 'chengdu', 'explain my electricity bill', 'payday']) expect(ACTION_VERB_RE.test(t), t).toBe(false)
   })
 })

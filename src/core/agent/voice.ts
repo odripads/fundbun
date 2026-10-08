@@ -445,13 +445,13 @@ export const TEMPLATES: Record<Intent, ToneTemplates> = {
     ],
     cheeky: [
       v('Hand it over — paste the bill and I’ll x-ray it.', { stage: 'need_text' }),
-      v('Nice try, bill[ from {merchant}]. It hid instructions in the small print, like moving money. I ignored them — I only take orders from you.[ Total {total}][, due {dueDate}].', { injection: 'yes' }),
+      v('Nice try, bill[ from {merchant}]. It hid instructions in the small print, like moving money. I ignored them — I only take orders from you.[ Total {total}.][ Due {dueDate}.][ {comparison}.]', { injection: 'yes' }),
       v('X-ray complete[: {merchant}]. Total {total}[, due {dueDate}][, {lineCount} line items].[ {comparison}.][ {warning}.]'),
       v('That bill is playing hard to get — I couldn’t find a total. Paste the whole thing?'),
     ],
     numbers: [
       v('Paste bill text to analyse.', { stage: 'need_text' }),
-      v('Warning: embedded instructions detected and ignored.[ Merchant: {merchant}.][ Total: {total}.][ Due: {dueDate}.]', { injection: 'yes' }),
+      v('Warning: embedded instructions detected and ignored.[ Merchant: {merchant}.][ Total: {total}.][ Due: {dueDate}.][ {comparison}.]', { injection: 'yes' }),
       v('[Merchant: {merchant}. ]Total: {total}.[ Due: {dueDate}.][ Line items: {lineCount}.][ {comparison}.][ {warning}.]'),
       v('No total found.'),
     ],

@@ -1,0 +1,211 @@
+/* The onboarding shell: a full-height column that bleeds past <main>'s padding so the progress bar can stick to
+ * the top edge and the primary action to the bottom edge, on phones and inside the desktop device frame. */
+
+.root {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: var(--viewport-h, 100dvh);
+  margin: calc(-1 * (var(--safe-top) + var(--s-4))) calc(-1 * var(--gutter)) calc(-1 * (var(--chrome-bottom) + var(--s-8)));
+}
+
+/* ───────── progress bar ───────── */
+
+.sentinel {
+  height: 1px;
+  margin-bottom: -1px;
+}
+
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding-top: var(--safe-top);
+  transition:
+    background-color var(--dur-2) var(--ease-out),
+    box-shadow var(--dur-2) var(--ease-out);
+}
+
+.stuck {
+  background: var(--surface-glass);
+  box-shadow: 0 1px 0 var(--border);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+}
+
+.barRow {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: var(--topbar-h);
+  padding: 0 var(--gutter) 0 var(--s-2);
+}
+
+.progress {
+  display: grid;
+  flex: 1;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.seg {
+  position: relative;
+  height: 6px;
+  overflow: hidden;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--text) 11%, transparent);
+}
+
+.seg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 70%, var(--accent-strong)));
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 520ms var(--ease-out);
+}
+
+.seg[data-state='done']::before,
+.seg[data-state='current']::before {
+  transform: scaleX(1);
+}
+
+/* the current step breathes: a soft light sweeps across it */
+.seg[data-state='current']::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--c-cream-50) 70%, transparent) 50%, transparent 100%);
+  transform: translateX(-100%);
+  animation: seg-sheen 2.6s var(--ease-out) 600ms infinite;
+}
+
+@keyframes seg-sheen {
+  60%,
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.count {
+  min-width: 2.6em;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+/* ───────── step body ───────── */
+
+.body {
+  display: grid;
+  flex: 1;
+  align-content: start;
+  gap: var(--s-6);
+  min-width: 0;
+  padding: var(--s-3) var(--gutter) var(--s-6);
+  animation: step-in var(--dur-3) var(--ease-out) both;
+}
+
+.body[data-dir='back'] {
+  animation-name: step-in-back;
+}
+
+@keyframes step-in {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+
+@keyframes step-in-back {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+}
+
+.intro {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--s-3);
+}
+
+.introText {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: var(--s-1);
+}
+
+.eyebrow {
+  color: var(--accent-strong);
+  font-size: var(--fs-xs);
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.title {
+  font-size: var(--fs-2xl);
+  font-weight: 640;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  outline: none;
+}
+
+@media (min-width: 380px) {
+  .title {
+    font-size: 2rem;
+  }
+}
+
+.mascot {
+  flex: none;
+  margin-bottom: -4px;
+}
+
+/* the finish line: mascot centred on top, a bigger headline */
+.introBig {
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: var(--s-2);
+  padding-top: var(--s-4);
+  text-align: center;
+}
+
+.introBig .title {
+  font-size: var(--fs-3xl);
+}
+
+.introBig .mascot {
+  margin: 0;
+}
+
+/* ───────── sticky action ───────── */
+
+.footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  display: grid;
+  gap: var(--s-2);
+  margin-top: auto;
+  padding: var(--s-6) var(--gutter) calc(var(--safe-bottom) + var(--s-4));
+  /* opaque behind the button and the note; only the top edge fades into the content */
+  background: linear-gradient(to top, var(--bg) calc(100% - var(--s-6)), color-mix(in srgb, var(--bg) 0%, transparent));
+}
+
+.footNote {
+  color: var(--over);
+  font-size: var(--fs-sm);
+  font-weight: 650;
+  text-align: center;
+}
+
+.footer[hidden] {
+  display: none;
+}

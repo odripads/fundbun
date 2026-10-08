@@ -1,0 +1,300 @@
+/* Shared building blocks for onboarding steps 2–8. */
+
+.lede {
+  margin-top: calc(-1 * var(--s-3));
+  color: var(--text-2);
+  line-height: 1.55;
+}
+
+.stack {
+  display: grid;
+  gap: var(--s-4);
+  min-width: 0;
+}
+
+.section {
+  display: grid;
+  gap: var(--s-3);
+  min-width: 0;
+}
+
+.sectionHead {
+  display: grid;
+  gap: 2px;
+}
+
+.h2 {
+  font-size: var(--fs-xl);
+  font-weight: 640;
+  letter-spacing: -0.015em;
+}
+
+.sub {
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+
+.card {
+  display: grid;
+  gap: var(--s-3);
+  min-width: 0;
+  padding: var(--s-2) var(--s-4) var(--s-4);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border), var(--shadow-1);
+  transition: box-shadow var(--dur-2) var(--ease-out);
+}
+
+.cardOn {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--under) 45%, transparent), var(--shadow-1);
+}
+
+.cardError {
+  box-shadow: inset 0 0 0 2px var(--over), var(--shadow-1);
+}
+
+.labelRow {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.error {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  color: var(--over);
+  font-size: var(--fs-sm);
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.error svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+}
+
+.facts {
+  display: grid;
+  gap: var(--s-3);
+  margin: 0;
+  padding: var(--s-3);
+  border-radius: var(--r-md);
+  background: var(--bg-sunken);
+}
+
+.fact {
+  display: grid;
+  gap: 2px;
+}
+
+.fact dt {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.factIcon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border);
+  color: var(--accent-strong);
+}
+
+.factIcon svg {
+  width: 15px;
+  height: 15px;
+  stroke-width: 2.2;
+}
+
+.fact dd {
+  margin: -6px 0 0 40px;
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+
+.bullets {
+  display: grid;
+  gap: var(--s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bullet {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-2);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+
+.bullet svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  color: var(--under);
+  stroke-width: 2.2;
+}
+
+.never .bullet svg {
+  color: var(--over);
+}
+
+/* "What we never do" — a link-style disclosure */
+.disclosure {
+  border-radius: var(--r-md);
+}
+
+.disclosure > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  color: var(--text);
+  font-weight: 650;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent) 70%, transparent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.disclosure > summary svg {
+  width: 18px;
+  height: 18px;
+  transition: transform var(--dur-2) var(--ease-out);
+}
+
+.disclosure[open] > summary svg {
+  transform: rotate(90deg);
+}
+
+.disclosure > summary:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.disclosureBody {
+  padding: var(--s-2) 0 var(--s-1);
+  animation: fade-down var(--dur-3) var(--ease-out);
+}
+
+@keyframes fade-down {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+.note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-2);
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  line-height: 1.45;
+}
+
+.note svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin-top: 1px;
+  color: var(--under);
+}
+
+/* a native <select> dressed like a TextField */
+.selectField {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.selectLabel {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 620;
+}
+
+.selectBox {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+  transition: box-shadow var(--dur-2) var(--ease-out);
+}
+
+.selectBox:hover {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 35%, transparent);
+}
+
+.selectBox:focus-within {
+  box-shadow: inset 0 0 0 2px var(--focus);
+}
+
+.select {
+  width: 100%;
+  min-height: 52px;
+  padding: 0 44px 0 var(--s-4);
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: var(--fs-md);
+  text-overflow: ellipsis;
+  appearance: none;
+  cursor: pointer;
+}
+
+.select:focus-visible {
+  outline: none;
+}
+
+.selectChevron {
+  position: absolute;
+  right: var(--s-4);
+  width: 18px;
+  height: 18px;
+  color: var(--text-3);
+  pointer-events: none;
+}
+
+.hint {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+
+.pop {
+  animation: pop var(--dur-3) var(--ease-spring) both;
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+}

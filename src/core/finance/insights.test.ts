@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { addDays, isWeekend } from '../dates'
-import type { Insight, Transaction } from '../types'
+import type { BudgetPlan, CategoryId, FinanceContext, Insight, Transaction } from '../types'
 import { arifLike, daily, makeCtx, MEI_DREAMS, meiLike, spend, yuan } from './__fixtures__'
 import { generateInsights } from './insights'
 
@@ -120,5 +120,58 @@ describe('generateInsights — specific detectors', () => {
 
   it('no data → no insights', () => {
     expect(generateInsights(makeCtx({ today: '2026-10-22' }))).toEqual([])
+  })
+})
+
+describe('generateInsights — suggested caps never loosen a budget', () => {
+  const budget = (limits: Partial<Record<CategoryId, number>>): BudgetPlan => ({
+    month: '2026-10',
+    total: yuan(9_500),
+    categories: Object.entries(limits).map(([category, limit]) => ({ category: category as CategoryId, limit: yuan(limit!) })),
+    method: 'custom',
+    createdBy: 'user',
+    createdAt: '2026-10-01T09:00:00.000Z',
+  })
+  const caps = (ctx: FinanceContext) =>
+    generateInsights(ctx)
+      .filter((x) => x.suggestedAction?.tool === 'set_category_budget')
+      .map((x) => ({ kind: x.kind, category: x.suggestedAction!.args.category as CategoryId, limit: x.suggestedAction!.args.limit as number, label: x.suggestedAction!.label }))
+
+  it('with a small budget, category_up and late_night caps sit 10% under the current limit (not above it)', () => {
+    const ctx = { ...meiLike(), budget: budget({ delivery: 520, shopping: 520, dining: 520 }) }
+    const out = caps(ctx)
+    expect(out.length).toBeGreaterThan(0)
+    for (const c of out) {
+      const current = ctx.budget!.categories.find((b) => b.category === c.category)!.limit
+      expect(c.limit).toBeLessThan(current)
+      expect(c.limit).toBe(yuan(460))
+      expect(c.label).toMatch(/at ¥460$/)
+    }
+    expect(out.map((c) => c.kind)).toEqual(expect.arrayContaining(['late_night']))
+  })
+
+  it('every suggested cap on the Mei-like month is below its existing limit, whatever the budget', () => {
+    for (const limit of [100, 520, 1_500, 5_000]) {
+      const ctx = { ...meiLike(), budget: budget({ delivery: limit, shopping: limit, dining: limit, entertainment: limit, coffee_tea: limit }) }
+      for (const c of caps(ctx)) expect(c.limit).toBeLessThan(yuan(limit))
+    }
+  })
+
+  it('a limit too small to tighten gets no cap suggestion rather than a looser one', () => {
+    const ctx = { ...meiLike(), budget: budget({ delivery: 5 }) }
+    const late = generateInsights(ctx).find((x) => x.kind === 'late_night')!
+    expect(late.suggestedAction).toBeUndefined()
+  })
+
+  it('without a budget the cap is ~15% under last month\'s spend in that category (this month\'s when new)', () => {
+    const late = (sep: number) => {
+      const txns: Transaction[] = [
+        ...(sep > 0 ? [spend('2026-09-12', 'Meituan', 'delivery', sep, { time: '19:00' })] : []),
+        ...[3, 6, 9, 12].map((d) => spend(`2026-10-${String(d).padStart(2, '0')}`, 'Meituan', 'delivery', 200, { time: '23:40' })),
+      ]
+      return generateInsights(makeCtx({ today: '2026-10-22', txns })).find((x) => x.kind === 'late_night')!.suggestedAction!.args
+    }
+    expect(late(1_000)).toEqual({ category: 'delivery', limit: yuan(850) })
+    expect(late(0)).toEqual({ category: 'delivery', limit: yuan(680) })
   })
 })

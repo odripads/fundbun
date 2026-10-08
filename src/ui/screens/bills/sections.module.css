@@ -1,0 +1,49 @@
+/* Shared scaffolding for the Bills sections. */
+
+.section {
+  display: grid;
+  gap: var(--s-3);
+  min-width: 0;
+  /* clear the sticky top bar when a hero tile or deep link jumps here */
+  scroll-margin-top: calc(var(--topbar-h) + var(--safe-top) + var(--s-6));
+}
+
+.head {
+  margin-bottom: 0;
+}
+
+.head h2:focus-visible {
+  outline-offset: 4px;
+}
+
+.lead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-1) var(--s-3);
+  margin-top: calc(var(--s-1) * -1);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+
+.asideMoney {
+  display: grid;
+  justify-items: end;
+  gap: 0;
+  text-align: end;
+}
+
+.asideLabel {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+
+.list {
+  display: grid;
+  gap: var(--s-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { FinanceContext, MirrorState, Tone } from '../types'
-import { ARIF_DREAMS, arifLike, daily, makeCtx, makeDream, MEI_DREAMS, meiLike, withTone, yuan } from './__fixtures__'
-import { computeMirror, couldveCollection, mirrorHistory, mirrorStatus, pickMirrorItem } from './mirror'
+import { ARIF_DREAMS, arifLike, checking, daily, makeCtx, makeDream, MEI_DREAMS, meiLike, pot, withTone, yuan } from './__fixtures__'
+import { computeMirror, couldveCollection, isFirstMonth, mirrorHistory, mirrorStatus, pickMirrorItem } from './mirror'
 import { summarizeMonth } from './summary'
 
 const TONES: Tone[] = ['gentle', 'cheeky', 'numbers']
@@ -265,5 +265,84 @@ describe('computeMirror — finished months and empty wishlists', () => {
     expect(computeMirror(over).headline).toBe('¥500 past your target.')
     expect(computeMirror(withTone(over, 'gentle')).headline).toBe("This month's extra ¥500 went past your target.")
     expect(computeMirror(paced(2_500, [], 'cheeky')).headline).toBe('Careful — this pace overshoots by ¥600.')
+  })
+})
+
+describe('computeMirror — brand-new users', () => {
+  const japan = makeDream('dream_japan', 'Trip to Japan', 8_000, 'goal', { image: 'preset:plane' })
+  /** first month with FundBun: a few days of light spending, nothing before October, nothing saved */
+  const newcomer = (tone: Tone, today = '2026-10-08') =>
+    makeCtx({ today, txns: daily('2026-10-01', today, 'Canteen', 'dining', 10), dreams: [japan], profile: { name: 'Lina', targetSpend: yuan(8_000), monthlyIncome: yuan(10_000), tone } })
+
+  it('a projection-only "under" becomes a welcome — no "¥7,9xx closer … (0% there)"', () => {
+    for (const tone of TONES) {
+      const ctx = newcomer(tone)
+      expect(isFirstMonth(ctx, summarizeMonth(ctx))).toBe(true)
+      expect(mirrorStatus(summarizeMonth(ctx))).toBe('under')
+      const m = computeMirror(ctx)
+      expect(m).toMatchObject({ status: 'on_track', mood: 'calm' })
+      expect(`${m.headline} ${m.subline}`).not.toMatch(/0% there|closer to your/)
+      expect(m.cta).toBeUndefined()
+      expect(m.treat).toBeUndefined()
+      expect(m.hoursOfWork).toBeUndefined()
+      expectCleanCopy(m)
+    }
+    expect(computeMirror(newcomer('gentle')).headline).toBe('Welcome, Lina! Your first month with Bun has begun.')
+    expect(computeMirror(newcomer('gentle')).subline).toContain('¥80 spent of your ¥8,000 target')
+  })
+
+  it('in the first days (day < 5) a newcomer is welcomed with a calm on-track mirror', () => {
+    const m = computeMirror(newcomer('cheeky', '2026-10-03'))
+    expect(m).toMatchObject({ status: 'on_track', headline: 'Welcome, Lina! Bun is still getting to know your wallet.' })
+    expect(m.subline).toContain('¥30 of ¥8,000 so far, 28 days to go')
+    expectCleanCopy(m)
+  })
+
+  it('no spending yet in the first month: a welcoming no_data', () => {
+    const ctx = makeCtx({ today: '2026-10-08', dreams: [japan], profile: { name: 'Lina', tone: 'gentle' } })
+    const m = computeMirror(ctx)
+    expect(m).toMatchObject({ status: 'no_data', mood: 'sleepy', headline: 'Welcome, Lina! Your mirror is ready.' })
+    expect(m.subline).toContain('starting with your Trip to Japan')
+  })
+
+  it('a user with history but an empty goal pot is not told "0% there"', () => {
+    const ctx = arifLike('gentle')
+    ctx.dreams = [japan, ...ARIF_DREAMS.filter((d) => d.kind === 'treat')]
+    const m = computeMirror(ctx)
+    expect(m.status).toBe('under')
+    expect(m.headline).toMatch(/^¥6\d\d under target — a first stash for your Trip to Japan\?$/)
+    expect(computeMirror(withTone(ctx, 'numbers')).subline).toContain('Trip to Japan: nothing saved yet')
+  })
+
+  it('a newcomer who is already over target still sees the honest over mirror', () => {
+    const ctx = makeCtx({ today: '2026-10-08', txns: daily('2026-10-01', '2026-10-08', 'Taobao', 'shopping', 1_200), dreams: [japan], profile: { targetSpend: yuan(8_000) } })
+    expect(computeMirror(ctx).status).toBe('over')
+  })
+})
+
+describe('computeMirror — treat & secondary CTA (under target)', () => {
+  it('fills treat with the biggest treat the surplus covers; no secondary CTA when the treat has no pot', () => {
+    const m = computeMirror(arifLike())
+    expect(m.treat).toMatchObject({ itemId: 'dream_concert', itemName: 'Concert ticket', label: 'a Concert ticket', image: 'preset:ticket' })
+    expect(m.treat!.fraction).toBeCloseTo(m.delta / yuan(480), 3)
+    expect(m.secondaryCta).toBeUndefined()
+  })
+
+  it('"Earmark for <treat>" moves money into the treat\'s own pot, capped at what it still needs', () => {
+    const ctx = arifLike()
+    ctx.bank.accounts = [checking(2_500), pot('dream_macbook', 3_680), pot('dream_concert', 100)]
+    const m = computeMirror(ctx)
+    expect(m.secondaryCta).toEqual({ tool: 'transfer_to_goal', args: { goalId: 'dream_concert', amount: yuan(380) }, label: 'Earmark for Concert ticket' })
+    expect(m.cta?.args.goalId).toBe('dream_macbook')
+    ctx.bank.accounts = [checking(2_500), pot('dream_macbook', 3_680), pot('dream_concert', 480)]
+    expect(computeMirror(ctx).secondaryCta).toBeUndefined()
+  })
+
+  it('no treat when over or when no treat fits', () => {
+    expect(computeMirror(meiLike()).treat).toBeUndefined()
+    expect(computeMirror(meiLike()).secondaryCta).toBeUndefined()
+    const ctx = arifLike()
+    ctx.dreams = ARIF_DREAMS.filter((d) => d.kind === 'goal')
+    expect(computeMirror(ctx).treat).toBeUndefined()
   })
 })

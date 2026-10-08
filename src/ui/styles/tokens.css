@@ -24,35 +24,6 @@
   --c-jade-600: #1f6c4e;
   --c-sky-500: #4a78b5;
 
-  /* semantic — light */
-  --bg: var(--c-cream-50);
-  --bg-sunken: var(--c-cream-100);
-  --surface: #ffffff;
-  --surface-2: var(--c-dough-200);
-  --surface-glass: rgba(255, 250, 242, 0.78);
-  --border: rgba(58, 42, 31, 0.12);
-  --border-strong: rgba(58, 42, 31, 0.24);
-  --text: var(--c-soy-900);
-  --text-2: var(--c-soy-700);
-  --text-3: #8c7764;
-  --text-on-accent: #24180f;
-  --accent: var(--c-yuan-500);
-  --accent-strong: var(--c-yuan-600);
-  --accent-soft: rgba(227, 162, 26, 0.16);
-  --over: var(--c-chili-500);
-  --over-soft: rgba(217, 71, 43, 0.12);
-  --under: var(--c-jade-500);
-  --under-soft: rgba(46, 139, 102, 0.12);
-  --warn: #c98a0b;
-  --warn-soft: rgba(201, 138, 11, 0.14);
-  --info: var(--c-sky-500);
-  --focus: #2b6fd6;
-  --bun: var(--c-dough-300);
-  --bun-shade: var(--c-crust-400);
-  --shadow-1: 0 1px 2px rgba(36, 24, 15, 0.06), 0 2px 8px rgba(36, 24, 15, 0.06);
-  --shadow-2: 0 4px 12px rgba(36, 24, 15, 0.08), 0 12px 32px rgba(36, 24, 15, 0.1);
-  --shadow-glow: 0 0 0 6px rgba(227, 162, 26, 0.18);
-
   /* type */
   --font-display: 'Fraunces Variable', 'Fraunces', Georgia, 'Songti SC', serif;
   --font-ui: 'DM Sans Variable', 'DM Sans', system-ui, -apple-system, 'PingFang SC', 'Hiragino Sans GB', sans-serif;
@@ -93,10 +64,53 @@
   /* layout */
   --app-max: 440px;
   --tabbar-h: 68px;
+}
 
+/* Semantic tokens. Light is the default on the root and is also forced on any [data-theme='light'] element,
+ * so a subtree can switch theme (e.g. a light card inside the dark app, or a gallery showing both). */
+:root,
+[data-theme='light'] {
+  --bg: var(--c-cream-50);
+  --bg-sunken: var(--c-cream-100);
+  --surface: #ffffff;
+  --surface-2: var(--c-dough-200);
+  --surface-glass: rgba(255, 250, 242, 0.78);
+  --border: rgba(58, 42, 31, 0.12);
+  --border-strong: rgba(58, 42, 31, 0.24);
+  --text: var(--c-soy-900);
+  --text-2: var(--c-soy-700);
+  --text-3: #8c7764;
+  --text-on-accent: #24180f;
+  --accent: var(--c-yuan-500);
+  --accent-strong: var(--c-yuan-600);
+  --accent-soft: rgba(227, 162, 26, 0.16);
+  --over: var(--c-chili-500);
+  --over-soft: rgba(217, 71, 43, 0.12);
+  --under: var(--c-jade-500);
+  --under-soft: rgba(46, 139, 102, 0.12);
+  --warn: #c98a0b;
+  --warn-soft: rgba(201, 138, 11, 0.14);
+  --info: var(--c-sky-500);
+  --focus: #2b6fd6;
+  --bun: var(--c-dough-300);
+  --bun-shade: var(--c-crust-400);
+  --shadow-1: 0 1px 2px rgba(36, 24, 15, 0.06), 0 2px 8px rgba(36, 24, 15, 0.06);
+  --shadow-2: 0 4px 12px rgba(36, 24, 15, 0.08), 0 12px 32px rgba(36, 24, 15, 0.1);
+  --shadow-glow: 0 0 0 6px rgba(227, 162, 26, 0.18);
+  /* chart palette — fixed categorical order (never cycled), CVD-validated per mode against the surface;
+   * category charts pass CATEGORIES colours instead */
+  --chart-1: #2a78d6;
+  --chart-2: #eb6834;
+  --chart-3: #1baf7a;
+  --chart-4: #eda100;
+  --chart-5: #e87ba4;
+  --chart-6: #4a3aa7;
+  /* permission tier T4 (prohibited); T0–T3 are derived below */
+  --tier-4: var(--c-soy-800);
   color-scheme: light;
 }
 
+/* Dark: the OS preference on the root (unless the root forces light), or forced on the root / any subtree. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     --bg: #17110c;
@@ -121,11 +135,20 @@
     --bun-shade: #c99a5b;
     --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow-2: 0 8px 28px rgba(0, 0, 0, 0.45);
+    /* chart palette (CVD-validated against the dark surface) + the prohibited tier */
+    --chart-1: #3987e5;
+    --chart-2: #d95926;
+    --chart-3: #199e70;
+    --chart-4: #c98500;
+    --chart-5: #d55181;
+    --chart-6: #9085e9;
+    --tier-4: #f3e3d3;
     color-scheme: dark;
   }
 }
 
-:root[data-theme='dark'] {
+:root[data-theme='dark'],
+[data-theme='dark'] {
   --bg: #17110c;
   --bg-sunken: #120d09;
   --surface: #221912;
@@ -148,5 +171,24 @@
   --bun-shade: #c99a5b;
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-2: 0 8px 28px rgba(0, 0, 0, 0.45);
+  /* chart palette (CVD-validated against the dark surface) + the prohibited tier */
+  --chart-1: #3987e5;
+  --chart-2: #d95926;
+  --chart-3: #199e70;
+  --chart-4: #c98500;
+  --chart-5: #d55181;
+  --chart-6: #9085e9;
+  --tier-4: #f3e3d3;
   color-scheme: dark;
+}
+
+/* Derived tokens resolve their var()s where they are declared, so they are re-declared on every theme scope —
+ * on :root alone a [data-theme] subtree would inherit the root theme's values. */
+:root,
+[data-theme] {
+  /* permission tiers — T0 read → T4 prohibited, warming with risk */
+  --tier-0: var(--info);
+  --tier-1: var(--under);
+  --tier-2: var(--accent);
+  --tier-3: var(--over);
 }

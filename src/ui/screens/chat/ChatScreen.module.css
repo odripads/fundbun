@@ -1,0 +1,332 @@
+.screen {
+  padding-top: var(--s-2);
+}
+
+.log {
+  display: grid;
+  gap: var(--s-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.end {
+  pointer-events: none;
+}
+
+/* "Jump to latest" — a quiet round button while the reader is up in the history; a pill when a reply lands */
+.jump {
+  position: fixed;
+  right: max(var(--gutter, 16px), calc(50% - var(--app-max) / 2 + var(--gutter, 16px)));
+  z-index: 31;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 44px;
+  height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: var(--surface-glass);
+  box-shadow: inset 0 0 0 1px var(--border-strong), var(--shadow-2);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  font-size: var(--fs-sm);
+  font-weight: 650;
+  animation: jumpIn var(--dur-3) var(--ease-spring) both;
+}
+
+.jump svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+}
+
+.jump:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+.jumpUnread {
+  padding: 0 16px 0 12px;
+  background: var(--text);
+  color: var(--bg);
+}
+
+/* ───────────────────────────── empty state ───────────────────────────── */
+
+.empty {
+  display: grid;
+  gap: var(--s-6);
+  padding-top: var(--s-2);
+}
+
+.hero {
+  display: grid;
+  justify-items: center;
+  gap: var(--s-3);
+  text-align: center;
+}
+
+.heroArt {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 172px;
+  height: 172px;
+  margin-bottom: calc(-1 * var(--s-2));
+}
+
+/* a slowly turning steam ring + a breathing glow: Bun is awake and listening */
+.heroArt::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  border: 1.5px dashed color-mix(in srgb, var(--accent) 38%, transparent);
+  animation: turn 48s linear infinite;
+}
+
+.heroHalo {
+  position: absolute;
+  inset: 14px;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 30%, transparent) 0%, transparent 68%);
+  animation: breath 5s ease-in-out infinite;
+}
+
+.heroArt > svg {
+  position: relative;
+}
+
+.heroTitle {
+  font-size: var(--fs-2xl);
+  font-weight: 650;
+}
+
+.heroBody {
+  max-width: 34ch;
+  color: var(--text-2);
+  font-size: var(--fs-md);
+  line-height: 1.55;
+}
+
+.heroBadges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--s-2);
+  margin-top: var(--s-1);
+}
+
+.startersBlock {
+  min-width: 0;
+}
+
+.startersTitle {
+  margin-bottom: var(--s-3);
+  color: var(--text-3);
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.starters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.starters li {
+  display: flex;
+  min-width: 0;
+  animation: starterIn 520ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 60ms + 120ms);
+}
+
+.starter {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-3);
+  min-width: 0;
+  min-height: 104px;
+  padding: var(--s-3) var(--s-3) var(--s-4);
+  border: 0;
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border), var(--shadow-1);
+  font-size: var(--fs-sm);
+  font-weight: 640;
+  line-height: 1.3;
+  text-align: start;
+  transition:
+    transform var(--dur-2) var(--ease-out),
+    box-shadow var(--dur-2) var(--ease-out);
+}
+
+.starter:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, var(--border)), var(--shadow-2);
+}
+
+.starter:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.starter:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 1px var(--border-strong), var(--ring);
+}
+
+.starter:disabled {
+  opacity: 0.55;
+}
+
+.starterIcon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.starterIcon svg {
+  width: 18px;
+  height: 18px;
+  color: var(--accent-strong);
+}
+
+.starterText {
+  text-wrap: pretty;
+}
+
+/* ───────────────────────────── handoff sheet ───────────────────────────── */
+
+.sheetStack {
+  display: grid;
+  gap: var(--s-4);
+}
+
+.handoff {
+  display: grid;
+  gap: var(--s-2);
+  padding: var(--s-4);
+  border-radius: var(--r-md);
+  background: var(--bg-sunken);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.handoffTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+
+.handoffTitle svg {
+  width: 16px;
+  height: 16px;
+  color: var(--accent-strong);
+}
+
+.handoffList {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.handoffList li {
+  padding: 6px 10px;
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  overflow-wrap: anywhere;
+}
+
+.handoffEmpty,
+.handoffMeta {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+
+.handoffSafe {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  font-weight: 650;
+}
+
+.handoffSafe svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--under);
+}
+
+@keyframes turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes breath {
+  0%,
+  100% {
+    opacity: 0.65;
+    transform: scale(0.94);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes starterIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes jumpIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .starters li {
+    animation-delay: 0s;
+  }
+}
+
+:global(html[data-motion='reduce']) .starters li {
+  animation-delay: 0s;
+}

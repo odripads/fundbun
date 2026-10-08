@@ -9,12 +9,14 @@ import type {
   MirrorState,
   MirrorStatus,
   MonthSummary,
+  SuggestedAction,
   Tone,
   YearMonth,
 } from '../types'
-import { overspendAction, stashAction } from './actions'
+import { majorUnits, overspendAction, roundDownTo10, stashAction } from './actions'
 import { byTone, delayPhrase, type Fmt, moneyFmt, pctText, plural, withArticle } from './copy'
-import { dreamEquivalents, equivalentOf, fallbackMonthlyRate, goalDelayDays, goalProgress, hoursOfWork, primaryGoal } from './dreams'
+import { dreamEquivalents, equivalentOf, fallbackMonthlyRate, goalDelayDays, goalProgress, hoursOfWork, potFor, primaryGoal } from './dreams'
+import { isSpending } from './ledger'
 import { summarizeMonth } from './summary'
 
 /** Early-month projections are mostly noise (research note §5): no pace verdicts before this day. */
@@ -160,16 +162,18 @@ function underCopy(c: CopyInput, dreams: DreamItem[]): Copy {
   }
   const now = `${Math.floor(goal.pct)}%`
   const after = `${Math.floor(Math.min(100, ((goal.saved + delta) / goal.price) * 100))}%`
+  // "(0% there)" reads like a scolding — an empty pot gets a fresh-start line instead
+  const started = goal.saved > 0
   return {
     headline: byTone(c.tone, {
-      gentle: `${f(delta)} closer to your ${goal.name} (${now} there).`,
+      gentle: started ? `${f(delta)} closer to your ${goal.name} (${now} there).` : `${f(delta)} under target — a first stash for your ${goal.name}?`,
       cheeky: `${f(delta)} under target — your ${goal.name} is blushing.`,
       numbers: `${f(delta)} under target.`,
     }),
     subline: byTone(c.tone, {
       gentle: `${pace} Stash it and your ${goal.name} is ${after} there${choice ? ` — or, if you'd like, ${choice}` : ''}. Your call.`,
       cheeky: `${pace} Stash it and you're ${after} of the way there${choice ? `, or ${choice}` : ''} — your call, legend.`,
-      numbers: `${s.isCurrent ? `Projected ${f(s.projected)}` : `Spent ${f(s.spent)}`} vs ${f(s.target)} target. ${goal.name}: ${now} saved, ${after} if stashed.${treat ? ` Alternative: ${treat.name} (${f(treat.price)}).` : ''}`,
+      numbers: `${s.isCurrent ? `Projected ${f(s.projected)}` : `Spent ${f(s.spent)}`} vs ${f(s.target)} target. ${goal.name}: ${started ? `${now} saved` : 'nothing saved yet'}, ${after} if stashed.${treat ? ` Alternative: ${treat.name} (${f(treat.price)}).` : ''}`,
     }),
   }
 }
@@ -189,15 +193,70 @@ function onTrackCopy(c: CopyInput): Copy {
   }
 }
 
-function noDataCopy(c: CopyInput): Copy {
+/** First month with FundBun: too little history for a verdict, so welcome instead of mirroring. */
+function welcomeCopy(c: CopyInput, name: string): Copy {
+  const { f, s, goal } = c
+  const left = daysToGo(s)
+  const hi = name ? `Welcome, ${name}!` : 'Welcome!'
+  const grow = goal ? ` and your ${goal.name} will start to show up here` : ''
+  return {
+    headline: byTone(c.tone, {
+      gentle: `${hi} Your first month with Bun has begun.`,
+      cheeky: `${hi} Bun is still getting to know your wallet.`,
+      numbers: `First month: ${f(s.spent)} of ${f(s.target)} so far.`,
+    }),
+    subline: byTone(c.tone, {
+      gentle: `${f(s.spent)} spent of your ${f(s.target)} target, ${plural(left, 'day')} to go. Give it a few more days of spending${grow} — no verdicts yet.`,
+      cheeky: `${f(s.spent)} of ${f(s.target)} so far, ${plural(left, 'day')} to go. A few more days of data${grow}.`,
+      numbers: `${plural(left, 'day')} left; safe to spend ${f(s.safeToSpendToday)}/day. Verdicts start once there is a little more history.`,
+    }),
+  }
+}
+
+function noDataCopy(c: CopyInput, welcome?: string): Copy {
   const label = monthLabel(c.s.month)
+  if (welcome !== undefined) {
+    const hi = welcome ? `Welcome, ${welcome}!` : 'Welcome!'
+    return {
+      headline: byTone(c.tone, { gentle: `${hi} Your mirror is ready.`, cheeky: `${hi} Bun is ready when you are.`, numbers: `No spending recorded for ${label} yet.` }),
+      subline: `Your ${f0(c)} target is set. As spending shows up, Bun will mirror your month in dream items${c.goal ? ` — starting with your ${c.goal.name}` : ''}.`,
+    }
+  }
   return {
     headline: byTone(c.tone, { gentle: 'Nothing to mirror yet.', cheeky: 'Bun is napping — no spending yet.', numbers: `No spending recorded for ${label}.` }),
     subline: `Once spending shows up for ${label}, your dreams will show up here.`,
   }
 }
 
+function f0(c: CopyInput): string {
+  return c.f(c.s.target)
+}
+
 // ───────────────────────────── mirror ─────────────────────────────
+
+/** No spending before this month: the projection has no baseline yet, so under/on-track verdicts are noise. */
+export function isFirstMonth(ctx: FinanceContext, s: MonthSummary): boolean {
+  const start = `${s.month}-01`
+  return s.isCurrent && !ctx.bank.transactions.some((t) => t.date < start && isSpending(t))
+}
+
+/** The guilt-free treat an under-target surplus fully covers (biggest first), as a dream equivalent. */
+function treatFor(status: MirrorStatus, delta: Minor, dreams: DreamItem[]): { item: DreamItem; eq: DreamEquivalent } | undefined {
+  if (status !== 'under' || delta <= 0) return undefined
+  const item = biggestTreatCovered(delta, dreams)
+  return item ? { item, eq: equivalentOf(delta, item) } : undefined
+}
+
+/** "Earmark for <treat>": only when the treat already has its own pot to move money into (never a purchase). */
+function earmarkAction(ctx: FinanceContext, treat: DreamItem, surplus: Minor): SuggestedAction | undefined {
+  const pot = potFor(treat, ctx.bank.accounts)
+  if (!pot) return undefined
+  const currency = ctx.profile.currency
+  const raw = Math.min(surplus, Math.max(0, treat.price - Math.max(0, pot.balance)))
+  const amount = raw >= majorUnits(10, currency) ? roundDownTo10(raw, currency) : Math.floor(raw)
+  if (amount < majorUnits(1, currency)) return undefined
+  return { tool: 'transfer_to_goal', args: { goalId: treat.id, amount }, label: `Earmark for ${treat.name}` }
+}
 
 /**
  * The Dream Mirror — FundBun's signature landing hero.
@@ -217,12 +276,20 @@ function noDataCopy(c: CopyInput): Copy {
  *
  * Pace verdicts wait until day 5 (early projections are noise). Under-target copy leads with goal progress
  * and offers the treat as the user's own choice; the CTA is always "stash", never a purchase.
+ * Under target, `treat` is the biggest treat the surplus fully covers; `secondaryCta` ("Earmark for <treat>",
+ * a transfer_to_goal) is offered only when that treat already has its own pot.
+ * A first month with no earlier spending gets a welcome (status 'on_track' instead of a projection-only
+ * 'under', or a welcoming 'no_data'), and an untouched goal is never described as "0% there".
  */
 export function computeMirror(ctx: FinanceContext, month?: YearMonth): MirrorState {
   const s = summarizeMonth(ctx, month)
   const tone = ctx.profile.tone
   const f = moneyFmt(ctx.profile.currency)
-  const status = mirrorStatus(s)
+  const raw = mirrorStatus(s)
+  const firstMonth = isFirstMonth(ctx, s)
+  // a brand-new user's "under" (or a first few days) is a projection with no history behind it — welcome instead
+  const welcome = firstMonth && (raw === 'under' || (raw === 'on_track' && s.dayOfMonth < PACE_FROM_DAY))
+  const status: MirrorStatus = welcome ? 'on_track' : raw
   const delta = deltaFor(status, s)
   const main = primaryGoal(openItems(ctx.dreams))
   // a treat-only wishlist has nothing to "get closer to" or delay
@@ -233,13 +300,17 @@ export function computeMirror(ctx: FinanceContext, month?: YearMonth): MirrorSta
   const delayDays = losing && goal ? goalDelayDays(delta, goal, fallbackMonthlyRate(ctx.profile)) : 0
 
   const input: CopyInput = { tone, f, s, delta, ...pick, goal, delayDays }
+  const name = ctx.profile.name?.trim() ?? ''
   const copy =
     status === 'over' ? overCopy(input)
     : status === 'pace_over' ? paceOverCopy(input)
     : status === 'under' ? underCopy(input, ctx.dreams)
+    : welcome ? welcomeCopy(input, name)
     : status === 'on_track' ? onTrackCopy(input)
-    : noDataCopy(input)
+    : noDataCopy(input, firstMonth ? name : undefined)
   const cta = losing ? overspendAction(ctx, s) : status === 'under' ? stashAction(ctx, s, delta) : undefined
+  const treat = treatFor(status, delta, ctx.dreams)
+  const secondaryCta = treat ? earmarkAction(ctx, treat.item, delta) : undefined
 
   return {
     status,
@@ -259,6 +330,8 @@ export function computeMirror(ctx: FinanceContext, month?: YearMonth): MirrorSta
     tone,
     mood: moodFor(status, tone),
     ...(cta ? { cta } : {}),
+    ...(treat ? { treat: treat.eq } : {}),
+    ...(secondaryCta ? { secondaryCta } : {}),
   }
 }
 

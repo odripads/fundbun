@@ -1,0 +1,77 @@
+.listHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+.count {
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.list {
+  display: grid;
+  gap: var(--s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-width: 0;
+  padding: var(--s-2) var(--s-1) var(--s-2) var(--s-2);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border), var(--shadow-1);
+}
+
+.main {
+  background:
+    radial-gradient(120% 140% at 0% 50%, var(--accent-soft) 0%, transparent 55%),
+    var(--surface);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent), var(--shadow-1);
+}
+
+.itemText {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: var(--s-1);
+}
+
+.itemName {
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-variation-settings: var(--fv-display);
+  font-size: var(--fs-lg);
+  font-weight: 620;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.price {
+  margin-right: 2px;
+  font-weight: 700;
+}
+
+.editorCard {
+  gap: var(--s-4);
+  padding-top: var(--s-4);
+}
+
+.editorTitle {
+  font-size: var(--fs-lg);
+}

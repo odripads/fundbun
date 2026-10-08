@@ -1,0 +1,589 @@
+.card {
+  --tier-c: var(--tier-2);
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-3);
+  min-width: 0;
+  padding: var(--s-4);
+  overflow: hidden;
+  border-radius: var(--r-lg);
+  background:
+    radial-gradient(120% 80% at 100% 0%, color-mix(in srgb, var(--tier-c) 12%, transparent) 0%, transparent 55%),
+    var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border), var(--shadow-1);
+}
+
+/* the tier stripe along the top edge */
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(90deg, var(--tier-c), color-mix(in srgb, var(--tier-c) 30%, transparent));
+}
+
+.card[data-tier='0'] {
+  --tier-c: var(--tier-0);
+}
+.card[data-tier='1'] {
+  --tier-c: var(--tier-1);
+}
+.card[data-tier='3'] {
+  --tier-c: var(--tier-3);
+}
+.card[data-tier='4'] {
+  --tier-c: var(--over);
+}
+
+/* waiting for the user: a slow breathing halo so the card never looks dead */
+.card[data-phase='pending']:not(.sheet) {
+  animation: breathe 3.2s var(--ease-out) infinite;
+}
+
+.sheet {
+  padding: 0;
+  overflow: visible;
+  background: none;
+  box-shadow: none;
+  animation: none;
+}
+
+.sheet::before {
+  display: none;
+}
+
+.muted {
+  opacity: 0.8;
+}
+
+.muted .amount,
+.muted .route {
+  filter: saturate(0.4);
+}
+
+/* ───────── header ───────── */
+
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.phase {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  font-weight: 650;
+}
+
+.phaseIcon {
+  display: inline-flex;
+  color: var(--tone, var(--text-3));
+}
+
+.phaseIcon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.tone-accent {
+  --tone: var(--accent-strong);
+}
+.tone-under {
+  --tone: var(--under);
+}
+.tone-over {
+  --tone: var(--over);
+}
+.tone-info {
+  --tone: var(--info);
+}
+.tone-neutral {
+  --tone: var(--text-3);
+}
+
+.title {
+  font-size: var(--fs-lg);
+  font-weight: 640;
+  line-height: 1.25;
+}
+
+.amount {
+  margin-top: calc(-1 * var(--s-2));
+  line-height: 1;
+}
+
+.summary {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+/* ───────── from → to ───────── */
+
+.route {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: var(--s-3);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--text) 3.5%, transparent);
+}
+
+.leg {
+  position: relative;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.leg dt {
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 720;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.leg dd {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 0;
+  margin: 0;
+  font-size: var(--fs-sm);
+  font-weight: 620;
+  line-height: 1.3;
+}
+
+.legIcon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+  color: var(--text-3);
+}
+
+.legIcon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.legTo .legIcon {
+  background: color-mix(in srgb, var(--tier-c) 16%, var(--surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tier-c) 45%, transparent);
+  color: var(--tier-c);
+}
+
+/* the connector between the two legs */
+.leg + .legTo::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: calc(38px + var(--s-2) + 13px);
+  width: 2px;
+  height: 10px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--tier-c) 50%, var(--border-strong));
+}
+
+/* ───────── effects ───────── */
+
+.effects {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: var(--s-3);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--text) 3.5%, transparent);
+  list-style: none;
+}
+
+.effects li {
+  position: relative;
+  padding-left: 16px;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+
+.effects li::before {
+  content: '';
+  position: absolute;
+  top: 0.55em;
+  left: 2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--tier-c);
+}
+
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.timing {
+  flex-basis: 100%;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 520;
+}
+
+.reasons {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+.rules {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: var(--s-2);
+}
+
+.rule {
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--text) 7%, transparent);
+  color: var(--text-2);
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* ───────── binding seal ───────── */
+
+.seal {
+  padding-top: var(--s-3);
+  border-top: 1px dashed var(--border-strong);
+}
+
+.sealButton {
+  position: relative;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  font-weight: 620;
+}
+
+.sealButton::after {
+  content: '';
+  position: absolute;
+  inset: -6px -8px;
+}
+
+.sealButton:focus-visible {
+  outline: none;
+  border-radius: 8px;
+  box-shadow: var(--ring);
+}
+
+.sealButton > svg {
+  width: 16px;
+  height: 16px;
+  color: var(--accent-strong);
+}
+
+.hash {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  letter-spacing: 0.02em;
+}
+
+.sealHint {
+  color: var(--text-3);
+  font-weight: 520;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
+.sealPanel {
+  margin-top: var(--s-2);
+  padding: var(--s-3);
+  border-radius: var(--r-md);
+  background: var(--bg-sunken);
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+  animation: rise var(--dur-3) var(--ease-out);
+}
+
+.sealPanel strong {
+  color: var(--text);
+}
+
+.fullHash {
+  display: block;
+  margin-top: 6px;
+  color: var(--text-3);
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 10.5px;
+  word-break: break-all;
+}
+
+/* ───────── state footer ───────── */
+
+.footer {
+  display: grid;
+  gap: var(--s-2);
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap-reverse;
+  gap: var(--s-2);
+}
+
+.buttons > :first-child {
+  flex: 1 0 auto;
+}
+
+/* the primary takes the remaining width, or its own row when the card is narrow */
+.buttons > :last-child {
+  flex: 2 1 170px;
+}
+
+.inlineError {
+  color: var(--over);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.successRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
+  min-height: 52px;
+  padding: var(--s-2) var(--s-2) var(--s-2) var(--s-3);
+  border-radius: var(--r-md);
+  background: var(--under-soft);
+}
+
+.successText {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-sm);
+  font-weight: 640;
+}
+
+.successText svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--under);
+}
+
+.blockedRow {
+  display: flex;
+  gap: var(--s-2);
+  padding: var(--s-3);
+  border-radius: var(--r-md);
+  background: var(--over-soft);
+  font-size: var(--fs-sm);
+}
+
+.blockedRow svg {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  color: var(--over);
+}
+
+.mutedRow {
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  font-weight: 560;
+}
+
+/* ───────── undo ───────── */
+
+.undo {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 14px 0 5px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border-strong), var(--shadow-1);
+  font-size: var(--fs-sm);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  transition: transform var(--dur-1) var(--ease-out);
+}
+
+.undo::after {
+  content: '';
+  position: absolute;
+  inset: -2px 0;
+}
+
+.undo:active {
+  transform: scale(0.97);
+}
+
+.undo:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 1px var(--border-strong), var(--ring);
+}
+
+.undoSmall {
+  min-height: 36px;
+  padding-right: 12px;
+}
+
+.undoRing {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+}
+
+.undoRing svg {
+  position: absolute;
+  inset: 0;
+  width: 30px;
+  height: 30px;
+  transform: rotate(-90deg);
+}
+
+.undoSecs {
+  position: relative;
+  font-size: 11px;
+  font-weight: 760;
+  font-variant-numeric: tabular-nums;
+}
+
+.undoTrack,
+.undoFill {
+  fill: none;
+  stroke-width: 2.5;
+}
+
+.undoTrack {
+  stroke: color-mix(in srgb, var(--under) 22%, transparent);
+}
+
+.undoFill {
+  stroke: var(--under);
+  stroke-linecap: round;
+  stroke-dasharray: 100;
+  stroke-dashoffset: calc(100 - var(--undo-frac, 1) * 100);
+  transition: stroke-dashoffset 1s linear;
+}
+
+/* ───────── receipt ───────── */
+
+.receipt {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-width: 0;
+  padding: var(--s-2) var(--s-2) var(--s-2) var(--s-3);
+  border-radius: var(--r-md);
+  background: var(--bg-sunken);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.receiptIcon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--tone, var(--text-3)) 15%, transparent);
+  color: var(--tone, var(--text-3));
+}
+
+.receiptIcon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.receiptText {
+  flex: 1;
+  min-width: 0;
+}
+
+.receiptTitle {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: var(--fs-sm);
+  font-weight: 640;
+  line-height: 1.3;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.receiptMeta {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  line-height: 1.35;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tier-c) 30%, var(--border)), var(--shadow-1);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--tier-c) 55%, var(--border)),
+      0 0 0 5px color-mix(in srgb, var(--tier-c) 12%, transparent),
+      var(--shadow-1);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

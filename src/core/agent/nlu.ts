@@ -1300,12 +1300,19 @@ const READ_TWIN: Partial<Record<Intent, Intent>> = {
 }
 const WH_QUESTION_RE = /^(?:how|what|whats|when|why|where|which|who|is|are|does|did|has|have)\b|^(?:多少|什么时候|怎么|为什么|哪)|\b(?:berapa|kapan|gimana|bagaimana)\b/
 
+/** Intents that move money or change a subscription — the classifier alone may not pick them without a verb. */
+export const VERB_GATED_INTENTS: readonly Intent[] = ['save_to_goal', 'withdraw_goal', 'pay_bill', 'cancel_sub', 'dispute']
+/** An explicit action verb (EN / ZH / ID). "Youku", "Rent", "Chengdu" or "explain my bill" have none. */
+export const ACTION_VERB_RE = /\b(?:pay|settle|cancel|unsubscribe|stop|end|drop|dispute|refund|chargeback|contest|report|move|transfer|send|save|stash|put|add|deposit|top ?up|withdraw|take|pull|get|feed|park|kill|quit|terminate|rid|schedule|bayar|batalkan|tabung|simpan|ambil|tarik)\b|付|交|缴|取消|退订|存|转|取/i
+
 /** Classifier result adjusted by context the bag-of-words model cannot see. */
 function adjustClassified(intent: Intent, p: Parsed): Intent {
   if (intent === 'breakdown' && !p.category && matchEntity(p.m.merchants, p.m.q, RECURRING_CONCEPTS)) return 'search'
   if (MONEY_INTENTS.includes(intent) && TRANSFER_VERB_RE.test(p.norm) && hasExternalSignal(p)) return 'external_transfer'
   const twin = READ_TWIN[intent]
   if (twin && WH_QUESTION_RE.test(p.norm)) return twin
+  // a bare name ("Youku", "Rent", "Chengdu") or "explain my electricity bill" is about the thing, not an order
+  if (twin && VERB_GATED_INTENTS.includes(intent) && !ACTION_VERB_RE.test(p.norm)) return twin
   return intent
 }
 

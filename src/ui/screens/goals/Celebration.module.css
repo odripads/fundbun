@@ -1,0 +1,139 @@
+.stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 200px;
+  height: 160px;
+  margin: 0 auto;
+}
+
+.halo {
+  position: absolute;
+  inset: 8% 14%;
+  border-radius: 50%;
+  background:
+    repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--accent) 22%, transparent) 0deg 8deg, transparent 8deg 22deg);
+  -webkit-mask-image: radial-gradient(closest-side, var(--text) 40%, transparent 100%);
+  mask-image: radial-gradient(closest-side, var(--text) 40%, transparent 100%);
+  animation: spin 24s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.dream {
+  position: relative;
+  z-index: 1;
+  animation: pop 700ms var(--ease-spring) both;
+}
+
+.stage .dream img {
+  background: transparent;
+  box-shadow: none;
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0.6) rotate(-6deg);
+    opacity: 0;
+  }
+
+  60% {
+    transform: scale(1.08) rotate(2deg);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(1) rotate(0);
+  }
+}
+
+.bun {
+  position: absolute;
+  right: 6px;
+  bottom: -4px;
+  z-index: 2;
+  animation: hop 2.4s var(--ease-out) 600ms infinite;
+}
+
+@keyframes hop {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+  }
+
+  30% {
+    transform: translateY(-8px);
+  }
+}
+
+.burst {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 0;
+}
+
+.coin,
+.puff {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 50%;
+  opacity: 0;
+  animation: fly 1100ms var(--ease-out) var(--delay, 0ms) both;
+}
+
+.coin {
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  background: radial-gradient(circle at 35% 35%, color-mix(in srgb, var(--accent) 60%, var(--c-cream-50)), var(--accent-strong));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-strong) 50%, transparent);
+}
+
+.puff {
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--bun) 90%, var(--c-cream-50)), transparent);
+  filter: blur(1px);
+}
+
+@keyframes fly {
+  0% {
+    opacity: 0;
+    transform: rotate(var(--a)) translateX(0) scale(0.4);
+  }
+
+  25% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: rotate(var(--a)) translateX(var(--d)) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .halo,
+  .bun,
+  .dream {
+    animation: none;
+  }
+
+  .coin,
+  .puff {
+    display: none;
+  }
+}
+
+:global(html[data-motion='reduce']) .coin,
+:global(html[data-motion='reduce']) .puff {
+  display: none;
+}

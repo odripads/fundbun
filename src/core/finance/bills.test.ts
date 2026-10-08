@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { monthsBack } from '../dates'
-import type { FinanceContext } from '../types'
+import type { FinanceContext, Transaction } from '../types'
 import { makeBill, makeCtx, MEI_DREAMS, meiLike, monthly, spend, yuan } from './__fixtures__'
 import { analyzeBills } from './bills'
 import { detectRecurring } from './recurring'
@@ -105,6 +105,68 @@ describe('analyzeBills — duplicates', () => {
     expect(kinds(makeCtx(base))).toContain('duplicate_charge')
     expect(kinds(makeCtx({ ...base, disputes: [{ id: 'd1', txnId: b.id, reason: 'dup', openedAt: TODAY, status: 'open', openedBy: 'user' }] }))).not.toContain('duplicate_charge')
     expect(kinds(makeCtx({ ...base, txns: [...base.txns.slice(0, -1), { ...b, flags: ['reversed'] }] }))).not.toContain('duplicate_charge')
+  })
+
+  it('two Luckin ¥13.90 coffees minutes apart are two real purchases', () => {
+    const ctx = makeCtx({
+      today: TODAY,
+      txns: [
+        spend('2026-10-20', 'Luckin Coffee', 'coffee_tea', 13.9, { time: '09:01', channel: 'wechat_pay' }),
+        spend('2026-10-20', 'Luckin Coffee', 'coffee_tea', 13.9, { time: '09:03', channel: 'wechat_pay' }),
+      ],
+    })
+    expect(kinds(ctx)).toEqual([])
+  })
+
+  it('a weekly delivery habit at the same price twice in a week is not a duplicate', () => {
+    const weeks = ['2026-09-22', '2026-09-29', '2026-10-06', '2026-10-13']
+    const txns = [
+      ...weeks.map((d) => spend(d, 'Meituan', 'delivery', 45, { time: '19:00', channel: 'alipay' })),
+      spend('2026-10-15', 'Meituan', 'delivery', 45, { time: '20:30', channel: 'alipay' }),
+    ]
+    expect(detectRecurring(txns, TODAY, []).some((s) => s.merchant === 'Meituan')).toBe(true)
+    expect(kinds(makeCtx({ today: TODAY, txns }))).not.toContain('duplicate_charge')
+  })
+
+  it('a weekly coffee / metro habit is not a "series" duplicate when the same price repeats within the week', () => {
+    const weeks = ['2026-09-22', '2026-09-29', '2026-10-06', '2026-10-13']
+    const txns = [
+      ...weeks.map((d) => spend(d, 'Luckin Coffee', 'coffee_tea', 13.9, { time: '09:00' })),
+      spend('2026-10-15', 'Luckin Coffee', 'coffee_tea', 13.9, { time: '15:00' }),
+      ...weeks.map((d) => spend(d, 'Shenzhen Metro', 'transport', 7, { time: '08:30' })),
+      spend('2026-10-14', 'Shenzhen Metro', 'transport', 7, { time: '18:30' }),
+    ]
+    const ctx = makeCtx({ today: TODAY, txns })
+    expect(detectRecurring(txns, TODAY, []).length).toBeGreaterThan(0)
+    expect(kinds(ctx)).not.toContain('duplicate_charge')
+  })
+
+  it('identical online/card charges within 10 minutes are flagged, also across midnight', () => {
+    const ctx = makeCtx({
+      today: TODAY,
+      txns: [
+        spend('2026-10-20', 'Taobao', 'shopping', 89, { time: '23:58', channel: 'alipay' }),
+        spend('2026-10-21', 'Taobao', 'shopping', 89, { time: '00:03', channel: 'alipay' }),
+      ],
+    })
+    expect(analyze(ctx)).toMatchObject([{ kind: 'duplicate_charge', severity: 'warn', evidence: { rule: 'instant' } }])
+  })
+
+  it('not flagged: 11+ minutes apart, cash, or small (< ¥20) purchases', () => {
+    const pair = (amount: number, t1: string, t2: string, extra: Partial<Transaction> = {}) => [
+      spend('2026-10-20', 'Taobao', 'shopping', amount, { time: t1, ...extra }),
+      spend('2026-10-20', 'Taobao', 'shopping', amount, { time: t2, ...extra }),
+    ]
+    expect(kinds(makeCtx({ today: TODAY, txns: pair(89, '12:00', '12:11') }))).toEqual([])
+    expect(kinds(makeCtx({ today: TODAY, txns: pair(89, '12:00', '12:02', { channel: 'cash' }) }))).toEqual([])
+    expect(kinds(makeCtx({ today: TODAY, txns: pair(19.9, '12:00', '12:02', { channel: 'card' }) }))).toEqual([])
+    expect(kinds(makeCtx({ today: TODAY, txns: pair(20, '12:00', '12:02', { channel: 'card' }) }))).toEqual(['duplicate_charge'])
+  })
+
+  it('a subscription charged twice in one billing period is an alert even when small', () => {
+    const txns = [...monthly('NetEase Cloud Music', 'subscriptions', 15, 9, MONTHS.slice(0, 3)), spend('2026-10-09', 'NetEase Cloud Music', 'subscriptions', 15), spend('2026-10-15', 'NetEase Cloud Music', 'subscriptions', 15)]
+    const f = analyze(makeCtx({ today: TODAY, txns })).find((x) => x.kind === 'duplicate_charge')
+    expect(f).toMatchObject({ severity: 'alert', evidence: { rule: 'series', daysApart: 6 } })
   })
 
   it('ignores old duplicates (> 60 days)', () => {

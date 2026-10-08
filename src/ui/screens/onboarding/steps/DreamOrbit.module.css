@@ -1,0 +1,90 @@
+.stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: var(--stage-h, 286px);
+}
+
+.halo {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: var(--halo, 250px);
+  height: var(--halo, 250px);
+  border-radius: 50%;
+  background:
+    radial-gradient(closest-side, color-mix(in srgb, var(--accent) 30%, transparent), transparent 72%),
+    radial-gradient(closest-side, color-mix(in srgb, var(--bun) 60%, transparent), transparent);
+  transform: translate(-50%, -50%);
+  animation: halo 6s ease-in-out infinite;
+}
+
+.ring {
+  position: absolute;
+  inset: 0;
+  animation: spin 90s linear infinite;
+}
+
+.orbiter {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: rotate(var(--angle)) translateX(var(--orbit-r, 118px)) rotate(calc(-1 * var(--angle)));
+}
+
+/* counter-spin keeps each picture upright while the ring turns; the inner drift bobs it gently */
+.drift {
+  display: block;
+  translate: -50% -50%;
+  animation:
+    spin 90s linear infinite reverse,
+    pop-in 700ms var(--ease-spring) calc(200ms + var(--i) * 90ms) both;
+}
+
+.drift > * {
+  animation: drift var(--d, 6s) ease-in-out var(--delay, 0s) infinite;
+  filter: drop-shadow(0 6px 10px color-mix(in srgb, var(--c-soy-900) 14%, transparent));
+}
+
+.bun {
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 14px 22px color-mix(in srgb, var(--c-bamboo-600) 28%, transparent));
+  animation: pop-in 800ms var(--ease-spring) 80ms both;
+}
+
+@keyframes spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@keyframes drift {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-3deg);
+  }
+
+  50% {
+    transform: translateY(-9px) rotate(3deg);
+  }
+}
+
+@keyframes halo {
+  0%,
+  100% {
+    opacity: 0.75;
+    scale: 0.94;
+  }
+
+  50% {
+    opacity: 1;
+    scale: 1.05;
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    scale: 0.6;
+  }
+}

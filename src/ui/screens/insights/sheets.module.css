@@ -1,0 +1,176 @@
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--border);
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.stack {
+  display: grid;
+  gap: var(--s-5);
+}
+
+.figureBlock {
+  display: grid;
+  gap: var(--s-3);
+}
+
+.figure {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s-2);
+}
+
+.figureNote {
+  color: var(--text-2);
+  font-size: var(--fs-md);
+}
+
+.figureNote strong {
+  color: var(--text);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.compare {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.overText {
+  color: var(--over);
+  font-weight: 700;
+}
+
+.limitForm {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--s-2);
+  padding: var(--s-4);
+  border-radius: var(--r-lg);
+  background: var(--bg-sunken);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.limitField {
+  min-width: 0;
+}
+
+/* line the button up with the input box (the label sits above it) */
+.limitSave {
+  margin-top: 26px;
+}
+
+.subhead {
+  margin-bottom: var(--s-2);
+  font-size: var(--fs-lg);
+}
+
+.seeAll {
+  margin-top: var(--s-2);
+}
+
+/* ───────── recategorize ───────── */
+
+.picker {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 0;
+  min-height: 52px;
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-2) var(--ease-out),
+    box-shadow var(--dur-2) var(--ease-out),
+    transform var(--dur-1) var(--ease-out);
+}
+
+.option:hover {
+  background: color-mix(in srgb, var(--surface) 90%, var(--accent));
+}
+
+.option:active {
+  transform: scale(0.98);
+}
+
+.option:has(.radio:focus-visible) {
+  box-shadow: inset 0 0 0 1px var(--border-strong), var(--ring);
+}
+
+.optionOn {
+  background: color-mix(in srgb, var(--surface) 80%, var(--accent));
+  box-shadow: inset 0 0 0 2px var(--accent-strong);
+}
+
+.radio {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.optionEmoji {
+  flex: none;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.optionLabel {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-sm);
+  font-weight: 620;
+  line-height: 1.2;
+}
+
+.nowTag {
+  flex: none;
+  padding: 1px 6px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.optionCheck {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--accent-strong);
+  stroke-width: 3;
+}
+
+.recatFoot {
+  display: grid;
+  gap: var(--s-2);
+  width: 100%;
+}
+
+.learn {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  text-align: center;
+}

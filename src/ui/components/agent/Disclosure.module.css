@@ -1,0 +1,108 @@
+.root {
+  min-width: 0;
+}
+
+.toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 620;
+  text-align: start;
+  transition: color var(--dur-2) var(--ease-out);
+}
+
+/* keep a 44px hit area around the compact toggle */
+.toggle::after {
+  content: '';
+  position: absolute;
+  inset: -6px -8px;
+}
+
+.toggle:hover {
+  color: var(--text);
+}
+
+.toggle:focus-visible {
+  outline: none;
+  border-radius: 8px;
+  box-shadow: var(--ring);
+}
+
+.icon {
+  display: inline-flex;
+  flex: none;
+  color: var(--accent-strong);
+}
+
+.icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.summary {
+  min-width: 0;
+}
+
+.meta {
+  color: var(--text-3);
+  font-weight: 520;
+}
+
+.chevron {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--text-3);
+  transition: transform var(--dur-2) var(--ease-out);
+}
+
+.open .chevron {
+  transform: rotate(180deg);
+}
+
+.panel {
+  margin-top: var(--s-2);
+  animation: reveal var(--dur-3) var(--ease-out);
+}
+
+/* ───────── bar: a full-width row ───────── */
+
+.bar .toggle {
+  display: flex;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--s-3);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+}
+
+.bar .toggle::after {
+  display: none;
+}
+
+.bar .summary {
+  flex: 1;
+}
+
+.bar .toggle:hover {
+  background: color-mix(in srgb, var(--text) 7%, transparent);
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

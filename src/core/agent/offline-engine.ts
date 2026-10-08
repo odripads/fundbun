@@ -15,7 +15,7 @@ import {
 import { TOOL_INTENT, actionFacts, readFacts, type Facts } from './facts'
 import type { AgentHost } from './host'
 import { evaluatePolicy } from '../security/policy'
-import { understand, type Intent, type NluContext, type NluResult } from './nlu'
+import { ACTION_VERB_RE, VERB_GATED_INTENTS, understand, type Intent, type NluContext, type NluResult } from './nlu'
 import { cancelActivePlans, planIntent, planReply, runRecoveryPlan, type IntentPlan, type Slots } from './planner'
 import { TOOL_SPECS, isToolName } from './specs'
 import { findBill, firstName, nluContextOf, summarizeArgs } from './support'
@@ -33,8 +33,8 @@ export interface Reply {
   suggestions?: string[]
 }
 
-const ACTION_INTENTS: Intent[] = ['save_to_goal', 'withdraw_goal', 'pay_bill', 'cancel_sub', 'dispute']
-const ACTION_VERB = /\b(?:pay|settle|cancel|unsubscribe|stop|end|drop|dispute|refund|chargeback|contest|report|move|transfer|send|save|stash|put|add|deposit|top ?up|withdraw|take|pull|get|feed|park|kill|quit|terminate|rid|schedule|bayar|batalkan|tabung|simpan|ambil|tarik)\b|付|交|缴|取消|退订|存|转|取/i
+const ACTION_INTENTS = VERB_GATED_INTENTS
+const ACTION_VERB = ACTION_VERB_RE
 const READ_TWIN: Partial<Record<Intent, Intent>> = { save_to_goal: 'goals', withdraw_goal: 'goals', pay_bill: 'bills', cancel_sub: 'subscriptions', dispute: 'bills' }
 
 export function toneOf(state: AppState): Tone {

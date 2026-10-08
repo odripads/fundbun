@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createFundBunApp, createTestApp, memoryStorage, STORAGE_KEY } from '../src/core/app'
-import { TEST_NOW, WARMING_UP } from '../src/core/controller/constants'
+import { CONSENT_VERSION, createFundBunApp, createTestApp, memoryStorage, STORAGE_KEY } from '../src/core/app'
+import { AUDIT_HEAD_SUFFIX, TEST_NOW, WARMING_UP } from '../src/core/controller/constants'
+import { verifyAudit } from '../src/core/security/audit'
 import { localISODate } from '../src/core/controller/util'
 import type { AppState, AuditType } from '../src/core/types'
 import { deferred, echoReply, fakeEngine } from './helpers/fake-engine'
@@ -41,14 +42,44 @@ describe('demo personas', () => {
     expect(derived.llm).toMatchObject({ checked: true, available: false })
   })
 
+  it('mei: tripwires are primed at load — two unseen alerts on Home, nothing re-fires on the first purchase', () => {
+    const { app } = demoKit('mei')
+    const { state, derived } = app.getSnapshot()
+    expect(state.tripwireEvents.map((e) => [e.tripwireId, e.seen])).toEqual([
+      ['tw_month_100', true], ['tw_delivery_100', false], ['tw_pace_110', false],
+    ])
+    expect(derived.unseenEvents).toHaveLength(2)
+    for (const id of ['tw_month_80', 'tw_month_100', 'tw_delivery_100', 'tw_pace_110']) {
+      expect(state.tripwires.find((t) => t.id === id)?.lastFiredKey).toBe('2026-10')
+    }
+    expect(state.audit.find((e) => e.type === 'onboarding')?.data).toMatchObject({ tripwireEvents: 3 })
+    const { events } = app.simulatePurchase({ merchant: 'Heytea', amount: 2_500 })
+    expect(events).toEqual([])
+    expect(app.getSnapshot().state.tripwireEvents).toHaveLength(3)
+  })
+
+  it('demo personas and onboarding record the same consent version', () => {
+    expect(CONSENT_VERSION).toBe('consent-2026-10')
+    for (const id of ['mei', 'arif']) {
+      const { state } = demoKit(id).app.getSnapshot()
+      expect(state.profile?.consent.version).toBe(CONSENT_VERSION)
+      expect(state.audit.find((e) => e.type === 'consent')?.data).toMatchObject({ version: CONSENT_VERSION })
+    }
+  })
+
   it('mei: derived analyses are populated', () => {
-    const { derived } = demoKit('mei').app.getSnapshot()
+    const { app } = demoKit('mei')
+    const { derived } = app.getSnapshot()
     expect(derived.ctx?.profile.name).toBeTruthy()
     expect(derived.history).toHaveLength(6)
     expect(derived.recurring.length).toBeGreaterThanOrEqual(6)
     expect(derived.findings.length).toBeGreaterThan(0)
     expect(derived.insights.length).toBeGreaterThan(0)
     expect(derived.goals.some((g) => g.itemId === 'dream_birkin')).toBe(true)
+    expect(derived.mirrorHistory).toHaveLength(6)
+    expect(derived.mirrorHistory?.at(-1)).toMatchObject({ month: '2026-10', status: 'over' })
+    expect(derived.couldve?.totalOver).toBeGreaterThan(0)
+    expect(derived.couldve).toBe(app.getSnapshot().derived.couldve)
     const due = derived.upcomingBills.map((b) => b.dueDate)
     expect(due).toEqual([...due].sort())
     expect(derived.upcomingBills.every((b) => b.status !== 'paid')).toBe(true)
@@ -684,6 +715,91 @@ describe('audit log', () => {
     expect(v.ok).toBe(false)
     expect(v.brokenAt).toBe(victim.seq)
     expect(lastAudit(tampered.app.getSnapshot().state).data).toMatchObject({ auditIntact: false })
+  })
+})
+
+describe('audit head anchoring (truncation of the newest entries)', () => {
+  const HEAD_KEY = `${STORAGE_KEY}${AUDIT_HEAD_SUFFIX}`
+  const head = (k: ReturnType<typeof kit>) => JSON.parse(k.storage.getItem(HEAD_KEY) as string) as { hash: string; count: number; seq: number }
+
+  /** a demo with some history, saved */
+  function busyDemo() {
+    const k = demoKit()
+    for (let i = 0; i < 4; i++) k.app.addTripwire({ kind: 'daily_over', threshold: 30_000 + i })
+    k.app.contributeToGoal('dream_chengdu', 5_000)
+    k.app.setCategoryBudget('delivery', 60_000)
+    return k
+  }
+
+  it('every saved commit records the head hash + count under a separate key', () => {
+    const k = busyDemo()
+    const log = k.app.getSnapshot().state.audit
+    expect(head(k)).toEqual({ hash: log.at(-1)!.hash, count: log.length, seq: log.at(-1)!.seq })
+    k.app.freeze()
+    expect(head(k).count).toBe(log.length + 1)
+    expect(k.app.verifyAudit()).toEqual({ ok: true, count: log.length + 1 })
+  })
+
+  it('deleting the last 3 entries in storage → verifyAudit fails after reload (and keeps failing)', () => {
+    const k = busyDemo()
+    const raw = JSON.parse(k.storage.getItem(STORAGE_KEY) as string) as AppState
+    const removed = raw.audit.splice(-3)
+    k.storage.setItem(STORAGE_KEY, JSON.stringify(raw))
+    // the truncated chain on its own is still a perfectly valid hash chain…
+    expect(verifyAudit(raw.audit).ok).toBe(true)
+    const reloaded = kit({ storage: k.storage })
+    const v = reloaded.app.verifyAudit()
+    expect(v.ok).toBe(false)
+    expect(v.brokenAt).toBe(removed[0].seq)
+    expect(v.reason).toMatch(/newest entries/)
+    expect(lastAudit(reloaded.app.getSnapshot().state)).toMatchObject({ type: 'session_start', data: { auditIntact: false, brokenAt: removed[0].seq } })
+    // the anchor is not moved onto the truncated chain, so later activity can't launder it
+    reloaded.app.addTripwire({ kind: 'daily_over', threshold: 40_000 })
+    expect(head(reloaded).hash).toBe(removed.at(-1)!.hash)
+    expect(reloaded.app.verifyAudit().ok).toBe(false)
+    expect(kit({ storage: k.storage }).app.verifyAudit().ok).toBe(false)
+  })
+
+  it('an untouched reload stays intact; the anchor moves forward along the same chain', () => {
+    const k = busyDemo()
+    const reloaded = kit({ storage: k.storage })
+    expect(reloaded.app.verifyAudit().ok).toBe(true)
+    expect(lastAudit(reloaded.app.getSnapshot().state).data).toMatchObject({ auditIntact: true })
+    expect(head(reloaded).count).toBe(reloaded.app.getSnapshot().state.audit.length)
+  })
+
+  it('a deliberately fresh chain gets a fresh anchor: loadDemo and resetAll', () => {
+    const k = busyDemo()
+    const raw = JSON.parse(k.storage.getItem(STORAGE_KEY) as string) as AppState
+    raw.audit.splice(-3)
+    k.storage.setItem(STORAGE_KEY, JSON.stringify(raw))
+    const reloaded = kit({ storage: k.storage })
+    expect(reloaded.app.verifyAudit().ok).toBe(false)
+    reloaded.app.loadDemo('arif')
+    expect(reloaded.app.verifyAudit()).toMatchObject({ ok: true })
+    expect(head(reloaded).count).toBe(reloaded.app.getSnapshot().state.audit.length)
+    reloaded.app.resetAll()
+    expect(k.storage.getItem(HEAD_KEY)).toBeNull()
+  })
+
+  it('unreadable stored data resets the anchor along with the data', () => {
+    const k = busyDemo()
+    k.storage.setItem(STORAGE_KEY, '{not json')
+    const fresh = kit({ storage: k.storage })
+    expect(fresh.app.verifyAudit().ok).toBe(true)
+    expect(head(fresh).count).toBe(1)
+  })
+
+  it('vault: the anchor follows the encrypted saves and an intact unlock verifies', async () => {
+    const k = busyDemo()
+    expect(await k.app.enableVault(PIN)).toEqual({ ok: true })
+    await k.app.flush()
+    expect(head(k).count).toBe(k.app.getSnapshot().state.audit.length)
+    const second = kit({ storage: k.storage })
+    expect(second.app.verifyAudit().ok).toBe(true)
+    expect(await second.app.unlock(PIN)).toEqual({ ok: true })
+    expect(second.app.verifyAudit().ok).toBe(true)
+    expect(lastAudit(second.app.getSnapshot().state).data).toMatchObject({ vault: true, auditIntact: true })
   })
 })
 

@@ -1,5 +1,7 @@
 import { CATEGORIES } from '../categories'
+import { CONSENT_VERSION } from '../consent'
 import { monthLabel, monthsBack, shiftMonth, ym } from '../dates'
+import { evaluateTripwires } from '../finance/tripwires'
 import { fmt } from '../money'
 import type {
   BankState,
@@ -15,6 +17,7 @@ import type {
   Profile,
   Transaction,
   Tripwire,
+  TripwireEvent,
   YearMonth,
 } from '../types'
 import { potId } from './drafts'
@@ -54,7 +57,10 @@ export const DEFAULT_SEED = 20261020
 export const SANDBOX_TODAY: ISODate = '2026-10-22'
 export const DEMO_PIN = '2580'
 export const PERSONA_ONBOARDED_AT: ISODateTime = '2026-04-01T09:00:00.000Z'
-export const PERSONA_CONSENT_VERSION = '1.0'
+/** Personas record the same consent text version as onboarding (CONSENT_VERSION). */
+export const PERSONA_CONSENT_VERSION = CONSENT_VERSION
+/** Tripwire alerts left unseen when a persona loads, so Home has something to show; older ones start seen. */
+export const DEMO_UNSEEN_EVENTS = 2
 export const WORK_HOURS_PER_MONTH = 174
 
 /**
@@ -83,7 +89,7 @@ function buildProfile(script: PersonaScript): Profile {
       llmProcessing: true,
       notifications: true,
       grantedAt: PERSONA_ONBOARDED_AT,
-      version: PERSONA_CONSENT_VERSION,
+      version: CONSENT_VERSION,
     },
     onboardedAt: PERSONA_ONBOARDED_AT,
     personaId: d.id,
@@ -233,4 +239,20 @@ export function loadPersona(id: string, today: ISODate, seed = DEFAULT_SEED): Pe
     tripwires: buildTripwires(script),
     mandate: { ...script.mandate },
   }
+}
+
+/**
+ * Evaluate the persona's tripwires against its own history, as if they had been watching all along: the
+ * alerts that are already true become events (the last `unseen` stay unseen, the rest are marked seen) and
+ * every tripwire gets its lastFiredKey — so the first purchase after loading doesn't replay month-level alerts.
+ */
+export function primeTripwires(
+  bundle: Pick<PersonaBundle, 'profile' | 'bank' | 'dreams' | 'budget' | 'tripwires'>,
+  now: ISODateTime,
+  unseen = DEMO_UNSEEN_EVENTS,
+): { tripwires: Tripwire[]; events: TripwireEvent[] } {
+  const { profile, bank, dreams, budget, tripwires } = bundle
+  const out = evaluateTripwires({ profile, bank, dreams, budget, tripwires }, { now })
+  const keepFrom = out.events.length - Math.max(0, unseen)
+  return { tripwires: out.tripwires, events: out.events.map((e, i) => ({ ...e, seen: i < keepFrom })) }
 }

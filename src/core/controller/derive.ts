@@ -4,8 +4,10 @@ import {
   allGoalProgress,
   analyzeBills,
   computeMirror,
+  couldveCollection,
   detectRecurring,
   generateInsights,
+  mirrorHistory,
   monthHistory,
   summarizeMonth,
 } from '../finance'
@@ -41,7 +43,14 @@ export interface FinanceDerived {
   readonly insights: Insight[]
   readonly goals: GoalProgress[]
   readonly upcomingBills: Bill[]
+  /** "Could've collection" over the last HISTORY_MONTHS months */
+  readonly couldve: NonNullable<DerivedState['couldve']> | undefined
+  /** per-month mirror verdicts for the last HISTORY_MONTHS months, oldest first */
+  readonly mirrorHistory: NonNullable<DerivedState['mirrorHistory']> | undefined
 }
+
+/** months covered by history, couldve and mirrorHistory */
+const HISTORY_MONTHS = 6
 
 const cache = new WeakMap<AppState, FinanceDerived>()
 
@@ -66,7 +75,7 @@ function lazyFinance(state: AppState): FinanceDerived {
     ctx,
     get summary() { return once<MonthSummary | null>('summarizeMonth', null, (c) => summarizeMonth(c)) },
     get mirror() { return once<MirrorState | null>('computeMirror', null, (c) => computeMirror(c)) },
-    get history() { return once<MonthHistoryPoint[]>('monthHistory', [], (c) => monthHistory(c, 6)) },
+    get history() { return once<MonthHistoryPoint[]>('monthHistory', [], (c) => monthHistory(c, HISTORY_MONTHS)) },
     get recurring() {
       return once<RecurringSeries[]>('detectRecurring', [], (c) =>
         detectRecurring(c.bank.transactions, c.bank.today, c.bank.cancelledMerchants))
@@ -75,6 +84,8 @@ function lazyFinance(state: AppState): FinanceDerived {
     get insights() { return once<Insight[]>('generateInsights', [], (c) => generateInsights(c)) },
     get goals() { return once<GoalProgress[]>('allGoalProgress', [], (c) => allGoalProgress(c)) },
     get upcomingBills() { return once<Bill[]>('upcomingBills', [], (c) => upcomingBills(c.bank.bills)) },
+    get couldve() { return once<FinanceDerived['couldve']>('couldveCollection', undefined, (c) => couldveCollection(c, HISTORY_MONTHS)) },
+    get mirrorHistory() { return once<FinanceDerived['mirrorHistory']>('mirrorHistory', undefined, (c) => mirrorHistory(c, HISTORY_MONTHS)) },
   }
   return derived
 }
@@ -102,6 +113,8 @@ export function createDerived(state: AppState, rt: RuntimeFlags): DerivedState {
     get insights() { return fin.insights },
     get goals() { return fin.goals },
     get upcomingBills() { return fin.upcomingBills },
+    get couldve() { return fin.couldve },
+    get mirrorHistory() { return fin.mirrorHistory },
     unseenEvents: state.tripwireEvents.filter((e) => !e.seen),
     awaiting: state.pending.filter((p) => p.status === 'pending'),
     llm: rt.llm,

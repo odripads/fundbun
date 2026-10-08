@@ -1,0 +1,534 @@
+/* ───────────────────────── 6-month trend ───────────────────────── */
+
+.trend {
+  --xh: 28px;
+  --axis-w: 44px;
+  margin: 0;
+  min-width: 0;
+}
+
+.plot {
+  display: grid;
+  grid-template-columns: var(--axis-w) minmax(0, 1fr);
+  height: 196px;
+  margin-top: var(--s-5);
+}
+
+.yAxis {
+  position: relative;
+  height: calc(100% - var(--xh));
+}
+
+.yTick {
+  position: absolute;
+  right: 8px;
+  transform: translateY(50%);
+  color: var(--text-3);
+  font-size: 10.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.area {
+  position: relative;
+  min-width: 0;
+}
+
+.grid,
+.targetLine {
+  position: absolute;
+  right: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.grid {
+  height: 1px;
+  background: var(--chart-grid);
+}
+
+.targetLine {
+  z-index: 2;
+  height: 0;
+  border-top: 2px dashed color-mix(in srgb, var(--text) 70%, transparent);
+}
+
+
+.cols {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.col {
+  min-width: 0;
+}
+
+.colButton {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-md);
+  background: transparent;
+  color: inherit;
+  transition: background-color var(--dur-2) var(--ease-out);
+}
+
+.colButton:hover {
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+}
+
+.colButton:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+.selected {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.selected:hover {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.barZone {
+  position: relative;
+  flex: 1;
+}
+
+.bar,
+.ghost {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: min(60%, 30px);
+  translate: -50% 0;
+  border-radius: 7px 7px 3px 3px;
+}
+
+.bar {
+  z-index: 1;
+  background: linear-gradient(180deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 75%, var(--accent-strong)) 100%);
+  transform-origin: bottom;
+  animation: barUp 700ms var(--ease-spring) both;
+}
+
+.barOver {
+  overflow: hidden;
+  background: repeating-linear-gradient(-45deg, var(--over) 0 5px, color-mix(in srgb, var(--over) 72%, var(--surface)) 5px 8px);
+}
+
+.barBase {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  border-top: 2px solid var(--surface);
+  background: linear-gradient(180deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 75%, var(--accent-strong)) 100%);
+}
+
+.barCurrent:not(.barOver) {
+  background: linear-gradient(180deg, var(--accent) 0%, var(--accent-strong) 100%);
+}
+
+.ghost {
+  background: repeating-linear-gradient(0deg, color-mix(in srgb, var(--over) 30%, transparent) 0 4px, transparent 4px 7px);
+  background-size: 100% 14px;
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--over) 55%, transparent);
+  animation: rise-in 700ms var(--ease-out) 300ms both, climb 2.4s linear infinite;
+}
+
+@keyframes barUp {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes climb {
+  to {
+    background-position: 0 -14px;
+  }
+}
+
+.ghostUnder {
+  background: repeating-linear-gradient(0deg, color-mix(in srgb, var(--under) 30%, transparent) 0 4px, transparent 4px 7px);
+  background-size: 100% 14px;
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--under) 55%, transparent);
+}
+
+.targetMark {
+  position: absolute;
+  z-index: 2;
+  left: 12%;
+  right: 12%;
+  height: 0;
+  border-top: 2px dashed var(--text);
+}
+
+.value {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  translate: -50% 0;
+  padding: 2px 3px;
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 10.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.selected .value {
+  background: color-mix(in srgb, var(--surface) 88%, var(--accent));
+}
+
+.valueOver {
+  color: var(--over);
+}
+
+.value svg {
+  width: 10px;
+  height: 10px;
+  stroke-width: 2.6;
+}
+
+.xLabel {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: var(--xh);
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  font-weight: 620;
+}
+
+.selected .xLabel {
+  color: var(--text);
+  font-weight: 800;
+}
+
+.nowDot {
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  margin-left: -2.5px;
+  border-radius: 50%;
+  background: var(--accent-strong);
+  animation: pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 50%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 0%, transparent);
+  }
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-1) var(--s-4);
+  margin: var(--s-3) 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.swatchIn {
+  background: var(--accent);
+}
+
+.swatchOver {
+  background: repeating-linear-gradient(-45deg, var(--over) 0 3px, color-mix(in srgb, var(--over) 60%, var(--surface)) 3px 5px);
+}
+
+.swatchGhost {
+  background: repeating-linear-gradient(0deg, color-mix(in srgb, var(--over) 35%, transparent) 0 2px, transparent 2px 4px);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--over) 55%, transparent);
+}
+
+.swatchGhostUnder {
+  background: repeating-linear-gradient(0deg, color-mix(in srgb, var(--under) 35%, transparent) 0 2px, transparent 2px 4px);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--under) 55%, transparent);
+}
+
+.swatchLine {
+  display: inline-block;
+  width: 16px;
+  border-top: 2px dashed var(--text);
+}
+
+.caption {
+  margin-top: var(--s-3);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+
+/* ───────────────────────── heatmap ───────────────────────── */
+
+.heat {
+  margin: 0;
+  min-width: 0;
+}
+
+.heatGrid {
+  --label-w: 30px;
+  --gap: 2px;
+  --cw: calc((100% - var(--label-w) - 24 * var(--gap)) / 24);
+  position: relative;
+  display: grid;
+  gap: var(--gap);
+  padding-top: 20px;
+}
+
+.heatRow,
+.hourAxis {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: var(--label-w) repeat(24, minmax(0, 1fr));
+  gap: var(--gap);
+}
+
+.dayLabel {
+  align-self: center;
+  color: var(--text-3);
+  font-size: 10.5px;
+  font-weight: 650;
+  line-height: 1;
+}
+
+.cell {
+  height: 15px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+}
+
+.cellOn {
+  background: color-mix(in srgb, var(--accent) var(--l, 50%), color-mix(in srgb, var(--text) 5%, transparent));
+}
+
+.cellLate.cellOn {
+  background: color-mix(in srgb, var(--over) var(--l, 50%), color-mix(in srgb, var(--text) 5%, transparent));
+}
+
+.cellDelivery {
+  position: relative;
+}
+
+.cellDelivery::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  margin: -2.5px 0 0 -2.5px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--over) 60%, transparent);
+}
+
+.lateBand {
+  position: absolute;
+  top: 0;
+  bottom: 14px;
+  left: calc(var(--label-w) + var(--gap) + var(--band-start) * (var(--cw) + var(--gap)) - 3px);
+  width: calc(var(--band-span) * (var(--cw) + var(--gap)) + 4px);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--over) 8%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--over) 22%, transparent);
+  overflow: hidden;
+}
+
+/* a slow glint across the band: alive, never busy */
+.lateBand::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--over) 12%, transparent) 50%, transparent 100%);
+  background-size: 100% 200%;
+  animation: glint 7s ease-in-out infinite;
+}
+
+@keyframes glint {
+  0%,
+  100% {
+    background-position: 0 100%;
+  }
+  50% {
+    background-position: 0 0%;
+  }
+}
+
+.lateLabel {
+  position: absolute;
+  top: 3px;
+  right: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: var(--over);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.lateLabel svg {
+  width: 10px;
+  height: 10px;
+  stroke-width: 2.6;
+}
+
+.hourAxis {
+  margin-top: 2px;
+}
+
+.hourTick {
+  overflow: visible;
+  color: var(--text-3);
+  font-size: 10px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.heatFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--s-2);
+  margin-top: var(--s-2);
+}
+
+.heatFoot > button {
+  margin: 0 calc(-1 * var(--s-3)) 0 auto;
+}
+
+.heatKey {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+
+.keyCell {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.keySep {
+  width: 1px;
+  height: 12px;
+  margin: 0 6px;
+  background: var(--border-strong);
+}
+
+.heatTableWrap {
+  margin-top: var(--s-2);
+  overflow-x: auto;
+}
+
+.heatTableWrap[hidden] {
+  display: none;
+}
+
+.heatTable {
+  width: 100%;
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.heatTable th,
+.heatTable td {
+  padding: 6px 4px;
+  border-top: 1px solid var(--border);
+  text-align: end;
+  white-space: nowrap;
+}
+
+.heatTable thead th {
+  border-top: 0;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 650;
+  vertical-align: bottom;
+}
+
+.heatTable th:first-child {
+  text-align: start;
+}
+
+.heatTable tbody th {
+  color: var(--text-2);
+  font-weight: 600;
+}
+
+.bandRange {
+  display: block;
+  font-weight: 500;
+}
+
+.lateValue {
+  color: var(--over);
+  font-weight: 700;
+}

@@ -105,6 +105,12 @@ function underBudget(env: Env): Scored[] {
 
 // ───────────────────────────── category changes ─────────────────────────────
 
+/** Last month's spend in the category (the baseline a suggested cap tightens from), else `fallback`. */
+function lastMonthOr(s: MonthSummary, category: CategoryId, fallback: Minor): Minor {
+  const prev = s.byCategory.find((r) => r.category === category)?.prevMonth ?? 0
+  return prev > 0 ? prev : fallback
+}
+
 function categoryChanges(env: Env): Scored[] {
   const { s, f, ctx, month } = env
   const prevMonth = shiftMonth(month, -1)
@@ -137,7 +143,7 @@ function categoryChanges(env: Env): Scored[] {
         severity: 'warn',
         why: `Flagged because ${label.toLowerCase()} changed by at least 20% and ${f(env.minor(CHANGE_MIN_MAJOR))} compared with ${prevLabel}.`,
         dream,
-        suggestedAction: CATEGORIES[c.category].kind === 'want' ? capCategoryAction(ctx, c.category, Math.max(c.before, c.now)) : undefined,
+        suggestedAction: CATEGORIES[c.category].kind === 'want' ? capCategoryAction(ctx, c.category, lastMonthOr(s, c.category, c.before || c.now)) : undefined,
         evidence: evidence(c),
       })
     }),
@@ -200,7 +206,7 @@ function lateNight(env: Env): Scored[] {
   const { category, share } = dominantCategory(late)
   const label = CATEGORIES[category].label
   const dream = dreamFor(amount, env)
-  const usual = Math.max(s.byCategory.find((r) => r.category === category)?.prevMonth ?? 0, s.byCategory.find((r) => r.category === category)?.spent ?? 0)
+  const usual = lastMonthOr(s, category, s.byCategory.find((r) => r.category === category)?.spent ?? 0)
   return [make(env, 'late_night', '', 70, {
     title: byTone(env.tone, { gentle: `Late-night spending: ${f(amount)}`, cheeky: `The midnight snack tax: ${f(amount)}`, numbers: `${late.length} late-night purchases: ${f(amount)}` }),
     body: `${plural(late.length, 'purchase')} between 10pm and 4am${share >= 0.5 ? `, mostly ${label.toLowerCase()}` : ''}.${thats(dream)}`,

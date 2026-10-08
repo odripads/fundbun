@@ -1,0 +1,349 @@
+.card {
+  --sev: var(--accent);
+  --sev-soft: var(--accent-soft);
+  position: relative;
+  display: grid;
+  gap: var(--s-3);
+  padding: var(--s-4) var(--s-4) var(--s-3);
+  overflow: hidden;
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border), var(--shadow-1);
+  animation: rise var(--dur-3) var(--ease-out) both;
+}
+
+/* a severity spine on the leading edge: colour + the labelled badge, never colour alone */
+.card::before {
+  content: '';
+  position: absolute;
+  top: var(--s-4);
+  bottom: var(--s-4);
+  left: 0;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--sev);
+}
+
+.warn {
+  --sev: var(--over);
+  --sev-soft: var(--over-soft);
+}
+
+.positive {
+  --sev: var(--under);
+  --sev-soft: var(--under-soft);
+}
+
+.neutral {
+  --sev: var(--accent);
+  --sev-soft: var(--accent-soft);
+}
+
+.featured {
+  padding: var(--s-5) var(--s-5) var(--s-4);
+  background:
+    radial-gradient(110% 80% at 100% 0%, var(--sev-soft) 0%, transparent 60%),
+    var(--surface);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sev) 26%, var(--border)), var(--shadow-2);
+}
+
+.featured::before {
+  top: var(--s-5);
+  bottom: var(--s-5);
+}
+
+/* ───────── head row ───────── */
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px var(--s-2);
+  min-width: 0;
+}
+
+.sev {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 22px;
+  padding: 0 8px 0 6px;
+  border-radius: var(--r-pill);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.sevIcon {
+  display: inline-flex;
+}
+
+.sevIcon svg {
+  width: 13px;
+  height: 13px;
+  stroke-width: 2.4;
+}
+
+.sev-over {
+  background: var(--over-soft);
+  color: var(--over);
+}
+
+.sev-under {
+  background: var(--under-soft);
+  color: var(--under);
+}
+
+.sev-accent {
+  background: var(--accent-soft);
+  color: color-mix(in srgb, var(--accent-strong) 80%, var(--text));
+}
+
+.cat {
+  overflow: hidden;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 620;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ai {
+  margin-left: auto;
+}
+
+/* ───────── body ───────── */
+
+.main {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+}
+
+.text {
+  display: grid;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  font-size: var(--fs-lg);
+  font-weight: 620;
+  line-height: 1.22;
+  overflow-wrap: anywhere;
+}
+
+.featured .title {
+  font-size: var(--fs-xl);
+  line-height: 1.15;
+}
+
+.body {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+
+.featureArt {
+  flex: none;
+  margin: -4px -4px 0 0;
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(-5px) rotate(2deg);
+  }
+}
+
+/* ───────── dream equivalent ───────── */
+
+.dream {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: var(--s-2);
+  min-width: 0;
+  max-width: 100%;
+  min-height: 36px;
+  padding: 3px var(--s-3) 3px 3px;
+  border-radius: var(--r-pill);
+  background: var(--bg-sunken);
+  box-shadow: inset 0 0 0 1px var(--border);
+  font-size: var(--fs-sm);
+  font-weight: 620;
+}
+
+.featured .dream {
+  padding-left: var(--s-3);
+  background: color-mix(in srgb, var(--surface) 60%, var(--sev-soft));
+}
+
+.dreamPic {
+  flex: none;
+  border-radius: 50%;
+}
+
+.dreamText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dreamEq {
+  color: var(--text-3);
+  font-weight: 700;
+}
+
+/* ───────── action + footer ───────── */
+
+.cta {
+  justify-self: start;
+  max-width: 100%;
+}
+
+.done {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  justify-self: start;
+  max-width: 100%;
+  min-height: 36px;
+  padding: 0 var(--s-4) 0 var(--s-3);
+  border-radius: var(--r-pill);
+  background: var(--under-soft);
+  color: var(--text);
+  font-size: var(--fs-sm);
+  animation: pop var(--dur-3) var(--ease-spring) both;
+}
+
+.done strong {
+  color: var(--under);
+}
+
+.done svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--under);
+  stroke-width: 3;
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
+  margin: 0 calc(-1 * var(--s-3)) calc(-1 * var(--s-1));
+  padding-top: var(--s-1);
+  border-top: 1px dashed var(--border-strong);
+}
+
+.why,
+.ask {
+  color: var(--text-2);
+}
+
+.why svg {
+  transition: transform var(--dur-2) var(--ease-out);
+}
+
+.why[aria-expanded='true'] svg {
+  transform: rotate(180deg);
+}
+
+/* ───────── why panel ───────── */
+
+.whyPanel {
+  display: grid;
+  gap: var(--s-3);
+  padding: var(--s-3);
+  border-radius: var(--r-md);
+  background: var(--bg-sunken);
+  box-shadow: inset 0 0 0 1px var(--border);
+  animation: open var(--dur-2) var(--ease-out) both;
+}
+
+.whyPanel[hidden] {
+  display: none;
+}
+
+.whyText {
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+
+.evidence {
+  width: 100%;
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.evidence th,
+.evidence td {
+  padding: 6px 0;
+  border-top: 1px solid var(--border);
+  vertical-align: baseline;
+}
+
+.evidence tr:first-child th,
+.evidence tr:first-child td {
+  border-top: 0;
+}
+
+.evidence th {
+  color: var(--text-2);
+  font-weight: 560;
+  text-align: start;
+}
+
+.evidence td {
+  padding-left: var(--s-3);
+  font-weight: 700;
+  text-align: end;
+  white-space: nowrap;
+}
+
+.whyFoot {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes open {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

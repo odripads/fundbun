@@ -1,0 +1,157 @@
+.list {
+  display: grid;
+  gap: var(--s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  gap: var(--s-2);
+  padding: var(--s-1) var(--s-4) var(--s-2);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border), var(--shadow-1);
+  transition: box-shadow var(--dur-2) var(--ease-out);
+}
+
+.on {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 38%, transparent), var(--shadow-1);
+}
+
+.control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-2) 0 var(--s-1);
+  border-top: 1px dashed var(--border-strong);
+  animation: open var(--dur-3) var(--ease-out);
+}
+
+.controlLabel {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+@keyframes open {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.toneHint {
+  margin-top: calc(-1 * var(--s-1));
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+/* ───────── the Mirror preview ───────── */
+
+.preview {
+  --wash: var(--over-soft);
+  display: grid;
+  gap: var(--s-3);
+  margin: 0;
+  padding: var(--s-4);
+  overflow: hidden;
+  border-radius: var(--r-xl);
+  background:
+    radial-gradient(120% 90% at 0% 0%, var(--wash) 0%, transparent 60%),
+    radial-gradient(90% 80% at 100% 100%, var(--accent-soft) 0%, transparent 70%),
+    var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border), var(--shadow-2);
+  transition: background-color var(--dur-3) var(--ease-out);
+}
+
+.preview[data-tone='gentle'] {
+  --wash: var(--warn-soft);
+}
+
+.preview[data-tone='numbers'] {
+  --wash: color-mix(in srgb, var(--info) 12%, transparent);
+}
+
+.previewTop {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.previewArt {
+  position: relative;
+  flex: none;
+}
+
+.previewBun {
+  position: absolute;
+  right: -12px;
+  bottom: -8px;
+}
+
+.caption {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+  padding-left: var(--s-2);
+}
+
+.captionKicker {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.captionLine {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.ai {
+  justify-self: start;
+}
+
+.previewText {
+  display: grid;
+  min-width: 0;
+  gap: var(--s-2);
+}
+
+.headline {
+  font-family: var(--font-display);
+  font-variation-settings: var(--fv-display);
+  font-size: var(--fs-2xl);
+  font-weight: 640;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+  animation: line-in var(--dur-3) var(--ease-out);
+}
+
+.preview[data-tone='numbers'] .headline {
+  font-family: var(--font-ui);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.subline {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+
+@keyframes line-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+    filter: blur(2px);
+  }
+}

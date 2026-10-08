@@ -1,0 +1,223 @@
+.dial {
+  padding: var(--s-4) var(--s-4) var(--s-3);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border), var(--shadow-1);
+}
+
+/* ───────── what runs where ───────── */
+
+.matrix {
+  display: grid;
+  gap: var(--s-2);
+}
+
+.lane {
+  --lane-c: var(--under);
+  display: grid;
+  gap: var(--s-2);
+  padding: var(--s-3);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--lane-c) 7%, var(--surface));
+  box-shadow: inset 3px 0 0 var(--lane-c), inset 0 0 0 1px color-mix(in srgb, var(--lane-c) 18%, transparent);
+}
+
+.lane[data-lane='tap'] {
+  --lane-c: var(--accent);
+}
+
+.lane[data-lane='pin'] {
+  --lane-c: var(--over);
+}
+
+.lane[data-lane='off'] {
+  --lane-c: var(--text-3);
+}
+
+.lane[data-lane='never'] {
+  --lane-c: var(--tier-4);
+  background: var(--bg-sunken);
+}
+
+.laneHead {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.laneHead svg {
+  width: 16px;
+  height: 16px;
+  color: var(--lane-c);
+  stroke-width: 2.4;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 4px 10px 4px 8px;
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  line-height: 1.25;
+  animation: chip-in 460ms var(--ease-spring) both;
+}
+
+.chip > span {
+  display: inline-flex;
+  color: var(--tier-c, var(--text-3));
+}
+
+.chip svg {
+  width: 13px;
+  height: 13px;
+  stroke-width: 2.3;
+}
+
+.chip[data-tier='0'] {
+  --tier-c: var(--tier-0);
+}
+
+.chip[data-tier='1'] {
+  --tier-c: var(--tier-1);
+}
+
+.chip[data-tier='2'] {
+  --tier-c: var(--tier-2);
+}
+
+.chip[data-tier='3'] {
+  --tier-c: var(--tier-3);
+}
+
+.chip[data-tier='4'] {
+  --tier-c: var(--tier-4);
+}
+
+.lane[data-lane='off'] .chip,
+.lane[data-lane='never'] .chip {
+  color: var(--text-2);
+}
+
+.lane[data-lane='never'] .chip {
+  animation: none;
+}
+
+.empty {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-style: italic;
+}
+
+@keyframes chip-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.92);
+  }
+}
+
+/* ───────── caps ───────── */
+
+.caps {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s-2);
+}
+
+/* ───────── PIN ───────── */
+
+.pinCard {
+  padding: var(--s-5) var(--s-4) var(--s-4);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border), var(--shadow-1);
+}
+
+.pinSetup {
+  display: grid;
+  justify-items: center;
+  gap: var(--s-3);
+}
+
+.rules {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--s-1) var(--s-3);
+  margin: 0;
+  padding: 0;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  list-style: none;
+}
+
+.rules li {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rules svg {
+  width: 13px;
+  height: 13px;
+  color: var(--under);
+  stroke-width: 2.6;
+}
+
+.pinDone {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  animation: chip-in 520ms var(--ease-spring) both;
+}
+
+.pinDoneIcon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--under-soft);
+  color: var(--under);
+}
+
+.pinDoneIcon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.pinDoneText {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+}
+
+.pinDoneTitle {
+  font-weight: 700;
+}
+
+.pinDoneSub {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  line-height: 1.4;
+}

@@ -53,22 +53,37 @@ function trimZero(s: string): string {
 }
 
 /**
+ * Magnitude suffixes. Single letters only count written directly after the digits ("2k", "1.5w", "5m", "5mn"),
+ * words may follow a space ("3 thousand", "2 grand", "5 million"); either way the suffix must end at a
+ * non-letter, so "save 500 more", "1 week", "500 with bun" and "2kg" keep their plain number.
+ */
+const AMOUNT_RE = new RegExp(
+  '(?:¥|￥|\\$|€|£|rmb|cny|usd|rp|rm)?\\s*(\\d{1,3}(?:,\\d{3})+|\\d+)(?:\\.(\\d+))?' +
+    '(?:(k|w|mn|m)(?![a-z])|\\s*(万|千)|\\s*(k|thousand|grand|million)(?![a-z]))?' +
+    '\\s*(?:元|块|yuan|rmb|cny|kuai|dollars?|bucks?)?',
+  'i',
+)
+
+const MULTIPLIER: Record<string, number> = {
+  k: 1_000, 千: 1_000, thousand: 1_000, grand: 1_000,
+  w: 10_000, 万: 10_000,
+  m: 1_000_000, mn: 1_000_000, million: 1_000_000,
+}
+
+/**
  * Parse a user-typed amount into minor units. Accepts "¥2,000", "2000元", "2k", "1.5w", "1.2万",
- * "$49.99", "RMB 300", "300 yuan", "3 thousand". Returns null when no amount is present.
+ * "$49.99", "RMB 300", "300 yuan", "3 thousand", "5m". Returns null when no amount is present.
  */
 export function parseAmount(text: string, currency: Currency = 'CNY'): Minor | null {
   const t = text.replace(/，/g, ',').toLowerCase()
-  const re = /(?:¥|￥|\$|€|£|rmb|cny|usd|rp|rm)?\s*(\d{1,3}(?:,\d{3})+|\d+)(?:\.(\d+))?\s*(k|w|万|千|thousand|grand|m|million)?\s*(?:元|块|yuan|rmb|cny|kuai|dollars?|bucks?)?/i
-  const m = t.match(re)
+  const m = t.match(AMOUNT_RE)
   if (!m) return null
   const int = m[1].replace(/,/g, '')
   const frac = m[2] ?? ''
   let major = Number(`${int}${frac ? '.' + frac : ''}`)
   if (!Number.isFinite(major)) return null
-  const suffix = m[3]
-  if (suffix === 'k' || suffix === '千' || suffix === 'thousand' || suffix === 'grand') major *= 1_000
-  if (suffix === 'w' || suffix === '万') major *= 10_000
-  if (suffix === 'm' || suffix === 'million') major *= 1_000_000
+  const suffix = m[3] ?? m[4] ?? m[5]
+  if (suffix) major *= MULTIPLIER[suffix]
   return toMinor(major, currency)
 }
 

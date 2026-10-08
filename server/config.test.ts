@@ -1,7 +1,9 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
   DEFAULT_ANTHROPIC_MODEL,
   DEFAULT_PORT,
+  DEFAULT_PROVIDER_TIMEOUT_MS,
   DEFAULT_RATE_LIMIT_RPM,
   MOCK_MODEL,
   parseIntInRange,
@@ -10,6 +12,7 @@ import {
   resolveFallbacks,
   resolveProvider,
 } from './config'
+import { parseDotenv } from './env'
 
 describe('resolveProvider', () => {
   it('defaults to anthropic when ANTHROPIC_API_KEY is set', () => {
@@ -124,5 +127,36 @@ describe('parseIntInRange', () => {
     expect(parseIntInRange('1e3', 0, 10_000, 7)).toBe(7)
     expect(parseIntInRange('101', 0, 100, 7)).toBe(7)
     expect(parseIntInRange(undefined, 0, 100, 7)).toBe(7)
+  })
+})
+
+describe('.env.example', () => {
+  const example = readFileSync(new URL('../.env.example', import.meta.url), 'utf8')
+  const vars = parseDotenv(example)
+
+  it('documents every variable the gateway reads', () => {
+    const source = readFileSync(new URL('./config.ts', import.meta.url), 'utf8')
+    const read = new Set([...source.matchAll(/env\.([A-Z][A-Z0-9_]+)/g)].map((m) => m[1]).filter((k) => k !== 'NODE_ENV'))
+    expect([...read].sort()).toEqual(expect.arrayContaining([
+      'ANTHROPIC_EFFORT', 'ANTHROPIC_FALLBACKS', 'FUNDBUN_ALLOWED_ORIGINS', 'FUNDBUN_ALLOW_MOCK', 'FUNDBUN_API_HOST',
+      'FUNDBUN_PROVIDER_TIMEOUT_MS', 'FUNDBUN_TRUST_PROXY',
+    ]))
+    for (const key of read) expect(Object.keys(vars), key).toContain(key)
+  })
+
+  it('copied as-is it keeps the documented defaults', () => {
+    const config = resolveConfig(vars)
+    expect(config).toMatchObject({
+      port: DEFAULT_PORT,
+      host: '127.0.0.1',
+      rateLimitRpm: DEFAULT_RATE_LIMIT_RPM,
+      trustProxy: false,
+      allowedOrigins: [],
+      providerTimeoutMs: DEFAULT_PROVIDER_TIMEOUT_MS,
+      provider: { ok: false, kind: 'anthropic', model: DEFAULT_ANTHROPIC_MODEL },
+    })
+    expect(resolveEffort(vars.ANTHROPIC_EFFORT)).toBe('low')
+    expect(resolveFallbacks(vars.ANTHROPIC_FALLBACKS, DEFAULT_ANTHROPIC_MODEL)).toBe(true)
+    expect(resolveProvider({ ...vars, LLM_PROVIDER: 'mock', NODE_ENV: 'production' }).ok).toBe(false)
   })
 })

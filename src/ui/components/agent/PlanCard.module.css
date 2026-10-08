@@ -1,0 +1,384 @@
+.plan {
+  overflow: hidden;
+  background:
+    radial-gradient(120% 70% at 0% 0%, var(--accent-soft) 0%, transparent 50%),
+    var(--surface);
+}
+
+.tone-under {
+  --tone: var(--under);
+}
+.tone-accent {
+  --tone: var(--accent);
+}
+.tone-info {
+  --tone: var(--info);
+}
+.tone-over {
+  --tone: var(--over);
+}
+.tone-warn {
+  --tone: var(--warn);
+}
+.tone-neutral {
+  --tone: var(--text-3);
+}
+
+/* ───────── header ───────── */
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+  padding: var(--s-4) var(--s-4) 0;
+}
+
+.headIcon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-md);
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.headIcon svg {
+  width: 20px;
+  height: 20px;
+  color: var(--accent-strong);
+}
+
+.headText {
+  flex: 1;
+  min-width: 0;
+}
+
+.eyebrow {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 680;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin-top: 2px;
+  font-size: var(--fs-lg);
+  font-weight: 640;
+  line-height: 1.25;
+}
+
+.statusRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-3) var(--s-4) 0;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--tone, var(--text-3)) 14%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tone, var(--text-3)) 32%, transparent);
+  font-size: var(--fs-xs);
+  font-weight: 680;
+}
+
+.pill svg {
+  width: 13px;
+  height: 13px;
+}
+
+.count {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 560;
+  font-variant-numeric: tabular-nums;
+}
+
+.track {
+  height: 4px;
+  margin: var(--s-3) var(--s-4) 0;
+  overflow: hidden;
+  border-radius: var(--r-pill);
+  background: var(--chart-track);
+}
+
+.track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--under), color-mix(in srgb, var(--under) 70%, var(--accent)));
+  transition: width 600ms var(--ease-out);
+}
+
+/* ───────── DAG map ───────── */
+
+.map {
+  display: block;
+  width: calc(100% - 2 * var(--s-4));
+  height: auto;
+  margin: var(--s-3) auto 0;
+  overflow: visible;
+}
+
+.edge {
+  fill: none;
+  stroke: var(--border-strong);
+  stroke-width: 1.6;
+}
+
+.edgeDone {
+  stroke: color-mix(in srgb, var(--under) 60%, transparent);
+}
+
+.edgeDead {
+  stroke-dasharray: 3 4;
+  opacity: 0.55;
+}
+
+/* dependencies feeding the step that waits for you: a slow marching dash */
+.edgeFlow {
+  stroke: var(--accent);
+  stroke-dasharray: 4 5;
+  animation: march 1.4s linear infinite;
+}
+
+.dot {
+  fill: var(--surface);
+  stroke: var(--border-strong);
+  stroke-width: 1.5;
+}
+
+.label {
+  fill: var(--text-3);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 760;
+  font-variant-numeric: tabular-nums;
+}
+
+.map-neutral .dot {
+  stroke-dasharray: 3 3;
+}
+
+.map-under .dot {
+  fill: var(--under);
+  stroke: var(--under);
+}
+
+.map-accent .dot {
+  fill: var(--accent);
+  stroke: var(--accent-strong);
+}
+
+.map-info .dot {
+  fill: var(--info);
+  stroke: var(--info);
+}
+
+.map-over .dot {
+  fill: var(--over);
+  stroke: var(--over);
+}
+
+.map-under .label,
+.map-info .label,
+.map-over .label {
+  fill: var(--surface);
+}
+
+.map-accent .label {
+  fill: var(--text-on-accent);
+}
+
+.mapNode[data-status='skipped'] {
+  opacity: 0.5;
+}
+
+.halo {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: halo 2.2s var(--ease-out) infinite;
+}
+
+/* ───────── steps ───────── */
+
+.steps {
+  display: grid;
+  margin: var(--s-3) 0 0;
+  padding: 0 var(--s-4) var(--s-2);
+  list-style: none;
+}
+
+.step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: var(--s-3);
+  padding-bottom: var(--s-4);
+}
+
+/* the rail between nodes */
+.step::before {
+  content: '';
+  position: absolute;
+  top: 32px;
+  bottom: 4px;
+  left: 13px;
+  width: 2px;
+  border-radius: var(--r-pill);
+  background: var(--border);
+}
+
+.step:last-child::before {
+  display: none;
+}
+
+.step[data-status='done']::before {
+  background: color-mix(in srgb, var(--under) 45%, transparent);
+}
+
+.node {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--tone, var(--text-3)) 15%, var(--surface));
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--tone, var(--text-3)) 45%, transparent);
+  color: var(--tone, var(--text-3));
+}
+
+.node svg {
+  width: 15px;
+  height: 15px;
+  stroke-width: 2.4;
+}
+
+.step[data-status='needs_approval'] .node {
+  animation: nodeGlow 2.2s var(--ease-out) infinite;
+}
+
+.stepBody {
+  min-width: 0;
+  padding-top: 3px;
+}
+
+.stepLabel {
+  display: flex;
+  gap: 6px;
+  font-size: var(--fs-sm);
+  font-weight: 640;
+  line-height: 1.35;
+}
+
+.num {
+  flex: none;
+  min-width: 1.4em;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.stepMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin-top: 4px;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 540;
+}
+
+.statusText {
+  color: var(--text-2);
+  font-weight: 680;
+}
+
+.parallel {
+  padding: 1px 8px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--info) 12%, transparent);
+  color: var(--text-2);
+}
+
+.result {
+  margin-top: 4px;
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  line-height: 1.45;
+}
+
+.embedded {
+  position: relative;
+  z-index: 1;
+  margin-top: var(--s-3);
+  /* actions get the full card width, sliding under the timeline column */
+  margin-left: calc(-28px - var(--s-3));
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4) var(--s-4);
+  border-top: 1px solid var(--border);
+  background: color-mix(in srgb, var(--text) 2.5%, transparent);
+}
+
+.footHint {
+  flex: 1 1 160px;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes march {
+  to {
+    stroke-dashoffset: -18;
+  }
+}
+
+@keyframes halo {
+  0% {
+    opacity: 0.7;
+    transform: scale(0.85);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+
+@keyframes nodeGlow {
+  0%,
+  100% {
+    box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--tone) 45%, transparent), 0 0 0 0 color-mix(in srgb, var(--tone) 35%, transparent);
+  }
+  50% {
+    box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--tone) 60%, transparent), 0 0 0 6px color-mix(in srgb, var(--tone) 0%, transparent);
+  }
+}

@@ -1,0 +1,745 @@
+.page {
+  display: grid;
+  gap: var(--s-5);
+  padding-top: var(--s-2);
+}
+
+.section {
+  display: grid;
+  gap: var(--s-3);
+  min-width: 0;
+}
+
+/* ───────────── chain verdict ───────────── */
+
+.chain {
+  --chain-c: var(--under);
+  position: relative;
+  display: grid;
+  gap: var(--s-4);
+  padding: var(--s-4);
+  overflow: hidden;
+  border-radius: var(--r-lg);
+  background:
+    radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--chain-c) 14%, transparent) 0%, transparent 60%),
+    var(--surface);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--chain-c) 28%, transparent), var(--shadow-1);
+}
+
+.chainBroken {
+  --chain-c: var(--over);
+}
+
+.chainCompact {
+  gap: var(--s-3);
+  padding: var(--s-3);
+  border-radius: var(--r-md);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--chain-c) 28%, transparent);
+}
+
+.chainHead {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-width: 0;
+}
+
+.chainIcon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--chain-c) 16%, var(--surface));
+  color: var(--chain-c);
+}
+
+.chainIcon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.chainText {
+  flex: 1;
+  min-width: 0;
+}
+
+.chainTitle {
+  font-family: var(--font-display);
+  font-variation-settings: var(--fv-display);
+  font-size: var(--fs-lg);
+  font-weight: 640;
+  line-height: 1.2;
+}
+
+.chainCompact .chainTitle {
+  font-size: var(--fs-md);
+}
+
+.chainDetail {
+  overflow: hidden;
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spinOnce {
+  animation: spin 700ms var(--ease-out);
+}
+
+/* the newest links of the chain, joined left → right; a highlight travels along them (verifying) */
+.links {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.link {
+  position: relative;
+  display: grid;
+  flex: 1;
+  justify-items: center;
+  gap: 1px;
+  min-width: 0;
+  padding: 6px 2px;
+  border-radius: 10px;
+  background: var(--bg-sunken);
+  box-shadow: inset 0 0 0 1px var(--border);
+  animation: linkIn var(--dur-3) var(--ease-spring) both, linkGlow 6s var(--ease-out) infinite;
+  animation-delay: calc(var(--i) * 70ms), calc(1.2s + var(--i) * 260ms);
+}
+
+.link + .link {
+  margin-left: 12px;
+}
+
+/* the joint between links */
+.link + .link::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  width: 12px;
+  height: 2px;
+  background: color-mix(in srgb, var(--chain-c) 55%, var(--border));
+}
+
+.linkSeq {
+  color: var(--text-3);
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.linkHash {
+  color: var(--text);
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.linkBroken {
+  background: var(--over-soft);
+  box-shadow: inset 0 0 0 1px var(--over);
+}
+
+.linkBroken::before {
+  background: repeating-linear-gradient(90deg, var(--over) 0 3px, transparent 3px 5px) !important;
+}
+
+.chainBroken .link {
+  animation: linkIn var(--dur-3) var(--ease-spring) both;
+}
+
+@keyframes linkIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes linkGlow {
+  0%,
+  14%,
+  100% {
+    box-shadow: inset 0 0 0 1px var(--border);
+  }
+  6% {
+    box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--chain-c) 70%, transparent), 0 0 0 3px color-mix(in srgb, var(--chain-c) 16%, transparent);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ───────────── stats & glass-box entry ───────────── */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.stats > * {
+  padding: var(--s-3) var(--s-4);
+}
+
+.stats > * + * {
+  border-left: 1px solid var(--border);
+}
+
+.statValue {
+  font-family: var(--font-display);
+  font-variation-settings: var(--fv-display);
+  font-size: var(--fs-2xl);
+  font-weight: 620;
+  font-variant-numeric: tabular-nums;
+}
+
+.glassEntry {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: 64px;
+  padding: var(--s-3) var(--s-4);
+  border: 0;
+  border-radius: var(--r-lg);
+  background:
+    linear-gradient(120deg, color-mix(in srgb, var(--info) 10%, transparent), color-mix(in srgb, var(--accent) 12%, transparent)),
+    var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border);
+  text-align: start;
+  transition: transform var(--dur-1) var(--ease-out), box-shadow var(--dur-2) var(--ease-out);
+}
+
+.glassEntry:hover {
+  box-shadow: inset 0 0 0 1px var(--border-strong), var(--shadow-1);
+}
+
+.glassEntry:active {
+  transform: scale(0.99);
+}
+
+.glassEntryIcon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.glassEntryIcon svg {
+  width: 20px;
+  height: 20px;
+  animation: peek 5s var(--ease-out) infinite;
+}
+
+.glassEntryText {
+  display: grid;
+  min-width: 0;
+}
+
+.glassEntryTitle {
+  font-weight: 700;
+}
+
+.glassEntrySub {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+
+@keyframes peek {
+  0%,
+  86%,
+  100% {
+    transform: scaleY(1);
+  }
+  90% {
+    transform: scaleY(0.12);
+  }
+}
+
+/* the desktop shows the real glass box beside the phone */
+@media (min-width: 1024px) {
+  .glassEntry {
+    display: none;
+  }
+}
+
+.pending {
+  display: grid;
+  gap: var(--s-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* ───────────── filters ───────────── */
+
+.filters {
+  display: flex;
+  gap: var(--s-2);
+  /* room for the chips' 44px hit areas inside the scroller */
+  margin: -8px calc(-1 * var(--gutter));
+  padding: 8px var(--gutter);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.filters::-webkit-scrollbar {
+  display: none;
+}
+
+.filters > * {
+  flex: none;
+}
+
+.count {
+  margin-left: 6px;
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ───────────── timeline ───────────── */
+
+.days {
+  display: grid;
+  gap: var(--s-5);
+}
+
+.day {
+  display: grid;
+  gap: var(--s-2);
+}
+
+.dayLabel {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+  padding: var(--s-1) 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.dayCount {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.timeline {
+  position: relative;
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* the spine that joins the actor dots */
+.timeline::before {
+  content: '';
+  position: absolute;
+  top: 22px;
+  bottom: 22px;
+  left: 21px;
+  width: 2px;
+  border-radius: 2px;
+  background: linear-gradient(var(--border-strong), var(--border));
+}
+
+.entry {
+  position: relative;
+  border-radius: var(--r-md);
+  transition: background-color var(--dur-2) var(--ease-out);
+}
+
+.entryOpen {
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border), var(--shadow-1);
+}
+
+.entryButton {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+  width: 100%;
+  min-height: 56px;
+  padding: var(--s-2) var(--s-1) var(--s-2) 2px;
+  border: 0;
+  border-radius: var(--r-md);
+  background: transparent;
+  text-align: start;
+}
+
+.entryButton:hover {
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+}
+
+.entryOpen .entryButton:hover {
+  background: transparent;
+}
+
+.actor {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border), 0 0 0 4px var(--bg);
+  color: var(--text-2);
+}
+
+.actor svg {
+  width: 18px;
+  height: 18px;
+}
+
+.actorSm {
+  width: 26px;
+  height: 26px;
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.actorSm svg {
+  width: 14px;
+  height: 14px;
+}
+
+.actor_agent {
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface));
+  color: var(--accent-strong);
+}
+
+.actor_policy {
+  background: color-mix(in srgb, var(--info) 14%, var(--surface));
+  color: var(--info);
+}
+
+.actor_user {
+  background: color-mix(in srgb, var(--under) 12%, var(--surface));
+  color: var(--under);
+}
+
+.actor_bank {
+  background: var(--surface-2);
+}
+
+.entryBlocked .actor {
+  background: var(--over-soft);
+  color: var(--over);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--over) 40%, transparent), 0 0 0 4px var(--bg);
+}
+
+.entryMain {
+  display: grid;
+  flex: 1;
+  gap: 4px;
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.entrySummary {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow-wrap: anywhere;
+}
+
+.entryOpen .entrySummary {
+  display: block;
+}
+
+.entryMeta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  min-width: 0;
+}
+
+.entryActor {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+
+.entryAside {
+  display: grid;
+  flex: none;
+  justify-items: end;
+  gap: 4px;
+  padding-top: 2px;
+}
+
+.entryTime {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.chevron {
+  width: 16px;
+  height: 16px;
+  color: var(--text-3);
+  transition: transform var(--dur-2) var(--ease-out);
+}
+
+.entryOpen .chevron {
+  transform: rotate(180deg);
+}
+
+.details {
+  display: grid;
+  gap: var(--s-3);
+  padding: 0 var(--s-3) var(--s-3) calc(40px + var(--s-3) + 2px);
+  animation: open var(--dur-2) var(--ease-out);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-2);
+  margin: 0;
+}
+
+.facts dt {
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.facts dd {
+  margin: 0;
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.hashLink {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  min-width: 0;
+}
+
+.hashBox {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: var(--bg-sunken);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.hashBoxSelf {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--under) 45%, transparent);
+}
+
+.hashLabel {
+  color: var(--text-3);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.hashBox code {
+  overflow: hidden;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hashJoin {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--under);
+}
+
+.hashNote {
+  color: var(--text-3);
+  font-size: 11px;
+}
+
+.json {
+  max-height: 240px;
+  margin: 0;
+  padding: var(--s-3);
+  overflow: auto;
+  border-radius: 10px;
+  background: var(--bg-sunken);
+  box-shadow: inset 0 0 0 1px var(--border);
+  color: var(--text-2);
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 11.5px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* a new entry arriving live: slide in, warm flash, settle */
+.fresh {
+  animation: fresh 1.8s var(--ease-out) both;
+}
+
+@keyframes fresh {
+  0% {
+    opacity: 0;
+    transform: translateY(-6px);
+    background-color: color-mix(in srgb, var(--accent) 22%, transparent);
+  }
+  15% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+@keyframes open {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+/* ───────────── glass-box audit tail ───────────── */
+
+.tail {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 0;
+  padding: 6px var(--s-2);
+  border-radius: 10px;
+}
+
+.tail + .tail {
+  border-top: 1px solid var(--border);
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.tailSeq {
+  flex: none;
+  width: 34px;
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.tailMain {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tailTop {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.tailTime {
+  color: var(--text-3);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tailSummary {
+  overflow: hidden;
+  font-size: var(--fs-xs);
+  font-weight: 560;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tailHash {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 7px;
+  border-radius: var(--r-pill);
+  background: var(--bg-sunken);
+  box-shadow: inset 0 0 0 1px var(--border);
+  color: var(--text);
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 11px;
+}
+
+.tailPrev {
+  color: var(--text-3);
+}
+
+.tail.entryBlocked {
+  background: color-mix(in srgb, var(--over) 6%, transparent);
+}
+
+/* ───────────── take-away ───────────── */
+
+.takeaway {
+  display: grid;
+  gap: var(--s-3);
+}
+
+.takeawayHead {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+.takeawayHead svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--under);
+}
+
+.takeawayActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+/* the glass box inside a sheet: its sticky tab row blends with the sheet surface */
+.sheetGlass {
+  --gb-bg: var(--surface);
+}

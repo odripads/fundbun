@@ -1,0 +1,840 @@
+/* Chat cards — compact, data-first renderers for every ChatCard type. Tokens only. */
+
+.avatar {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 680;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.eyebrow svg {
+  width: 14px;
+  height: 14px;
+  color: var(--accent-strong);
+}
+
+.minor {
+  margin-bottom: 6px;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+
+.bullets {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+
+.gapBelow {
+  margin-bottom: var(--s-3);
+}
+
+.push {
+  margin-left: auto;
+  align-self: center;
+}
+
+/* "Show 4 more" */
+.more {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 36px;
+  margin-top: var(--s-2);
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 650;
+}
+
+.more::after {
+  content: '';
+  position: absolute;
+  inset: -4px -8px;
+}
+
+.more:hover {
+  color: var(--text);
+}
+
+.more:focus-visible {
+  outline: none;
+  border-radius: 8px;
+  box-shadow: var(--ring);
+}
+
+.more svg {
+  width: 16px;
+  height: 16px;
+  transition: transform var(--dur-2) var(--ease-out);
+}
+
+.flip {
+  transform: rotate(180deg);
+}
+
+/* evidence ("Why?") */
+.evidence {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+}
+
+.evidenceChip {
+  display: inline-flex;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+  font-size: var(--fs-xs);
+}
+
+.evidenceChip dt {
+  color: var(--text-3);
+  font-weight: 560;
+}
+
+.evidenceChip dd {
+  margin: 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ───────────────────────────── mirror ───────────────────────────── */
+
+.mirror {
+  overflow: hidden;
+}
+
+.mirrorTop {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  padding: var(--s-4) var(--s-4) 0;
+}
+
+/* the vanity-mirror arch around the dream item */
+.arch {
+  position: relative;
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 84px;
+  height: 104px;
+  padding-top: 8px;
+  overflow: hidden;
+  border-radius: 42px 42px 14px 14px;
+  background: radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--accent) 22%, var(--surface)) 0%, var(--surface) 72%);
+  box-shadow:
+    inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 50%, transparent),
+    inset 0 0 0 5px color-mix(in srgb, var(--surface) 70%, transparent),
+    var(--shadow-1);
+}
+
+/* the illustration sits straight on the glass, no plate */
+.arch .archImg img {
+  background: transparent;
+  box-shadow: none;
+}
+
+.mirror[data-status='over'] .arch {
+  background: radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--over) 16%, var(--surface)) 0%, var(--surface) 72%);
+}
+
+.mirror[data-status='under'] .arch {
+  background: radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--under) 18%, var(--surface)) 0%, var(--surface) 72%);
+}
+
+/* a slow light sweep across the glass — it's a mirror */
+.glint {
+  position: absolute;
+  top: -30%;
+  bottom: -30%;
+  left: -70%;
+  width: 45%;
+  background: linear-gradient(100deg, transparent 0%, color-mix(in srgb, var(--c-cream-50) 55%, transparent) 50%, transparent 100%);
+  transform: rotate(14deg);
+  animation: glint 7s var(--ease-out) infinite;
+  pointer-events: none;
+}
+
+.mirrorText {
+  flex: 1;
+  min-width: 0;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.status svg {
+  width: 14px;
+  height: 14px;
+}
+
+.status-over svg {
+  color: var(--over);
+}
+.status-pace_over svg {
+  color: var(--warn);
+}
+.status-on_track svg {
+  color: var(--accent-strong);
+}
+.status-under svg {
+  color: var(--under);
+}
+.status-no_data svg {
+  color: var(--text-3);
+}
+
+.headline {
+  margin-top: 6px;
+  font-size: var(--fs-xl);
+  font-weight: 650;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+}
+
+.mirrorBody {
+  display: grid;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4) var(--s-4);
+}
+
+.subline {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+
+.factRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.factRow li {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--text) 5.5%, transparent);
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  font-weight: 620;
+  font-variant-numeric: tabular-nums;
+}
+
+.factRow svg {
+  width: 13px;
+  height: 13px;
+  color: var(--text-3);
+}
+
+.cta {
+  justify-self: start;
+}
+
+/* ───────────────────────────── affordability ───────────────────────────── */
+
+.afford {
+  display: grid;
+  gap: var(--s-3);
+}
+
+.affordHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-1) var(--s-3);
+  margin-top: calc(-1 * var(--s-1));
+}
+
+.affordLabel {
+  font-size: var(--fs-xl);
+  font-weight: 640;
+}
+
+.verdict {
+  --tone: var(--under);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+  padding: var(--s-3);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--tone) 12%, var(--surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tone) 32%, transparent);
+}
+
+.verdict > svg {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  margin-top: 1px;
+  color: var(--tone);
+}
+
+.verdict-warn {
+  --tone: var(--warn);
+}
+
+.verdict-over {
+  --tone: var(--over);
+}
+
+.verdictLabel {
+  font-family: var(--font-display);
+  font-variation-settings: var(--fv-display);
+  font-size: var(--fs-lg);
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+.verdictSub {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  gap: var(--s-2);
+  margin: 0;
+}
+
+.stats > div {
+  min-width: 0;
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+}
+
+.stats dt {
+  overflow: hidden;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stats dd {
+  margin: 0;
+  font-family: var(--font-display);
+  font-variation-settings: var(--fv-display);
+  font-size: var(--fs-lg);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.equivWrap {
+  min-width: 0;
+}
+
+.equivalents {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.equivalents li {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--fs-sm);
+  font-weight: 580;
+}
+
+/* ───────────────────────────── goals ───────────────────────────── */
+
+.goalGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.goalTile {
+  display: grid;
+  justify-items: center;
+  gap: var(--s-2);
+  padding: var(--s-3) var(--s-2);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--text) 3%, transparent);
+  text-align: center;
+}
+
+.goalSingle {
+  grid-template-columns: 1fr;
+}
+
+.goalSingle .goalTile {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  justify-items: start;
+  gap: var(--s-4);
+  padding: var(--s-3);
+  text-align: start;
+}
+
+.goalText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.goalName {
+  font-size: var(--fs-sm);
+  font-weight: 680;
+  line-height: 1.25;
+}
+
+.goalAmounts {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+
+.goalEta {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 560;
+}
+
+/* ───────────────────────────── spending lists ───────────────────────────── */
+
+.totalRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px var(--s-2);
+  margin-bottom: var(--s-2);
+}
+
+.totalOf {
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+}
+
+.listCard {
+  overflow: hidden;
+}
+
+.listHeader {
+  margin-bottom: 0;
+  padding: var(--s-4) var(--s-4) var(--s-1);
+}
+
+.listCard > ul {
+  padding: 0 var(--s-4) var(--s-2);
+}
+
+.listFooter {
+  padding: 0 var(--s-4) var(--s-3);
+}
+
+.flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+  white-space: normal;
+}
+
+/* counterparty memo: untrusted text, quoted and muted */
+.memo {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 5px 8px;
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--text) 4.5%, transparent);
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-style: italic;
+  white-space: normal;
+}
+
+.memo svg {
+  flex: none;
+  width: 13px;
+  height: 13px;
+  margin-top: 2px;
+}
+
+.memoText {
+  display: -webkit-box;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.perRow {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.per {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+
+.table {
+  width: 100%;
+  font-size: var(--fs-sm);
+}
+
+.table th,
+.table td {
+  padding: 9px 0;
+  border-top: 1px solid var(--border);
+  font-weight: 540;
+  text-align: start;
+  vertical-align: middle;
+}
+
+.table tbody tr:first-child th,
+.table tbody tr:first-child td {
+  border-top: 0;
+}
+
+.table td {
+  padding-left: var(--s-3);
+  font-weight: 680;
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+  white-space: nowrap;
+}
+
+.tableCat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tableBar {
+  display: block;
+  height: 4px;
+  margin-top: 6px;
+  overflow: hidden;
+  border-radius: var(--r-pill);
+  background: var(--chart-track);
+}
+
+.tableBar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+}
+
+.lineItems th {
+  color: var(--text-2);
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.lineItems tfoot th,
+.lineItems tfoot td {
+  border-top: 1.5px solid var(--border-strong);
+  color: var(--text);
+  font-weight: 720;
+}
+
+.rationale {
+  display: flex;
+  gap: var(--s-2);
+  margin-top: var(--s-3);
+  padding: var(--s-3);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+.rationale svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  color: var(--accent-strong);
+}
+
+/* ───────────────────────────── findings / insights ───────────────────────────── */
+
+.items {
+  display: grid;
+  gap: var(--s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  --sev: var(--info);
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: var(--s-3);
+  padding: var(--s-3);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--sev) 5%, var(--surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sev) 20%, transparent);
+}
+
+.sev-alert {
+  --sev: var(--over);
+}
+.sev-warn {
+  --sev: var(--warn);
+}
+.sev-info {
+  --sev: var(--info);
+}
+.sev-under {
+  --sev: var(--under);
+}
+
+.itemIcon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--sev) 15%, transparent);
+  color: var(--sev);
+}
+
+.itemIcon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.itemBody {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.itemKicker {
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 720;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.itemHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-2);
+}
+
+.itemTitle {
+  font-size: var(--fs-md);
+  font-weight: 650;
+  line-height: 1.3;
+}
+
+.itemText {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+
+.itemFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2) var(--s-4);
+  margin-top: var(--s-2);
+}
+
+.itemFoot > div {
+  min-width: 0;
+}
+
+/* an open "Why?" takes its own line */
+.itemFoot > div:has(> button[aria-expanded='true']) {
+  flex-basis: 100%;
+}
+
+.dreamChip {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 3px 12px 3px 3px;
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border);
+  font-size: var(--fs-xs);
+  font-weight: 640;
+}
+
+/* ───────────────────────────── x-ray / notice / clarify ───────────────────────────── */
+
+.signals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.signal {
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--over) 14%, transparent);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.minorRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: var(--s-2);
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+
+.minorRow svg {
+  width: 14px;
+  height: 14px;
+}
+
+.noticeBlock {
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--over) 45%, transparent),
+    0 0 0 4px color-mix(in srgb, var(--over) 7%, transparent);
+}
+
+.clarify {
+  display: grid;
+  gap: var(--s-2);
+}
+
+.clarifyQ {
+  font-size: var(--fs-sm);
+  font-weight: 620;
+}
+
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.option {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  max-width: 100%;
+  padding: 6px 16px 6px 8px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 45%, transparent), var(--shadow-1);
+  font-size: var(--fs-sm);
+  font-weight: 650;
+  text-align: start;
+  transition:
+    background-color var(--dur-2) var(--ease-out),
+    transform var(--dur-1) var(--ease-out);
+}
+
+.option:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+}
+
+.option:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.option:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 1.5px var(--accent), var(--ring);
+}
+
+.option:disabled {
+  cursor: default;
+  opacity: 0.5;
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.optionPicked,
+.optionPicked:disabled {
+  background: var(--text);
+  color: var(--bg);
+  opacity: 1;
+}
+
+.optionIcon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+}
+
+.optionIcon svg {
+  width: 16px;
+  height: 16px;
+  color: var(--accent-strong);
+}
+
+.optionCheck {
+  width: 16px;
+  height: 16px;
+}
+
+@keyframes glint {
+  0%,
+  55% {
+    transform: translateX(0) rotate(14deg);
+  }
+  100% {
+    transform: translateX(520%) rotate(14deg);
+  }
+}

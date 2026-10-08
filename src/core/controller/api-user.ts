@@ -1,8 +1,8 @@
 import type { AppApi } from '../app-api'
 import { importCsv as parseCsvImport } from '../sandbox/csv'
-import { auditToJSONL, verifyAudit } from '../security/audit'
+import { auditToJSONL } from '../security/audit'
 import type { AppState, Mandate } from '../types'
-import { appendAudit } from './audit'
+import { appendAudit, verifyAuditAnchored } from './audit'
 import { LOCKED_MSG, NOT_SET_UP_MSG, expirePending, userTx, userTxValue, type Core } from './core'
 import {
   advanceDaysIn,
@@ -99,7 +99,9 @@ export function createUserApi(core: Core, onLlmGranted: () => void): UserApi {
     changePin,
     verifyAudit() {
       const log = store.get().audit
-      return safely('verifyAudit', () => verifyAudit(log), { ok: false, count: log.length, reason: 'Audit verification is unavailable' })
+      // while the vault is locked the in-memory log is a placeholder — the stored anchor is not about it
+      const head = core.lock.locked ? null : safely('auditHead', () => core.persistence.auditHead(), null)
+      return safely('verifyAudit', () => verifyAuditAnchored(log, head), { ok: false, count: log.length, reason: 'Audit verification is unavailable' })
     },
     exportData() {
       safely('audit data_export', () => store.mutate((draft) => {

@@ -1,0 +1,31 @@
+.screen {
+  display: grid;
+  gap: var(--s-4);
+  min-width: 0;
+  padding-top: var(--s-2);
+}
+
+.months {
+  width: 100%;
+}
+
+/* the view switcher stays reachable while scrolling long lists (under the sticky top bar) */
+.tabs {
+  min-width: 0;
+  margin-top: var(--s-2);
+}
+
+.tabs > [role='tablist'] {
+  position: sticky;
+  top: calc(var(--safe-top) + var(--topbar-h));
+  z-index: 10;
+  margin: 0 calc(-1 * var(--gutter, var(--s-4)));
+  padding: 0 var(--gutter, var(--s-4));
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(16px) saturate(1.3);
+  -webkit-backdrop-filter: blur(16px) saturate(1.3);
+}
+
+.tabs > [role='tabpanel'] {
+  outline: none;
+}

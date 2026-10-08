@@ -1,7 +1,7 @@
 import type { AppApi, Result } from '../app-api'
 import { MAX_PIN_ATTEMPTS, PIN_LOCK_MINUTES } from '../security/pin'
 import { decryptJSON } from '../security/vault'
-import { appendAudit } from './audit'
+import { appendAudit, verifyAuditAnchored } from './audit'
 import { LOCKED_MSG, NOT_SET_UP_MSG, expirePending, type Core } from './core'
 import { stepUp } from './safety'
 import { parseState } from './state'
@@ -37,7 +37,10 @@ export function createVaultApi(core: Core, onUnlocked: () => void): VaultApi {
     state.settings.vault = true
     persistence.setVaultPin(pin)
     core.engines.reset()
-    appendAudit(state, core.now(), 'user', 'session_start', 'Vault unlocked with PIN', { vault: true })
+    const check = verifyAuditAnchored(state.audit, persistence.auditHead())
+    appendAudit(state, core.now(), 'user', 'session_start', 'Vault unlocked with PIN', {
+      vault: true, auditIntact: check.ok, auditEntries: check.count, ...(check.ok ? {} : { brokenAt: check.brokenAt ?? null }),
+    })
     store.replace(state)
     expirePending(core)
     onUnlocked()

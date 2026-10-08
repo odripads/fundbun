@@ -1,0 +1,193 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  min-height: 36px;
+}
+
+.title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-variation-settings: var(--fv-display);
+  font-weight: 640;
+}
+
+.title svg {
+  width: 20px;
+  height: 20px;
+  color: var(--over);
+  animation: ring 4s ease-in-out infinite;
+  transform-origin: 50% 10%;
+}
+
+@keyframes ring {
+  0%,
+  86%,
+  100% {
+    transform: rotate(0);
+  }
+
+  89% {
+    transform: rotate(14deg);
+  }
+
+  92% {
+    transform: rotate(-12deg);
+  }
+
+  95% {
+    transform: rotate(6deg);
+  }
+}
+
+.count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: var(--r-pill);
+  background: var(--c-chili-600);
+  color: var(--c-cream-50);
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+
+.deck {
+  position: relative;
+  padding-bottom: calc(var(--behind, 0) * 8px);
+}
+
+.ghost {
+  position: absolute;
+  right: calc(var(--n) * 10px);
+  bottom: calc((var(--behind) - var(--n)) * 8px);
+  left: calc(var(--n) * 10px);
+  height: 40px;
+  border-radius: 0 0 var(--r-lg) var(--r-lg);
+  background: color-mix(in srgb, var(--over) calc(14% - var(--n) * 4%), var(--surface));
+  box-shadow: inset 0 0 0 1px var(--border), var(--shadow-1);
+  opacity: calc(1 - var(--n) * 0.25);
+}
+
+.card {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--s-3);
+  padding: var(--s-4);
+  border-radius: var(--r-lg);
+  background:
+    radial-gradient(120% 120% at 0% 0%, var(--over-soft) 0%, transparent 60%),
+    var(--surface);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--over) 28%, transparent), var(--shadow-2);
+  animation: deal 480ms var(--ease-spring) both;
+}
+
+@keyframes deal {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.97);
+  }
+}
+
+.art {
+  align-self: start;
+  animation: nudge 5.5s ease-in-out infinite;
+}
+
+@keyframes nudge {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+
+  50% {
+    transform: translateY(-3px) rotate(2deg);
+  }
+}
+
+.body {
+  min-width: 0;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: color-mix(in srgb, var(--over) 78%, var(--text));
+  font-size: var(--fs-xs);
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+
+.pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--over);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--over) 50%, transparent);
+  animation: pulse 2.2s ease-out infinite;
+}
+
+@keyframes pulse {
+  70%,
+  100% {
+    box-shadow: 0 0 0 8px transparent;
+  }
+}
+
+.cardTitle {
+  margin: 4px 0 0;
+  font-size: var(--fs-md);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.message {
+  margin: 4px 0 0;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin-top: var(--s-3);
+}
+
+.tap.tap {
+  --btn-h: 44px;
+}
+
+.more {
+  margin: 0;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .title svg,
+  .art,
+  .pulse,
+  .card {
+    animation: none;
+  }
+}

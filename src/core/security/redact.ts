@@ -10,8 +10,11 @@ export type RedactionKind = 'email' | 'iban' | 'phone' | 'cn_id' | 'nik' | 'card
 interface Rule {
   kind: RedactionKind
   re: RegExp
-  /** replacement for a match, or null to leave it untouched (failed checksum / structure) */
-  replace: (match: string) => string | null
+  /**
+   * replacement for a match, or null to leave it untouched (failed checksum / structure). `before` is the text
+   * preceding the match on the same line (for rules that look for a nearby label).
+   */
+  replace: (match: string, before: string) => string | null
 }
 
 // Lookarounds use ASCII \w so CJK text right next to a number (卡号6222…) still matches.
@@ -19,6 +22,17 @@ const NB = '(?<![\\w+])'
 const NA = '(?![\\w]|[.,]\\d)'
 
 const MASK = '••••'
+
+/** How far before a long number (same line) an account label still counts as "near". */
+const LABEL_WINDOW = 48
+/** Labels that make a long digit run an account / card number even when it fails Luhn. */
+const ACCOUNT_LABEL = /(?:\b(?:accounts?|acct|a\/c|cards?|iban|rekening|no\.?\s*rek)\b|账号|帐号|卡号|账户|帐户|户号|银行卡)/i
+/** 12–30 digit runs in groups of 3+ (spaces/dashes), so dates (2026-10-28) and grouped amounts never qualify. */
+const LONG_DIGIT_RUN = /(?<![\w+.,¥$€£])\d{3,}(?:[ -]\d{3,})*(?:[ -]\d{1,4})?(?![\w]|[.,]\d)/g
+
+function keepLast4(label: 'CARD' | 'ACCOUNT', digitsOf: string): string {
+  return `[${label} ${MASK}${digitsOf.replace(/\D/g, '').slice(-4)}]`
+}
 
 /** Already-redacted placeholders are skipped by every later rule (so digits in "[CARD ••••1234]" stay put). */
 const PLACEHOLDER = /(\[(?:EMAIL|PHONE|ID|NIK|PASSPORT|NAME|CARD ••••\d{4}|ACCOUNT ••••\d{4}|IBAN ••••[A-Z0-9]{4})\])/
@@ -103,14 +117,34 @@ const RULES: Rule[] = [
     re: new RegExp(`${NB}[A-Z]{1,2}\\d{7,8}${NA}`, 'g'),
     replace: () => '[PASSPORT]',
   },
+  {
+    kind: 'account',
+    // a long number (12+ digits) near an account / card label, Luhn or not: "to account at ICBC 6222 0212 3456 7890 123"
+    re: LONG_DIGIT_RUN,
+    replace: (m, before) => {
+      const n = countDigits(m)
+      return n >= 12 && n <= 30 && ACCOUNT_LABEL.test(before.slice(-LABEL_WINDOW)) ? keepLast4('ACCOUNT', m) : null
+    },
+  },
+  {
+    kind: 'card',
+    // UnionPay BIN 62: any 16–19 digit run is a bank card / account number even when it fails Luhn
+    re: new RegExp(`${NB}62(?:[ -]?\\d){14,17}${NA}`, 'g'),
+    replace: (m) => {
+      const n = countDigits(m)
+      return n >= 16 && n <= 19 ? keepLast4('CARD', m) : null
+    },
+  },
 ]
 
 /**
  * Mask PII before anything leaves the device: emails, phone numbers (CN mobile 1[3-9]x{9}, +country
  * formats), PRC resident ID (18 chars), Indonesian NIK (16 digits), passport-like ids, bank card numbers
  * (13–19 digits, Luhn-valid; keep last 4), IBANs, and any `extraNames` (e.g. the user's name) → [NAME].
- * Amounts like "¥2,000" or "2000.50" must NOT be redacted.
- * Long digit runs that fail every check (order numbers, timestamps) are left alone on purpose.
+ * Bank account numbers that fail Luhn are still masked (keep last 4) when they are 12+ digits near an account
+ * label (account, acct, a/c, card, IBAN, rekening, 账号, 卡号, 账户…) or 16–19 digits starting with the UnionPay
+ * BIN 62. Amounts like "¥2,000" or "2000.50" and dates must NOT be redacted.
+ * Other long digit runs that fail every check (order numbers, timestamps) are left alone on purpose.
  */
 export function redactText(text: string, extraNames: string[] = []): RedactionReport {
   return makeRedactor(extraNames)(text)
@@ -160,8 +194,12 @@ function applyRule(text: string, rule: Rule, counts: Record<string, number>): st
     .map((segment, i) => {
       // odd indexes are captured placeholders
       if (i % 2 === 1) return segment
-      return segment.replace(rule.re, (m: string) => {
-        const replacement = rule.replace(m)
+      return segment.replace(rule.re, (m: string, ...rest: unknown[]) => {
+        // replace() passes (match, ...groups, offset, whole[, namedGroups])
+        const offsetAt = rest.findIndex((x) => typeof x === 'number')
+        const offset = offsetAt >= 0 ? (rest[offsetAt] as number) : 0
+        const line = segment.slice(0, offset)
+        const replacement = rule.replace(m, line.slice(line.lastIndexOf('\n') + 1))
         if (replacement === null) return m
         counts[rule.kind] = (counts[rule.kind] ?? 0) + 1
         return replacement

@@ -5,7 +5,7 @@ import { createAgentEngine } from './agent/runtime'
 import { createAgentApi, initialLlmStatus } from './controller/api-agent'
 import { createUserApi } from './controller/api-user'
 import { createVaultApi } from './controller/api-vault'
-import { appendAudit } from './controller/audit'
+import { appendAudit, verifyAuditAnchored } from './controller/audit'
 import { STORAGE_KEY, TEST_NOW } from './controller/constants'
 import { LOCKED_MSG, expirePending, type Core, type LockState } from './controller/core'
 import { buildDemoState } from './controller/demo'
@@ -16,17 +16,17 @@ import {
   createPersistence,
   defaultStorage,
   memoryStorage,
+  type AuditHead,
   type LoadResult,
   type StorageLike,
 } from './controller/persistence'
 import { emptyState } from './controller/state'
 import { createStore } from './controller/store'
 import { OK, errorMessage, fail, localISODate, safely } from './controller/util'
-import { verifyAudit } from './security/audit'
 import type { AppState, ISODateTime } from './types'
 
 export { memoryStorage, type StorageLike }
-export { DEMO_PIN, DEMO_TODAY, STORAGE_KEY, TEST_NOW } from './controller/constants'
+export { CONSENT_VERSION, DEMO_PIN, DEMO_TODAY, STORAGE_KEY, TEST_NOW } from './controller/constants'
 
 export interface CreateAppOptions {
   /** localStorage in the browser; an in-memory store in Node/tests */
@@ -58,7 +58,7 @@ interface Boot {
   persist: boolean
 }
 
-function bootFrom(loaded: LoadResult, lock: LockState, now: ISODateTime, today: string): Boot {
+function bootFrom(loaded: LoadResult, lock: LockState, now: ISODateTime, today: string, head: AuditHead | null = null): Boot {
   switch (loaded.kind) {
     case 'empty':
       return { state: emptyState(today), persist: false }
@@ -73,8 +73,11 @@ function bootFrom(loaded: LoadResult, lock: LockState, now: ISODateTime, today: 
     case 'plain': {
       const { state } = loaded
       if (!state.profile) return { state, persist: false }
-      const check = safely('verifyAudit', () => verifyAudit(state.audit), { ok: false, count: state.audit.length })
-      appendAudit(state, now, 'system', 'session_start', 'Session started', { auditIntact: check.ok, auditEntries: check.count })
+      // anchored: deleting the newest entries from storage is caught too, not only edits
+      const check = safely('verifyAudit', () => verifyAuditAnchored(state.audit, head), { ok: false, count: state.audit.length })
+      appendAudit(state, now, 'system', 'session_start', 'Session started', {
+        auditIntact: check.ok, auditEntries: check.count, ...(check.ok ? {} : { brokenAt: check.brokenAt ?? null }),
+      })
       return { state, persist: true }
     }
   }
@@ -90,7 +93,10 @@ export function createFundBunApp(opts: CreateAppOptions = {}): FundBunApp {
   const llmClient = llmBaseUrl === null ? null : new LlmClient(llmBaseUrl)
   const lock: LockState = { locked: false, blob: null, failures: 0, lockedUntil: 0 }
 
-  const boot = bootFrom(persistence.load(), lock, now(), today())
+  const loaded = persistence.load()
+  const boot = bootFrom(loaded, lock, now(), today(), persistence.auditHead())
+  // nothing (or nothing readable) to protect: whatever chain starts now gets a fresh anchor
+  if (loaded.kind === 'empty' || loaded.kind === 'corrupt') persistence.resetAuditHead()
   const store = createStore(boot.state, { llm: initialLlmStatus(llmClient !== null), busy: 0 }, {
     onCommit: (state, persist) => {
       if (persist && !lock.locked) persistence.save(state)
@@ -137,6 +143,8 @@ export function createFundBunApp(opts: CreateAppOptions = {}): FundBunApp {
     }
     const next = buildDemoState(personaId, now())
     persistence.setVaultPin(null)
+    // the demo starts a fresh audit chain, so it gets a fresh anchor
+    persistence.resetAuditHead()
     engines.reset()
     store.replace(next)
     recheckLlm()

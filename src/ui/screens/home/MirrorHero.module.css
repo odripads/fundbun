@@ -1,0 +1,626 @@
+/* The Dream Mirror hero: full-bleed, status-tinted, with an arched vanity mirror at its heart. */
+
+.hero {
+  --tint: var(--accent);
+  --tint-2: var(--accent);
+  position: relative;
+  isolation: isolate;
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  /* bleed to the screen edges and up behind the (transparent) top bar */
+  margin-inline: calc(-1 * var(--gutter));
+  margin-top: calc(-1 * (var(--topbar-h) + var(--safe-top) + var(--s-2)));
+  padding: calc(var(--topbar-h) + var(--safe-top) + var(--s-2)) var(--gutter) var(--s-6);
+  color: var(--text);
+}
+
+.hero[data-status='over'] {
+  --tint: var(--over);
+  --tint-2: var(--accent);
+}
+
+.hero[data-status='pace_over'] {
+  --tint: var(--warn);
+  --tint-2: var(--over);
+}
+
+.hero[data-status='under'] {
+  --tint: var(--under);
+  --tint-2: var(--accent);
+}
+
+.hero[data-status='on_track'] {
+  --tint: var(--accent);
+  --tint-2: var(--under);
+}
+
+.hero[data-status='no_data'] {
+  --tint: var(--text-3);
+  --tint-2: var(--accent);
+}
+
+/* ───────────── ambient background ───────────── */
+
+.ambient {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 70% at 50% 18%, color-mix(in srgb, var(--tint) 16%, transparent) 0%, transparent 70%),
+    linear-gradient(180deg, color-mix(in srgb, var(--tint) 7%, var(--bg)) 0%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, var(--text) 0%, var(--text) 72%, transparent 100%);
+  mask-image: linear-gradient(180deg, var(--text) 0%, var(--text) 72%, transparent 100%);
+  pointer-events: none;
+}
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(36px);
+  opacity: 0.55;
+  will-change: transform;
+}
+
+.orbA {
+  top: 4%;
+  left: -18%;
+  width: 62%;
+  aspect-ratio: 1;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--tint) 34%, transparent), transparent);
+  animation: drift-a 19s ease-in-out infinite alternate;
+}
+
+.orbB {
+  top: 14%;
+  right: -22%;
+  width: 70%;
+  aspect-ratio: 1;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--tint-2) 30%, transparent), transparent);
+  animation: drift-b 23s ease-in-out infinite alternate;
+}
+
+.orbC {
+  top: 46%;
+  left: 18%;
+  width: 64%;
+  aspect-ratio: 1.3;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--bun) 60%, transparent), transparent);
+  opacity: 0.45;
+  animation: drift-c 27s ease-in-out infinite alternate;
+}
+
+.grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.045;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.2 0 0 0 0 0.15 0 0 0 0 0.1 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@keyframes drift-a {
+  to {
+    transform: translate3d(14%, 10%, 0) scale(1.08);
+  }
+}
+
+@keyframes drift-b {
+  to {
+    transform: translate3d(-16%, 8%, 0) scale(0.94);
+  }
+}
+
+@keyframes drift-c {
+  to {
+    transform: translate3d(10%, -12%, 0) scale(1.1);
+  }
+}
+
+/* ───────────── demo control (top-right, beside the arch) ───────────── */
+
+.sandbox {
+  position: absolute;
+  top: calc(var(--topbar-h) + var(--safe-top) + var(--s-2));
+  right: var(--gutter);
+  z-index: 4;
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* ───────────── the mirror ───────────── */
+
+.stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-3);
+  margin: var(--s-5) 0 0;
+}
+
+.mirrorWrap {
+  position: relative;
+  width: min(192px, 54cqi);
+}
+
+.mirror {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 0.88;
+  padding: 7px;
+  border-radius: 999px 999px var(--r-xl) var(--r-xl);
+  /* a brass frame: the gradient shows through the padding ring */
+  background:
+    linear-gradient(160deg,
+      color-mix(in srgb, var(--accent) 92%, var(--c-cream-50)) 0%,
+      var(--accent-strong) 38%,
+      color-mix(in srgb, var(--accent) 70%, var(--bun)) 62%,
+      var(--accent-strong) 100%);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, var(--c-cream-50) 50%, transparent) inset,
+    0 18px 40px -18px color-mix(in srgb, var(--tint) 55%, transparent),
+    0 8px 18px -10px color-mix(in srgb, var(--c-soy-900) 40%, transparent);
+}
+
+.glass {
+  position: absolute;
+  inset: 7px;
+  border-radius: 999px 999px calc(var(--r-xl) - 6px) calc(var(--r-xl) - 6px);
+  background:
+    radial-gradient(90% 60% at 50% 38%, color-mix(in srgb, var(--surface) 92%, var(--tint)) 0%, transparent 100%),
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--tint) 14%, var(--surface)) 0%,
+      color-mix(in srgb, var(--tint) 24%, var(--bg-sunken)) 100%);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--c-soy-900) 14%, transparent),
+    inset 0 10px 24px -12px color-mix(in srgb, var(--c-soy-900) 30%, transparent);
+}
+
+/* a slow highlight sweeping across the glass */
+.sheen {
+  position: absolute;
+  inset: 7px;
+  z-index: 2;
+  overflow: hidden;
+  border-radius: 999px 999px calc(var(--r-xl) - 6px) calc(var(--r-xl) - 6px);
+  pointer-events: none;
+}
+
+.sheen::before {
+  content: '';
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: -60%;
+  width: 38%;
+  background: linear-gradient(100deg, transparent, color-mix(in srgb, var(--c-cream-50) 34%, transparent) 50%, transparent);
+  transform: skewX(-14deg);
+  animation: sheen 9s ease-in-out 1.2s infinite;
+}
+
+.sheen::after {
+  /* a static glint on the upper-left of the glass */
+  content: '';
+  position: absolute;
+  top: 9%;
+  left: 15%;
+  width: 22%;
+  height: 34%;
+  border-radius: 50%;
+  border-top: 3px solid color-mix(in srgb, var(--c-cream-50) 55%, transparent);
+  transform: rotate(-28deg);
+  opacity: 0.7;
+}
+
+@keyframes sheen {
+  0%,
+  62% {
+    transform: translateX(0) skewX(-14deg);
+  }
+
+  100% {
+    transform: translateX(560%) skewX(-14deg);
+  }
+}
+
+.float {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  animation: float 6.5s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(3px) rotate(-1.2deg);
+  }
+
+  50% {
+    transform: translateY(-7px) rotate(1.2deg);
+  }
+}
+
+/* the illustrations bring their own pastel blob — let them sit straight on the glass */
+.mirror .dream img {
+  background: transparent;
+  box-shadow: none;
+}
+
+.floor {
+  position: absolute;
+  bottom: 13%;
+  left: 50%;
+  z-index: 0;
+  width: 46%;
+  height: 7%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--c-soy-900) 22%, transparent), transparent);
+  transform: translateX(-50%);
+  animation: floor 6.5s ease-in-out infinite;
+}
+
+@keyframes floor {
+  0%,
+  100% {
+    transform: translateX(-50%) scale(1);
+    opacity: 0.9;
+  }
+
+  50% {
+    transform: translateX(-50%) scale(0.82);
+    opacity: 0.6;
+  }
+}
+
+.ring {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 160px;
+  height: 160px;
+  transform: translate(-50%, -50%) rotate(-90deg);
+  overflow: visible;
+}
+
+.ring circle {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.ringTrack {
+  stroke: color-mix(in srgb, var(--text) 10%, transparent);
+}
+
+.ringAfter {
+  stroke: color-mix(in srgb, var(--under) 38%, transparent);
+  animation: ring-breathe 3.2s ease-in-out infinite;
+}
+
+.ringNow {
+  stroke: var(--under);
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--under) 45%, transparent));
+}
+
+@keyframes ring-breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Bun peeks round the bottom-right of the frame */
+.bun {
+  position: absolute;
+  right: -18%;
+  bottom: -6%;
+  z-index: 3;
+  filter: drop-shadow(0 6px 10px color-mix(in srgb, var(--c-soy-900) 22%, transparent));
+}
+
+/* ───────────── steam rising off the mirror ───────────── */
+
+.steam {
+  position: absolute;
+  inset: -30% 10% auto;
+  z-index: -1;
+  height: 62%;
+  pointer-events: none;
+}
+
+.wisp {
+  position: absolute;
+  bottom: 0;
+  width: 34%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(50% 50% at 50% 60%, color-mix(in srgb, var(--c-cream-50) 82%, var(--bun)) 0%, color-mix(in srgb, var(--c-cream-50) 30%, transparent) 45%, transparent 70%);
+  filter: blur(9px);
+  opacity: 0;
+  animation: wisp 9s ease-in infinite;
+}
+
+.wispA {
+  left: 8%;
+}
+
+.wispB {
+  left: 36%;
+  animation-delay: -3s;
+  animation-duration: 11s;
+}
+
+.wispC {
+  left: 62%;
+  animation-delay: -6.5s;
+  animation-duration: 10s;
+}
+
+@keyframes wisp {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 40%, 0) scale(0.6, 0.8);
+  }
+
+  30% {
+    opacity: 0.9;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(12%, -36%, 0) scale(1.25, 1.4);
+  }
+}
+
+/* ───────────── nameplate ───────────── */
+
+.plate {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  max-width: 100%;
+  padding: 5px 14px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent), var(--shadow-1);
+  font-size: var(--fs-sm);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.plateName {
+  overflow: hidden;
+  font-weight: 640;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plateDot {
+  color: var(--text-3);
+}
+
+.plateDetail {
+  flex: none;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ───────────── copy ───────────── */
+
+.copy {
+  margin-top: var(--s-4);
+  animation: rise-in 600ms var(--ease-out) 80ms both;
+}
+
+.eyebrowRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-1) var(--s-3);
+  margin-bottom: var(--s-2);
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.headline {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.85rem, 9.4cqi, 2.6rem);
+  font-variation-settings: var(--fv-display);
+  font-weight: 640;
+  line-height: 1.04;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+.headline[data-long] {
+  font-size: clamp(1.7rem, 8.2cqi, 2.3rem);
+}
+
+.itemName {
+  font-style: italic;
+  font-variation-settings: var(--fv-display-wonk);
+  background: linear-gradient(transparent 64%, color-mix(in srgb, var(--tint) 26%, transparent) 64%, color-mix(in srgb, var(--tint) 26%, transparent) 92%, transparent 92%);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+.subline {
+  margin: var(--s-3) 0 0;
+  color: var(--text-2);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+/* ───────────── evidence tiles ───────────── */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
+  gap: var(--s-2);
+  margin: var(--s-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stat {
+  --stat-tone: var(--text);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 10px var(--s-3);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--surface) 78%, transparent);
+  box-shadow: inset 0 0 0 1px var(--border), var(--shadow-1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  animation: rise-in 520ms var(--ease-out) both;
+  animation-delay: calc(180ms + var(--i, 0) * 70ms);
+}
+
+.stat[data-tone='over'] {
+  --stat-tone: var(--over);
+}
+
+.stat[data-tone='warn'] {
+  --stat-tone: var(--warn);
+}
+
+.stat[data-tone='under'] {
+  --stat-tone: var(--under);
+}
+
+.stat[data-tone='accent'] {
+  --stat-tone: var(--accent-strong);
+}
+
+.statValue {
+  color: var(--stat-tone);
+  font-family: var(--font-display);
+  font-size: clamp(1.1rem, 5.6cqi, 1.375rem);
+  font-variation-settings: var(--fv-display);
+  font-weight: 650;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.statLabel {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--text-2);
+  font-size: 0.71875rem;
+  font-weight: 560;
+  line-height: 1.25;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* ───────────── actions ───────────── */
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  margin-top: var(--s-4);
+  animation: rise-in 520ms var(--ease-out) 320ms both;
+}
+
+.hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0 0 var(--s-1);
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  text-align: center;
+}
+
+.hint svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--under);
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
+  margin-top: var(--s-3);
+}
+
+/* ───────────── fallback (no mirror) ───────────── */
+
+.fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-8) 0 var(--s-4);
+  text-align: center;
+}
+
+.fallback .headline {
+  font-size: var(--fs-2xl);
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+/* ───────────── motion policy ───────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .orb,
+  .float,
+  .floor,
+  .sheen::before,
+  .ringAfter {
+    animation: none;
+  }
+
+  .wisp {
+    display: none;
+  }
+}
+
+:global(html[data-motion='reduce']) .orb,
+:global(html[data-motion='reduce']) .float,
+:global(html[data-motion='reduce']) .floor,
+:global(html[data-motion='reduce']) .sheen::before,
+:global(html[data-motion='reduce']) .ringAfter {
+  animation: none;
+}
+
+:global(html[data-motion='reduce']) .wisp {
+  display: none;
+}
+
+@media (forced-colors: active) {
+  .mirror {
+    border: 2px solid CanvasText;
+  }
+}

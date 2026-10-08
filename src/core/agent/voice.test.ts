@@ -113,6 +113,19 @@ describe('composeReply', () => {
     for (const tone of TONES) expect(composeReply('xray', { injection: 'yes', total: '¥486.20' }, tone)).toMatch(/instructions/i)
   })
 
+  it('keeps the history comparison in every tone, with or without an injection warning', () => {
+    const facts = { merchant: 'Shenzhen Power Supply', total: '¥486.20', dueDate: 'Oct 28', comparison: '57% above your usual ¥310' }
+    for (const tone of TONES) {
+      for (const injection of [undefined, 'yes']) {
+        const text = composeReply('xray', { ...facts, ...(injection ? { injection } : {}) }, tone)
+        expect(text, `${tone}/${injection ?? 'clean'}`).toContain('57% above your usual ¥310')
+        expect(text).not.toMatch(/\.\.|\{|\}/)
+      }
+    }
+    // with nothing but the injection flag the cheeky reply doesn't leave dangling punctuation
+    expect(composeReply('xray', { injection: 'yes' }, 'cheeky')).toMatch(/orders from you\.$/)
+  })
+
   it('inserts fact values verbatim and never re-expands template syntax inside them', () => {
     const text = composeReply('goals', { goalName: '{amount} [x] {goalName}', saved: '¥1', price: '¥2', pct: '50%', amount: 'LEAK' }, 'numbers')
     expect(text).toContain('{amount} [x] {goalName}')

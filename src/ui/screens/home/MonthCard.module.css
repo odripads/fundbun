@@ -1,0 +1,264 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-variation-settings: var(--fv-display);
+  font-weight: 640;
+  letter-spacing: -0.015em;
+}
+
+.amounts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px var(--s-2);
+  margin: 0;
+}
+
+.of {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 560;
+}
+
+/* ───────────── the month track ───────────── */
+
+.track {
+  --fill: var(--under);
+  position: relative;
+  margin: var(--s-5) 0 var(--s-5);
+}
+
+.track[data-tone='warn'] {
+  --fill: var(--warn);
+}
+
+.track[data-tone='over'] {
+  --fill: var(--accent);
+}
+
+.bar {
+  position: relative;
+  height: 14px;
+  overflow: hidden;
+  border-radius: var(--r-pill);
+  background: var(--chart-track);
+}
+
+.within,
+.over,
+.projected {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: var(--r-pill);
+  transform-origin: left center;
+  animation: grow 900ms var(--ease-out) both;
+}
+
+.within {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--fill) 70%, var(--surface)), var(--fill));
+}
+
+.over {
+  border-radius: 0 var(--r-pill) var(--r-pill) 0;
+  background:
+    repeating-linear-gradient(-45deg, transparent 0 4px, color-mix(in srgb, var(--c-cream-50) 30%, transparent) 4px 7px),
+    var(--over);
+  animation-delay: 200ms;
+}
+
+/* the dashed ghost out to the projected month end */
+.projected {
+  background: color-mix(in srgb, var(--fill) 26%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fill) 45%, transparent);
+  animation-delay: 380ms;
+}
+
+.track[data-tone='over'] .projected {
+  background: color-mix(in srgb, var(--over) 20%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--over) 40%, transparent);
+}
+
+@keyframes grow {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.marker {
+  position: absolute;
+  top: -6px;
+  bottom: -6px;
+  left: var(--at);
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 1px;
+}
+
+.marker[data-kind='target'] {
+  background: var(--text);
+}
+
+.marker[data-kind='pace'] {
+  top: -3px;
+  bottom: -3px;
+  background: var(--surface);
+  box-shadow: 0 0 0 1px var(--text-2);
+}
+
+.markerLabel {
+  position: absolute;
+  left: 50%;
+  color: var(--text-2);
+  font-size: 0.6875rem;
+  font-weight: 650;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.marker[data-kind='target'] .markerLabel {
+  bottom: calc(100% + 3px);
+  color: var(--text);
+}
+
+.marker[data-kind='pace'] .markerLabel {
+  top: calc(100% + 4px);
+}
+
+.marker[data-align='start'] .markerLabel {
+  left: -1px;
+  transform: none;
+}
+
+.marker[data-align='end'] .markerLabel {
+  right: -1px;
+  left: auto;
+  transform: none;
+}
+
+.paceRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-1) var(--s-3);
+  margin: 0;
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  font-weight: 560;
+}
+
+.paceText,
+.projectedText {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.paceText svg {
+  width: 14px;
+  height: 14px;
+  color: var(--under);
+  transform: scaleY(-1);
+}
+
+.paceText[data-ahead] svg {
+  color: var(--over);
+  transform: none;
+}
+
+.swatch {
+  --sw: var(--under);
+  width: 16px;
+  height: 8px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--sw) 24%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sw) 45%, transparent);
+}
+
+.paceRow[data-tone='warn'] .swatch {
+  --sw: var(--warn);
+}
+
+.paceRow[data-tone='over'] .swatch {
+  --sw: var(--over);
+}
+
+/* ───────────── safe to spend + saved ───────────── */
+
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--s-3);
+  margin-top: var(--s-2);
+  padding-top: var(--s-4);
+  border-top: var(--hairline);
+}
+
+.safe,
+.saved {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.saved {
+  position: relative;
+  padding: var(--s-3);
+  border-radius: var(--r-md);
+  background: var(--under-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--under) 22%, transparent);
+}
+
+.savedIcon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--under);
+}
+
+.label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+
+.safeMoney {
+  line-height: 1.05;
+}
+
+.note {
+  margin: 2px 0 0;
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  line-height: 1.4;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .within,
+  .over,
+  .projected {
+    animation: none;
+  }
+}

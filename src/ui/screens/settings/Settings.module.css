@@ -1,0 +1,1202 @@
+.page {
+  display: grid;
+  gap: var(--s-8);
+  padding-top: var(--s-2);
+}
+
+.section {
+  display: grid;
+  gap: var(--s-3);
+  min-width: 0;
+  scroll-margin-top: calc(var(--topbar-h) + var(--safe-top) + var(--s-2));
+}
+
+/* SectionHeader already spaces itself; the grid gap does that job here */
+.section > :first-child {
+  margin-bottom: 0;
+}
+
+.card {
+  display: grid;
+  gap: var(--s-4);
+}
+
+.rowIcon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: var(--surface-2);
+  color: var(--text-2);
+}
+
+.rowIcon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.fieldLabel {
+  padding: 0;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 620;
+}
+
+.fieldHint {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+
+.form {
+  display: grid;
+  gap: var(--s-4);
+}
+
+/* ───────────── kill switch ───────────── */
+
+.kill {
+  position: relative;
+  display: grid;
+  gap: var(--s-4);
+  padding: var(--s-5) var(--s-4) var(--s-4);
+  overflow: hidden;
+  border-radius: var(--r-xl);
+  background:
+    radial-gradient(90% 120% at 0% 0%, color-mix(in srgb, var(--accent) 22%, transparent) 0%, transparent 58%),
+    radial-gradient(80% 100% at 100% 100%, color-mix(in srgb, var(--under) 10%, transparent) 0%, transparent 60%),
+    var(--surface);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, var(--border)), var(--shadow-2);
+}
+
+.killHead {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+}
+
+.killArt {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 60%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%);
+}
+
+.killText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.killEyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--under);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.liveDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--under);
+  animation: beat 2.4s var(--ease-out) infinite;
+}
+
+@keyframes beat {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--under) 55%, transparent);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 7px transparent;
+  }
+}
+
+.killTitle {
+  font-size: var(--fs-2xl);
+}
+
+.killSub {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: 1.4;
+}
+
+.freezeButton {
+  min-height: 56px;
+  font-size: var(--fs-lg);
+}
+
+.killNote {
+  margin-top: calc(-1 * var(--s-2));
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  text-align: center;
+}
+
+/* frozen: an icy wash with slow-falling snow */
+.killFrozen {
+  background:
+    radial-gradient(100% 120% at 0% 0%, color-mix(in srgb, var(--info) 24%, transparent) 0%, transparent 62%),
+    linear-gradient(180deg, color-mix(in srgb, var(--info) 8%, var(--surface)), var(--surface));
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--info) 55%, transparent), var(--shadow-2);
+}
+
+.killFrozen .killArt {
+  background: radial-gradient(circle at 50% 60%, color-mix(in srgb, var(--info) 22%, transparent), transparent 70%);
+}
+
+.killEyebrowFrozen {
+  color: var(--info);
+}
+
+.killEyebrowFrozen svg {
+  width: 13px;
+  height: 13px;
+}
+
+.kill > :not(.snow) {
+  position: relative;
+}
+
+.snow {
+  position: absolute;
+  inset: -40px 0 0;
+  background-image:
+    radial-gradient(circle, color-mix(in srgb, var(--info) 45%, transparent) 1.2px, transparent 1.8px),
+    radial-gradient(circle, color-mix(in srgb, var(--info) 30%, transparent) 1px, transparent 1.6px);
+  background-size: 46px 46px, 29px 29px;
+  background-position: 0 0, 13px 7px;
+  opacity: 0.7;
+  pointer-events: none;
+  animation: snow 14s linear infinite;
+  mask-image: linear-gradient(transparent, var(--text) 20%, var(--text) 60%, transparent);
+}
+
+@keyframes snow {
+  to {
+    background-position: 0 46px, 13px 65px;
+  }
+}
+
+/* ───────────── jump nav ───────────── */
+
+.jumps {
+  display: flex;
+  gap: var(--s-2);
+  margin: calc(-1 * var(--s-4) - 4px) calc(-1 * var(--gutter)) -4px;
+  padding: 4px var(--gutter);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.jumps::-webkit-scrollbar {
+  display: none;
+}
+
+.jump {
+  flex: none;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 650;
+  transition: background-color var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out);
+}
+
+.jump:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+/* keep 44px targets while looking like slim pills */
+.jump {
+  position: relative;
+}
+
+.jump::after {
+  content: '';
+  position: absolute;
+  inset: -4px 0;
+}
+
+/* ───────────── PIN sheet ───────────── */
+
+.pinBody {
+  display: grid;
+  gap: var(--s-4);
+  padding-bottom: var(--s-2);
+}
+
+.pinFoot,
+.pinLead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 6px;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  text-align: center;
+}
+
+.pinFoot svg,
+.pinLead svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+}
+
+.pinLead {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+.pinSteps {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pinSteps li {
+  width: 28px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--chart-track);
+  transition: background-color var(--dur-2) var(--ease-out);
+}
+
+.pinSteps li[data-done] {
+  background: var(--under);
+}
+
+.pinSteps li[data-on] {
+  background: var(--accent);
+}
+
+.diff {
+  display: grid;
+  gap: var(--s-2);
+  margin: 0;
+  padding: var(--s-3);
+  border-radius: var(--r-md);
+  background: var(--bg-sunken);
+  box-shadow: inset 0 0 0 1px var(--border);
+  list-style: none;
+}
+
+.diff li {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--fs-sm);
+}
+
+.diffName {
+  flex: 1;
+  font-weight: 650;
+}
+
+.diff li > :first-child {
+  margin-right: auto;
+}
+
+/* ───────────── permissions ───────────── */
+
+.asym {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: calc(-1 * var(--s-2));
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+
+.asym svg {
+  width: 14px;
+  height: 14px;
+}
+
+.matrixWrap {
+  display: grid;
+  gap: var(--s-3);
+  min-width: 0;
+}
+
+.matrix {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0 3px;
+}
+
+.matrixCaption {
+  padding-bottom: var(--s-2);
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  font-weight: 650;
+  text-align: start;
+}
+
+.matrix th,
+.matrix td {
+  padding: 0;
+}
+
+.matrix thead th {
+  padding: 0 2px 4px;
+  color: var(--text-3);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.matrix thead th:first-child {
+  width: 30%;
+}
+
+.matrix thead th.colNow {
+  color: var(--text);
+}
+
+.matrix thead th.colNow::after {
+  content: '';
+  display: block;
+  width: 18px;
+  height: 3px;
+  margin: 3px auto 0;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.matrix tbody th {
+  padding-right: var(--s-2);
+  text-align: start;
+  font-family: var(--font-ui);
+  font-weight: 650;
+}
+
+.tierCode {
+  display: inline-block;
+  min-width: 24px;
+  margin-right: 4px;
+  padding: 1px 4px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--tc) 16%, transparent);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 800;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.tierCode[data-tier='0'] {
+  --tc: var(--tier-0);
+}
+
+.tierCode[data-tier='1'] {
+  --tc: var(--tier-1);
+}
+
+.tierCode[data-tier='2'] {
+  --tc: var(--tier-2);
+}
+
+.tierCode[data-tier='3'] {
+  --tc: var(--tier-3);
+}
+
+.tierCode[data-tier='4'] {
+  --tc: var(--tier-4);
+}
+
+.tierName {
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.cell {
+  height: 44px;
+  text-align: center;
+  vertical-align: middle;
+  background: color-mix(in srgb, var(--gc, var(--text-3)) 9%, transparent);
+  color: var(--gc, var(--text-3));
+}
+
+.cell:nth-child(2) {
+  border-radius: 10px 0 0 10px;
+}
+
+.cell:last-child {
+  border-radius: 0 10px 10px 0;
+}
+
+.cell.colNow {
+  background: color-mix(in srgb, var(--gc) 20%, var(--surface));
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--gc) 55%, transparent);
+  border-radius: 8px;
+}
+
+.cellIcon {
+  display: inline-grid;
+  place-items: center;
+}
+
+.cellIcon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.cellText {
+  display: block;
+  color: var(--text);
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.gate_auto {
+  --gc: var(--under);
+}
+
+.gate_tap {
+  --gc: var(--accent-strong);
+}
+
+.gate_pin {
+  --gc: var(--warn);
+}
+
+.gate_never {
+  --gc: var(--over);
+}
+
+.legend {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px var(--s-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+}
+
+.legend .cellIcon {
+  color: var(--gc);
+}
+
+.gate {
+  padding: 1px 8px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--gc, var(--text-3)) 14%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gc, var(--text-3)) 45%, transparent);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.caps {
+  display: grid;
+  gap: var(--s-4);
+}
+
+.capLine {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+.capLine > span:first-child {
+  display: grid;
+}
+
+.capName {
+  font-size: var(--fs-sm);
+  font-weight: 620;
+  color: var(--text-2);
+}
+
+.capHint {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+
+.of {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+
+/* tools */
+
+.toolsCard {
+  overflow: hidden;
+}
+
+.toolsHead {
+  padding: var(--s-4) var(--s-4) var(--s-2);
+}
+
+.toolGroup {
+  border-top: 1px solid var(--border);
+}
+
+.toolSummary {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: 52px;
+  padding: 0 var(--s-4);
+  cursor: pointer;
+  list-style: none;
+}
+
+.toolSummary::-webkit-details-marker {
+  display: none;
+}
+
+.toolSummary:hover {
+  background: color-mix(in srgb, var(--text) 3%, transparent);
+}
+
+.toolSummary:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--focus);
+}
+
+.toolCount {
+  flex: 1;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-align: end;
+}
+
+.toolChevron {
+  width: 16px;
+  height: 16px;
+  color: var(--text-3);
+  transition: transform var(--dur-2) var(--ease-out);
+}
+
+.toolGroup[open] .toolChevron {
+  transform: rotate(180deg);
+}
+
+.toolList {
+  margin: 0;
+  padding: 0 var(--s-4) var(--s-2);
+  list-style: none;
+}
+
+.toolRow {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: 52px;
+}
+
+.toolRow + .toolRow {
+  border-top: 1px dashed var(--border);
+}
+
+.toolText {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.toolLabel {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.toolName {
+  overflow: hidden;
+  color: var(--text-3);
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.locked {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  background: var(--over-soft);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.locked svg {
+  width: 12px;
+  height: 12px;
+  color: var(--over);
+}
+
+/* ───────────── profile ───────────── */
+
+.profileForm {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--s-4) var(--s-3);
+}
+
+.span2,
+.toneField,
+.preview,
+.formActions {
+  grid-column: 1 / -1;
+}
+
+.toneField {
+  display: grid;
+  gap: var(--s-2);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.preview {
+  display: grid;
+  gap: var(--s-2);
+  margin: 0;
+  padding: var(--s-3) var(--s-4) var(--s-4);
+  border-radius: var(--r-lg);
+  background:
+    radial-gradient(120% 140% at 100% 0%, var(--accent-soft), transparent 60%),
+    var(--bg-sunken);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.previewCaption {
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.previewBody {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  animation: swap var(--dur-3) var(--ease-out);
+}
+
+.previewArt {
+  flex: none;
+}
+
+.previewText {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.previewHeadline {
+  font-family: var(--font-display);
+  font-variation-settings: var(--fv-display-wonk);
+  font-size: var(--fs-xl);
+  font-weight: 640;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+.previewSub {
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  line-height: 1.45;
+}
+
+@keyframes swap {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+.formActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+/* ───────────── tripwires ───────────── */
+
+.twList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.twRow {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding-right: var(--s-4);
+}
+
+.twRow + .twRow {
+  border-top: 1px solid var(--border);
+}
+
+.twMain {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--s-3);
+  min-width: 0;
+  min-height: 68px;
+  padding: var(--s-2) var(--s-2) var(--s-2) var(--s-4);
+  border: 0;
+  background: transparent;
+  text-align: start;
+}
+
+.twMain:hover {
+  background: color-mix(in srgb, var(--text) 3%, transparent);
+}
+
+.twMain:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--focus);
+  border-radius: var(--r-md);
+}
+
+.twIcon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: var(--warn-soft);
+  color: var(--warn);
+  transition: background-color var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out);
+}
+
+.twIcon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.twRow[data-off] .twIcon {
+  background: var(--surface-2);
+  color: var(--text-3);
+}
+
+.twRow[data-off] .twTitle {
+  color: var(--text-3);
+}
+
+.twText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.twTitle {
+  font-size: var(--fs-sm);
+  font-weight: 650;
+  line-height: 1.3;
+}
+
+.twSub {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 8px;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+
+.twAgent {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--accent-strong);
+  font-weight: 650;
+}
+
+.twAgent svg {
+  width: 12px;
+  height: 12px;
+}
+
+.sheetActions {
+  display: flex;
+  gap: var(--s-2);
+}
+
+.deleteButton {
+  flex: none;
+  color: var(--over);
+}
+
+.kindField {
+  display: grid;
+  gap: var(--s-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.kindChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.selectField {
+  display: grid;
+  gap: 6px;
+}
+
+.select {
+  width: 100%;
+  min-height: 52px;
+  padding: 0 40px 0 var(--s-4);
+  border: 0;
+  border-radius: var(--r-md);
+  background:
+    linear-gradient(45deg, transparent 50%, var(--text-3) 50%) calc(100% - 22px) 50% / 6px 6px no-repeat,
+    linear-gradient(-45deg, transparent 50%, var(--text-3) 50%) calc(100% - 16px) 50% / 6px 6px no-repeat,
+    var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+  color: var(--text);
+  font-size: var(--fs-md);
+  appearance: none;
+}
+
+.select:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--focus);
+}
+
+.select:disabled {
+  opacity: 0.6;
+}
+
+.sentence {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-2);
+  padding: var(--s-3);
+  border-radius: var(--r-md);
+  background: var(--accent-soft);
+  font-size: var(--fs-sm);
+  font-weight: 560;
+}
+
+.sentence svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  color: var(--accent-strong);
+}
+
+/* ───────────── security ───────────── */
+
+.vault {
+  display: grid;
+  gap: var(--s-2);
+}
+
+.vault > :first-child {
+  padding-top: 0;
+}
+
+.vaultNote {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-2);
+  padding: var(--s-3);
+  border-radius: var(--r-md);
+  background: var(--bg-sunken);
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+}
+
+.vaultNote svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--under);
+}
+
+/* ───────────── privacy ───────────── */
+
+.consentRow,
+.engineRow {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+}
+
+.toggleRow {
+  padding: var(--s-1) var(--s-4);
+}
+
+.consentRow + .toggleRow,
+.toggleRow + .engineRow,
+.toggleRow + .toggleRow {
+  border-top: 1px solid var(--border);
+}
+
+.consentText {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+}
+
+.consentTitle {
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.consentSub {
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  line-height: 1.4;
+}
+
+.engineRow {
+  background: var(--bg-sunken);
+}
+
+.trailIcon {
+  width: 18px;
+  height: 18px;
+  color: var(--text-3);
+}
+
+.danger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  border-radius: var(--r-lg);
+  background: color-mix(in srgb, var(--over) 6%, var(--surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--over) 30%, transparent);
+}
+
+.dangerTitle {
+  font-weight: 700;
+}
+
+.dangerSub {
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+}
+
+/* ───────────── sandbox & about ───────────── */
+
+.sandboxLead {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+.about {
+  display: grid;
+  gap: var(--s-3);
+}
+
+.aboutHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+.version {
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  background: var(--bg-sunken);
+  box-shadow: inset 0 0 0 1px var(--border);
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.aboutLead {
+  font-family: var(--font-display);
+  font-variation-settings: var(--fv-display);
+  font-size: var(--fs-lg);
+  line-height: 1.35;
+}
+
+.licences {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.licences li {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: 52px;
+}
+
+.licences li + li {
+  border-top: 1px solid var(--border);
+}
+
+.licName {
+  flex: 1;
+  font-weight: 650;
+}
+
+.licUse {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+
+/* inputs in multi-column grids: let the field shrink to its track (an input's intrinsic width is ~20ch) */
+.profileForm input {
+  width: 0;
+}
+
+.clip {
+  overflow: hidden;
+}
+
+.dangerButton {
+  flex: none;
+}
+
+.vaultNote:not([data-on]) svg {
+  color: var(--text-3);
+}
+
+.tierHead {
+  display: grid;
+  justify-items: start;
+  gap: 2px;
+}
+
+.tierHead .tierCode {
+  margin-right: 0;
+}
+
+/* about facts: full sentences, so they wrap instead of truncating */
+.facts {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fact + .fact {
+  border-top: 1px solid var(--border);
+}
+
+.fact {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+}
+
+.fact:has(.factButton) {
+  padding: 0;
+}
+
+.factButton {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  width: 100%;
+  min-height: 64px;
+  padding: var(--s-3) var(--s-4);
+  border: 0;
+  background: transparent;
+  text-align: start;
+}
+
+.factButton:hover {
+  background: color-mix(in srgb, var(--text) 3%, transparent);
+}
+
+.factButton:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--focus);
+}
+
+.factText {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+}
+
+.factTitle {
+  font-weight: 650;
+  line-height: 1.3;
+}
+
+.factBody {
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  line-height: 1.4;
+}
+
+.factChevron {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--text-3);
+}
+
+.savedNote {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.savedNote svg {
+  width: 16px;
+  height: 16px;
+  color: var(--under);
+}

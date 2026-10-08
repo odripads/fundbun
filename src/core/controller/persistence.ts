@@ -1,6 +1,6 @@
 import { encryptJSON, isVaultBlob } from '../security/vault'
-import type { AppState } from '../types'
-import { VAULT_PREFIX } from './constants'
+import type { AppState, AuditEntry } from '../types'
+import { AUDIT_HEAD_SUFFIX, VAULT_PREFIX } from './constants'
 import { parseState } from './state'
 import { errorMessage } from './util'
 
@@ -8,6 +8,17 @@ export interface StorageLike {
   getItem(key: string): string | null
   setItem(key: string, value: string): void
   removeItem(key: string): void
+}
+
+/**
+ * The newest audit entry of the last state actually written to storage, kept under its own key
+ * (`<key>.audit-head`). A hash chain cannot show that its newest entries were deleted; this anchor can.
+ */
+export interface AuditHead {
+  hash: string
+  /** entries in the saved log (no pruning: equals the head's seq) */
+  count: number
+  seq: number
 }
 
 export type LoadResult =
@@ -27,6 +38,10 @@ export interface Persistence {
   /** the vault PIN is held in memory only, for this session */
   setVaultPin(pin: string | null): void
   hasVaultPin(): boolean
+  /** the recorded audit head, or null when none (fresh device, wiped, unreadable) */
+  auditHead(): AuditHead | null
+  /** forget the anchor — only when a NEW audit chain intentionally starts (demo load, unreadable data) */
+  resetAuditHead(): void
 }
 
 export function looksEncrypted(raw: string): boolean {
@@ -38,7 +53,19 @@ export function looksEncrypted(raw: string): boolean {
   }
 }
 
+function isAuditHead(v: unknown): v is AuditHead {
+  if (!v || typeof v !== 'object') return false
+  const h = v as Record<string, unknown>
+  return typeof h.hash === 'string' && /^[0-9a-f]{64}$/.test(h.hash) && Number.isSafeInteger(h.count) && (h.count as number) >= 1 && Number.isSafeInteger(h.seq)
+}
+
+/** true when `audit` still contains the anchored head at its position (the chain only grew since). */
+export function extendsHead(audit: readonly AuditEntry[], head: AuditHead): boolean {
+  return audit.length >= head.count && audit[head.count - 1]?.hash === head.hash
+}
+
 export function createPersistence(storage: StorageLike, key: string): Persistence {
+  const headKey = `${key}${AUDIT_HEAD_SUFFIX}`
   let vaultPin: string | null = null
   // bumped by plaintext saves / wipes so in-flight encrypted writes never land afterwards
   let generation = 0
@@ -64,6 +91,42 @@ export function createPersistence(storage: StorageLike, key: string): Persistenc
       lastError = `Could not save: ${errorMessage(e)}`
       console.error('[fundbun] storage write failed:', e)
       return false
+    }
+  }
+
+  function auditHead(): AuditHead | null {
+    try {
+      const raw = storage.getItem(headKey)
+      if (!raw) return null
+      const parsed: unknown = JSON.parse(raw)
+      return isAuditHead(parsed) ? { hash: parsed.hash, count: parsed.count, seq: parsed.seq } : null
+    } catch {
+      return null
+    }
+  }
+
+  /**
+   * Record the head of a state that was just written. The anchor only moves forward along the same chain: if
+   * the saved log no longer contains the anchored entry (newest entries deleted from storage), the old anchor
+   * is kept so the truncation stays detectable.
+   */
+  function writeHead(audit: readonly AuditEntry[]) {
+    const head = audit[audit.length - 1]
+    if (!head) return
+    const prev = auditHead()
+    if (prev && !extendsHead(audit, prev)) return
+    try {
+      storage.setItem(headKey, JSON.stringify({ hash: head.hash, count: audit.length, seq: head.seq }))
+    } catch (e) {
+      console.error('[fundbun] audit head write failed:', e)
+    }
+  }
+
+  function resetAuditHead() {
+    try {
+      storage.removeItem(headKey)
+    } catch (e) {
+      console.error('[fundbun] audit head remove failed:', e)
     }
   }
 
@@ -93,7 +156,7 @@ export function createPersistence(storage: StorageLike, key: string): Persistenc
       if (!pin) break
       try {
         const blob = await encryptJSON(state, pin)
-        if (gen === generation) write(blob)
+        if (gen === generation && write(blob)) writeHead(state.audit)
       } catch (e) {
         lastError = `Encryption failed: ${errorMessage(e)}`
         console.error('[fundbun] vault encryption failed:', e)
@@ -115,7 +178,7 @@ export function createPersistence(storage: StorageLike, key: string): Persistenc
     }
     generation++
     queued = null
-    write(JSON.stringify(state))
+    if (write(JSON.stringify(state))) writeHead(state.audit)
   }
 
   async function flush() {
@@ -133,6 +196,7 @@ export function createPersistence(storage: StorageLike, key: string): Persistenc
     } catch (e) {
       console.error('[fundbun] storage remove failed:', e)
     }
+    resetAuditHead()
   }
 
   return {
@@ -142,6 +206,8 @@ export function createPersistence(storage: StorageLike, key: string): Persistenc
     wipe,
     setVaultPin: (pin) => void (vaultPin = pin),
     hasVaultPin: () => vaultPin !== null,
+    auditHead,
+    resetAuditHead,
   }
 }
 

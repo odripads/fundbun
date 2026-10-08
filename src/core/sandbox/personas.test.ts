@@ -1,16 +1,21 @@
 import { describe, expect, it } from 'vitest'
 import { CATEGORIES } from '../categories'
 import { diffDays, shiftMonth, ym } from '../dates'
+import { CONSENT_VERSION } from '../consent'
+import { evaluateTripwires } from '../finance/tripwires'
 import type { BankState, PayChannel, Transaction } from '../types'
 import {
   DEFAULT_SEED,
   DEMO_PIN,
+  DEMO_UNSEEN_EVENTS,
+  PERSONA_CONSENT_VERSION,
   PERSONAS,
   PERSONA_ONBOARDED_AT,
   SANDBOX_TODAY,
   categoryMedians,
   historyBudget,
   loadPersona,
+  primeTripwires,
   tripwireLabel,
 } from './personas'
 
@@ -204,7 +209,7 @@ describe('acceptance — Mei (the OVER story)', () => {
       tone: 'cheeky',
       onboardedAt: PERSONA_ONBOARDED_AT,
       personaId: 'mei',
-      consent: { financialData: true, llmProcessing: true, notifications: true, grantedAt: '2026-04-01T09:00:00.000Z' },
+      consent: { financialData: true, llmProcessing: true, notifications: true, grantedAt: '2026-04-01T09:00:00.000Z', version: 'consent-2026-10' },
     })
     expect(mei.dreams.map((d) => [d.id, d.name, d.price, d.image, d.kind, d.potAccountId])).toEqual([
       ['dream_birkin', 'Birkin 25', yuan(98_000), 'preset:bag', 'goal', 'pot_dream_birkin'],
@@ -406,6 +411,50 @@ describe('loadPersona', () => {
     expect(injected[0].amountDue).toBeGreaterThan(1.25 * (prior.reduce((s, v) => s + v, 0) / 3))
     expect(b.budget.categories.reduce((s, c) => s + c.limit, 0)).toBe(yuan(9_500))
     expect(b.bank.transactions[0].date).toBe(`${shiftMonth(ym(today), -6)}-01`)
+  })
+})
+
+describe('consent version', () => {
+  it('personas record the same consent text version as onboarding', () => {
+    expect(CONSENT_VERSION).toBe('consent-2026-10')
+    expect(PERSONA_CONSENT_VERSION).toBe(CONSENT_VERSION)
+    for (const b of [mei, arif]) expect(b.profile.consent.version).toBe(CONSENT_VERSION)
+  })
+})
+
+describe('primeTripwires', () => {
+  const NOW = '2026-10-22T02:00:00.000Z'
+  const ctx = (b: typeof mei) => ({ profile: b.profile, bank: b.bank, dreams: b.dreams, budget: b.budget, tripwires: b.tripwires })
+
+  it('records the alerts already true for Mei, leaving the latest two unseen', () => {
+    const { tripwires, events } = primeTripwires(mei, NOW)
+    expect(events.map((e) => e.tripwireId)).toEqual(['tw_month_100', 'tw_delivery_100', 'tw_pace_110'])
+    expect(events.map((e) => e.seen)).toEqual([true, false, false])
+    expect(events.filter((e) => !e.seen)).toHaveLength(DEMO_UNSEEN_EVENTS)
+    expect(events.every((e) => e.firedAt === NOW && e.dream)).toBe(true)
+    // the quieter 80% alert is marked fired too, so it never shows up later
+    expect(Object.fromEntries(tripwires.map((t) => [t.id, t.lastFiredKey]))).toMatchObject({
+      tw_month_80: '2026-10', tw_month_100: '2026-10', tw_delivery_100: '2026-10', tw_pace_110: '2026-10',
+    })
+    expect(tripwires.find((t) => t.id === 'tw_single_over')?.lastFiredKey).toBeUndefined()
+  })
+
+  it('nothing re-fires after priming (the month-level alerts are spent)', () => {
+    const { tripwires } = primeTripwires(mei, NOW)
+    expect(evaluateTripwires({ ...ctx(mei), tripwires }, { now: NOW }).events).toEqual([])
+  })
+
+  it('Arif (under target) primes no events and is not changed', () => {
+    const { tripwires, events } = primeTripwires(arif, NOW)
+    expect(events).toEqual([])
+    expect(tripwires).toEqual(arif.tripwires)
+  })
+
+  it('does not mutate the bundle; unseen = 0 marks everything seen', () => {
+    const before = JSON.stringify(mei.tripwires)
+    const { events } = primeTripwires(mei, NOW, 0)
+    expect(events.every((e) => e.seen)).toBe(true)
+    expect(JSON.stringify(mei.tripwires)).toBe(before)
   })
 })
 
