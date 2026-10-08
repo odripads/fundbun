@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 740" width="1200" height="740" font-family="'DM Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="a-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#24180F"/>
+    </marker>
+    <marker id="a-chili" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#D9472B"/>
+    </marker>
+    <marker id="a-gold" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#B97F08"/>
+    </marker>
+    <marker id="a-jade" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#2E8B66"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1200" height="740" fill="#FFFAF2"/>
+
+  <text x="40" y="54" font-size="28" font-weight="700" fill="#24180F">From proposal to execution</text>
+  <text x="40" y="84" font-size="16" fill="#5E4E40">Every tool call takes the same path, whoever proposed it. Money moves only after every check on the lower row passes.</text>
+
+  <!-- proposal -->
+  <rect x="40" y="128" width="220" height="94" rx="12" fill="#FFFFFF" stroke="#CDBFAE" stroke-width="1.5"/>
+  <text x="150" y="156" font-size="16" font-weight="700" fill="#24180F" text-anchor="middle">1 · Proposal</text>
+  <text x="150" y="180" font-size="14" fill="#5E4E40" text-anchor="middle">Bun Engine, LLM,</text>
+  <text x="150" y="200" font-size="14" fill="#5E4E40" text-anchor="middle">plan step or UI button</text>
+  <line x1="260" y1="175" x2="307" y2="175" stroke="#24180F" stroke-width="2" marker-end="url(#a-ink)"/>
+
+  <!-- policy gate -->
+  <rect x="310" y="128" width="250" height="94" rx="12" fill="#DDF0E7" stroke="#2E8B66" stroke-width="2"/>
+  <text x="435" y="156" font-size="16" font-weight="700" fill="#24180F" text-anchor="middle">2 · Policy gate</text>
+  <text x="435" y="180" font-size="14" fill="#24180F" text-anchor="middle">evaluatePolicy + LLM guard</text>
+  <text x="435" y="200" font-size="14" fill="#24180F" text-anchor="middle">ordered rules, first deny wins</text>
+
+  <!-- branches -->
+  <line x1="560" y1="160" x2="637" y2="134" stroke="#D9472B" stroke-width="2" marker-end="url(#a-chili)"/>
+  <line x1="560" y1="175" x2="637" y2="212" stroke="#2E8B66" stroke-width="2" marker-end="url(#a-jade)"/>
+  <line x1="560" y1="190" x2="637" y2="300" stroke="#B97F08" stroke-width="2" marker-end="url(#a-gold)"/>
+
+  <!-- deny -->
+  <rect x="640" y="104" width="270" height="58" rx="12" fill="#FBE3DC" stroke="#D9472B" stroke-width="2"/>
+  <text x="656" y="128" font-size="16" font-weight="700" fill="#24180F">Deny</text>
+  <text x="656" y="150" font-size="14" fill="#24180F">nothing runs · audited</text>
+  <line x1="910" y1="133" x2="937" y2="133" stroke="#D9472B" stroke-width="2" marker-end="url(#a-chili)"/>
+  <rect x="940" y="104" width="230" height="110" rx="12" fill="#FFFFFF" stroke="#D9472B" stroke-width="1.8" stroke-dasharray="6 5"/>
+  <text x="956" y="130" font-size="15" font-weight="700" fill="#24180F">Circuit breaker</text>
+  <text x="956" y="153" font-size="14" fill="#24180F">3 denied money attempts</text>
+  <text x="956" y="173" font-size="14" fill="#24180F">in 10 min, or 1 in a tainted</text>
+  <text x="956" y="193" font-size="14" fill="#24180F">turn → agent frozen</text>
+
+  <!-- allow -->
+  <rect x="640" y="174" width="270" height="76" rx="12" fill="#DDF0E7" stroke="#2E8B66" stroke-width="2"/>
+  <text x="656" y="198" font-size="16" font-weight="700" fill="#24180F">Allow (runs now)</text>
+  <text x="656" y="220" font-size="14" fill="#24180F">T0 always · T1 in Co-pilot+</text>
+  <text x="656" y="240" font-size="14" fill="#24180F">T2 in Autopilot, untainted</text>
+
+  <!-- confirm / step-up -->
+  <rect x="640" y="262" width="270" height="78" rx="12" fill="#FBEFD3" stroke="#E3A21A" stroke-width="2"/>
+  <text x="656" y="287" font-size="16" font-weight="700" fill="#24180F">Confirm, or PIN step-up</text>
+  <text x="656" y="309" font-size="14" fill="#24180F">T1 in Suggest · T2 below Autopilot</text>
+  <text x="656" y="329" font-size="14" fill="#24180F">T3 always needs tap + PIN</text>
+
+  <!-- allow path to execute -->
+  <polyline points="910,212 925,212 925,435" fill="none" stroke="#2E8B66" stroke-width="2" marker-end="url(#a-jade)"/>
+  <text x="935" y="300" font-size="14" fill="#2E8B66">runs</text>
+  <text x="935" y="318" font-size="14" fill="#2E8B66">now</text>
+
+  <!-- confirm path to card -->
+  <polyline points="775,340 775,380 140,380 140,435" fill="none" stroke="#B97F08" stroke-width="2" marker-end="url(#a-gold)"/>
+  <text x="458" y="370" font-size="14" font-weight="700" fill="#8A5E00" text-anchor="middle">PendingAction, expires in 10 minutes</text>
+
+  <!-- pipeline -->
+  <rect x="40" y="438" width="200" height="110" rx="12" fill="#FFFFFF" stroke="#CDBFAE" stroke-width="1.5"/>
+  <text x="140" y="466" font-size="16" font-weight="700" fill="#24180F" text-anchor="middle">3 · Action card</text>
+  <text x="140" y="490" font-size="14" fill="#5E4E40" text-anchor="middle">built by code from</text>
+  <text x="140" y="510" font-size="14" fill="#5E4E40" text-anchor="middle">the structured call;</text>
+  <text x="140" y="530" font-size="14" fill="#5E4E40" text-anchor="middle">binding hash stored</text>
+  <line x1="240" y1="493" x2="267" y2="493" stroke="#24180F" stroke-width="2" marker-end="url(#a-ink)"/>
+
+  <rect x="270" y="438" width="200" height="110" rx="12" fill="#DDF0E7" stroke="#2E8B66" stroke-width="2"/>
+  <text x="370" y="466" font-size="16" font-weight="700" fill="#24180F" text-anchor="middle">4 · User approves</text>
+  <text x="370" y="490" font-size="14" fill="#24180F" text-anchor="middle">a tap on the card;</text>
+  <text x="370" y="510" font-size="14" fill="#24180F" text-anchor="middle">for T3 also the PIN</text>
+  <line x1="470" y1="493" x2="497" y2="493" stroke="#24180F" stroke-width="2" marker-end="url(#a-ink)"/>
+
+  <rect x="500" y="438" width="200" height="110" rx="12" fill="#DDF0E7" stroke="#2E8B66" stroke-width="2"/>
+  <text x="600" y="466" font-size="16" font-weight="700" fill="#24180F" text-anchor="middle">5 · Checks</text>
+  <text x="600" y="490" font-size="14" fill="#24180F" text-anchor="middle">policy re-run on current</text>
+  <text x="600" y="510" font-size="14" fill="#24180F" text-anchor="middle">state · binding hash ·</text>
+  <text x="600" y="530" font-size="14" fill="#24180F" text-anchor="middle">PIN (T3)</text>
+  <line x1="700" y1="493" x2="727" y2="493" stroke="#24180F" stroke-width="2" marker-end="url(#a-ink)"/>
+
+  <rect x="730" y="438" width="200" height="110" rx="12" fill="#DDF0E7" stroke="#2E8B66" stroke-width="2"/>
+  <text x="830" y="466" font-size="16" font-weight="700" fill="#24180F" text-anchor="middle">6 · Execute</text>
+  <text x="830" y="490" font-size="14" fill="#24180F" text-anchor="middle">sandbox bank checks</text>
+  <text x="830" y="510" font-size="14" fill="#24180F" text-anchor="middle">own accounts, verified</text>
+  <text x="830" y="530" font-size="14" fill="#24180F" text-anchor="middle">payee, ¥5,000/day</text>
+  <line x1="930" y1="493" x2="957" y2="493" stroke="#24180F" stroke-width="2" marker-end="url(#a-ink)"/>
+
+  <rect x="960" y="438" width="200" height="110" rx="12" fill="#FFFFFF" stroke="#CDBFAE" stroke-width="1.5"/>
+  <text x="1060" y="466" font-size="16" font-weight="700" fill="#24180F" text-anchor="middle">7 · Undo window</text>
+  <text x="1060" y="490" font-size="14" fill="#5E4E40" text-anchor="middle">30 s for reversible</text>
+  <text x="1060" y="510" font-size="14" fill="#5E4E40" text-anchor="middle">T1 and T2 actions</text>
+
+  <!-- failure notes -->
+  <text x="140" y="578" font-size="14" fill="#5E4E40" text-anchor="middle">shows amount, from → to,</text>
+  <text x="140" y="598" font-size="14" fill="#5E4E40" text-anchor="middle">tier and reasons</text>
+  <text x="370" y="578" font-size="14" fill="#D9472B" text-anchor="middle">reject or expiry</text>
+  <text x="370" y="598" font-size="14" fill="#D9472B" text-anchor="middle">→ nothing runs</text>
+  <text x="600" y="578" font-size="14" fill="#D9472B" text-anchor="middle">any failure → refused,</text>
+  <text x="600" y="598" font-size="14" fill="#D9472B" text-anchor="middle">¥0 moved; 3 bad PINs → lock</text>
+  <text x="830" y="578" font-size="14" fill="#D9472B" text-anchor="middle">bank error →</text>
+  <text x="830" y="598" font-size="14" fill="#D9472B" text-anchor="middle">action fails</text>
+  <text x="1060" y="578" font-size="14" fill="#5E4E40" text-anchor="middle">pay, cancel, dispute</text>
+  <text x="1060" y="598" font-size="14" fill="#5E4E40" text-anchor="middle">have no undo</text>
+
+  <!-- audit bar -->
+  <rect x="40" y="632" width="1120" height="76" rx="12" fill="#FFFFFF" stroke="#24180F" stroke-width="1.5"/>
+  <text x="600" y="662" font-size="15" font-weight="700" fill="#24180F" text-anchor="middle">Every step is appended to the SHA-256 hash-chained audit log</text>
+  <text x="600" y="688" font-size="14" fill="#5E4E40" text-anchor="middle">tool_call · policy_decision · action_confirmed · action_executed · action_denied · step_up_failed · action_undone · circuit_breaker</text>
+</svg>
