@@ -11,9 +11,11 @@ export interface DreamImageProps {
   className?: string
   /** soft gold glow behind the picture (hero / goal moments) */
   glow?: boolean
+  /** the picture is the page's hero (its largest paint above the fold): load it right away, at high priority */
+  priority?: boolean
 }
 
-export function DreamImage({ image, alt, size = 96, className, glow = false }: DreamImageProps) {
+export function DreamImage({ image, alt, size = 96, className, glow = false, priority = false }: DreamImageProps) {
   const px = Number.isFinite(size) && size > 0 ? size : 96
   const source = dreamSource(image)
   return (
@@ -23,7 +25,17 @@ export function DreamImage({ image, alt, size = 96, className, glow = false }: D
       data-kind={source.kind}
       data-preset={source.kind === 'preset' ? source.key : undefined}
     >
-      <img src={source.src} alt={alt} width={px} height={px} className={styles.img} loading="lazy" decoding="async" draggable={false} />
+      <img
+        src={source.src}
+        alt={alt}
+        width={px}
+        height={px}
+        className={styles.img}
+        loading={priority ? 'eager' : 'lazy'}
+        fetchPriority={priority ? 'high' : undefined}
+        decoding="async"
+        draggable={false}
+      />
     </span>
   )
 }

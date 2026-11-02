@@ -22,3 +22,6 @@ playwright-report/
 
 # docs:export default output (the submission copies live outside the repo)
 docs/export/out/
+
+# Vercel CLI project link (vercel link)
+.vercel

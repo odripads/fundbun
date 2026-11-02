@@ -11,7 +11,9 @@
   align-items: center;
   justify-content: space-between;
   min-height: 44px;
-  animation: rise var(--dur-3) var(--ease-out) both;
+  /* slides without fading: an element first painted at opacity 0 never counts as the page's largest paint, and
+     everything else here fades in — without one visible element Lighthouse cannot score the landing page */
+  animation: settle var(--dur-3) var(--ease-out) both;
 }
 
 /* the orbit sits a little into the logo row and the headline for a tighter hero */
@@ -22,6 +24,12 @@
 @keyframes rise {
   from {
     opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+@keyframes settle {
+  from {
     transform: translateY(12px);
   }
 }

@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { act, createElement as h } from 'react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createTestApp, memoryStorage, type FundBunApp } from '../core/app'
 import type { OnboardingInput } from '../core/app-api'
-import { App, SCREENS } from './App'
+import { App, firstScreenChunks, preloadScreens, SCREENS } from './App'
 import { agentPillName } from './components/layout/ShellActions'
 import type { EngineStatus } from './state'
 import { byLabel, byText, cleanup, click, flush, key, render } from './components/ds/testing'
@@ -36,6 +36,10 @@ async function renderAt(hash: string, app: FundBunApp) {
   await flush()
   return r
 }
+
+// screens are code-split by route; load their chunks once so every render below is synchronous
+// (src/ui/lazyScreen.test.ts covers the suspend-then-load path itself)
+beforeAll(() => preloadScreens(), 60_000)
 
 beforeEach(() => {
   vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
@@ -191,6 +195,30 @@ describe('App shell — onboarded', () => {
     await act(async () => app.resetAll())
     await flush()
     expect(window.location.hash).toBe('#/onboarding')
+  })
+})
+
+describe('first screen chunk (loaded before the first render)', () => {
+  it('is the screen the route resolves to, including redirects', () => {
+    const ready = (app: FundBunApp): EngineStatus => ({ ready: true, app })
+    const onboarded = ready(onboardedApp())
+    expect(firstScreenChunks(onboarded, '#/insights')).toEqual([SCREENS.insights])
+    expect(firstScreenChunks(onboarded, '')).toEqual([SCREENS.home])
+    expect(firstScreenChunks(onboarded, '#/nowhere')).toEqual([SCREENS.home])
+    expect(firstScreenChunks(ready(createTestApp()), '#/bills')).toEqual([SCREENS.onboarding])
+    expect(firstScreenChunks(ready(createTestApp()), '')).toEqual([SCREENS.onboarding])
+  })
+
+  it('is nothing behind the PIN lock or when the engine failed; the gallery needs no engine', async () => {
+    const storage = memoryStorage()
+    const first = onboardedApp(storage)
+    expect((await first.enableVault('2580')).ok).toBe(true)
+    await first.flush()
+    expect(firstScreenChunks({ ready: true, app: createTestApp({ storage }) }, '#/home')).toEqual([])
+    expect(firstScreenChunks({ ready: false, error: 'boom' }, '#/home')).toEqual([])
+    const gallery = firstScreenChunks({ ready: false, error: 'boom' }, '#/gallery')
+    expect(gallery).toHaveLength(1)
+    expect(typeof gallery[0].preload).toBe('function')
   })
 })
 

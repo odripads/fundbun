@@ -14,6 +14,7 @@
     "dev:api": "tsx watch server/index.ts",
     "build": "tsc -b && vite build",
     "build:pages": "tsc -b && vite build --base=/fundbun/ --mode pages",
+    "build:vercel": "tsc -b && vite build --mode vercel",
     "start": "NODE_ENV=production tsx server/index.ts",
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",

@@ -47,8 +47,24 @@ export function monthlyHabitDays(script: PersonaScript, seed: number, month: Yea
   return new Set(sampleDistinct(rng, eligible, count))
 }
 
+/**
+ * monthlyHabitDays() is a pure function of its arguments (its RNG stream is seeded from them), so the day loop
+ * asks for each habit's month once instead of re-sampling the whole month for every day of it — the bulk of a
+ * demo load's CPU time before. Keyed by the (immutable) habit spec, so dropped personas free their entries.
+ */
+const habitDaysCache = new WeakMap<HabitSpec, Map<string, ReadonlySet<ISODate>>>()
+
+function cachedHabitDays(script: PersonaScript, seed: number, month: YearMonth, habit: HabitSpec, intensity: number): ReadonlySet<ISODate> {
+  let byKey = habitDaysCache.get(habit)
+  if (!byKey) habitDaysCache.set(habit, (byKey = new Map()))
+  const key = `${seed}|${script.def.id}|${month}|${intensity}`
+  let days = byKey.get(key)
+  if (!days) byKey.set(key, (days = monthlyHabitDays(script, seed, month, habit, intensity)))
+  return days
+}
+
 function eventCount(script: PersonaScript, seed: number, date: ISODate, habit: HabitSpec, intensity: number, rng: Rng): number {
-  if (habit.perMonth) return monthlyHabitDays(script, seed, ym(date), habit, intensity).has(date) ? 1 : 0
+  if (habit.perMonth) return cachedHabitDays(script, seed, ym(date), habit, intensity).has(date) ? 1 : 0
   const rate = (habit.perDay?.[dayKind(date)] ?? 0) * intensityFor(habit, intensity)
   const cap = habit.maxPerDay ?? 1
   // with a cap of one, a Bernoulli draw keeps the expected count equal to the rate

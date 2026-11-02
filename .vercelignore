@@ -1,0 +1,30 @@
+# Upload only what `npm run build:vercel` needs (sources, configs, public/). Vercel installs its own node_modules.
+# A leading / anchors a pattern to the repo root: scripts/evidence/ is source that tsc -b checks.
+node_modules
+/dist
+/.vercel
+/.git
+/.github
+/.claude
+
+# large or not part of the app build
+/docs
+/deck
+/evidence
+/Dockerfile
+/.dockerignore
+
+# secrets, local state and build leftovers
+.env
+.env.*
+!.env.example
+*.log
+*.tsbuildinfo
+.vite
+coverage
+test-results
+playwright-report
+
+# iCloud conflict copies ("file 2.md")
+* [0-9]
+* [0-9].*

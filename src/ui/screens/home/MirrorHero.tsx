@@ -255,7 +255,7 @@ export function MirrorHero({ onCheck, onSandbox }: MirrorHeroProps) {
               {hero.item ? (
                 <span className={styles.float}>
                   {hero.role === 'goal' ? <GoalRing now={goalNow} after={goalAfter} /> : null}
-                  <DreamImage image={hero.item.image} alt={hero.item.name} size={hero.role === 'goal' ? 118 : 136} glow={!noData} className={styles.dream} />
+                  <DreamImage image={hero.item.image} alt={hero.item.name} size={hero.role === 'goal' ? 118 : 136} glow={!noData} className={styles.dream} priority />
                 </span>
               ) : (
                 <span className={styles.float}>

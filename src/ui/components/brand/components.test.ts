@@ -149,6 +149,13 @@ describe('DreamImage', () => {
     const html = img({ image: 'preset:ring', alt: 'ring', glow: true })
     expect(html).toContain('draggable="false"')
     expect(html).toContain('loading="lazy"')
+    expect(html).not.toContain('fetchpriority')
+  })
+
+  it('loads a hero picture (the largest paint) eagerly at high priority', () => {
+    const html = img({ image: 'preset:plane', alt: 'Weekend in Chengdu', priority: true })
+    expect(html).toContain('loading="eager"')
+    expect(html).toContain('fetchPriority="high"')
   })
 
   it('covers every preset key', () => {

@@ -1,4 +1,7 @@
-/** One module per screen so screens can be built independently. App.tsx imports from here. */
+/**
+ * One module per screen so screens can be built (and code-split) independently. App.tsx does not import this
+ * barrel: it lazy-loads each screen module on its own so every route ships in its own chunk.
+ */
 export { OnboardingScreen } from './onboarding/OnboardingScreen'
 export { HomeScreen } from './home/HomeScreen'
 export { GoalsScreen } from './goals/GoalsScreen'
