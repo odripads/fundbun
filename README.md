@@ -4,7 +4,7 @@
 
 <h1 align="center">FundBun</h1>
 <p align="center"><em>"You could've gotten a Birkin."</em><br/>An AI money buddy that shows you the dream you could've had — and an agent you can trust inside your bank.</p>
-<p align="center"><a href="https://youtu.be/Se5TD4KQ35A"><b>▶ Watch the 5-minute demo</b></a> · <a href="https://odripads.github.io/fundbun/?demo=mei"><b>Try the live demo</b></a> · <a href="docs/TECHNICAL.md">Technical document</a> · <a href="docs/SECURITY_SELF_ASSESSMENT.md">Security self-assessment</a> · <a href="evidence/latest/SUMMARY.md">Evidence</a></p>
+<p align="center"><a href="https://youtu.be/Se5TD4KQ35A"><b>▶ Watch the 5-minute demo</b></a> · <a href="https://fundbun.vercel.app/?demo=mei"><b>Try the live demo</b></a> (<a href="https://odripads.github.io/fundbun/?demo=mei">mirror</a>) · <a href="docs/TECHNICAL.md">Technical document</a> · <a href="docs/SECURITY_SELF_ASSESSMENT.md">Security self-assessment</a> · <a href="evidence/latest/SUMMARY.md">Evidence</a></p>
 
 ---
 
@@ -70,8 +70,9 @@
 
 ## 4. Installation and Execution
 
-> **No install needed to try it:** open https://odripads.github.io/fundbun/?demo=mei (or `?demo=arif`), demo PIN **2580**. The hosted demo is the
-> static build with the on-device engine — your data stays in your browser.
+> **No install needed to try it:** open https://fundbun.vercel.app/?demo=mei (or `?demo=arif`; mirror:
+> https://odripads.github.io/fundbun/?demo=mei), demo PIN **2580**. The hosted demo is the static build with the
+> on-device engine — your data stays in your browser.
 
 ```bash
 git clone https://github.com/odripads/fundbun.git
@@ -85,7 +86,8 @@ Open **http://localhost:5173/?demo=mei** (over-target story) or **?demo=arif** (
 
 - Production (one process serving the app + gateway): `npm run build && npm start` → http://localhost:8787
 - Docker: `docker build -t fundbun . && docker run -p 8787:8787 --env-file .env fundbun`
-- Static, fully offline build (on-device engine only, e.g. GitHub Pages): `npm run build:pages`
+- Static, fully offline build (on-device engine only): `npm run build:vercel` (Vercel, site root — see `vercel.json`) or
+  `npm run build:pages` (GitHub Pages, under `/fundbun/`)
 - Mock LLM mode without a key: `FUNDBUN_ALLOW_MOCK=1 LLM_PROVIDER=mock npm run dev`
 
 **Things to try:** Home → "Should I buy it?" · Sandbox chip → simulate a purchase (tripwire fires) · Ask Bun →
@@ -115,8 +117,17 @@ npm run evidence       # replays all scripted scenarios → evidence/latest (log
 
 - **Repository:** https://github.com/odripads/fundbun
 - **Demo video:** https://youtu.be/Se5TD4KQ35A (4:47, English subtitles)
-- **Live demo:** https://odripads.github.io/fundbun/?demo=mei (Mei, over target) · https://odripads.github.io/fundbun/?demo=arif (Arif, under target) · PIN 2580
-  — the static on-device build, deployed by the *Deploy demo to GitHub Pages* workflow; nothing to install
+- **Live demo:** https://fundbun.vercel.app/?demo=mei (Mei, over target) · https://fundbun.vercel.app/?demo=arif (Arif,
+  under target) · PIN 2580 — the static on-device build (no LLM gateway, no API keys); nothing to install.
+  Mirror on GitHub Pages: https://odripads.github.io/fundbun/?demo=mei (deployed by the *Deploy demo to GitHub Pages*
+  workflow)
+- **Vercel:** `vercel.json` builds `npm run build:vercel` (Vite mode `vercel`: root base, static engine, no source maps)
+  into `dist/` and sends the security headers (the CSP of the page's `<meta>` plus `frame-ancestors 'none'`, HSTS,
+  `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `Permissions-Policy`, COOP); hashed `/assets/*`
+  are cached for a year, the page is revalidated on every visit. `.vercelignore` keeps `node_modules`, docs, the deck
+  and evidence out of the upload. Deploy with `vercel --prod`. Screens are code-split by route, so the first visit
+  loads ~336 KB of gzipped JavaScript (React, icons, the on-device engine, the design system) plus ~17 KB for the
+  landing screen, instead of one 445 KB bundle; the other screens are prefetched once the browser is idle
 - **Deployment:** Docker image (app + gateway on one port) or `npm run build && npm start` behind any HTTPS reverse
   proxy; set `FUNDBUN_TRUST_PROXY=1` behind a proxy and `FUNDBUN_ALLOWED_ORIGINS` for your domain. CI
   (`.github/workflows/ci.yml`) runs typecheck, tests, the scenario evidence and the production build on every push.
