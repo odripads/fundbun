@@ -68,6 +68,7 @@ export function buildOpenAiBody(req: ProviderRequest, model: string): Record<str
     messages: toOpenAiMessages(req.system, req.messages),
     max_tokens: req.maxTokens,
     stream: false,
+    thinking: { type: 'disabled' },
     ...(req.tools.length ? { tools: toOpenAiTools(req.tools), tool_choice: 'auto' } : {}),
   }
 }

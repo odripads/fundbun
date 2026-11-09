@@ -38,7 +38,7 @@ describe('resolveProvider', () => {
 
   it('picks openai_compat when only its key is set', () => {
     expect(resolveProvider({ OPENAI_COMPAT_API_KEY: 'k', OPENAI_COMPAT_BASE_URL: 'https://api.deepseek.com/v1/' })).toEqual({
-      ok: true, kind: 'openai_compat', model: 'deepseek-chat', apiKey: 'k', baseUrl: 'https://api.deepseek.com/v1',
+      ok: true, kind: 'openai_compat', model: 'deepseek-flash', apiKey: 'k', baseUrl: 'https://api.deepseek.com/v1',
     })
   })
 

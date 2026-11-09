@@ -6,7 +6,7 @@ import { createProvider, DIST_DIR, gatewayOptionsFor, main } from './index'
 describe('createProvider', () => {
   it('builds each configured provider without touching the network', () => {
     expect(createProvider({ ok: true, kind: 'anthropic', model: 'claude-sonnet-5-5', apiKey: 'sk-ant-test', effort: 'low', fallbacks: true }, 40_000)).toMatchObject({ name: 'anthropic', model: 'claude-sonnet-5-5' })
-    expect(createProvider({ ok: true, kind: 'openai_compat', model: 'deepseek-chat', apiKey: 'k', baseUrl: 'https://api.deepseek.com/v1' }, 40_000)).toMatchObject({ name: 'openai_compat', model: 'deepseek-chat' })
+    expect(createProvider({ ok: true, kind: 'openai_compat', model: 'deepseek-flash', apiKey: 'k', baseUrl: 'https://api.deepseek.com/v1' }, 40_000)).toMatchObject({ name: 'openai_compat', model: 'deepseek-flash' })
     expect(createProvider({ ok: true, kind: 'mock', model: 'fundbun-mock-1' }, 40_000)).toMatchObject({ name: 'mock' })
   })
 

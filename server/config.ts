@@ -3,7 +3,7 @@ export type ProviderKind = 'anthropic' | 'openai_compat' | 'mock'
 export type AnthropicEffort = 'low' | 'medium' | 'high' | 'xhigh' | 'max'
 
 export const DEFAULT_ANTHROPIC_MODEL = 'claude-sonnet-5-5'
-export const DEFAULT_OPENAI_COMPAT_MODEL = 'deepseek-chat'
+export const DEFAULT_OPENAI_COMPAT_MODEL = 'deepseek-flash'
 export const DEFAULT_PORT = 8787
 export const DEFAULT_RATE_LIMIT_RPM = 30
 export const DEFAULT_PROVIDER_TIMEOUT_MS = 40_000

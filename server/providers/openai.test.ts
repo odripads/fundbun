@@ -76,6 +76,10 @@ describe('toOpenAiTools / buildOpenAiBody', () => {
     expect(noTools).not.toHaveProperty('tools')
     expect(noTools).not.toHaveProperty('tool_choice')
   })
+
+  it('sends thinking disabled so DeepSeek reasoning stays off', () => {
+    expect(buildOpenAiBody(request(), 'deepseek-flash')).toMatchObject({ thinking: { type: 'disabled' } })
+  })
 })
 
 describe('fromOpenAiResponse', () => {
