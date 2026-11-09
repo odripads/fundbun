@@ -39,7 +39,7 @@ export function safeDefaultMandate(): Mandate {
 }
 
 export function defaultSettings(): AppSettings {
-  return { glassBox: true, llmEnabled: true, notificationsEnabled: false, reducedMotion: false, vault: false }
+  return { glassBox: true, llmEnabled: true, notificationsEnabled: false, reducedMotion: false, vault: false, emailAuto: false, receiptScans: false }
 }
 
 export function emptyBank(today: ISODate, seed = DEFAULT_SEED): BankState {

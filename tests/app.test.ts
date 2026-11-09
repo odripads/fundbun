@@ -33,7 +33,7 @@ describe('demo personas', () => {
     expect(state.mandate.autonomy).toBe('copilot')
     expect(state.mandate.pinHash).toMatch(/^[0-9a-f]+$/)
     expect(JSON.stringify(state)).not.toContain('"2580"')
-    expect(state.settings).toEqual({ glassBox: true, llmEnabled: true, notificationsEnabled: false, reducedMotion: false, vault: false })
+    expect(state.settings).toEqual({ glassBox: true, llmEnabled: true, notificationsEnabled: false, reducedMotion: false, vault: false, emailAuto: false, receiptScans: false })
     expect(state.chat).toHaveLength(1)
     expect(state.chat[0]).toMatchObject({ role: 'assistant', engine: 'offline' })
     expect(state.chat[0].suggestions?.length).toBeGreaterThan(0)

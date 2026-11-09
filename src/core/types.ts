@@ -107,6 +107,22 @@ export interface Transaction {
   flags?: TxnFlag[]
 }
 
+/** A single spending item parsed from an email or a receipt, awaiting the user's Confirm/Edit. */
+export interface SpendingCandidate {
+  /** stable id from the source (email id / receipt hash) so a re-fetch doesn't re-add */
+  id: string
+  merchant: string
+  /** positive amount of the spend (outflow) */
+  amount: Minor
+  currency: Currency
+  date: ISODate
+  time?: string
+  category: CategoryId
+  /** raw counterparty description — UNTRUSTED CONTENT */
+  description: string
+  source: 'email' | 'receipt'
+}
+
 export type PayeeKind = 'utility' | 'telco' | 'landlord' | 'subscription' | 'person' | 'merchant' | 'card'
 
 export interface Payee {
@@ -836,6 +852,10 @@ export interface AppSettings {
   reducedMotion: boolean
   /** encrypt local storage with the PIN (AES-GCM) */
   vault: boolean
+  /** AUTO mode: read transaction emails/e-statements from banks and payment apps (read-only) */
+  emailAuto: boolean
+  /** scan receipts with the camera (on-device OCR) */
+  receiptScans: boolean
 }
 
 export interface AppState {

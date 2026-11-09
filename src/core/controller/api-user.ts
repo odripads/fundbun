@@ -2,13 +2,14 @@ import type { AppApi } from '../app-api'
 import { importCsv as parseCsvImport } from '../sandbox/csv'
 import { auditToJSONL } from '../security/audit'
 import { clipForDisplay } from '../security/redact'
-import type { AppState, Mandate } from '../types'
+import type { AppState, Mandate, SpendingCandidate, Transaction } from '../types'
 import { appendAudit, verifyAuditAnchored } from './audit'
 import { LOCKED_MSG, NOT_SET_UP_MSG, expirePending, syncClock, userTx, userTxValue, type Core } from './core'
 import {
   advanceDaysIn,
   filterTransactions,
   importParsedIn,
+  mergeTransactions,
   purchaseError,
   simulatePurchaseIn,
   type ImportSummary,
@@ -78,6 +79,39 @@ export function createUserApi(core: Core, onLlmGranted: () => void): UserApi {
     } catch (e) {
       return emptyImport(errorMessage(e))
     }
+  }
+
+  function addSpending(candidates: SpendingCandidate[]): { added: number; duplicates: number } {
+    const none = { added: 0, duplicates: 0 }
+    if (core.lock.locked || !store.get().profile) return none
+    if (!Array.isArray(candidates) || candidates.length === 0) return none
+    // spend up to the device's date: catch the calendar up first
+    syncClock(core)
+    const s = store.get()
+    const accountId = checkingAccountId(s.bank)
+    const currency = s.profile!.currency
+    const txns: Transaction[] = candidates.map((c) => ({
+      id: c.id,
+      accountId,
+      date: c.date,
+      time: c.time,
+      amount: -Math.abs(c.amount),
+      currency: c.currency || currency,
+      merchant: c.merchant,
+      description: c.description,
+      category: c.category,
+      categorySource: 'import',
+      categoryConfidence: 1,
+    }))
+    return store.mutate((draft) => {
+      const { added, duplicates } = mergeTransactions(draft, txns)
+      if (added.length) {
+        appendAudit(draft, core.now(), 'user', 'data_import', `Added ${added.length} spending${added.length === 1 ? '' : 's'}`, {
+          added: added.length, duplicates, source: candidates[0]?.source ?? 'unknown',
+        })
+      }
+      return { added: added.length, duplicates }
+    })
   }
 
   function changePin(oldPin: string, newPin: string) {
@@ -151,6 +185,7 @@ export function createUserApi(core: Core, onLlmGranted: () => void): UserApi {
 
     // ── data ──
     importCsv,
+    addSpending,
     transactions: (filter) => filterTransactions(store.get().bank.transactions, filter),
 
     // ── sandbox / demo controls ──

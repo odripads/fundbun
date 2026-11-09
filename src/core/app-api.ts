@@ -22,6 +22,7 @@ import type {
   PendingAction,
   Profile,
   RecurringSeries,
+  SpendingCandidate,
   SuggestedAction,
   Tone,
   ToolName,
@@ -243,6 +244,8 @@ export interface AppApi {
 
   // ── data ──
   importCsv(text: string): { added: number; skipped: number; errors: string[] }
+  /** add parsed spending (from email or receipt) after the user confirms — dedupes against existing */
+  addSpending(candidates: SpendingCandidate[]): { added: number; duplicates: number }
   /** Bill X-ray via the agent (xray_bill tool) — returns the assistant message with the xray card */
   xrayBill(text: string): Promise<ChatMessage>
   transactions(filter?: { month?: YearMonth; category?: CategoryId; query?: string }): Transaction[]

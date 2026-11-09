@@ -24,6 +24,8 @@ export const DEMO_SETTINGS: AppSettings = {
   notificationsEnabled: false,
   reducedMotion: false,
   vault: false,
+  emailAuto: false,
+  receiptScans: false,
 }
 
 export const WARMING_UP = 'Bun is still warming up — chat isn\'t ready yet, but Home, bills and goals work as usual.'

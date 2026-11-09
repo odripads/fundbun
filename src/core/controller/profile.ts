@@ -7,7 +7,7 @@ type ProfilePatch = Parameters<AppApi['setProfile']>[0]
 type ConsentPatch = Parameters<AppApi['setConsent']>[0]
 
 const TONES: readonly Tone[] = ['cheeky', 'gentle', 'numbers']
-const SETTING_KEYS = ['glassBox', 'llmEnabled', 'notificationsEnabled', 'reducedMotion'] as const
+const SETTING_KEYS = ['glassBox', 'llmEnabled', 'notificationsEnabled', 'reducedMotion', 'emailAuto', 'receiptScans'] as const
 
 function profilePatchError(p: ProfilePatch): string | null {
   if (p.name !== undefined && !isNonEmptyString(p.name)) return 'Name cannot be empty'

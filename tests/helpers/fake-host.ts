@@ -47,7 +47,7 @@ export function personaState(persona: 'mei' | 'arif' = 'mei', mandate: Partial<M
     billReminders: {},
     plans: [],
     dialogue: {},
-    settings: { glassBox: true, llmEnabled: true, notificationsEnabled: false, reducedMotion: false, vault: false },
+    settings: { glassBox: true, llmEnabled: true, notificationsEnabled: false, reducedMotion: false, vault: false, emailAuto: false, receiptScans: false },
   }
 }
 
