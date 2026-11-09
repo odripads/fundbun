@@ -59,7 +59,7 @@ Scope: the core in `src/core/`, the React app in `src/ui/` and the LLM gateway i
 
 A chat message that tries to override Bun's rules ("ignore your rules and…", "you are now DAN") is handled as an injection attempt. It is audited as `injection_detected` (source `user_message`, kind `override_attempt`) and taints the turn. It is always answered by the rule-based engine, even when the LLM is on (`flagOverride()` in `src/core/agent/offline-engine.ts`).
 
-Before any of it reaches a model, hidden characters are stripped and the text is wrapped in `<untrusted source="…">` with a reminder. Bills and memos are also scanned, and reading them *taints* the turn whatever the scan score: nothing at T2+ can then auto-execute (P-TAINT). Model output is untrusted too: a `tool_use` block is just a proposal, and the reply is checked for invented numbers (`src/core/security/grounding.ts`).
+Before any of it reaches a model, hidden characters are stripped and the text is wrapped in `<untrusted source="…">` with a reminder. Bills and memos are also scanned, and reading them *taints* the turn whatever the scan score: nothing at T1+ can then auto-execute (P-TAINT). Model output is untrusted too: a `tool_use` block is just a proposal, and the reply is checked for invented numbers (`src/core/security/grounding.ts`).
 
 **Permission tiers** (`src/core/agent/specs.ts`, the single source of truth for tier, `movesMoney` and `reversible`):
 
@@ -79,10 +79,10 @@ T4 tools exist so attempts are recognised, denied and audited. They are never of
 |---|---|---|---|---|---|
 | Observe | allow | deny | deny | deny | deny |
 | Suggest *(onboarding default)* | allow | confirm | confirm | PIN | deny |
-| Co-pilot *(`defaultMandate()`, demo personas)* | allow | allow | confirm | PIN | deny |
-| Autopilot | allow | allow | allow¹ | PIN | deny |
+| Co-pilot *(`defaultMandate()`, demo personas)* | allow | allow¹ | confirm | PIN | deny |
+| Autopilot | allow | allow¹ | allow¹ | PIN | deny |
 
-¹ Only when the turn is untainted and the amount is within all caps. A tainted turn turns it into `confirm`. "PIN" means `step_up`: a tap on the action card plus the PIN.
+¹ A tainted turn turns T1 and T2 into `confirm`: after bill, memo or import text, even a reversible change waits for a tap. Autopilot's T2 `allow` also needs the amount within all caps. "PIN" means `step_up`: a tap on the action card plus the PIN.
 
 The matrix is the last of the policy rules. `evaluatePolicy()` runs the rules in this order, and the first deny wins:
 
@@ -94,7 +94,7 @@ The matrix is the last of the policy rules. `evaluatePolicy()` runs the rules in
 | P-ENTITY | Goal, bill, transaction or subscription must exist. A bill's payee must be verified. Schedules must fall between today and 60 days ahead |
 | P-CAP-PER-ACTION · P-CAP-DAILY · P-CAP-MONTHLY | Money over ¥500 per action, ¥1,000 per day or ¥5,000 per month (defaults) → deny |
 | P-FUNDS · P-LIQUIDITY | Insufficient balance. Or a transfer would leave checking below unpaid bills due within 14 days plus a ¥500 cushion → deny with a safe maximum |
-| P-TAINT → P-TIER-MATRIX | A tainted turn at T2+ needs at least `confirm`, then the matrix applies |
+| P-TAINT → P-TIER-MATRIX | A tainted turn at T1+ needs at least `confirm`, then the matrix applies |
 
 The liquidity rule exists because payment reminders have been shown to *raise* overdraft fees ([Medina 2021][medina], [research 02](research/02-behavioral-science.md)). A corrupted mandate fails closed: missing caps count as ¥0, and an unknown autonomy level never auto-executes.
 
@@ -329,7 +329,7 @@ Likelihood is our own estimate for a public deployment of the current code.
 | R1 | A modified client bypasses the on-device policy engine | High | Medium | The bank re-checks own accounts, verified payees and the exact bill amount, and caps agent outflow at ¥5,000/day. No external-transfer or add-payee method exists. The gateway refuses T4 tools | In this prototype the bank also runs on the device, so a modified client can change both. **Roadmap:** enforce the mandate server-side at the bank API (signed mandate; approval verified by the bank) |
 | R2 | Offline brute force of a 4–6 digit PIN from a copy of storage | High | Low–Medium | PBKDF2 20,000 iterations (PIN hash) or 150,000 (vault); random salts; online lockout after 3 tries. The vault unlock throttle is stored outside the encrypted blob (`fundbun.v1.unlock`), so a reload does not reset it, and each lock-out doubles (5, 10, 20 … minutes, at most 24 h) | At most 10⁶ PINs, so a copied store or vault blob may fall in seconds to minutes on one GPU (our estimate). **Next:** platform keystore or WebAuthn passkey; optional long vault passphrase; server-side PIN attempts |
 | R3 | Browser storage read by malicious extensions or XSS | High | Low–Medium | CSP on every production build: a `<meta>` tag in the built `index.html`, so the static Pages build has one too (`cspMetaPlugin()` in `vite.config.ts`). The Node server also sends it as a header with `frame-ancestors 'none'`. The policy is `default-src 'self'`, with no inline scripts. No third-party scripts or CDNs; no `dangerouslySetInnerHTML` in `src/ui`; optional vault | An extension with page access reads everything once unlocked. A `<meta>` CSP cannot set `frame-ancestors`, so framing protection needs the server's headers. **Next:** Trusted Types, native-app keystore |
-| R4 | The heuristic injection scanner misses novel phrasing | Medium | Medium | The scanner is not the gate: any bill or memo taints the turn whatever its score, a tainted T2+ never auto-runs, and T4 is never offered | A missed scan only loses the warning notice. **Next:** grow the red-team corpus; add a classifier; wider multilingual coverage |
+| R4 | The heuristic injection scanner misses novel phrasing | Medium | Medium | The scanner is not the gate: any bill or memo taints the turn whatever its score, a tainted T1+ never auto-runs, and T4 is never offered | A missed scan only loses the warning notice. **Next:** grow the red-team corpus; add a classifier; wider multilingual coverage |
 | R5 | Imported merchant and description fields are neither wrapped nor scanned (only memos and bills are) | Medium | Low–Medium | Length caps (80 / 200 chars); policy decides on structured data only | **Next:** treat every imported field as untrusted and taint turns that read imported rows |
 | R6 | On-device NLU misreads a request | Medium | Low | 213/216 (98.6%) held-out accuracy. Refusal rules run first. Tested that refusals never become actions. Every action is still policy-gated and shown on a card; clarification for ambiguity (B9) | Unseen phrasings and mixed languages. **Next:** larger eval set in Chinese and Indonesian; low confidence → ask |
 | R7 | Cross-border transfer and data residency when the LLM is on | High (legal) | Medium if an overseas provider is used | LLM optional with separate consent, off in the static build; redacted twice; minimised context. The OpenAI-compatible provider can point at an in-country endpoint (`server/config.ts`) | The default Anthropic model is hosted outside mainland China, and redacted financial context is still personal information. **Next:** in-country or on-device model; PIPL Art. 38 standard contract plus PIA |

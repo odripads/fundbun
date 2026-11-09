@@ -209,8 +209,8 @@ function isRealDate(d: string): boolean {
  *  P-FUNDS               transfer_to_goal amount > checking balance → deny
  *  P-LIQUIDITY           transfer_to_goal would leave checking below (unpaid bills due in the next 14 days + ¥500
  *                        buffer) → deny with a plain reason (protects against overdraft — Medina 2021)
- *  P-TAINT               tainted turn + tier >= 2 → at least 'confirm' (never auto-execute)
- *  P-TIER-MATRIX         tier vs autonomy: T0 allow; T1 allow (copilot/autopilot) else confirm;
+ *  P-TAINT               tainted turn + tier >= 1 → at least 'confirm' (never auto-execute)
+ *  P-TIER-MATRIX         tier vs autonomy: T0 allow; T1 allow (copilot/autopilot, untainted) else confirm;
  *                        T2 allow only in autopilot (untainted, within caps) else confirm; T3 always step_up.
  *
  * The first deny wins (its ruleId is the only one reported). P-FUNDS also covers withdraw_from_goal (pot
@@ -273,9 +273,9 @@ function gate(tier: Tier, autonomy: Autonomy, tainted: boolean, amount: Minor, m
   const ruleIds: string[] = []
   const reasons: string[] = []
   let decision: Decision = 'allow'
-  if (tainted && tier >= 2) {
+  if (tainted && tier >= 1) {
     ruleIds.push('P-TAINT')
-    reasons.push('This conversation included text from outside FundBun (a bill, memo or import), so nothing that moves money happens without your tap.')
+    reasons.push('This conversation included text from outside FundBun (a bill, memo or import), so nothing that changes your budget or moves money happens without your tap.')
     decision = 'confirm'
   }
   const matrix = tierMatrix(tier, autonomy, tainted, amount, money, undoSec)
@@ -289,9 +289,12 @@ function tierMatrix(tier: Tier, autonomy: Autonomy, tainted: boolean, amount: Mi
   const mode = AUTONOMY_LABEL[autonomy] ?? 'its current'
   if (tier === 0) return { decision: 'allow', reason: 'Reading and explaining your data is always allowed.' }
   if (tier === 1) {
-    return autonomy === 'copilot' || autonomy === 'autopilot'
-      ? { decision: 'allow', reason: `Organizing changes (budgets, tripwires, categories, reminders) are reversible, and ${mode} mode lets the assistant make them.` }
-      : { decision: 'confirm', reason: `Your assistant is in ${mode} mode, so it needs your tap before changing anything.` }
+    if (autonomy === 'copilot' || autonomy === 'autopilot') {
+      return tainted
+        ? { decision: 'confirm', reason: 'This turn included text from outside FundBun, so the assistant waits for your tap before making this reversible change.' }
+        : { decision: 'allow', reason: `Organizing changes (budgets, tripwires, categories, reminders) are reversible, and ${mode} mode lets the assistant make them.` }
+    }
+    return { decision: 'confirm', reason: `Your assistant is in ${mode} mode, so it needs your tap before changing anything.` }
   }
   if (tier === 2) {
     if (autonomy !== 'autopilot') return { decision: 'confirm', reason: `Moving money between your own accounts needs your tap in ${mode} mode.` }

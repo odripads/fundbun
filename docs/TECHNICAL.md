@@ -467,10 +467,12 @@ This is a summary. Test-by-test detail and the known-risk register are in the se
 | Tier | Observe | Suggest | Co-pilot (default) | Autopilot |
 |---|---|---|---|---|
 | T0 read | allow | allow | allow | allow |
-| T1 organise | deny | confirm | allow | allow |
+| T1 organise | deny | confirm | allow¹ | allow¹ |
 | T2 own money | deny | confirm | confirm | allow if untainted and within caps, else confirm |
 | T3 pay / cancel / dispute | deny | step_up (tap + PIN) | step_up | step_up |
 | T4 prohibited | deny | deny | deny | deny |
+
+¹ A tainted turn (bill, memo or import text read) turns T1 into `confirm`, so a reversible organising change still waits for a tap.
 
 **Policy rules, in order; the first deny wins** (`evaluatePolicy()`):
 
@@ -535,7 +537,7 @@ The trip is audited, with a reason that names what was blocked. Only the user ca
   - FundBun tool names and exfiltration.
 
   Hidden Unicode tag text and base64 are decoded and rescanned. Weights are summed, and ≥ 0.5 is suspicious; one weak signal such as "pay immediately" stays below that.
-- **Taint.** A turn that reads untrusted text (pasted bills, stored bill text, memos, imported CSV fields) is tainted. So is a chat message that tries to override Bun's rules; it is also audited as `injection_detected`. In a tainted turn T2+ never auto-executes, and one denied money attempt trips the breaker.
+- **Taint.** A turn that reads untrusted text (pasted bills, stored bill text, memos, imported CSV fields) is tainted. So is a chat message that tries to override Bun's rules; it is also audited as `injection_detected`. In a tainted turn T1+ never auto-executes, and one denied money attempt trips the breaker.
 - **Wrapping.** Untrusted text sent to the LLM is sanitised and wrapped in `<untrusted source="…">` tags, with nested tags and chat-template tokens neutralised. User-authored strings (dream names, notes) are wrapped too, and the user's name is sanitised in the prompt.
 - **Structure, not detection.** T4 tools are never offered to the model, and the gateway rejects any request that offers them (`tool_not_allowed`). The policy denies them, and the bank refuses external transfers anyway.
 - **Evidence.** In every case below, ¥0 moved.

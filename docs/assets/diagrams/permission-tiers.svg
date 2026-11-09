@@ -157,7 +157,7 @@
 <line x1="944.4" y1="818" x2="960.4" y2="818" stroke="#8A7560" stroke-width="1.5" marker-end="url(#ah)"/>
 <rect x="963.4" y="802" width="131.6" height="32" rx="16" fill="#FBEBC4" stroke="#8A7560" stroke-width="1.3"/>
 <text class="code" x="1029.2" y="823" text-anchor="middle">P-TIER-MATRIX</text>
-<text class="t" x="40" y="862">* Autopilot moves own money on its own only in an untainted turn within every cap. After bill, memo or import text, T2+ waits for a tap (P-TAINT).</text>
+<text class="t" x="40" y="862">* Autopilot moves own money on its own only in an untainted turn within every cap. After bill, memo or import text, T1+ waits for a tap (P-TAINT).</text>
 <text class="t" x="40" y="888">An LLM proposal for a tool it is never offered is denied whatever the matrix says (P-LLM-NOT-EXPOSED, agent/actions.ts).</text>
 <text class="m" x="40" y="914">Default mandate: Co-pilot · ¥500 per action · ¥1,000 a day · ¥5,000 a month · 20 agent actions an hour · 30 s undo window</text>
 </svg>
