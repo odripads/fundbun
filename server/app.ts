@@ -2,6 +2,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import type { LlmHealth, LlmResponse } from '../src/core/agent/llm'
 import { llmToolDefinitions } from '../src/core/agent/specs'
 import { redactDeep } from '../src/core/security/redact'
+import { emailSourcesMeta, fetchEmailMessages } from './email'
 import { ProviderError, type LlmProvider, type ProviderRequest } from './providers/types'
 import { createRateLimiter, type RateLimiter } from './ratelimit'
 import { LIMITS, parseLlmRequest } from './schema'
@@ -100,6 +101,14 @@ async function route(ctx: RouteContext, req: IncomingMessage, res: ServerRespons
     if (req.method !== 'POST') return methodNotAllowed(res, 'POST')
     return handleLlm(ctx, req, res)
   }
+  if (pathname === '/api/email/sources') {
+    if (req.method !== 'GET' && req.method !== 'HEAD') return methodNotAllowed(res, 'GET, HEAD')
+    return sendJson(res, 200, emailSourcesMeta(), req.method === 'HEAD')
+  }
+  if (pathname === '/api/email/fetch') {
+    if (req.method !== 'GET' && req.method !== 'HEAD') return methodNotAllowed(res, 'GET, HEAD')
+    return handleEmailFetch(req, res)
+  }
   if (pathname === '/api' || pathname.startsWith('/api/')) return sendJson(res, 404, { error: 'not_found', message: 'Unknown API route.' })
   if (ctx.opts.staticHandler) return ctx.opts.staticHandler(req, res, pathname)
   return sendJson(res, 404, { error: 'not_found', message: 'This server only serves the API in development; open the Vite dev server.' })
@@ -151,6 +160,24 @@ async function handleLlm(ctx: RouteContext, req: IncomingMessage, res: ServerRes
   if (!redacted) return sendJson(res, 503, { error: 'redaction_unavailable', message: 'Server-side redaction is unavailable.' })
   const request: ProviderRequest = { ...redacted.value, tools: parsed.value.tools, maxTokens: parsed.value.maxTokens }
   await callProvider(opts.provider, request, redacted.counts, opts.providerTimeoutMs ?? 40_000, res)
+}
+
+/** Read-only email ingestion (the stage demo serves the synthetic sandbox mailbox — no IMAP account needed). */
+async function handleEmailFetch(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  const source = queryParam(req, 'source') ?? 'sandbox'
+  const result = await fetchEmailMessages(source)
+  if (!result.ok) return sendJson(res, result.status, { error: result.error, message: result.message })
+  return sendJson(res, 200, { source: result.source, messages: result.messages })
+}
+
+function queryParam(req: IncomingMessage, name: string): string | undefined {
+  const q = (req.url ?? '').split('?')[1]
+  if (!q) return undefined
+  try {
+    return new URLSearchParams(q).get(name) ?? undefined
+  } catch {
+    return undefined
+  }
 }
 
 type Redactable = Pick<ProviderRequest, 'system' | 'messages'>

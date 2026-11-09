@@ -33,6 +33,7 @@ import { DataStep } from './steps/DataStep'
 import { DoneStep } from './steps/DoneStep'
 import { DreamsStep } from './steps/DreamsStep'
 import { MoneyStep } from './steps/MoneyStep'
+import { ModeStep } from './steps/ModeStep'
 import { PermissionsStep } from './steps/PermissionsStep'
 import { TripwiresStep } from './steps/TripwiresStep'
 import { DreamOrbit, type OrbitItem } from './steps/DreamOrbit'
@@ -247,6 +248,9 @@ export function OnboardingScreen() {
       break
     case 'data':
       body = <DataStep {...props} csv={csv} />
+      break
+    case 'mode':
+      body = <ModeStep {...props} />
       break
     case 'done':
       body = <DoneStep draft={draft} pinSet={pin !== null} problems={finish.problems} error={finish.error} onEdit={editFromSummary} />

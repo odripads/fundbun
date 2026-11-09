@@ -138,6 +138,8 @@ export interface OnboardingInput {
   /** step-up PIN, 4–6 digits */
   pin: string
   dataSource: DataSource
+  /** AUTO mode: read transaction emails/e-statements (read-only). Requires the AUTO consent screen. */
+  emailAuto?: boolean
 }
 
 export interface Result {

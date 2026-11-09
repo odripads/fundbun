@@ -139,6 +139,8 @@ describe('OnboardingScreen', () => {
     await flush()
     await click(byText(container, 'Review my setup', 'button'))
     await flush()
+    await click(byText(container, 'Continue', 'button'))
+    await flush()
     expect(window.location.hash).toBe('#/onboarding?step=done')
     expect(h1(container)).toBe('You’re all set, Odri')
 

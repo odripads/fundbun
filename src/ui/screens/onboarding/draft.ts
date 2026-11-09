@@ -8,7 +8,7 @@ import type { DreamInput } from '../../../core/app-api'
 import { CURRENCY_SYMBOL } from '../../../core/money'
 import type { Autonomy, Currency, Tone } from '../../../core/types'
 
-export const STEPS = ['welcome', 'consent', 'money', 'dreams', 'tripwires', 'permissions', 'data', 'done'] as const
+export const STEPS = ['welcome', 'consent', 'money', 'dreams', 'tripwires', 'permissions', 'data', 'mode', 'done'] as const
 export type StepId = (typeof STEPS)[number]
 
 export function isStepId(value: unknown): value is StepId {
@@ -32,6 +32,9 @@ export interface DreamDraft extends DreamInput {
 export type DataKind = 'persona' | 'csv' | 'empty'
 export type PersonaId = 'mei' | 'arif'
 
+/** How ongoing spending arrives after onboarding: manual CSV uploads, or AUTO reading bank/payment emails. */
+export type ModeKind = 'manual' | 'auto'
+
 export interface OnboardingDraft {
   v: 1
   consent: { financialData: boolean; llmProcessing: boolean; notifications: boolean }
@@ -47,6 +50,10 @@ export interface OnboardingDraft {
   autonomy: Autonomy
   caps: { perAction: string; daily: string; monthly: string }
   data: { kind: DataKind | null; personaId: PersonaId | null; csvName: string; csvText: string; balance: string }
+  /** MANUAL (upload a CSV) vs AUTO (Bun reads your bank emails, read-only) — MANUAL by default */
+  mode: ModeKind
+  /** the AUTO consent (WHAT/WHY/WHERE) — false until the user toggles it on */
+  emailConsent: boolean
 }
 
 export const TRIPWIRE_KEYS: readonly TripwireKey[] = ['month80', 'month100', 'single', 'pace']
@@ -54,6 +61,7 @@ const TONES: readonly Tone[] = ['gentle', 'cheeky', 'numbers']
 const AUTONOMIES: readonly Autonomy[] = ['observe', 'suggest', 'copilot', 'autopilot']
 const DATA_KINDS: readonly DataKind[] = ['persona', 'csv', 'empty']
 const PERSONA_IDS: readonly PersonaId[] = ['mei', 'arif']
+const MODE_KINDS: readonly ModeKind[] = ['manual', 'auto']
 
 /** Nothing pre-ticked, gentle tone, low autonomy (Suggest), the contract's default caps. */
 export function emptyDraft(): OnboardingDraft {
@@ -71,6 +79,8 @@ export function emptyDraft(): OnboardingDraft {
     autonomy: 'suggest',
     caps: { perAction: '500', daily: '1,000', monthly: '5,000' },
     data: { kind: null, personaId: null, csvName: '', csvText: '', balance: '' },
+    mode: 'manual',
+    emailConsent: false,
   }
 }
 
@@ -132,6 +142,8 @@ export function sanitizeDraft(raw: unknown): OnboardingDraft {
       csvText: str(data.csvText, '', MAX_CSV_CHARS),
       balance: str(data.balance, '', 24),
     },
+    mode: oneOf(raw.mode, MODE_KINDS, base.mode),
+    emailConsent: bool(raw.emailConsent),
   }
 }
 

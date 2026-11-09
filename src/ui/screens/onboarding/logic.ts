@@ -30,11 +30,12 @@ export const STEP_META: Record<StepId, StepMeta> = {
   tripwires: { title: 'Tripwires & tone', short: 'Tripwires & tone', mood: 'worried' },
   permissions: { title: 'What Bun may do', short: 'Permissions', mood: 'calm' },
   data: { title: 'Where should Bun look?', short: 'Your data', mood: 'sleepy' },
+  mode: { title: 'How should spending arrive?', short: 'Spending source', mood: 'calm' },
   done: { title: 'You’re all set', short: 'Done', mood: 'happy' },
 }
 
 /** The steps the progress bar counts (welcome and done sit outside it). */
-export const FLOW: readonly StepId[] = ['consent', 'money', 'dreams', 'tripwires', 'permissions', 'data']
+export const FLOW: readonly StepId[] = ['consent', 'money', 'dreams', 'tripwires', 'permissions', 'data', 'mode']
 
 export function stepIndex(step: StepId): number {
   return STEPS.indexOf(step)
@@ -137,6 +138,11 @@ export function validateMoney(d: OnboardingDraft): Errors {
 
 export function validateDreams(d: OnboardingDraft): Errors {
   return d.dreams.length > 0 ? {} : { dreams: 'Add at least one dream — tap “Add to my list” to save it.' }
+}
+
+/** The mode step is always valid: MANUAL is the default and AUTO without consent simply stays off. */
+export function validateMode(_d: OnboardingDraft): Errors {
+  return {}
 }
 
 // ───────────────────────────── tripwires ─────────────────────────────
@@ -519,6 +525,7 @@ export function stepErrors(step: StepId, d: OnboardingDraft, ctx: FlowContext): 
     case 'tripwires': return validateTripwires(d)
     case 'permissions': return validatePermissions(d, ctx.pinSet)
     case 'data': return validateData(d, ctx.csv)
+    case 'mode': return validateMode(d)
     default: return {}
   }
 }
@@ -566,6 +573,7 @@ export function buildOnboardingInput(d: OnboardingDraft, pin: string | null, csv
       caps: { perActionCap: caps.perAction, dailyCap: caps.daily, monthlyCap: caps.monthly },
       pin,
       dataSource: source,
+      emailAuto: d.mode === 'auto' && d.emailConsent,
     },
   }
 }

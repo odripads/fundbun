@@ -1,4 +1,4 @@
-import { Bell, FileSpreadsheet, Landmark, Lock, ShieldCheck, Sparkles, Sprout, Wallet, type LucideIcon } from 'lucide-react'
+import { Bell, FileSpreadsheet, Landmark, Lock, Mail, ShieldCheck, Sparkles, Sprout, Wallet, type LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { fmt } from '../../../../core/money'
 import { DreamImage } from '../../../components/brand'
@@ -83,6 +83,12 @@ export function DoneStep({ draft, pinSet, problems, error, onEdit }: DoneStepPro
       value: `${autonomy} · ${caps.perAction !== undefined && caps.daily !== undefined && caps.monthly !== undefined ? `${f(caps.perAction)} / ${f(caps.daily)} / ${f(caps.monthly)}` : 'caps need a look'} · ${pinSet ? 'PIN set' : 'PIN needed'}`,
     },
     { step: 'data', icon: DataIcon, label: 'Your data', value: dataLine(draft) },
+    {
+      step: 'mode',
+      icon: Mail,
+      label: 'Spending source',
+      value: draft.mode === 'auto' && draft.emailConsent ? 'Auto — Bun reads your bank emails' : 'Manual — you add spending yourself',
+    },
     {
       step: 'consent',
       icon: Lock,

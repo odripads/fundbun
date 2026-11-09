@@ -158,7 +158,7 @@ export function buildOnboardedState(input: OnboardingInput, prev: AppState, now:
     mandate: buildMandate(input),
     audit: [...prev.audit],
     chat: [welcomeMessage(profile, now)],
-    settings: { ...defaultSettings(), notificationsEnabled: profile.consent.notifications },
+    settings: { ...defaultSettings(), notificationsEnabled: profile.consent.notifications, emailAuto: input.emailAuto === true },
   }
   appendAudit(state, now, 'user', 'onboarding', 'Onboarding completed', {
     dataSource: input.dataSource.kind,
