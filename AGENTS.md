@@ -82,14 +82,13 @@ of staged deletions, **do not commit** — that commit would delete everything. 
 files), check `git status` looks normal, then commit. Never force-push.
 
 ## 7. Open work (in rough priority order)
-1. **Wire DeepSeek into the app**: `LLM_PROVIDER=openai_compat`, `OPENAI_COMPAT_BASE_URL=https://api.deepseek.com`,
-   `OPENAI_COMPAT_MODEL=deepseek-flash` (the repo default `deepseek-chat` is retired), send
-   `thinking: {type: 'disabled'}`, `OPENAI_COMPAT_API_KEY` from `.env` (never commit keys). Remove any
-   `ANTHROPIC_API_KEY` from the demo setup.
-2. **Live-test the AI path**: TECHNICAL.md:635 says the LLM path was never live-tested. Run the 24 attacks
-   against real DeepSeek before claiming "24/24" for the AI mode.
-3. **Security gap T1**: a hidden instruction can auto-run budget changes in Co-pilot mode
-   (`src/core/security/policy.ts:276,292`). Fix it, add a test, correct SECURITY_SELF_ASSESSMENT.md:337.
+1. ~~Wire DeepSeek into the app~~ (done — `deepseek-flash`, `thinking: {type:'disabled'}`, `.env.example` updated,
+   server tests green). Still needed: your `OPENAI_COMPAT_API_KEY` in `.env` (next item).
+2. **Live-test the AI path** (BLOCKED on the key): TECHNICAL.md:635 says the LLM path was never live-tested.
+   Add `OPENAI_COMPAT_API_KEY` to `.env`, then run the 24 attacks against real DeepSeek before claiming "24/24"
+   for the AI mode.
+3. ~~Security gap T1~~ (done — a tainted turn now forces a tap on T1 organising changes too; test added,
+   SECURITY_SELF_ASSESSMENT.md + TECHNICAL.md updated).
 4. ~~Rename demo persona Mei → Jing~~ (done — app, deep links `?demo=jing` with `?demo=mei` alias, docs).
 5. Be honest about the "on-device AI": it is text matching + rules (27 intents), not a neural model.
 6. Do a full dry run with no Claude, from start to stage demo, before flying.
