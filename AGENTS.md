@@ -5,7 +5,7 @@ You are helping **Odri** (Odri Prince Sembiring, UGM, Indonesia) finish and pres
 Track, Topic A (personal-finance AI agent). FundBun is a **Top 10 Finalist** — never claim it won anything.
 
 This file replaces the memory Odri's previous assistant had. Claude is not available in mainland China,
-so you (OpenCode with DeepSeek for logic, Kimi for UI/UX) are the coding helper during the final.
+so you (Kimi Code CLI, `kimi`; OpenCode is installed as a backup) are the coding helper during the final.
 
 ## 1. The team
 - **Odri** — team leader, the only person attending and competing in Shenzhen. Talk to Odri directly,
@@ -99,6 +99,6 @@ files), check `git status` looks normal, then commit. Never force-push.
 - Ask Odri before: publishing anything, pushing to the public repo, sending emails, spending money.
 - Never type passport/ID numbers or put personal data, API keys or voice files in the repo.
 - Report real measured numbers, not guesses.
-- Logic/backend/security → `logic` agent (DeepSeek V4 Pro). Screens/layout/copy/screenshots → `ui` agent
-  (Kimi). Free OpenCode models are fine for quick questions, but their providers may log prompts, so keep
-  anything private off them.
+- Odri finds complex tools confusing: one step at a time, say exactly what to type or click, and check
+  the result before moving on.
+- Don't paste personal data, keys or ID documents into prompts.
