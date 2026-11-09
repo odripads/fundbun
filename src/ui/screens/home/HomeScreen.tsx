@@ -1,5 +1,5 @@
-import { Camera, FlaskConical } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { Camera, ChevronDown, FlaskConical } from 'lucide-react'
+import { useCallback, useRef, useState, type TouchEvent } from 'react'
 import { SandboxPanel } from '../../components/sandbox'
 import { Button, Sheet } from '../../components/ds'
 import { navigate } from '../../router'
@@ -16,18 +16,47 @@ import styles from './HomeScreen.module.css'
  * Home — the Dream Mirror. Hero first (the month reflected as a dream), then live tripwires, the month in numbers,
  * the "Should I buy it?" check, bills, two insights and the six-month could've collection.
  */
+const PULL_OPEN_PX = 140
+
 export function HomeScreen() {
   const [sandbox, setSandbox] = useState(false)
   const [check, setCheck] = useState<CheckRequest | null>(null)
+  const [pull, setPull] = useState(0)
+  const touchY = useRef<number | null>(null)
   const clearCheck = useCallback(() => setCheck(null), [])
   // the open sandbox sheet shows each purchase's tripwires inline; a toast on top would only hide them
   useTripwireToasts({ quiet: sandbox })
 
+  // swipe down when the page is already at the top opens the camera — the quick way to scan a receipt
+  const onTouchStart = (e: TouchEvent<HTMLDivElement>) => {
+    touchY.current = window.scrollY <= 0 ? e.touches[0].clientY : null
+  }
+  const onTouchMove = (e: TouchEvent<HTMLDivElement>) => {
+    if (touchY.current == null) return
+    const dy = e.touches[0].clientY - touchY.current
+    setPull(dy > 0 ? Math.min(1, dy / PULL_OPEN_PX) : 0)
+  }
+  const onTouchEnd = (e: TouchEvent<HTMLDivElement>) => {
+    const start = touchY.current
+    touchY.current = null
+    setPull(0)
+    if (start == null) return
+    if (e.changedTouches[0].clientY - start > PULL_OPEN_PX) navigate('receipt')
+  }
+  const cancelPull = () => {
+    touchY.current = null
+    setPull(0)
+  }
+
   return (
-    <div className={styles.page}>
+    <div className={styles.page} onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd} onTouchCancel={cancelPull}>
+      <div className={styles.pullHint} style={{ opacity: pull }} aria-hidden="true">
+        <ChevronDown className={styles.pullIcon} />
+        <span>Pull to scan a receipt</span>
+      </div>
       <MirrorHero onCheck={setCheck} onSandbox={() => setSandbox(true)} />
       <div className={styles.scanRow}>
-        <Button variant="soft" size="sm" iconStart={<Camera />} onClick={() => navigate('receipt')}>
+        <Button variant="soft" size="lg" iconStart={<Camera />} onClick={() => navigate('receipt')}>
           Scan a receipt
         </Button>
       </div>

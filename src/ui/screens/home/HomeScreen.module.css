@@ -12,12 +12,36 @@
 
 .scanRow {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
   margin-top: calc(-1 * var(--s-2));
 }
 
 .scanRow button {
   box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.pullHint {
+  position: fixed;
+  top: calc(var(--safe-top, 0px) + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: var(--r-pill);
+  background: var(--text);
+  color: var(--bg);
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  pointer-events: none;
+  transition: opacity 120ms var(--ease-out);
+}
+
+.pullIcon {
+  width: 18px;
+  height: 18px;
 }
 
 /* each section settles in after the hero */
