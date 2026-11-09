@@ -160,6 +160,8 @@ html {
   -webkit-tap-highlight-color: transparent;
   background: var(--bg-sunken);
   scroll-padding-top: calc(var(--topbar-h) + var(--safe-top) + 8px);
+  /* app-like feel on iOS: no rubber-band bounce pulling the whole page */
+  overscroll-behavior-y: none;
 }
 
 body {
@@ -175,6 +177,8 @@ body {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
+  /* kill the double-tap-zoom delay and accidental pinch-zoom on controls */
+  touch-action: manipulation;
 }
 
 #root {
