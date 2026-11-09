@@ -1,0 +1,150 @@
+.page {
+  display: grid;
+  gap: var(--s-4);
+  padding-top: var(--s-2);
+}
+
+.hiddenInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.choose {
+  display: grid;
+  gap: var(--s-4);
+}
+
+.lead {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+
+.samples {
+  display: grid;
+  gap: var(--s-2);
+}
+
+.samplesTitle {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 650;
+}
+
+.sampleChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.sampleChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--border);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 620;
+  cursor: pointer;
+  transition: background-color var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out);
+}
+
+.sampleChip:hover {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.sampleChip:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--focus);
+}
+
+.sampleChip svg {
+  width: 15px;
+  height: 15px;
+}
+
+.split {
+  display: grid;
+  gap: var(--s-4);
+}
+
+@media (min-width: 720px) {
+  .split {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.photo {
+  display: grid;
+  gap: var(--s-2);
+  min-width: 0;
+}
+
+.img {
+  width: 100%;
+  max-height: 60vh;
+  object-fit: contain;
+  border-radius: var(--r-lg);
+  background: var(--bg-sunken);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.noPhoto {
+  display: grid;
+  place-items: center;
+  gap: var(--s-2);
+  min-height: 200px;
+  padding: var(--s-4);
+  border-radius: var(--r-lg);
+  background: var(--bg-sunken);
+  box-shadow: inset 0 0 0 1px var(--border);
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  text-align: center;
+}
+
+.noPhoto svg {
+  width: 28px;
+  height: 28px;
+}
+
+.source {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+
+.scanning {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+.draft {
+  display: grid;
+  gap: var(--s-3);
+  min-width: 0;
+}
+
+.form {
+  display: grid;
+  gap: var(--s-4);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s-2);
+}

@@ -10,21 +10,25 @@ import { Badge, Card, SectionHeader, Sheet, Toggle } from '../../components/ds'
 import { SandboxPanel } from '../../components/sandbox'
 import { useRoute } from '../../router'
 import { shallowEqual, useApp, useSnapshot } from '../../state'
+import { DataSourcesSection } from './DataSourcesSection'
 import { KillSwitch } from './KillSwitch'
 import { APP_LICENCE, APP_VERSION, LICENCES, REPO_URL, repoLabel, teamLine } from './logic'
 import { PermissionsSection } from './PermissionsSection'
 import { PrivacySection } from './PrivacySection'
 import { ProfileSection } from './ProfileSection'
+import { ReceiptSettingsSection } from './ReceiptSettingsSection'
 import { SecuritySection } from './SecuritySection'
 import { TripwiresSection } from './TripwiresSection'
 import styles from './Settings.module.css'
 
 const JUMPS = [
   { id: 'set-profile', label: 'Profile' },
+  { id: 'set-sources', label: 'Data sources' },
   { id: 'set-perms', label: 'Permissions' },
   { id: 'set-tripwires', label: 'Tripwires' },
   { id: 'set-security', label: 'Security' },
   { id: 'set-privacy', label: 'Privacy' },
+  { id: 'set-receipt', label: 'Receipts' },
   { id: 'set-sandbox', label: 'Sandbox' },
   { id: 'set-about', label: 'About' },
 ] as const
@@ -67,10 +71,12 @@ export function SettingsScreen() {
         ))}
       </nav>
       <ProfileSection />
+      <DataSourcesSection />
       <PermissionsSection />
       <TripwiresSection />
       <SecuritySection />
       <PrivacySection />
+      <ReceiptSettingsSection />
       <DisplaySection />
       <SandboxSection />
       <AboutSection />

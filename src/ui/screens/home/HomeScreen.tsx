@@ -1,7 +1,8 @@
-import { FlaskConical } from 'lucide-react'
+import { Camera, FlaskConical } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { SandboxPanel } from '../../components/sandbox'
 import { Button, Sheet } from '../../components/ds'
+import { navigate } from '../../router'
 import { BillsStrip } from './BillsStrip'
 import { CouldveStrip } from './CouldveStrip'
 import { InsightsPeek } from './InsightsPeek'
@@ -25,6 +26,11 @@ export function HomeScreen() {
   return (
     <div className={styles.page}>
       <MirrorHero onCheck={setCheck} onSandbox={() => setSandbox(true)} />
+      <div className={styles.scanRow}>
+        <Button variant="soft" size="sm" iconStart={<Camera />} onClick={() => navigate('receipt')}>
+          Scan a receipt
+        </Button>
+      </div>
       <div className={styles.sections}>
         <TripwireStack />
         <MonthCard />

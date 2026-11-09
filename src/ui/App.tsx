@@ -19,6 +19,7 @@ const ChatScreen = lazyScreen(() => import('./screens/chat/ChatScreen').then((m)
 const GoalsScreen = lazyScreen(() => import('./screens/goals/GoalsScreen').then((m) => m.GoalsScreen))
 const SettingsScreen = lazyScreen(() => import('./screens/settings/SettingsScreen').then((m) => m.SettingsScreen))
 const ActivityScreen = lazyScreen(() => import('./screens/activity/ActivityScreen').then((m) => m.ActivityScreen))
+const ReceiptScreen = lazyScreen(() => import('./screens/receipt/ReceiptScreen').then((m) => m.ReceiptScreen))
 const GlassBoxContent = lazyScreen(() => import('./screens/glassbox/GlassBoxContent').then((m) => m.GlassBoxContent))
 const OnboardingGlass = lazyScreen(() => import('./screens/glassbox/OnboardingGlass').then((m) => m.OnboardingGlass))
 const Gallery = lazyScreen(() => import('./screens/Gallery').then((m) => m.default))
@@ -52,6 +53,7 @@ const APP_CHUNKS: readonly LazyScreen[] = [
   GoalsScreen,
   SettingsScreen,
   ActivityScreen,
+  ReceiptScreen,
 ]
 
 /** Each route's chunk (the gallery's too). */
@@ -64,6 +66,7 @@ const ROUTE_CHUNKS: Record<RouteName, LazyScreen> = {
   goals: GoalsScreen,
   settings: SettingsScreen,
   activity: ActivityScreen,
+  receipt: ReceiptScreen,
   gallery: Gallery,
 }
 
@@ -109,6 +112,7 @@ export const SCREENS: Record<RouteName, ComponentType> = {
   goals: GoalsScreen,
   settings: SettingsScreen,
   activity: ActivityScreen,
+  receipt: ReceiptScreen,
   gallery: GalleryRoute,
 }
 

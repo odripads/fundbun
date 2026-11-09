@@ -4,7 +4,7 @@
  */
 import { useMemo, useSyncExternalStore } from 'react'
 
-export const ROUTES = ['onboarding', 'home', 'insights', 'bills', 'chat', 'goals', 'settings', 'activity', 'gallery'] as const
+export const ROUTES = ['onboarding', 'home', 'insights', 'bills', 'chat', 'goals', 'settings', 'activity', 'receipt', 'gallery'] as const
 export type RouteName = (typeof ROUTES)[number]
 
 /** The five bottom-bar slots, left to right. `chat` is the raised centre "Ask Bun" button. */
@@ -51,6 +51,7 @@ export const ROUTE_META: Record<RouteName, RouteMeta> = {
   goals: { title: 'Goals', chrome: 'app', tab: 'goals', topBar: true, tabBar: true, requiresOnboarding: true },
   settings: { title: 'Settings', chrome: 'app', tab: null, topBar: true, tabBar: false, parent: 'home', requiresOnboarding: true },
   activity: { title: 'Activity', chrome: 'app', tab: null, topBar: true, tabBar: false, parent: 'home', requiresOnboarding: true },
+  receipt: { title: 'Scan receipt', chrome: 'app', tab: null, topBar: true, tabBar: false, parent: 'home', requiresOnboarding: true },
   gallery: { title: 'Design system', chrome: 'wide', tab: null, topBar: false, tabBar: false, requiresOnboarding: false },
 }
 

@@ -82,7 +82,7 @@ describe('route tables', () => {
   })
 
   it('shows the desktop glass box on app routes and on onboarding, never on the gallery', () => {
-    expect(ROUTES.filter((r) => showsGlassBox(ROUTE_META[r]))).toEqual(['onboarding', 'home', 'insights', 'bills', 'chat', 'goals', 'settings', 'activity'])
+    expect(ROUTES.filter((r) => showsGlassBox(ROUTE_META[r]))).toEqual(['onboarding', 'home', 'insights', 'bills', 'chat', 'goals', 'settings', 'activity', 'receipt'])
     expect(showsGlassBox({ ...ROUTE_META.gallery, glassBox: true })).toBe(false)
     expect(showsGlassBox({ ...ROUTE_META.home, glassBox: false })).toBe(false)
   })
