@@ -8,7 +8,7 @@ import type { DreamInput } from '../../../core/app-api'
 import { CURRENCY_SYMBOL } from '../../../core/money'
 import type { Autonomy, Currency, Tone } from '../../../core/types'
 
-export const STEPS = ['welcome', 'consent', 'money', 'dreams', 'tripwires', 'permissions', 'data', 'mode', 'done'] as const
+export const STEPS = ['welcome', 'consent', 'money', 'dreams', 'tripwires', 'permissions', 'mode', 'data', 'done'] as const
 export type StepId = (typeof STEPS)[number]
 
 export function isStepId(value: unknown): value is StepId {

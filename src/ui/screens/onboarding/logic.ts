@@ -35,7 +35,7 @@ export const STEP_META: Record<StepId, StepMeta> = {
 }
 
 /** The steps the progress bar counts (welcome and done sit outside it). */
-export const FLOW: readonly StepId[] = ['consent', 'money', 'dreams', 'tripwires', 'permissions', 'data', 'mode']
+export const FLOW: readonly StepId[] = ['consent', 'money', 'dreams', 'tripwires', 'permissions', 'mode', 'data']
 
 export function stepIndex(step: StepId): number {
   return STEPS.indexOf(step)

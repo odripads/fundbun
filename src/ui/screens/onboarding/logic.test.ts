@@ -64,8 +64,8 @@ const ctx = { pinSet: true, csv: null }
 describe('step navigation', () => {
   it('walks the nine steps in order and clamps at the ends', () => {
     expect(nextStep('welcome')).toBe('consent')
-    expect(nextStep('data')).toBe('mode')
-    expect(nextStep('mode')).toBe('done')
+    expect(nextStep('mode')).toBe('data')
+    expect(nextStep('data')).toBe('done')
     expect(nextStep('done')).toBe('done')
     expect(prevStep('consent')).toBe('welcome')
     expect(prevStep('welcome')).toBe('welcome')
@@ -73,8 +73,8 @@ describe('step navigation', () => {
 
   it('counts seven progress steps, outside welcome and done', () => {
     expect(flowPosition('consent')).toBe(1)
-    expect(flowPosition('data')).toBe(6)
-    expect(flowPosition('mode')).toBe(7)
+    expect(flowPosition('mode')).toBe(6)
+    expect(flowPosition('data')).toBe(7)
     expect(flowPosition('welcome')).toBeNull()
     expect(flowPosition('done')).toBeNull()
   })
