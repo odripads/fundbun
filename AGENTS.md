@@ -5,7 +5,7 @@ You are helping **Odri** (Odri Prince Sembiring, UGM, Indonesia) finish and pres
 Track, Topic A (personal-finance AI agent). FundBun is a **Top 10 Finalist** — never claim it won anything.
 
 This file replaces the memory Odri's previous assistant had. Claude is not available in mainland China,
-so you (Kimi Code CLI, `kimi`; OpenCode is installed as a backup) are the coding helper during the final.
+so you (OpenCode: `logic` agent = DeepSeek, `ui` agent = Kimi) are the coding helper during the final.
 
 ## 1. The team
 - **Odri** — team leader, the only person attending and competing in Shenzhen. Talk to Odri directly,
