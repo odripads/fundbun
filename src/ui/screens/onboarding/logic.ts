@@ -430,7 +430,7 @@ export interface LedgerInfo {
 }
 
 export const SANDBOX_LEDGERS: readonly LedgerInfo[] = [
-  { id: 'mei', owner: 'Mei’s ledger', account: 'Everyday •••• 4821', blurb: 'A designer’s month: delivery, milk tea, rent, a few subscriptions.' },
+  { id: 'mei', owner: 'Jing’s ledger', account: 'Everyday •••• 4821', blurb: 'A designer’s month: delivery, milk tea, rent, a few subscriptions.' },
   { id: 'arif', owner: 'Arif’s ledger', account: 'Student •••• 3307', blurb: 'A student’s month: dorm, canteen, metro, bubble tea.' },
 ]
 

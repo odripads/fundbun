@@ -22,7 +22,7 @@ import {
   parseToolContent,
 } from './mock'
 
-const SYSTEM = buildSystemPrompt({ name: 'Mei', currency: 'CNY', today: '2026-10-22', tone: 'cheeky', autonomy: 'copilot' })
+const SYSTEM = buildSystemPrompt({ name: 'Jing', currency: 'CNY', today: '2026-10-22', tone: 'cheeky', autonomy: 'copilot' })
 const req = (messages: LlmMessage[], system = SYSTEM): ProviderRequest => ({ system, messages, tools: [], maxTokens: 512 })
 const ask = (text: string) => req([{ role: 'user', content: text }])
 

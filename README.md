@@ -4,7 +4,7 @@
 
 <h1 align="center">FundBun</h1>
 <p align="center"><em>"You could've gotten a Birkin."</em><br/>An AI money buddy that shows you the dream you could've had — and an agent you can trust inside your bank.</p>
-<p align="center"><a href="https://youtu.be/Se5TD4KQ35A"><b>▶ Watch the 5-minute demo</b></a> · <a href="https://fundbun.vercel.app/?demo=mei"><b>Try the live demo</b></a> (<a href="https://odripads.github.io/fundbun/?demo=mei">mirror</a>) · <a href="docs/TECHNICAL.md">Technical document</a> · <a href="docs/SECURITY_SELF_ASSESSMENT.md">Security self-assessment</a> · <a href="evidence/latest/SUMMARY.md">Evidence</a></p>
+<p align="center"><a href="https://youtu.be/Se5TD4KQ35A"><b>▶ Watch the 5-minute demo</b></a> · <a href="https://fundbun.vercel.app/?demo=jing"><b>Try the live demo</b></a> (<a href="https://odripads.github.io/fundbun/?demo=jing">mirror</a>) · <a href="docs/TECHNICAL.md">Technical document</a> · <a href="docs/SECURITY_SELF_ASSESSMENT.md">Security self-assessment</a> · <a href="evidence/latest/SUMMARY.md">Evidence</a></p>
 
 ---
 
@@ -70,8 +70,8 @@
 
 ## 4. Installation and Execution
 
-> **No install needed to try it:** open https://fundbun.vercel.app/?demo=mei (or `?demo=arif`; mirror:
-> https://odripads.github.io/fundbun/?demo=mei), demo PIN **2580**. The hosted demo is the static build with the
+> **No install needed to try it:** open https://fundbun.vercel.app/?demo=jing (or `?demo=arif`; mirror:
+> https://odripads.github.io/fundbun/?demo=jing), demo PIN **2580**. The hosted demo is the static build with the
 > on-device engine — your data stays in your browser.
 
 ```bash
@@ -81,7 +81,7 @@ npm install
 npm run dev            # web on http://localhost:5173 + LLM gateway on :8787
 ```
 
-Open **http://localhost:5173/?demo=mei** (over-target story) or **?demo=arif** (under-target story) — the demo PIN is
+Open **http://localhost:5173/?demo=jing** (over-target story) or **?demo=arif** (under-target story) — the demo PIN is
 **2580**. `?reset=1` wipes local data and starts onboarding ("Set up my own").
 
 - Production (one process serving the app + gateway): `npm run build && npm start` → http://localhost:8787
@@ -92,7 +92,7 @@ Open **http://localhost:5173/?demo=mei** (over-target story) or **?demo=arif** (
 
 **Things to try:** Home → "Should I buy it?" · Sandbox chip → simulate a purchase (tripwire fires) · Ask Bun →
 "Help me get back on track this month" (task plan) · "Move ¥300 to my Chengdu fund" · "Pay my electricity bill" (PIN) ·
-Bills → X-ray Mei's electricity bill (prompt injection blocked) · "Send ¥4,800 to account 6222 0210 0112 3456 789" ·
+Bills → X-ray Jing's electricity bill (prompt injection blocked) · "Send ¥4,800 to account 6222 0210 0112 3456 789" ·
 Settings → Freeze Bun · Activity → verify the audit chain.
 
 ## 5. Testing
@@ -117,9 +117,9 @@ npm run evidence       # replays all scripted scenarios → evidence/latest (log
 
 - **Repository:** https://github.com/odripads/fundbun
 - **Demo video:** https://youtu.be/Se5TD4KQ35A (4:47, English subtitles)
-- **Live demo:** https://fundbun.vercel.app/?demo=mei (Mei, over target) · https://fundbun.vercel.app/?demo=arif (Arif,
+- **Live demo:** https://fundbun.vercel.app/?demo=jing (Jing, over target) · https://fundbun.vercel.app/?demo=arif (Arif,
   under target) · PIN 2580 — the static on-device build (no LLM gateway, no API keys); nothing to install.
-  Mirror on GitHub Pages: https://odripads.github.io/fundbun/?demo=mei (deployed by the *Deploy demo to GitHub Pages*
+  Mirror on GitHub Pages: https://odripads.github.io/fundbun/?demo=jing (deployed by the *Deploy demo to GitHub Pages*
   workflow)
 - **Vercel:** `vercel.json` builds `npm run build:vercel` (Vite mode `vercel`: root base, static engine, no source maps)
   into `dist/` and sends the security headers (the CSP of the page's `<meta>` plus `frame-ancestors 'none'`, HSTS,

@@ -782,11 +782,11 @@ interface Scene {
 
 const yuan = (major: number) => Math.round(major * 100)
 
-/** Mei half-way through setup: consent given, dreams picked, the money step still empty (typed on camera). */
+/** Jing half-way through setup: consent given, dreams picked, the money step still empty (typed on camera). */
 const ONBOARDING_DRAFT = JSON.stringify({
   v: 1,
   consent: { financialData: true, llmProcessing: false, notifications: true },
-  name: 'Mei',
+  name: 'Jing',
   currency: 'CNY',
   income: '',
   target: '',
@@ -820,7 +820,7 @@ function scenes(facts: Facts): Scene[] {
       title: 'Tell Bun about you',
       len: 21,
       run: async (d) => {
-        // behind the card: the first-run welcome, with Mei's half-finished setup in this tab's session
+        // behind the card: the first-run welcome, with Jing's half-finished setup in this tab's session
         await d.page.evaluate((draft) => sessionStorage.setItem('fundbun.onboarding.v1', draft), ONBOARDING_DRAFT)
         await d.go('/#/onboarding')
         await d.card(null)
@@ -853,7 +853,7 @@ function scenes(facts: Facts): Scene[] {
       title: 'The Dream Mirror',
       len: 21,
       run: async (d) => {
-        d.caption('Or skip the setup and open a demo persona: meet Mei.')
+        d.caption('Or skip the setup and open a demo persona: meet Jing.')
         await d.cursor(false)
         await d.veil(true)
         await d.go('/#/onboarding')
@@ -862,10 +862,10 @@ function scenes(facts: Facts): Scene[] {
         await d.cursor(true)
         await d.chapter('The Dream Mirror')
         await d.wait(500)
-        await d.tap(d.app.getByRole('button', { name: /Explore as Mei/ }), { scroll: false })
+        await d.tap(d.app.getByRole('button', { name: /Explore as Jing/ }), { scroll: false })
         await d.settle(1000)
         await d.at(5)
-        d.caption('Mei is ¥2,580 over her target.')
+        d.caption('Jing is ¥2,580 over her target.')
         await d.point(d.app.getByText('Over target'))
         await d.mark('mirror-mei')
         await d.at(10)
@@ -969,7 +969,7 @@ function scenes(facts: Facts): Scene[] {
         await d.point(d.app.locator('[class*="dag"], svg').filter({ hasText: /Cancel Youku/ }).or(d.app.getByText(/Cancel Youku/)).last(), { scroll: false, ring: false }).catch(() => undefined)
         await d.mark('plan-glassbox')
         await d.at(23)
-        d.caption('Low-risk fixes apply themselves; cancelling a subscription waits for Mei.')
+        d.caption('Low-risk fixes apply themselves; cancelling a subscription waits for Jing.')
         await d.reveal(d.app.getByRole('button', { name: /Approve with PIN/ }), { block: 'center', ms: 2400 })
         await d.wait(400)
         await d.point(plan.getByText(/Cancel Youku/).first(), { scroll: false })
@@ -980,7 +980,7 @@ function scenes(facts: Facts): Scene[] {
       len: 27,
       run: async (d) => {
         await d.chapter('Her PIN, her call')
-        d.caption('Paying or cancelling always needs Mei’s PIN — bound to this exact action and payee.')
+        d.caption('Paying or cancelling always needs Jing’s PIN — bound to this exact action and payee.')
         await d.tap(d.app.getByRole('button', { name: /Approve with PIN/ }))
         const sheet = d.app.getByRole('dialog')
         await sheet.waitFor()

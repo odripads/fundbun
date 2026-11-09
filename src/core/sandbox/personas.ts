@@ -27,7 +27,7 @@ import { SCRIPTS, getScript } from './scripts'
 
 export interface PersonaDef {
   id: string
-  /** display name, e.g. "Mei" */
+  /** display name, e.g. "Jing" */
   name: string
   /** one line, e.g. "24 · UX designer in Shenzhen" */
   tagline: string
@@ -38,7 +38,7 @@ export interface PersonaDef {
   payday: number
   /** short description of the story this persona demonstrates */
   story: string
-  /** e.g. "Mei Lin" */
+  /** e.g. "Jing Lin" */
   fullName?: string
 }
 

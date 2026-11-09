@@ -9,7 +9,7 @@ import type { EngineStatus } from './state'
 import { byLabel, byText, cleanup, click, flush, key, render } from './components/ds/testing'
 
 const ONBOARDING: OnboardingInput = {
-  name: 'Mei',
+  name: 'Jing',
   currency: 'CNY',
   monthlyIncome: 1_850_000,
   targetSpend: 950_000,
@@ -77,7 +77,7 @@ describe('App shell — before onboarding', () => {
     expect(byText(container, 'Meet Bun')).not.toBeNull()
   })
 
-  it('integration: Mei’s demo card loads the sandbox persona and lands on home', async () => {
+  it('integration: Jing’s demo card loads the sandbox persona and lands on home', async () => {
     const app = createTestApp()
     const { container } = await renderAt('#/onboarding', app)
     await click(container.querySelector('button[data-status="over"]'))

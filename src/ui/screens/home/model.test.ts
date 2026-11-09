@@ -451,7 +451,7 @@ describe('"Why am I seeing this?"', () => {
 })
 
 describe('with the demo personas', () => {
-  it('Mei (over): the hero shows the could-have item and three evidence tiles', () => {
+  it('Jing (over): the hero shows the could-have item and three evidence tiles', () => {
     const s = demo('mei')
     const m = s.derived.mirror!
     expect(m.status).toBe('over')
@@ -474,7 +474,7 @@ describe('with the demo personas', () => {
     expect(mirrorStats(m, 'CNY').at(-1)!.value).toMatch(/^46→\d+%$/)
   })
 
-  it('Mei (over): "Make a plan with Bun" leads, the one-tap rule follows', () => {
+  it('Jing (over): "Make a plan with Bun" leads, the one-tap rule follows', () => {
     const s = demo('mei')
     const m = s.derived.mirror!
     const a = heroActions(m, s.state.dreams)

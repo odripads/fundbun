@@ -95,7 +95,7 @@ describe('checkAffordability', () => {
 
     it('a purchase within today\'s safe-to-spend is never a skip just because the pace runs hot', () => {
       const c = meiLike()
-      // Mei is over already → skip regardless; take an under-target month that paces over instead
+      // Jing is over already → skip regardless; take an under-target month that paces over instead
       const hot = makeCtx({
         today: '2026-10-12',
         txns: [...daily('2026-07-01', '2026-09-30', 'Canteen', 'dining', 400), ...daily('2026-10-01', '2026-10-12', 'Canteen', 'dining', 380)],

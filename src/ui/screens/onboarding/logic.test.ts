@@ -40,7 +40,7 @@ import {
 const FIXTURES = resolve(__dirname, '../../../core/sandbox/__fixtures__')
 const wechat = readFileSync(resolve(FIXTURES, 'wechat-pay-2026-09.csv'), 'utf8')
 
-/** A draft that passes every step (Mei-like numbers). */
+/** A draft that passes every step (Jing-like numbers). */
 function complete(patch: Partial<OnboardingDraft> = {}): OnboardingDraft {
   const d = emptyDraft()
   return {

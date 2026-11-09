@@ -60,11 +60,11 @@ All under `~/Desktop/STARTUP/` (iCloud Desktop — if a read hangs, the Mac is l
 | `team members/` | **Passport/ID documents. Never open, copy, upload or commit anything from here.** |
 
 **App data:** there is no real user or bank data anywhere. Demo users are synthetic personas in
-`src/core/sandbox/` (deep link `?demo=mei` — rename "Mei" to **Jing** is pending). The app stores
+`src/core/sandbox/` (deep link `?demo=jing`; `?demo=mei` still works as an alias). The app stores
 state in the browser only.
 
 Live: https://fundbun.vercel.app (static, offline engine, calls no AI model) ·
-https://odripads.github.io/fundbun/?demo=mei · demo video https://youtu.be/Se5TD4KQ35A
+https://odripads.github.io/fundbun/?demo=jing · demo video https://youtu.be/Se5TD4KQ35A
 
 ## 5. Commands
 ```
@@ -90,7 +90,7 @@ files), check `git status` looks normal, then commit. Never force-push.
    against real DeepSeek before claiming "24/24" for the AI mode.
 3. **Security gap T1**: a hidden instruction can auto-run budget changes in Co-pilot mode
    (`src/core/security/policy.ts:276,292`). Fix it, add a test, correct SECURITY_SELF_ASSESSMENT.md:337.
-4. Rename demo persona **Mei → Jing** everywhere (app, deep links, docs).
+4. ~~Rename demo persona Mei → Jing~~ (done — app, deep links `?demo=jing` with `?demo=mei` alias, docs).
 5. Be honest about the "on-device AI": it is text matching + rules (27 intents), not a neural model.
 6. Do a full dry run with no Claude, from start to stage demo, before flying.
 

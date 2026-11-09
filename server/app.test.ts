@@ -16,7 +16,7 @@ import { createStaticHandler } from './static'
 
 const PHONE = '13812345678'
 const CARD = '4111111111111111'
-const SYSTEM = buildSystemPrompt({ name: 'Mei', currency: 'CNY', today: '2026-10-22', tone: 'cheeky', autonomy: 'copilot' })
+const SYSTEM = buildSystemPrompt({ name: 'Jing', currency: 'CNY', today: '2026-10-22', tone: 'cheeky', autonomy: 'copilot' })
 const TOOLS = llmToolDefinitions()
 
 /** Stand-in for the real redactor so gateway plumbing is testable on its own: masks long digit runs. */

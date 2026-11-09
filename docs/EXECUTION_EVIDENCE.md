@@ -10,7 +10,7 @@
 | Competition track | International AI Track — Topic A: Personal Finance Assistant |
 | Submission date | 2026-10-20 |
 | Source code | [github.com/odripads/fundbun](https://github.com/odripads/fundbun) |
-| Live demo | [fundbun.vercel.app](https://fundbun.vercel.app/?demo=mei) · mirror [odripads.github.io/fundbun](https://odripads.github.io/fundbun/?demo=mei) — no install, demo PIN 2580 |
+| Live demo | [fundbun.vercel.app](https://fundbun.vercel.app/?demo=jing) · mirror [odripads.github.io/fundbun](https://odripads.github.io/fundbun/?demo=jing) — no install, demo PIN 2580 |
 | Demo video | [youtu.be/Se5TD4KQ35A](https://youtu.be/Se5TD4KQ35A) (4:47, English subtitles) |
 
 *How to read this document.* Every number below comes from `evidence/latest/` in the repository ([github.com/odripads/fundbun](https://github.com/odripads/fundbun)), which `npm run evidence` regenerates byte for byte. The same folder is attached as **InternationalAI-FundBun-ExecutionEvidence-Logs.zip**. Topic A is not an on-chain topic, so this evidence consists of sandbox operation logs and the demo video, not transaction hashes.
@@ -27,16 +27,16 @@
 
 | Persona | Profile | The month on the sandbox date (2026-10-22) |
 |---|---|---|
-| **Mei Lin**, 26 | UX designer in Shenzhen; net income ¥18,500; spending target ¥9,500; tone *cheeky* (opted in); autonomy Co-pilot | ¥12,080.24 spent, **¥2,580.24 over** target, projected ¥15,230. Home: *"You could've gotten a Weekend in Chengdu."* Her Birkin 25 goal is pushed back about 5 weeks (35 days) |
+| **Jing Lin**, 26 | UX designer in Shenzhen; net income ¥18,500; spending target ¥9,500; tone *cheeky* (opted in); autonomy Co-pilot | ¥12,080.24 spent, **¥2,580.24 over** target, projected ¥15,230. Home: *"You could've gotten a Weekend in Chengdu."* Her Birkin 25 goal is pushed back about 5 weeks (35 days) |
 | **Arif Nasution**, 23 | Indonesian master's student in Shenzhen; income ¥4,800; target ¥3,600 | Projected **¥668 under** target. Home: *"¥668 closer to your MacBook Air (46% there)."* The call to action is "Stash ¥330 in MacBook Air" |
 
 **Fixed inputs:** sandbox date 2026-10-22, seed 20261020, clock 2026-10-22T10:00:00+08:00 advancing 1 s per step, demo PIN 2580.
 
 <p align="center">
-  <img src="assets/screens/home-mei.png" width="240" alt="Mei's Home over target: You could've gotten a Weekend in Chengdu">
+  <img src="assets/screens/home-mei.png" width="240" alt="Jing's Home over target: You could've gotten a Weekend in Chengdu">
   <img src="assets/screens/home-arif.png" width="240" alt="Arif's Home under target: ¥668 closer to your MacBook Air">
 </p>
-<p align="center"><em>Figure 1 · The two sandbox personas on Home. Left: Mei, over target (scenario A1). Right: Arif, under target, with the stash call to action (A13).</em></p>
+<p align="center"><em>Figure 1 · The two sandbox personas on Home. Left: Jing, over target (scenario A1). Right: Arif, under target, with the stash call to action (A13).</em></p>
 
 **How the evidence was produced.** `npm run evidence` (`scripts/run-scenarios.ts`) replays all 45 scripted scenarios in [`docs/SCENARIOS.md`](SCENARIOS.md). Each scenario runs on a fresh app through the public `AppApi`, the same interface the React app uses. The on-device Bun Engine answers by default. The five LLM-path scenarios (C4, C5, C9, C11, D2) start the real LLM gateway (`server/app.ts`) on `127.0.0.1` with a deterministic mock provider. C5 uses a scripted adversarial model. Every user turn, intent, tool call, policy decision, approval, execution, balance change and audit entry is written to `operations.jsonl`.
 
@@ -67,7 +67,7 @@
 | Audit chain verification | **44/44 runs intact** · tampering detected | `verifyAudit()` on every run's final hash chain. C10 deliberately edits its chain, and the edit is caught at entry #7 |
 | Reproducibility | Byte-identical reruns | Two runs give identical files apart from the git-commit line in `SUMMARY.md` |
 
-**The demo video is execution evidence too.** Attachment 2 defines this item for non-on-chain topics as "simulated-account/sandbox operation logs and demo video". The demo video submitted with this package ([youtu.be/Se5TD4KQ35A](https://youtu.be/Se5TD4KQ35A), 4:47, English subtitles) runs the same sandbox in the real app. Its Glass Box panel shows the sandbox time, every tool call and policy decision, and the audit chain as they happen. It covers Mei's Mirror, the recovery plan, a PIN-approved cancellation, the blocked bill injection, blocked transfer and escalation attempts, the kill switch, and Arif stashing his surplus.
+**The demo video is execution evidence too.** Attachment 2 defines this item for non-on-chain topics as "simulated-account/sandbox operation logs and demo video". The demo video submitted with this package ([youtu.be/Se5TD4KQ35A](https://youtu.be/Se5TD4KQ35A), 4:47, English subtitles) runs the same sandbox in the real app. Its Glass Box panel shows the sandbox time, every tool call and policy decision, and the audit chain as they happen. It covers Jing's Mirror, the recovery plan, a PIN-approved cancellation, the blocked bill injection, blocked transfer and escalation attempts, the kill switch, and Arif stashing his surplus.
 
 ---
 
@@ -86,7 +86,7 @@ Below are 30 representative operations, chosen across all four categories. **Tim
 
 | Line | Time | Scenario | Action | Result | Screenshot / link |
 |---|---|---|---|---|---|
-| 10 | 10:00:01 | A1 · Mei opens Home | UI reads the Dream Mirror | Status **over**: "You could've gotten a Weekend in Chengdu." ¥2,580 over a ¥9,500 target; Birkin 25 about 5 weeks further away; bun mood burnt | Figure 1 · [A1](../evidence/latest/scenarios/A1.md) |
+| 10 | 10:00:01 | A1 · Jing opens Home | UI reads the Dream Mirror | Status **over**: "You could've gotten a Weekend in Chengdu." ¥2,580 over a ¥9,500 target; Birkin 25 about 5 weeks further away; bun mood burnt | Figure 1 · [A1](../evidence/latest/scenarios/A1.md) |
 | 24–25 | 10:00:01 | A2 · "How am I doing this month?" | `get_overview` (T0, ALLOW) | "October 2026: spent ¥12,080.24 of ¥9,500 (over)"; reply grounded, 2/2 numbers traced | [A2](../evidence/latest/scenarios/A2.md) |
 | 78 | 10:00:01 | A5 · "Check my bills" | `analyze_bills` (T0) | 6 findings: Tencent Video charged twice, iQIYI price hike, electricity +57%, three video services, bills due soon, annual cost | Figure 2 · [A5](../evidence/latest/scenarios/A5.md) |
 | 114 | 10:00:01 | A7 · "Can I afford ¥1,299 sneakers?" | `check_affordability` (T0) | Verdict **skip**: 12.2 hours of work; Birkin 25 delayed 18 more days | [A7](../evidence/latest/scenarios/A7.md) |
@@ -189,11 +189,11 @@ npx tsx scripts/run-scenarios.ts --verify-audit evidence/latest/audit-C10.tamper
 npm run dev            # web on http://localhost:5173, LLM gateway on :8787
 ```
 
-**Fastest:** open the hosted demo at **https://fundbun.vercel.app/?demo=mei** (mirror: https://odripads.github.io/fundbun/?demo=mei) — no install; it is the same app and sandbox with the on-device engine. Locally: open **http://localhost:5173/?demo=mei#/home** (Mei, over target) or **?demo=arif** (Arif, under target). The step-up PIN is **2580**. On a wide screen the Glass Box beside the app shows each intent, tool call, policy decision and audit entry live.
+**Fastest:** open the hosted demo at **https://fundbun.vercel.app/?demo=jing** (mirror: https://odripads.github.io/fundbun/?demo=jing) — no install; it is the same app and sandbox with the on-device engine. Locally: open **http://localhost:5173/?demo=jing#/home** (Jing, over target) or **?demo=arif** (Arif, under target). The step-up PIN is **2580**. On a wide screen the Glass Box beside the app shows each intent, tool call, policy decision and audit entry live.
 
 | Try | Expected result |
 |---|---|
-| Home as Mei | "You could've gotten a Weekend in Chengdu."; Birkin pushed back about 5 weeks; burnt bun (A1) |
+| Home as Jing | "You could've gotten a Weekend in Chengdu."; Birkin pushed back about 5 weeks; burnt bun (A1) |
 | "Help me get back on track this month" | A 7-step plan: reads run; the delivery cap and tripwire apply; the Youku cancellation waits for your PIN (A11) |
 | "Move ¥300 to my Chengdu fund" → Approve → Undo | Confirm card → executed → undone within 30 s (B1) |
 | "Pay my electricity bill" → wrong PIN, then 2580 | Wrong PIN refused; ¥486.20 paid to the verified payee (B5) |

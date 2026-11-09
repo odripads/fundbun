@@ -151,7 +151,7 @@ export const MEI_DREAMS = [
 ]
 
 /**
- * Mei-like OVER story, today 2026-10-22. Jul–Sep: rent 4,200 + ~¥150/day + fixed charges ≈ ¥9,300/month.
+ * Jing-like OVER story, today 2026-10-22. Jul–Sep: rent 4,200 + ~¥150/day + fixed charges ≈ ¥9,300/month.
  * October to date: rent + subscriptions + ¥300/day + a ¥1,299 Taobao splurge ≈ ¥12,330 → about ¥2,830 over the
  * ¥9,500 target, which covers the Weekend in Chengdu (¥2,400). Birkin pot ¥23,400 at ¥2,200/month.
  */
@@ -189,7 +189,7 @@ export function meiLike(tone: Tone = 'cheeky'): FinanceContext {
       makeBill({ id: 'bill_mobile_2026_10', payeeId: 'payee_cmcc', name: 'China Mobile', category: 'phone_internet', amountDue: yuan(128), dueDate: '2026-10-25', period: '2026-10' }),
     ],
     dreams: MEI_DREAMS,
-    profile: { name: 'Mei', monthlyIncome: yuan(18_500), targetSpend: yuan(9_500), tone },
+    profile: { name: 'Jing', monthlyIncome: yuan(18_500), targetSpend: yuan(9_500), tone },
   })
 }
 

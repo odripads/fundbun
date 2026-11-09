@@ -1190,7 +1190,7 @@ describe('F24 / F55 · one clock', () => {
 })
 
 describe('F25 / F26 / F32 / F34 · the sandbox clock behaves like a month really passing', () => {
-  it('F25: Mei keeps paying rent and utilities after the clock moves — no pile of overdue bills', () => {
+  it('F25: Jing keeps paying rent and utilities after the clock moves — no pile of overdue bills', () => {
     const app = createTestApp()
     app.loadDemo('mei')
     app.advanceDays(65) // → 2026-12-26
@@ -1259,7 +1259,7 @@ describe('F33 / F36 · goal pots', () => {
     expect(app.removeDream('dream_birkin')).toEqual({ ok: true })
     const pot = app.getSnapshot().state.bank.accounts.find((a) => a.id === 'pot_dream_birkin')
     expect(pot).toMatchObject({ balance: 0, closed: true })
-    const { txns } = app.advanceDays(25) // past the 10th: Mei's auto-save day
+    const { txns } = app.advanceDays(25) // past the 10th: Jing's auto-save day
     expect(txns.filter((t) => t.accountId === 'pot_dream_birkin')).toEqual([])
     const again = app.addDream({ name: 'Birkin', price: 9_800_000, image: 'preset:bag', kind: 'goal' })
     expect(again.id).not.toBe('dream_birkin')

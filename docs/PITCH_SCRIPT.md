@@ -22,7 +22,7 @@ Alipay's Huabei bill assistant was linked to 19.6% lower monthly spending (Tsing
 spending is when a nudge matters."
 
 ## 3 · The idea — the Dream Mirror
-**On slide:** side-by-side phone screenshots: Mei (over) "You could've gotten a Weekend in Chengdu." and Arif (under)
+**On slide:** side-by-side phone screenshots: Jing (over) "You could've gotten a Weekend in Chengdu." and Arif (under)
 "¥668 closer to your MacBook Air." Caption: your own dream items, your own photos, your own words.
 **Say:** "At onboarding you tell FundBun your income, what you're willing to spend, and your dreams — a Birkin, new
 shoes, a flight home. Overspend, and the home screen mirrors it back: you could've gotten a weekend in Chengdu, and your
@@ -38,7 +38,7 @@ Shame backfires in the research, so the cheeky voice is opt-in and gentle is the
 
 ## 5 · Live product tour (≈2 min — or play the 5-minute video)
 **On slide:** 4 screenshots in a row: Home mirror · "Should I buy it?" check · Bills with X-ray · Ask Bun plan card.
-**Demo path:** `?demo=mei` → Home mirror → Should I buy ¥1,299 sneakers → Sandbox purchase fires a tripwire → Ask Bun
+**Demo path:** `?demo=jing` → Home mirror → Should I buy ¥1,299 sneakers → Sandbox purchase fires a tripwire → Ask Bun
 "Help me get back on track" → plan DAG → approve Youku cancellation with PIN → Bills X-ray of the electricity bill.
 
 ## 6 · AI as a financial participant — what Bun actually does
@@ -65,7 +65,7 @@ other people, add payees, invest, borrow, or change its own limits."
 ## 9 · Red team — the four attacks judges asked about
 **On slide:** big numbers: 24/24 attacks blocked · ¥0 moved · 0% false refusals · 4 attack classes (induced transfer,
 data extraction, privilege escalation, prompt injection) + the electricity-bill injection card screenshot.
-**Say:** "Mei's electricity bill hides an instruction telling the AI to wire ¥4,800 to a stranger. Bun reads the bill,
+**Say:** "Jing's electricity bill hides an instruction telling the AI to wire ¥4,800 to a stranger. Bun reads the bill,
 flags the injection, and nothing moves — because the decision isn't the model's to make."
 
 ## 10 · Privacy & compliance by design

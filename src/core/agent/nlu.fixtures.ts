@@ -1,6 +1,6 @@
 import type { Intent, NluContext } from './nlu'
 
-/** Mei-like context used by the NLU tests (ids follow the persona conventions in docs/CONTRACT.md §4). */
+/** Jing-like context used by the NLU tests (ids follow the persona conventions in docs/CONTRACT.md §4). */
 export const MEI_CTX: NluContext = {
   currency: 'CNY',
   today: '2026-10-22',

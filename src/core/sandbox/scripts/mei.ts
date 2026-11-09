@@ -6,7 +6,7 @@ import type { BillSeriesSpec, MerchantSpec, PersonaScript } from '../script-type
 import { electricityQuote, fixedQuote, waterQuote } from '../tariffs'
 
 /**
- * Mei Lin, 26 · UX designer in Shenzhen — the OVER story (CONTRACT §4).
+ * Jing Lin, 26 · UX designer in Shenzhen — the OVER story (CONTRACT §4).
  * October-to-date spending lands at ≈ ¥12,260 against a ¥9,500 target.
  */
 
@@ -336,8 +336,8 @@ const rent: BillSeriesSpec = {
 export const MEI: PersonaScript = {
   def: {
     id: 'mei',
-    name: 'Mei',
-    fullName: 'Mei Lin',
+    name: 'Jing',
+    fullName: 'Jing Lin',
       tagline: '26 · UX designer in Shenzhen',
     city: 'Shenzhen',
     currency: 'CNY',

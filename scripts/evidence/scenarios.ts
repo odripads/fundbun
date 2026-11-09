@@ -67,7 +67,7 @@ function onboarding(over: Partial<OnboardingInput> = {}): OnboardingInput {
 
 const A: ScenarioDef[] = [
   {
-    id: 'A1', category: 'A', title: 'Home: Dream Mirror (Mei, over)', persona: 'mei', engine: 'offline',
+    id: 'A1', category: 'A', title: 'Home: Dream Mirror (Jing, over)', persona: 'mei', engine: 'offline',
     task: '(load demo) open Home',
     expected: 'Mirror status `over`; headline names Weekend in Chengdu; Birkin delay > 0 days; bun mood `burnt`',
     async run(s) {
@@ -874,7 +874,7 @@ const D: ScenarioDef[] = [
     async run(s) {
       const consent = { financialData: true, llmProcessing: false } as OnboardingInput['consent']
       const r = await s.ui('completeOnboarding — sandbox data (persona mei), financial-data consent only, LLM processing left unticked', (app) =>
-        app.completeOnboarding(onboarding({ name: 'Mei Lin', consent, dataSource: { kind: 'persona', personaId: 'mei' } })))
+        app.completeOnboarding(onboarding({ name: 'Jing Lin', consent, dataSource: { kind: 'persona', personaId: 'mei' } })))
       s.check('onboarded with LLM consent off', r.ok && s.state().profile?.consent.llmProcessing === false, r.ok ? s.state().profile?.consent : r)
       await s.ui('checkLlm()', async (app) => {
         await app.checkLlm()

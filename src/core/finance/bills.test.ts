@@ -14,7 +14,7 @@ function analyze(ctx: FinanceContext) {
 
 const kinds = (ctx: FinanceContext) => analyze(ctx).map((f) => f.kind)
 
-describe('analyzeBills — Mei-like month', () => {
+describe('analyzeBills — Jing-like month', () => {
   const findings = analyze(meiLike())
 
   it('finds the duplicate, the due bill, the price hike, the spike, the overlap and the annual cost — most severe first', () => {

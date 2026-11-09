@@ -51,7 +51,7 @@ describe('sanitizeDraft', () => {
   it('keeps valid fields and drops tampered ones', () => {
     const d = sanitizeDraft({
       v: 1,
-      name: 'Mei',
+      name: 'Jing',
       currency: 'XXX',
       payday: 31,
       tone: 'evil',
@@ -65,7 +65,7 @@ describe('sanitizeDraft', () => {
       tripwires: [{ key: 'single', enabled: false, threshold: -4 }],
       data: { kind: 'persona', personaId: 'eve' },
     })
-    expect(d.name).toBe('Mei')
+    expect(d.name).toBe('Jing')
     expect(d.currency).toBe('CNY')
     expect(d.payday).toBe(10)
     expect(d.tone).toBe('gentle')
@@ -119,14 +119,14 @@ describe('storage', () => {
     const photo = `data:image/jpeg;base64,${'A'.repeat(4000)}`
     const d = {
       ...emptyDraft(),
-      name: 'Mei',
+      name: 'Jing',
       dreams: [{ key: 'p', name: 'Mine', price: 10, image: photo, kind: 'goal' as const }],
       data: { ...emptyDraft().data, kind: 'csv' as const, csvName: 'big.csv', csvText: 'x'.repeat(6000) },
     }
     const store = memoryStore(3000)
     expect(saveDraft(d, store)).toBe(true)
     const saved = loadDraft(store)
-    expect(saved.name).toBe('Mei')
+    expect(saved.name).toBe('Jing')
     expect(saved.data.csvText).toBe('')
     expect(saved.dreams[0].image).toBe('preset:gift')
   })
@@ -142,7 +142,7 @@ describe('storage', () => {
 describe('helpers', () => {
   it('knows when there is something to resume', () => {
     expect(hasProgress(emptyDraft())).toBe(false)
-    expect(hasProgress({ ...emptyDraft(), name: 'Mei' })).toBe(true)
+    expect(hasProgress({ ...emptyDraft(), name: 'Jing' })).toBe(true)
   })
 
   it('recognises step ids', () => {

@@ -18,7 +18,7 @@ function expectWellFormed(xs: Insight[]) {
   }
 }
 
-describe('generateInsights — over-target month (Mei-like)', () => {
+describe('generateInsights — over-target month (Jing-like)', () => {
   const xs = generateInsights(meiLike())
 
   it('leads with the pace warning and stays within 8 well-formed insights', () => {
@@ -155,7 +155,7 @@ describe('generateInsights — suggested caps never loosen a budget', () => {
     for (const c of out) expect(none.find((x) => x.category === c.category && x.kind === c.kind)?.limit ?? c.limit).toBe(c.limit)
   })
 
-  it('every suggested cap on the Mei-like month is below its existing limit, whatever the budget', () => {
+  it('every suggested cap on the Jing-like month is below its existing limit, whatever the budget', () => {
     for (const limit of [100, 520, 1_500, 5_000]) {
       const ctx = { ...meiLike(), budget: budget({ delivery: limit, shopping: limit, dining: limit, entertainment: limit, coffee_tea: limit }) }
       for (const c of caps(ctx)) expect(c.limit).toBeLessThan(yuan(limit))

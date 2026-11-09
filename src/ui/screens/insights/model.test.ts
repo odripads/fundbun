@@ -355,7 +355,7 @@ describe('habits', () => {
     expect(isDayToDay(txn({ amount: 500 }))).toBe(false)
   })
 
-  it('maps Mei’s October with the late-night delivery habit', () => {
+  it('maps Jing’s October with the late-night delivery habit', () => {
     const map = heatmap(mei.ctx.bank.transactions, '2026-10')
     expect(map.count).toBeGreaterThan(50)
     expect(map.late.count).toBeGreaterThanOrEqual(10)

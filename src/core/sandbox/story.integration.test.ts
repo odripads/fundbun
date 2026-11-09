@@ -19,7 +19,7 @@ function ctxOf(b: PersonaBundle): FinanceContext {
   return { profile: b.profile, bank: b.bank, dreams: b.dreams, budget: b.budget, tripwires: b.tripwires }
 }
 
-describe('story — Mei is over target', () => {
+describe('story — Jing is over target', () => {
   const mei = loadPersona('mei', TODAY)
   const ctx = ctxOf(mei)
 
@@ -46,7 +46,7 @@ describe('story — Mei is over target', () => {
     expect(findings.find((f) => f.kind === 'bill_spike')!.billId).toBe('bill_electricity_2026-09')
   })
 
-  it('keeps exactly the Tencent Video duplicate when Mei repeats a metro ride and a Luckin coffee minutes apart', () => {
+  it('keeps exactly the Tencent Video duplicate when Jing repeats a metro ride and a Luckin coffee minutes apart', () => {
     const bundle = loadPersona('mei', TODAY)
     const bank = new SandboxBank(bundle.bank)
     for (const time of ['08:41', '08:47']) bank.simulatePurchase({ merchant: 'Shenzhen Metro', amount: 700, category: 'transport', time })

@@ -70,6 +70,6 @@ export function advanceTotals(txns: readonly Transaction[]): { out: number; in: 
 export const DEMO_PIN = '2580'
 
 export const PERSONAS: { id: 'mei' | 'arif'; label: string; blurb: string }[] = [
-  { id: 'mei', label: 'Mei', blurb: 'Over target — the Dream Mirror story' },
+  { id: 'mei', label: 'Jing', blurb: 'Over target — the Dream Mirror story' },
   { id: 'arif', label: 'Arif', blurb: 'Under target — the stash-it story' },
 ]

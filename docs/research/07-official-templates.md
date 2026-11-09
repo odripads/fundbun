@@ -298,7 +298,7 @@ Name every file on the video pattern, for example `InternationalAI-<TeamName>-Te
 
 **Technical Document** (no limit; aim for 8–12 pages so it gets read):
 - **01 Project Overview**
-  - Topic A problem, the two personas (Mei over budget, Arif under budget) and why behaviour-first budgeting matters.
+  - Topic A problem, the two personas (Jing over budget, Arif under budget) and why behaviour-first budgeting matters.
   - Core value and innovation: Dream Mirror, tripwires, consent-first nudges, and the evidence (doc 02).
 - **02 System Architecture**
   - One diagram of `src/core` (finance, sandbox, security, agent), `src/ui` and the `server/` LLM gateway, with a table of each component's job.
@@ -324,7 +324,7 @@ Put one number per claim. Keep the scoring weights (40/30/30) visible as the spi
 
 **Demo Video** (≤ 5:00, 16:9 1080p, burned-in English subtitles, filename `InternationalAI-<TeamName>-DemoVideo.mp4`). Follow the guide's three beats:
 - **Intro (about 0:30):** project and team.
-- **Core scenario end to end (about 2:30):** Mei's over-budget Home, then "help me get back on track", the DAG plan, approve or deny, and the audit entry.
+- **Core scenario end to end (about 2:30):** Jing's over-budget Home, then "help me get back on track", the DAG plan, approve or deny, and the audit entry.
 - **Safety, innovation and results (about 1:30):** a live injection attempt blocked, a PIN step-up, Arif stashing his surplus, and the metric card.
 
 Use no copyrighted music or brand logos beyond the fictional sandbox. The video also counts as execution evidence, so show sandbox timestamps on screen.
@@ -338,7 +338,7 @@ Use no copyrighted music or brand logos beyond the fictional sandbox. The video 
 - **04 Known Risks.** Use exactly the prompt's four columns: Risk | Impact | Mitigation | Planned improvement.
 
 **Execution Evidence:**
-- **01 Evidence Summary:** Topic A, the Mei and Arif scenarios, and what the logs prove for the 40% task-completion and 30% security scores.
+- **01 Evidence Summary:** Topic A, the Jing and Arif scenarios, and what the logs prove for the 40% task-completion and 30% security scores.
 - **02 Logs or Transactions:** a table of Timestamp | Action | Result | Screenshot/link, generated from `evidence/` with one row per tool call or policy decision. Link the full JSON logs and the demo video.
 - **03 Reproduction Guide:** seed, sandbox date and persona switch as given in `docs/SCENARIOS.md`, then `npm ci` → `npm test` → `npm run evidence`, with expected pass counts. Judges should be able to verify in under 10 minutes.
 

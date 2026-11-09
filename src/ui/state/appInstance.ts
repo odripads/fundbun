@@ -50,8 +50,9 @@ export function createBrowserApp(): FundBunApp {
 }
 
 /**
- * Deep links for judges and demos: `?demo=mei` / `?demo=arif` loads a sandbox persona (replacing local data),
- * `?reset=1` wipes local data. The query is removed afterwards so a reload doesn't repeat it.
+ * Deep links for judges and demos: `?demo=jing` / `?demo=arif` loads a sandbox persona (replacing local data),
+ * `?demo=mei` is a legacy alias for `?demo=jing`, and `?reset=1` wipes local data. The query is removed
+ * afterwards so a reload doesn't repeat it.
  */
 export function applyBootParams(app: FundBunApp, loc: Location | undefined = globalThis.location): void {
   if (!loc) return
@@ -60,7 +61,8 @@ export function applyBootParams(app: FundBunApp, loc: Location | undefined = glo
   const reset = params.get('reset')
   if (!demo && !reset) return
   if (reset === '1') app.resetAll()
-  if (demo === 'mei' || demo === 'arif') app.loadDemo(demo)
+  const persona = demo === 'jing' ? 'mei' : demo
+  if (persona === 'mei' || persona === 'arif') app.loadDemo(persona)
   try {
     const hash = loc.hash || (demo ? '#/home' : '#/onboarding')
     globalThis.history?.replaceState(null, '', `${loc.pathname}${hash}`)

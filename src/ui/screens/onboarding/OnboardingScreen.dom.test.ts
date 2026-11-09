@@ -42,7 +42,7 @@ describe('OnboardingScreen', () => {
     const { container } = await renderOnboarding(createTestApp({ storage: memoryStorage() }))
     expect(h1(container)).toBe('See what your spending could have been.')
     expect(byText(container, 'Set up my own', 'button')).not.toBeNull()
-    expect(container.querySelector('button[data-status="over"]')!.textContent).toContain('Mei')
+    expect(container.querySelector('button[data-status="over"]')!.textContent).toContain('Jing')
     expect(container.querySelector('button[data-status="under"]')!.textContent).toContain('Arif')
   })
 

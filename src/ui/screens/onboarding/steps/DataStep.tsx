@@ -29,7 +29,7 @@ function FieldError({ children }: { children: ReactNode }) {
   )
 }
 
-/** Where the transactions come from: a sandbox ledger (Mei's or Arif's), an on-device CSV import, or nothing yet. */
+/** Where the transactions come from: a sandbox ledger (Jing's or Arif's), an on-device CSV import, or nothing yet. */
 export function DataStep({ draft, update, errors, csv }: DataStepProps) {
   const [reading, setReading] = useState(false)
   const [fileError, setFileError] = useState<string | null>(null)

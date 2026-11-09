@@ -34,7 +34,7 @@ afterEach(async () => {
   document.documentElement.removeAttribute('data-motion')
 })
 
-describe('BillsScreen — Mei', () => {
+describe('BillsScreen — Jing', () => {
   it('summarises what is due, subscriptions per year in dream items and the findings', async () => {
     const { container } = await renderBills(demo('mei'))
     const hero = container.querySelector('section[aria-labelledby="bills-hero-title"]') as HTMLElement
@@ -111,10 +111,10 @@ describe('BillsScreen — Mei', () => {
     expect(p).toMatchObject({ status: 'pending', call: { args: { recurringId: 'rec_iqiyi' } } })
   })
 
-  it('X-rays Mei’s electricity bill: injection banner, receipt, line items and a verified-payee pay action', async () => {
+  it('X-rays Jing’s electricity bill: injection banner, receipt, line items and a verified-payee pay action', async () => {
     const app = demo('mei')
     const { container } = await renderBills(app)
-    await click(byText(container, 'Try Mei’s electricity bill', 'button'))
+    await click(byText(container, 'Try Jing’s electricity bill', 'button'))
     await flush(20)
     const outcome = container.querySelector('#bills-xray [data-xray-outcome]') as HTMLElement
     const text = outcome.textContent ?? ''

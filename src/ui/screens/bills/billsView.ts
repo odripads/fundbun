@@ -556,7 +556,7 @@ export function billNoun(name: string): string {
   return /\b(rent|bill|statement|notice)$/i.test(lowered) ? lowered : `${lowered} bill`
 }
 
-/** "Mei Lin" → "Mei’s", "Agnes" → "Agnes’", no name → "your" */
+/** "Jing Lin" → "Jing’s", "Agnes" → "Agnes’", no name → "your" */
 export function possessive(name: string): string {
   const first = name.trim().split(/\s+/)[0]
   if (!first) return 'your'

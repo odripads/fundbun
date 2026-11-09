@@ -48,7 +48,7 @@ describe('errorText', () => {
 
 describe('bootEngine', () => {
   it('returns the app when creation and the first snapshot succeed', () => {
-    const { app } = fakeApp({ spent: 1, name: 'Mei' })
+    const { app } = fakeApp({ spent: 1, name: 'Jing' })
     const status = bootEngine(() => app)
     expect(status).toEqual({ ready: true, app })
   })
@@ -116,7 +116,7 @@ describe('shallowEqual', () => {
 
 describe('useSnapshot / useApp', () => {
   it('renders selected slices and re-renders only when they change', async () => {
-    const { app, set, listeners } = fakeApp({ spent: 100, name: 'Mei' })
+    const { app, set, listeners } = fakeApp({ spent: 100, name: 'Jing' })
     const status: EngineStatus = { ready: true, app }
     let renders = 0
     function Spent() {
@@ -136,7 +136,7 @@ describe('useSnapshot / useApp', () => {
   })
 
   it('object selectors stay stable with shallowEqual', async () => {
-    const { app, set } = fakeApp({ spent: 1, name: 'Mei' })
+    const { app, set } = fakeApp({ spent: 1, name: 'Jing' })
     const seen: unknown[] = []
     function Probe() {
       seen.push(useSnapshot((s) => ({ name: (s.state.profile as { name: string }).name }), shallowEqual))

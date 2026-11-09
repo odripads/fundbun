@@ -74,7 +74,7 @@ entity checks. The sandbox bank independently enforces its own agent limit (defe
 Sandbox "today" for both personas: **2026-10-22** (day 22 of 31). History: 2026-04-01 → today. Seed default `20261020`.
 Demo PIN: **2580**. Goal ids are stable: `dream_<slug>`; pot ids `pot_<goalId>`; checking account id `chk_main`.
 
-### `mei` — Mei Lin, 26 · UX designer in Shenzhen (CNY) — the OVER story
+### `mei` — Jing Lin, 26 · UX designer in Shenzhen (CNY) — the OVER story
 * Net income ¥18,500 (payday 10th). Target spend ¥9,500/month.
 * Rent ¥4,200 (landlord payee, verified, due 1st). Electricity (Shenzhen Power Supply, verified; seasonal; the
   **2026-09 bill = ¥486.20, due 2026-10-28, ~57% above its 3-period average** → bill_spike). Water ¥58 (Shenzhen Water).
@@ -130,7 +130,7 @@ bob) that respects `prefers-reduced-motion`. Mobile-first (390×844), desktop sh
   what is shown to what executes; PIN approval is bound to that hash and re-verified at execution.
 * **Liquidity check** before any transfer to a pot (P-LIQUIDITY).
 * **Tone**: shame backfires and "confirmshaming" is a recognised dark pattern → onboarding default tone is `gentle`;
-  `cheeky` (the "You could've gotten a Birkin." voice) is an explicit opt-in (persona Mei chose it). Celebrate saving,
+  `cheeky` (the "You could've gotten a Birkin." voice) is an explicit opt-in (persona Jing chose it). Celebrate saving,
   never push spending: under-target primary CTA = "Stash it in <goal>"; the treat is a secondary, user-chosen option.
   No merchant links / no "buy now" anywhere (China algorithm-recommendation rules Art. 8).
 * **Consent**: nothing pre-ticked. Separate consent for financial data (PIPL Art. 29) and for LLM processing.

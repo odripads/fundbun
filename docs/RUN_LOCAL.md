@@ -75,7 +75,7 @@ If `en0` is empty, try `ipconfig getifaddr en1`.
 Demo personas load via the `?demo=` query string (hash routing is used, so no
 server-side route fallback is needed):
 
-- `http://localhost:8787/?demo=mei`
+- `http://localhost:8787/?demo=jing`
 - `http://localhost:8787/?demo=arif`
 
-(For a phone, use `http://192.168.100.121:8787/?demo=mei`, etc.)
+(For a phone, use `http://192.168.100.121:8787/?demo=jing`, etc.)

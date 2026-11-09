@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { checkGrounding, extractNumbers } from './grounding'
 
-/** A trimmed get_overview + get_goals tool result for persona Mei (minor units). */
+/** A trimmed get_overview + get_goals tool result for persona Jing (minor units). */
 const MEI_SOURCES = [
   {
     month: '2026-10',

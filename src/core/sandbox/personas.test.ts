@@ -43,7 +43,7 @@ describe('PERSONAS', () => {
   it('exposes mei and arif with the contract numbers', () => {
     expect(PERSONAS.map((p) => p.id)).toEqual(['mei', 'arif'])
     const [m, a] = PERSONAS
-    expect(m).toMatchObject({ name: 'Mei', fullName: 'Mei Lin', city: 'Shenzhen', currency: 'CNY', monthlyIncome: yuan(18_500), targetSpend: yuan(9_500), payday: 10 })
+    expect(m).toMatchObject({ name: 'Jing', fullName: 'Jing Lin', city: 'Shenzhen', currency: 'CNY', monthlyIncome: yuan(18_500), targetSpend: yuan(9_500), payday: 10 })
     expect(a).toMatchObject({ name: 'Arif', fullName: 'Arif Nasution', currency: 'CNY', monthlyIncome: yuan(4_800), targetSpend: yuan(3_600), payday: 5 })
     expect(m.tagline).toContain('26')
     expect(a.tagline).toContain('23')
@@ -56,7 +56,7 @@ describe('PERSONAS', () => {
   })
 })
 
-describe('acceptance — Mei (the OVER story)', () => {
+describe('acceptance — Jing (the OVER story)', () => {
   it('October-to-date spending lands between ¥12,000 and ¥12,400', () => {
     const spent = octToDate(mei.bank)
     expect(spent).toBeGreaterThanOrEqual(yuan(12_000))
@@ -200,7 +200,7 @@ describe('acceptance — Mei (the OVER story)', () => {
 
   it('builds the profile, dreams, tripwires and mandate', () => {
     expect(mei.profile).toMatchObject({
-      name: 'Mei',
+      name: 'Jing',
       currency: 'CNY',
       monthlyIncome: yuan(18_500),
       targetSpend: yuan(9_500),
@@ -426,7 +426,7 @@ describe('primeTripwires', () => {
   const NOW = '2026-10-22T02:00:00.000Z'
   const ctx = (b: typeof mei) => ({ profile: b.profile, bank: b.bank, dreams: b.dreams, budget: b.budget, tripwires: b.tripwires })
 
-  it('records the alerts already true for Mei, leaving the latest two unseen', () => {
+  it('records the alerts already true for Jing, leaving the latest two unseen', () => {
     const { tripwires, events } = primeTripwires(mei, NOW)
     expect(events.map((e) => e.tripwireId)).toEqual(['tw_month_100', 'tw_delivery_100', 'tw_pace_110'])
     expect(events.map((e) => e.seen)).toEqual([true, false, false])

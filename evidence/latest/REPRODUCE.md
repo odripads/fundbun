@@ -49,12 +49,12 @@ npm run dev            # web on http://localhost:5173, LLM gateway on :8787
 # optional, LLM path without a key:  LLM_PROVIDER=mock npm run dev
 ```
 
-Open **http://localhost:5173/?demo=mei** (Mei, over budget) or **http://localhost:5173/?demo=arif** (Arif, under budget).
+Open **http://localhost:5173/?demo=jing** (Jing, over budget) or **http://localhost:5173/?demo=arif** (Arif, under budget).
 The step-up PIN is **2580**. Open the glass-box panel to watch intents, tool calls, policy decisions and the audit chain.
 
 | Try | Expected |
 |---|---|
-| Home (Mei) | “You could've gotten a Weekend in Chengdu.”, Birkin pushed back, burnt bun (A1) |
+| Home (Jing) | “You could've gotten a Weekend in Chengdu.”, Birkin pushed back, burnt bun (A1) |
 | “Help me get back on track this month” | a plan: reads run, the delivery cap / cancellation / tripwire wait for you (A11) |
 | “Move ¥300 to my Chengdu fund” → tap Approve → Undo | confirm card, executed, undone within 30 s (B1) |
 | “Pay my electricity bill” → wrong PIN, then 2580 | step-up refuses the wrong PIN, pays the verified payee (B5) |

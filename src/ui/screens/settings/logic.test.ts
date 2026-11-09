@@ -185,15 +185,15 @@ describe('money inputs', () => {
 })
 
 describe('profile draft', () => {
-  const profile = { name: 'Mei', currency: 'CNY', monthlyIncome: 1850000, targetSpend: 950000, payday: 10, tone: 'cheeky' } as Profile
+  const profile = { name: 'Jing', currency: 'CNY', monthlyIncome: 1850000, targetSpend: 950000, payday: 10, tone: 'cheeky' } as Profile
 
   it('round-trips without a patch', () => {
     expect(checkProfileDraft(profileDraft(profile), profile)).toEqual({ patch: {}, errors: {} })
   })
 
   it('returns only changed fields', () => {
-    const d = { ...profileDraft(profile), target: '9000', tone: 'gentle' as const, name: ' Mei Lin ' }
-    expect(checkProfileDraft(d, profile).patch).toEqual({ name: 'Mei Lin', targetSpend: 900000, tone: 'gentle' })
+    const d = { ...profileDraft(profile), target: '9000', tone: 'gentle' as const, name: ' Jing Lin ' }
+    expect(checkProfileDraft(d, profile).patch).toEqual({ name: 'Jing Lin', targetSpend: 900000, tone: 'gentle' })
   })
 
   it('flags bad fields', () => {

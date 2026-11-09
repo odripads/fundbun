@@ -37,8 +37,8 @@ describe('conversation shape', () => {
   })
 
   it('surfaces the welcome only before the first question', () => {
-    expect(welcomeText([bot('Hi Mei!')])).toBe('Hi Mei!')
-    expect(welcomeText([bot('Hi Mei!'), user('Hey')])).toBeNull()
+    expect(welcomeText([bot('Hi Jing!')])).toBe('Hi Jing!')
+    expect(welcomeText([bot('Hi Jing!'), user('Hey')])).toBeNull()
     expect(welcomeText([])).toBeNull()
   })
 })
@@ -78,14 +78,14 @@ describe('starter prompts', () => {
 
 describe('greeting', () => {
   it('speaks in the chosen tone, gentle by default', () => {
-    expect(greeting('gentle', 'Mei').title).toBe('Hi, Mei — I’m Bun')
-    expect(greeting('cheeky', 'Mei').title).toBe('Spill the tea, Mei')
+    expect(greeting('gentle', 'Jing').title).toBe('Hi, Jing — I’m Bun')
+    expect(greeting('cheeky', 'Jing').title).toBe('Spill the tea, Jing')
     expect(greeting('numbers', '').title).toBe('Ask me anything')
     expect(greeting('gentle', '').body).toMatch(/only with your OK/)
   })
 
   it('takes the first name', () => {
-    expect(firstName('Mei Lin')).toBe('Mei')
+    expect(firstName('Jing Lin')).toBe('Jing')
     expect(firstName('  ')).toBe('')
     expect(firstName(undefined)).toBe('')
   })

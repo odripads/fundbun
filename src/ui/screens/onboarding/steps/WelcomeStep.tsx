@@ -31,7 +31,7 @@ interface DemoCard {
 }
 
 const DEMOS: readonly DemoCard[] = [
-  { id: 'mei', name: 'Mei', age: 26, role: 'UX designer', image: 'preset:plane', status: 'over', mirror: 'Could’ve had a weekend in Chengdu.' },
+  { id: 'mei', name: 'Jing', age: 26, role: 'UX designer', image: 'preset:plane', status: 'over', mirror: 'Could’ve had a weekend in Chengdu.' },
   { id: 'arif', name: 'Arif', age: 23, role: 'Grad student', image: 'preset:laptop', status: 'under', mirror: 'Closer to his MacBook — or a concert, guilt-free.' },
 ]
 

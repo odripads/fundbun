@@ -41,7 +41,7 @@ afterEach(async () => {
 })
 
 describe('HomeScreen — the Dream Mirror', () => {
-  it('Mei (over): headline, evidence tiles, AI label and h2-first outline', async () => {
+  it('Jing (over): headline, evidence tiles, AI label and h2-first outline', async () => {
     const { container } = await renderHome(demo('mei'))
     const hero = container.querySelector('section[data-status="over"]')!
     expect(hero).not.toBeNull()
@@ -65,7 +65,7 @@ describe('HomeScreen — the Dream Mirror', () => {
     expect(spy.mock.calls[0][0]).toEqual(cta)
   })
 
-  it('Mei (over): "Make a plan with Bun" opens chat with the get-back-on-track request', async () => {
+  it('Jing (over): "Make a plan with Bun" opens chat with the get-back-on-track request', async () => {
     const app = demo('mei')
     const spy = vi.spyOn(app, 'sendMessage')
     const { container } = await renderHome(app)

@@ -57,7 +57,7 @@ afterEach(async () => {
 describe('ChatScreen — first open', () => {
   it('greets in the user’s tone with six starters covering the judged tasks', async () => {
     const { container } = await renderChat(demo('mei'))
-    expect(container.querySelector('h2')?.textContent).toBe('Spill the tea, Mei')
+    expect(container.querySelector('h2')?.textContent).toBe('Spill the tea, Jing')
     const starters = Array.from(container.querySelectorAll('ul button')).map((b) => b.textContent)
     expect(starters).toEqual([
       'How am I doing this month?',

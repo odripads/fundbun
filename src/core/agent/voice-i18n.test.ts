@@ -7,7 +7,7 @@ import { composeReply, line, refusal } from './voice'
 const LOCAL = ['zh', 'id'] as const
 
 const SAMPLE: Record<string, string> = {
-  name: 'Mei', status: 'over', month: '2026年10月', spent: '¥12,080', target: '¥9,500', delta: '¥2,580', remaining: '¥1,000', projected: '¥15,230',
+  name: 'Jing', status: 'over', month: '2026年10月', spent: '¥12,080', target: '¥9,500', delta: '¥2,580', remaining: '¥1,000', projected: '¥15,230',
   safeToSpend: '¥120', goalName: 'Birkin 25', goalDelay: '约5周', total: '¥12,080', topCategory: '外卖', topAmount: '¥1,007', topShare: '8%',
   category: '外卖', categorySpent: '¥1,007', categoryLimit: '¥940', categoryPct: '107%', categoryPrev: '¥1,285', count: '6', nextBill: 'Rent (¥4,200)',
   verdict: 'skip', label: '手机', amount: '¥3,000', remainingAfter: '¥0', overTargetBy: '¥8,730', hoursOfWork: '16', saved: '¥23,300', price: '¥98,000',

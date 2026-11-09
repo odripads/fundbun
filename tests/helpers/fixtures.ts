@@ -58,7 +58,7 @@ export function kit(opts: { storage?: StorageLike; engine?: FakeEngineOptions; a
   return { app, engine, storage, clock }
 }
 
-/** Mei demo loaded through the public API. */
+/** Jing demo loaded through the public API. */
 export function demoKit(personaId = 'mei', opts: Parameters<typeof kit>[0] = {}): TestKit {
   const k = kit(opts)
   k.app.loadDemo(personaId)

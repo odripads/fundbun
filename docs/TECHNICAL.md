@@ -9,7 +9,7 @@
 | Competition track | International AI Track — Topic A: Personal Finance Assistant |
 | Submission date | 2026-10-20 |
 | Source code | [github.com/odripads/fundbun](https://github.com/odripads/fundbun) |
-| Live demo | [fundbun.vercel.app](https://fundbun.vercel.app/?demo=mei) · mirror [odripads.github.io/fundbun](https://odripads.github.io/fundbun/?demo=mei) — no install, demo PIN 2580 |
+| Live demo | [fundbun.vercel.app](https://fundbun.vercel.app/?demo=jing) · mirror [odripads.github.io/fundbun](https://odripads.github.io/fundbun/?demo=jing) — no install, demo PIN 2580 |
 | Demo video | [youtu.be/Se5TD4KQ35A](https://youtu.be/Se5TD4KQ35A) (4:47, English subtitles) |
 
 *How to read this document.* Each technical claim names the file that implements it (paths are relative to the repository root). Results come from `evidence/latest/SUMMARY.md`, which `npm run evidence` regenerates byte for byte, and from a Vitest run on 2026-10-08 (`npx vitest run`). Anything not yet built is labelled **Roadmap**.
@@ -28,7 +28,7 @@
 
 | Persona | Profile | Month (sandbox date 2026-10-22) |
 |---|---|---|
-| **Mei Lin**, 26 | UX designer in Shenzhen; net ¥18,500; target spend ¥9,500; tone *cheeky* (opted in) | ¥12,080.24 spent, ¥2,580.24 over target |
+| **Jing Lin**, 26 | UX designer in Shenzhen; net ¥18,500; target spend ¥9,500; tone *cheeky* (opted in) | ¥12,080.24 spent, ¥2,580.24 over target |
 | **Arif Nasution**, 23 | Indonesian master's student in Shenzhen; income ¥4,800 (¥3,500 stipend + tutoring); target ¥3,600 | projected ¥668 under target |
 
 **What the agent does as a financial participant.** Bun, the agent:
@@ -42,11 +42,11 @@ It can never add payees, pay other people, invest, borrow or change its own perm
 ### Core value and innovation
 
 1. **The Dream Mirror.** At onboarding the user lists dream items with pictures. Goals are big (a Birkin, a MacBook); treats are small (sneakers, a concert ticket). Home then shows the month in those items:
-   - Mei sees "You could've gotten a Weekend in Chengdu." and learns her Birkin moved about 5 weeks further away.
+   - Jing sees "You could've gotten a Weekend in Chengdu." and learns her Birkin moved about 5 weeks further away.
    - Arif sees "¥668 closer to your MacBook Air (46% there)."
 
    The mechanism is opportunity-cost salience ([Frederick et al. 2009](https://doi.org/10.1086/599764)). A 39-study meta-analysis puts its effect at a modest d = 0.22 ([Maguire et al. 2023](https://doi.org/10.1007/s40881-023-00134-6)). Photo-labelled goals have field evidence ([Soman & Cheema 2011](https://doi.org/10.1509/jmkr.48.SPL.S14)).
-2. **Tripwires.** The user sets thresholds: 80% of target, a category limit, any purchase over ¥X, a day over ¥Y, or projected overspend. Each alert names a dream item. In scenario A10, a ¥459 purchase triggers "Whoa, ¥459 at JD.com", about 0.5% of Mei's Birkin 25. Goal-specific reminders raised saving by 16%, while generic ones did nothing ([Karlan et al. 2016](https://doi.org/10.1287/mnsc.2015.2296)). Alipay's Huabei bill assistant was linked to 19.6% lower monthly spending ([research 01, source 35](https://www.cls.cn/detail/1444552)).
+2. **Tripwires.** The user sets thresholds: 80% of target, a category limit, any purchase over ¥X, a day over ¥Y, or projected overspend. Each alert names a dream item. In scenario A10, a ¥459 purchase triggers "Whoa, ¥459 at JD.com", about 0.5% of Jing's Birkin 25. Goal-specific reminders raised saving by 16%, while generic ones did nothing ([Karlan et al. 2016](https://doi.org/10.1287/mnsc.2015.2296)). Alipay's Huabei bill assistant was linked to 19.6% lower monthly spending ([research 01, source 35](https://www.cls.cn/detail/1444552)).
 3. **Behaviour-safe framing.** Shame drives people away from their finances ([Gladstone et al. 2021](https://doi.org/10.1016/j.obhdp.2021.06.002)), so the default tone is *gentle*. The "You could've gotten…" voice is opt-in. Under target, the main button is "Stash it in [goal]". A treat is only a secondary choice the user makes, because goal progress can license overspending ([Fishbach & Dhar 2005](https://doi.org/10.1086/497548)). The agent never suggests purchases or links to merchants (system-prompt rule 7; `docs/CONTRACT.md` §7), in line with Art. 8 of the CAC algorithm-recommendation rules.
 4. **A governed participant.** All of these controls are deterministic code: permission tiers, a user-set mandate, binding hashes (what you see is what executes), PIN step-up, a circuit breaker, a kill switch, undo, and a hash-chained audit log.
 5. **Local-first and transparent.** The on-device "Bun Engine" works with no network. An optional LLM needs separate consent and only sees redacted context. Every reply carries a glass-box trace.
@@ -101,23 +101,23 @@ A bill the account cannot cover stays unpaid and turns overdue. A cancelled subs
 
 **User interface.** All screenshots below come from the running app on the sandbox (`npm run screens`, 390 × 844 at 2×).
 
-- **Onboarding.** The user sets income, target, payday and tone (gentle by default) and gives separate consents; nothing is pre-ticked. They add wishlist photos, tripwires, autonomy, caps and a PIN. "Try the demo" loads Mei or Arif instead.
+- **Onboarding.** The user sets income, target, payday and tone (gentle by default) and gives separate consents; nothing is pre-ticked. They add wishlist photos, tripwires, autonomy, caps and a PIN. "Try the demo" loads Jing or Arif instead.
 
 <p align="center">
   <img src="assets/screens/onboarding-welcome.png" width="220" alt="Onboarding welcome step">
   <img src="assets/screens/onboarding-dreams.png" width="220" alt="Onboarding dreams step">
   <img src="assets/screens/onboarding-tone.png" width="220" alt="Onboarding tone picker">
 </p>
-<p align="center"><em>Onboarding. Left: welcome, with "Try the demo" for Mei or Arif. Centre: the wishlist, with goals and treats. Right: tripwires and Bun's tone, where "Cheeky" is an explicit opt-in with a live Mirror preview.</em></p>
+<p align="center"><em>Onboarding. Left: welcome, with "Try the demo" for Jing or Arif. Centre: the wishlist, with goals and treats. Right: tripwires and Bun's tone, where "Cheeky" is an explicit opt-in with a live Mirror preview.</em></p>
 
 - **Home / Dream Mirror.** A full-bleed dream item, headline, bun mood and a call to action built by code.
 
 <p align="center">
-  <img src="assets/screens/home-mei.png" width="220" alt="Home for Mei, over target">
+  <img src="assets/screens/home-mei.png" width="220" alt="Home for Jing, over target">
   <img src="assets/screens/home-arif.png" width="220" alt="Home for Arif, under target">
-  <img src="assets/screens/home-dark-mei.png" width="220" alt="Home for Mei in dark mode">
+  <img src="assets/screens/home-dark-mei.png" width="220" alt="Home for Jing in dark mode">
 </p>
-<p align="center"><em>The Dream Mirror. Left: Mei, ¥2,580 over, "You could've gotten a Weekend in Chengdu.", with her Birkin about 5 weeks further away (A1). Centre: Arif, "¥668 closer to your MacBook Air (46% there).", with "Stash ¥330 in MacBook Air" as the main action (A13). Right: dark mode.</em></p>
+<p align="center"><em>The Dream Mirror. Left: Jing, ¥2,580 over, "You could've gotten a Weekend in Chengdu.", with her Birkin about 5 weeks further away (A1). Centre: Arif, "¥668 closer to your MacBook Air (46% there).", with "Stash ¥330 in MacBook Air" as the main action (A13). Right: dark mode.</em></p>
 
 - **Goals.** Saved amount, % complete, monthly rate and ETA. **Insights.** The month at a glance, then cards with a "why" and a dream equivalent.
 - **Bills.** Findings with suggested actions, upcoming bills, and **Bill X-ray** for pasted bills.
@@ -347,7 +347,7 @@ On 20 unseen merchant names (`categorize.test.ts` asserts ≥ 75%), naive Bayes 
 - projected = max(spent, round(spent + r · (D − d) + billsDue + expectedRecurring))
 - r = w · (variable spend so far / d) + (1 − w) · baseline, where w = d / D, d is today's day of the month and D is the number of days in the month
 
-*Variable* spending excludes fixed categories (housing, utilities, phone, insurance, subscriptions), bill payments, recurring charges and one-off outliers (anomalies at least 3× the typical amount). *Baseline* is the average daily variable spend over the previous three months. *expectedRecurring* adds fixed charges still due this month that no bill already covers. This is the fixed-plus-variable blend from [research 05](research/05-algorithms-and-data.md) §5. Mei's month projects to ¥15,230 against a ¥9,500 target (A2).
+*Variable* spending excludes fixed categories (housing, utilities, phone, insurance, subscriptions), bill payments, recurring charges and one-off outliers (anomalies at least 3× the typical amount). *Baseline* is the average daily variable spend over the previous three months. *expectedRecurring* adds fixed charges still due this month that no bill already covers. This is the fixed-plus-variable blend from [research 05](research/05-algorithms-and-data.md) §5. Jing's month projects to ¥15,230 against a ¥9,500 target (A2).
 
 #### Recurring and subscription detection (`finance/recurring.ts`)
 
@@ -367,7 +367,7 @@ A two-charge series needs near-identical amounts. An overdue series is dropped, 
 
 Confidence grows with the number of charges and with regular gaps and amounts (0.55–0.98). annualCost = last amount × periods per year.
 
-A **price change** is flagged when the latest charge is at least max(¥1, 5%) above the median of the up to 3 charges before the new level. This is Rocket Money's two-condition rule, scaled to ¥15–30 subscriptions ([research 05](research/05-algorithms-and-data.md) §2). Utilities are exempt. Mei has 6 series costing ¥6,240 a year (A6).
+A **price change** is flagged when the latest charge is at least max(¥1, 5%) above the median of the up to 3 charges before the new level. This is Rocket Money's two-condition rule, scaled to ¥15–30 subscriptions ([research 05](research/05-algorithms-and-data.md) §2). Utilities are exempt. Jing has 6 series costing ¥6,240 a year (A6).
 
 #### Bill analysis findings (`finance/bills.ts`)
 
@@ -380,7 +380,7 @@ A **price change** is flagged when the latest charge is at least max(¥1, 5%) ab
 | `subscription_overlap` | 2 or more active subscriptions in one niche (video or music) | Cancel the one that just got pricier, else the most expensive |
 | `annual_cost` | Total yearly cost of active subscriptions, with a dream equivalent | Review subscriptions |
 
-Findings sort alert > warn > info and carry their evidence numbers. Bill `rawText` is never read here. Mei's findings (A5): an iQIYI price hike, Tencent Video charged twice on 2026-10-03, electricity +57%, three video services, bills due soon, and the annual cost.
+Findings sort alert > warn > info and carry their evidence numbers. Bill `rawText` is never read here. Jing's findings (A5): an iQIYI price hike, Tencent Video charged twice on 2026-10-03, electricity +57%, three video services, bills due soon, and the annual cost.
 
 **Bill X-ray** (`finance/xray.ts`) parses a pasted English or Chinese bill into merchant, total, due date, line items and a masked account, and warns when the total is ≥ 25% above earlier amounts. Instruction-like lines are never used for any field, and the injection scanner fails closed. A12: ¥486.20, due 2026-10-28, +57%, injection flagged, no action.
 
@@ -392,7 +392,7 @@ A purchase is flagged only when z > 3.5 in a category with ≥ 6 samples, the am
 
 #### Insights (`finance/insights.ts`)
 
-Up to 8 insights, each with a plain-language `why`, evidence numbers and a dream equivalent. Kinds include category changes (≥ 20% and ≥ ¥200, compared on the same days of last month), late-night spending (22:00–04:00), small frequent purchases (under ¥40), weekend spikes, pace, anomalies and subscription load. Mei's 8 insights include late-night and small-frequent spending (A4).
+Up to 8 insights, each with a plain-language `why`, evidence numbers and a dream equivalent. Kinds include category changes (≥ 20% and ≥ ¥200, compared on the same days of last month), late-night spending (22:00–04:00), small frequent purchases (under ¥40), weekend spikes, pace, anomalies and subscription load. Jing's 8 insights include late-night and small-frequent spending (A4).
 
 #### Budget proposal (`finance/budget.ts`)
 
@@ -421,9 +421,9 @@ Limits round to whole yuan, or to ¥10 at ¥500 and above, and the remainder goe
   - under: stash half the projected surplus, capped at what the goal still needs and rounded down to ¥10. A treat is only ever the user's own choice.
 
 Measured results:
-- Mei is ¥2,580.24 over, which pushes her Birkin back 35 days (shown as about 5 weeks); mood burnt (A1).
+- Jing is ¥2,580.24 over, which pushes her Birkin back 35 days (shown as about 5 weeks); mood burnt (A1).
 - Arif is ¥668 under; call to action "Stash ¥330 in MacBook Air" (A13).
-- ¥1,299 sneakers would cost Mei 12.2 hours of work and 18 Birkin days (A7).
+- ¥1,299 sneakers would cost Jing 12.2 hours of work and 18 Birkin days (A7).
 
 #### Tripwire evaluation and deduplication (`finance/tripwires.ts`)
 
@@ -602,10 +602,10 @@ The trip is audited, with a reason that names what was blocked. Only the user ca
 | `FUNDBUN_API_HOST`, `_TRUST_PROXY`, `_ALLOWED_ORIGINS`, `_PROVIDER_TIMEOUT_MS`, `_ALLOW_MOCK`, `ANTHROPIC_EFFORT` | 127.0.0.1 (dev), 40,000 ms, `low` | Binding, proxy, origins, timeouts; mock refused in production unless allowed |
 
 **Deployment modes:**
-1. **Development:** `npm run dev`, then open `http://localhost:5173/?demo=mei` or `?demo=arif` (demo PIN 2580).
+1. **Development:** `npm run dev`, then open `http://localhost:5173/?demo=jing` or `?demo=arif` (demo PIN 2580).
 2. **Production:** `npm run build && npm start`, behind a TLS proxy.
-3. **Static / offline:** `npm run build:vercel` (site root) or `npm run build:pages` (under `/fundbun/`), served from any static host with no server; both boot the on-device engine with no LLM gateway. The live demo runs on Vercel at [fundbun.vercel.app](https://fundbun.vercel.app/?demo=mei) (`vercel.json`: build command, security headers, a year of caching for hashed assets; `vercel --prod`) and on GitHub Pages at [odripads.github.io/fundbun](https://odripads.github.io/fundbun/?demo=mei) (`.github/workflows/pages.yml`); append `?demo=arif` for Arif; PIN 2580. Screens are code-split by route (`src/ui/lazyScreen.ts`): the first visit loads React, the icons, the engine and the design system (~336 KB gzipped) plus the landing screen, and the other screens are prefetched when the browser is idle. Static builds ship no source maps.
-4. **Docker:** `docker build -t fundbun . && docker run -p 8787:8787 --env-file .env fundbun`, then open `http://localhost:8787/?demo=mei`. One container serves the app and the gateway, runs as a non-root user and has a health check.
+3. **Static / offline:** `npm run build:vercel` (site root) or `npm run build:pages` (under `/fundbun/`), served from any static host with no server; both boot the on-device engine with no LLM gateway. The live demo runs on Vercel at [fundbun.vercel.app](https://fundbun.vercel.app/?demo=jing) (`vercel.json`: build command, security headers, a year of caching for hashed assets; `vercel --prod`) and on GitHub Pages at [odripads.github.io/fundbun](https://odripads.github.io/fundbun/?demo=jing) (`.github/workflows/pages.yml`); append `?demo=arif` for Arif; PIN 2580. Screens are code-split by route (`src/ui/lazyScreen.ts`): the first visit loads React, the icons, the engine and the design system (~336 KB gzipped) plus the landing screen, and the other screens are prefetched when the browser is idle. Static builds ship no source maps.
+4. **Docker:** `docker build -t fundbun . && docker run -p 8787:8787 --env-file .env fundbun`, then open `http://localhost:8787/?demo=jing`. One container serves the app and the gateway, runs as a non-root user and has a health check.
 
 **Content-Security-Policy on production builds.** Every production build (`npm run build`, `build:pages` and `build:vercel`) puts a CSP `<meta>` into `index.html` (`cspMetaPlugin()` in `vite.config.ts`). The policy is `default-src 'self'`, no inline scripts, `connect-src 'self'` and `object-src 'none'`, so even the static build has no CSP gap. When the Node server serves `dist/`, it also sends the CSP as a header with `frame-ancestors 'none'`, plus `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy: no-referrer` and a restrictive `Permissions-Policy` (`server/app.ts`); on Vercel, `vercel.json` sends the same headers plus HSTS (a test keeps its CSP equal to the meta tag's). Development builds skip the meta tag, because Vite's hot reload needs inline code.
 
@@ -648,4 +648,4 @@ The fixed seed, sandbox date, clock and seeded ids make two runs byte-identical 
 - **Passkeys/WebAuthn** instead of a numeric PIN.
 - **Off-device audit anchoring.** Send the head anchor (already stored and checked on the device) to the bank or the gateway.
 - **Cooldown.** A 24-hour wait before loosened limits take effect, modelled on Monzo's gambling block ([research 06](research/06-agent-ux-patterns.md) §2).
-- **Hosted demo.** Live on Vercel at [fundbun.vercel.app](https://fundbun.vercel.app/?demo=mei) and on GitHub Pages at [odripads.github.io/fundbun](https://odripads.github.io/fundbun/?demo=mei) (static build, on-device engine only); the Docker image serves the app plus the LLM gateway for deployments with a model key.
+- **Hosted demo.** Live on Vercel at [fundbun.vercel.app](https://fundbun.vercel.app/?demo=jing) and on GitHub Pages at [odripads.github.io/fundbun](https://odripads.github.io/fundbun/?demo=jing) (static build, on-device engine only); the Docker image serves the app plus the LLM gateway for deployments with a model key.

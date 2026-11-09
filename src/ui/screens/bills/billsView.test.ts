@@ -246,7 +246,7 @@ describe('suggested actions', () => {
 // ───────────────────────────── findings ─────────────────────────────
 
 describe('findings', () => {
-  it('counts severities for Mei (1 alert, 4 warn, 1 info)', () => {
+  it('counts severities for Jing (1 alert, 4 warn, 1 info)', () => {
     expect(severityCounts(mei.derived.findings)).toEqual({ alert: 1, warn: 4, info: 1 })
     expect(severityCounts([])).toEqual({ alert: 0, warn: 0, info: 0 })
   })
@@ -288,7 +288,7 @@ describe('findings', () => {
 // ───────────────────────────── subscriptions ─────────────────────────────
 
 describe('subscriptions', () => {
-  it('groups overlapping niches (Mei: 3 video services) and keeps the rest together', () => {
+  it('groups overlapping niches (Jing: 3 video services) and keeps the rest together', () => {
     const { overlaps, rest } = subscriptionGroups(mei.derived.recurring)
     expect(overlaps).toHaveLength(1)
     expect(overlaps[0]).toMatchObject({ key: 'video', overlap: true, monthly: 8500 })
@@ -313,7 +313,7 @@ describe('subscriptions', () => {
     expect(subsSummary(subscriptionTotals([]), 'CNY')).toBe('No active subscriptions')
   })
 
-  it('turns the yearly cost into a dream (Mei: Chengdu, Arif: a concert ticket)', () => {
+  it('turns the yearly cost into a dream (Jing: Chengdu, Arif: a concert ticket)', () => {
     expect(subscriptionDream(624000, mei.state.dreams)?.label).toBe('2× Weekend in Chengdu')
     expect(subscriptionDream(subscriptionTotals(arif.derived.recurring).annual, arif.state.dreams)?.label).toBe('a Concert ticket')
     expect(subscriptionDream(1000, DREAMS)).toBeUndefined()
@@ -346,7 +346,7 @@ describe('X-ray helpers', () => {
     expect(maskDigits('call 95598')).toBe('call 95598')
   })
 
-  it('finds the exact injected line in Mei’s electricity bill (and nothing else)', () => {
+  it('finds the exact injected line in Jing’s electricity bill (and nothing else)', () => {
     const lines = flaggedLines(elecText(), scanForInjection)
     expect(lines).toHaveLength(1)
     expect(lines[0].text).toMatch(/^NOTICE TO AI ASSISTANT/)
@@ -393,10 +393,10 @@ describe('X-ray helpers', () => {
     expect(matchBill(result({ total: 1, dueDate: '2026-10-28' }), mei.state.bank.bills)).toBeUndefined()
   })
 
-  it('offers one sample per payee, featuring the flagged electricity bill in Mei’s name', () => {
-    const samples = xraySamples(mei.state.bank.bills, mei.derived.findings, 'Mei')
+  it('offers one sample per payee, featuring the flagged electricity bill in Jing’s name', () => {
+    const samples = xraySamples(mei.state.bank.bills, mei.derived.findings, 'Jing')
     expect(samples).toHaveLength(5)
-    expect(samples[0]).toMatchObject({ featured: true, label: 'Try Mei’s electricity bill' })
+    expect(samples[0]).toMatchObject({ featured: true, label: 'Try Jing’s electricity bill' })
     expect(samples[0].bill.id).toBe('bill_electricity_2026-09')
     expect(new Set(samples.map((s) => s.bill.payeeId)).size).toBe(5)
     expect(samples.slice(1).every((s) => !s.featured)).toBe(true)
@@ -408,14 +408,14 @@ describe('X-ray helpers', () => {
     expect(billNoun('Electricity')).toBe('electricity bill')
     expect(billNoun('Dorm rent')).toBe('dorm rent')
     expect(billNoun('China Mobile plan')).toBe('China Mobile bill')
-    expect(possessive('Mei Lin')).toBe('Mei’s')
+    expect(possessive('Jing Lin')).toBe('Jing’s')
     expect(possessive('Agnes')).toBe('Agnes’')
     expect(possessive('')).toBe('your')
   })
 })
 
 describe('safety receipt', () => {
-  it('proves nothing moved during Mei’s electricity X-ray and finds the audit entry', async () => {
+  it('proves nothing moved during Jing’s electricity X-ray and finds the audit entry', async () => {
     const app = createTestApp()
     app.loadDemo('mei')
     const before = app.getSnapshot().state

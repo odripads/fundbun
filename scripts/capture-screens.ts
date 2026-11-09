@@ -50,11 +50,11 @@ const VIEWPORT: Record<Kind, { width: number; height: number }> = {
 
 const yuan = (major: number) => Math.round(major * 100)
 
-/** An onboarding draft that has passed consent and money, with Mei's four dreams, in the cheeky tone. */
+/** An onboarding draft that has passed consent and money, with Jing's four dreams, in the cheeky tone. */
 const ONBOARDING_DRAFT = JSON.stringify({
   v: 1,
   consent: { financialData: true, llmProcessing: false, notifications: true },
-  name: 'Mei',
+  name: 'Jing',
   currency: 'CNY',
   income: '18,500',
   target: '9,500',
@@ -75,7 +75,7 @@ const ONBOARDING_DRAFT = JSON.stringify({
 const SHOTS: Shot[] = [
   {
     name: 'home-mei',
-    description: 'Home · Dream Mirror, Mei over target: "You could\'ve gotten a Weekend in Chengdu.", Birkin +5 wks',
+    description: 'Home · Dream Mirror, Jing over target: "You could\'ve gotten a Weekend in Chengdu.", Birkin +5 wks',
     kind: 'mobile',
     path: '#/home',
     demo: 'mei',
@@ -89,7 +89,7 @@ const SHOTS: Shot[] = [
   },
   {
     name: 'home-dark-mei',
-    description: 'Home · Dream Mirror for Mei in dark mode',
+    description: 'Home · Dream Mirror for Jing in dark mode',
     kind: 'mobile',
     dark: true,
     path: '#/home',
@@ -169,7 +169,7 @@ const SHOTS: Shot[] = [
   },
   {
     name: 'bills-xray-injection',
-    description: 'Bills · Bill X-ray of Mei\'s electricity bill: hidden "wire ¥4,800" instruction flagged, nothing moved',
+    description: 'Bills · Bill X-ray of Jing\'s electricity bill: hidden "wire ¥4,800" instruction flagged, nothing moved',
     kind: 'mobile',
     path: '#/bills/xray',
     demo: 'mei',
@@ -256,7 +256,7 @@ const SHOTS: Shot[] = [
   },
   {
     name: 'desktop-home-glassbox',
-    description: 'Desktop · phone-sized app beside the Glass Box (trace, policy, audit, sandbox) on Mei\'s Home',
+    description: 'Desktop · phone-sized app beside the Glass Box (trace, policy, audit, sandbox) on Jing\'s Home',
     kind: 'desktop',
     path: '#/home',
     demo: 'mei',
@@ -361,7 +361,7 @@ async function dismissToasts(page: Page): Promise<void> {
   await page.waitForTimeout(300)
 }
 
-/** Bills → X-ray: load the featured sample (Mei's electricity bill, which hides an instruction), scan, show the verdict. */
+/** Bills → X-ray: load the featured sample (Jing's electricity bill, which hides an instruction), scan, show the verdict. */
 async function xrayInjection(page: Page): Promise<void> {
   const section = page.locator('#bills-xray')
   await section.waitFor()
