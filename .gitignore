@@ -11,6 +11,9 @@ evidence/raw/
 test-results/
 playwright-report/
 *.tsbuildinfo
+# agent/tool local state (never commit)
+.opencode/
+.impeccable/
 # never commit identity documents or registration data
 **/team members/
 **/registration/

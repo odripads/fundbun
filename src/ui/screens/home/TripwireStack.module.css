@@ -65,6 +65,42 @@
   font-weight: 700;
 }
 
+.empty {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border), var(--shadow-1);
+}
+
+.emptyArt {
+  flex: none;
+  display: grid;
+  place-items: center;
+}
+
+.emptyBody {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.emptyTitle {
+  margin: 0;
+  font-size: var(--fs-md);
+  font-weight: 700;
+}
+
+.emptyText {
+  margin: 0 0 var(--s-1);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+
 .deck {
   position: relative;
   padding-bottom: calc(var(--behind, 0) * 8px);

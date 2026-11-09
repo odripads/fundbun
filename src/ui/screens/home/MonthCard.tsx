@@ -62,20 +62,19 @@ export function MonthCard() {
         </span>
       </p>
 
-      <div className={styles.split}>
-        <div className={styles.safe}>
-          <p className={styles.label}>Safe to spend today</p>
-          <Money amount={s.safeToSpendToday} currency={currency} size="hero" decimals={false} className={styles.safeMoney} />
-          <p className={styles.note}>{safeToSpendNote(s, tone, currency)}</p>
-        </div>
-        <div className={styles.saved}>
-          <p className={styles.label}>
-            <PiggyBank aria-hidden="true" className={styles.savedIcon} />
-            Saved to goals
-          </p>
-          <Money amount={s.savedToGoals} currency={currency} size="lg" decimals={false} tone={s.savedToGoals > 0 ? 'under' : 'neutral'} signed={s.savedToGoals > 0} />
-          <p className={styles.note}>{s.savedToGoals > 0 ? 'this month — nice.' : 'this month, so far'}</p>
-        </div>
+      <div className={styles.safe}>
+        <p className={styles.label}>Safe to spend today</p>
+        <Money amount={s.safeToSpendToday} currency={currency} size="hero" decimals={false} className={styles.safeMoney} />
+        <p className={styles.note}>{safeToSpendNote(s, tone, currency)}</p>
+      </div>
+
+      <div className={styles.saved}>
+        <p className={styles.label}>
+          <PiggyBank aria-hidden="true" className={styles.savedIcon} />
+          Saved to goals
+        </p>
+        <Money amount={s.savedToGoals} currency={currency} size="lg" decimals={false} tone={s.savedToGoals > 0 ? 'under' : 'neutral'} signed={s.savedToGoals > 0} />
+        <p className={styles.note}>{s.savedToGoals > 0 ? 'this month — nice.' : 'this month, so far'}</p>
       </div>
     </Card>
   )

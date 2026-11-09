@@ -28,7 +28,7 @@ export function Badge({ variant = 'neutral', size = 'md', icon, children, classN
 export type AgentEngine = 'offline' | 'llm'
 
 export const ENGINE_LABEL: Record<AgentEngine, string> = {
-  offline: 'On-device',
+  offline: 'On-device rules',
   llm: 'LLM',
 }
 

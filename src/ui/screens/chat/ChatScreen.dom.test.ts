@@ -67,7 +67,7 @@ describe('ChatScreen — first open', () => {
       'Help me get back on track',
       'Move ¥300 to my Chengdu fund',
     ])
-    expect(container.querySelector('[aria-label="AI-generated · On-device"]')).not.toBeNull()
+    expect(container.querySelector('[aria-label="AI-generated · On-device rules"]')).not.toBeNull()
   })
 
   it('sends a starter and answers with an AI-labelled reply and the mirror card', async () => {
@@ -78,7 +78,7 @@ describe('ChatScreen — first open', () => {
     await flush()
     expect(spy).toHaveBeenCalledWith('How am I doing this month?')
     const reply = lastBot(container)
-    expect(reply.querySelector('[aria-label="AI-generated · On-device"]')).not.toBeNull()
+    expect(reply.querySelector('[aria-label="AI-generated · On-device rules"]')).not.toBeNull()
     expect(reply.querySelector('section[aria-label^="Dream mirror"]')?.textContent).toContain('Weekend in Chengdu')
     // quick replies on the newest message send on tap
     const chip = reply.querySelector<HTMLButtonElement>('[role="group"][aria-label="Suggested replies"] button')!

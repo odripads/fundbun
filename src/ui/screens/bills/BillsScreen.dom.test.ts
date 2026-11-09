@@ -129,7 +129,7 @@ describe('BillsScreen — Jing', () => {
     expect(text).toContain('+57% vs usual')
     expect(outcome.querySelectorAll('tbody tr')).toHaveLength(4)
     expect(text).toContain('never to an account written in the bill')
-    expect(outcome.querySelector('[aria-label="AI-generated · On-device"]')).not.toBeNull()
+    expect(outcome.querySelector('[aria-label="AI-generated · On-device rules"]')).not.toBeNull()
     // nothing moved and nothing was queued by the X-ray itself
     expect(app.getSnapshot().state.pending).toHaveLength(0)
     expect(document.activeElement?.textContent).toBe('Hidden instructions ignored')

@@ -94,7 +94,7 @@ describe('Badges', () => {
 
   it('AiBadge names the engine for assistive tech', async () => {
     const { container } = await render(h(AiBadge, { engine: 'offline' }))
-    expect(container.querySelector('[role="img"]')!.getAttribute('aria-label')).toBe('AI-generated · On-device')
+    expect(container.querySelector('[role="img"]')!.getAttribute('aria-label')).toBe('AI-generated · On-device rules')
   })
 })
 

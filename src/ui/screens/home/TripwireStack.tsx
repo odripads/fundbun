@@ -91,7 +91,31 @@ export function TripwireStack() {
     focusAfterDismiss(events.length ? cardRef.current : null, pending.after)
   }, [events])
 
-  if (events.length === 0) return null
+  // Never hide the crux: a user with no tripwires yet should still meet the feature and be able to set one.
+  if (events.length === 0) {
+    return (
+      <section ref={rootRef} className={styles.root} aria-labelledby={headingId}>
+        <div className={styles.head}>
+          <h2 id={headingId} className={styles.title}>
+            <BellRing aria-hidden="true" />
+            Tripwires
+          </h2>
+        </div>
+        <div className={styles.empty}>
+          <span className={styles.emptyArt}>
+            <BunMascot mood="calm" size={48} />
+          </span>
+          <div className={styles.emptyBody}>
+            <p className={styles.emptyTitle}>No tripwires yet</p>
+            <p className={styles.emptyText}>Set one and Bun will warn you before you overspend.</p>
+            <Button size="sm" iconStart={<BellRing />} className={styles.tap} onClick={openTripwireSettings}>
+              Set a tripwire
+            </Button>
+          </div>
+        </div>
+      </section>
+    )
+  }
   const ordered = newestFirst(events)
   const top = ordered[0]
   const behind = Math.min(2, ordered.length - 1)

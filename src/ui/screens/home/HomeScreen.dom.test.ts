@@ -139,7 +139,7 @@ describe('HomeScreen — the Dream Mirror', () => {
     await click(byText(deck, 'Clear all', 'button'))
     await flush()
     expect(app.getSnapshot().derived.unseenEvents).toHaveLength(0)
-    expect(container.textContent).not.toContain('Tripwires')
+    expect(container.textContent).toContain('No tripwires yet')
   })
 
   it('toasts a new tripwire with its dream picture and stacks it until "Got it"', async () => {
@@ -147,7 +147,7 @@ describe('HomeScreen — the Dream Mirror', () => {
     // start from a clean deck: the demo's two primed alerts are covered by the test above
     app.markEventsSeen()
     const { container } = await renderHome(app)
-    expect(container.textContent).not.toContain('Tripwires')
+    expect(container.textContent).toContain('No tripwires yet')
     await click(byText(container, 'Sandbox', 'button'))
     const sheet = document.querySelector('[role="dialog"]')!
     expect(sheet.textContent).toContain('No real money moves')
@@ -233,7 +233,7 @@ describe('Home regressions', () => {
     expect(document.activeElement).toBe(now.querySelector('article h3'))
     await click(byText(now, 'Got it', 'button'))
     await flush()
-    expect(deckOf(container)).toBeUndefined()
+    expect(deckOf(container)!.querySelector('article')).toBeNull()
     expect(document.activeElement).not.toBe(document.body)
     expect(document.activeElement?.tagName).toMatch(/^H[23]$/)
   })
