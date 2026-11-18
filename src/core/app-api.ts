@@ -1,3 +1,4 @@
+import type { CheckInView } from './finance/checkin'
 import type {
   AppSettings,
   AppState,
@@ -60,6 +61,8 @@ export interface DerivedState {
   viewDate: ISODate
   /** which clock `today` follows */
   clock: 'sandbox' | 'real'
+  /** the daily check-in card: today's slot, the streak, golden buns (finance/checkin) */
+  checkIn: CheckInView
   /** null until onboarded */
   ctx: FinanceContext | null
   /** current month */
@@ -265,6 +268,12 @@ export interface AppApi {
   markBillPaid(billId: string): { ok: boolean; reason?: string }
   /** take back markBillPaid */
   unmarkBillPaid(billId: string): { ok: boolean; reason?: string }
+  /**
+   * The daily check-in: "I looked, and there is nothing else to log today". Once a day; it stamps the card, keeps
+   * the streak and makes today a logged day for Bun's temper. `earned` is true when it won a golden bun (every
+   * seventh day in a row). Logging spending checks in by itself.
+   */
+  checkIn(): { ok: boolean; added: boolean; streak: number; earned: boolean }
   /** Bill X-ray via the agent (xray_bill tool) — returns the assistant message with the xray card */
   xrayBill(text: string): Promise<ChatMessage>
   transactions(filter?: { month?: YearMonth; category?: CategoryId; query?: string }): Transaction[]

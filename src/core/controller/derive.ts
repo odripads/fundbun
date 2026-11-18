@@ -1,3 +1,4 @@
+import { checkInView } from '../finance/checkin'
 import { agentRecords } from '../agent/actions'
 import type { CapUsage, DerivedState, LlmStatus } from '../app-api'
 import { compareDate, endOfMonth } from '../dates'
@@ -148,6 +149,7 @@ export function createDerived(state: AppState, rt: RuntimeFlags, now: () => stri
     today: state.bank.today,
     viewDate: viewDateOf(state),
     clock: state.bank.personaId ? 'sandbox' as const : 'real' as const,
+    checkIn: checkInView(state.checkIns, state.bank.today),
     get ctx() { return fin.ctx },
     get summary() { return fin.summary },
     get mirror() { return fin.mirror },

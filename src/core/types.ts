@@ -869,6 +869,8 @@ export interface FinanceContext {
   dreams: DreamItem[]
   budget: BudgetPlan | null
   tripwires: Tripwire[]
+  /** days the user checked in: each counts as logged, even with no spending (finance/temper) */
+  checkedDays?: ISODate[]
 }
 
 // ───────────────────────────── persisted app state ─────────────────────────────
@@ -907,4 +909,16 @@ export interface AppState {
   plans: TaskPlan[]
   dialogue: DialogueState
   settings: AppSettings
+  /** the daily check-in (absent in states saved before it existed) */
+  checkIns?: CheckIns
+}
+
+/** The daily check-in habit (finance/checkin). */
+export interface CheckIns {
+  /** days checked in, ascending; the recent ones only */
+  days: ISODate[]
+  /** longest streak so far */
+  best: number
+  /** golden buns earned: one for every seventh day in a row */
+  golden: number
 }

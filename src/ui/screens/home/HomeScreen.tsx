@@ -8,6 +8,7 @@ import { Button, Callout, Sheet } from '../../components/ds'
 import { navigate } from '../../router'
 import { useSnapshot } from '../../state'
 import { BillsStrip } from './BillsStrip'
+import { CheckInCard } from './CheckInCard'
 import { CouldveStrip } from './CouldveStrip'
 import { InsightsPeek } from './InsightsPeek'
 import { MirrorHero, type CheckRequest } from './MirrorHero'
@@ -87,6 +88,7 @@ export function HomeScreen() {
       </div>
       <QuickAdd open={adding} onClose={() => setAdding(false)} />
       <div className={styles.sections}>
+        <CheckInCard onAddSpending={() => setAdding(true)} />
         <TripwireStack />
         <MonthCard />
         <QuickCheck request={check} onRequestHandled={clearCheck} />

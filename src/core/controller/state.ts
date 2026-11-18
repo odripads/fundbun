@@ -1,23 +1,7 @@
 import { CATEGORIES } from '../categories'
 import { CURRENCY_SYMBOL } from '../money'
 import { defaultMandate } from '../security/policy'
-import type {
-  Account,
-  AppSettings,
-  AppState,
-  BankState,
-  BudgetPlan,
-  CategoryBudget,
-  Consent,
-  Currency,
-  FinanceContext,
-  ISODate,
-  Mandate,
-  Minor,
-  Profile,
-  Tone,
-  TripwireKind,
-} from '../types'
+import type { Account, AppSettings, AppState, BankState, BudgetPlan, CategoryBudget, CheckIns, Consent, Currency, FinanceContext, ISODate, Mandate, Minor, Profile, Tone, TripwireKind } from '../types'
 import { CHECKING_ID, DEFAULT_SEED } from './constants'
 import { isRecord, safely } from './util'
 
@@ -76,7 +60,7 @@ export function emptyState(today: ISODate): AppState {
 export function ctxOf(state: AppState): FinanceContext | null {
   if (!state.profile) return null
   const { profile, bank, dreams, budget, tripwires } = state
-  return { profile, bank, dreams, budget, tripwires }
+  return { profile, bank, dreams, budget, tripwires, ...(state.checkIns?.days.length ? { checkedDays: state.checkIns.days } : {}) }
 }
 
 export function checkingAccountId(bank: BankState): string {
@@ -176,5 +160,13 @@ export function parseState(raw: unknown): AppState | null {
     plans: records(raw.plans, (p) => Array.isArray(p.steps)),
     dialogue: rec(raw.dialogue),
     settings: { ...base.settings, ...rec<Partial<AppSettings>>(raw.settings) },
+    ...parseCheckIns(raw.checkIns),
   }
+}
+
+/** The daily check-in of a save: dates only, in order; anything else is dropped. Older saves have none. */
+function parseCheckIns(raw: unknown): { checkIns?: CheckIns } {
+  if (!isRecord(raw)) return {}
+  const days = [...new Set(arr<unknown>(raw.days).filter((d): d is string => isStr(d) && /^\d{4}-\d{2}-\d{2}$/.test(d)))].sort()
+  return { checkIns: { days, best: isNum(raw.best) && raw.best >= 0 ? Math.floor(raw.best) : 0, golden: isNum(raw.golden) && raw.golden >= 0 ? Math.floor(raw.golden) : 0 } }
 }

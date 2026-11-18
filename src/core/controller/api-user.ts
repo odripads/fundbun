@@ -5,6 +5,7 @@ import { clipForDisplay } from '../security/redact'
 import type { AppState, Mandate, SpendingCandidate, Transaction } from '../types'
 import { appendAudit, verifyAuditAnchored } from './audit'
 import { LOCKED_MSG, NOT_SET_UP_MSG, expirePending, syncClock, userTx, userTxValue, type Core } from './core'
+import { recordCheckIn } from '../finance/checkin'
 import { MARKED_PAID_PREFIX, hasBank, syncExpectedBills } from '../finance/expected'
 import { applyTripwires } from './tripwires'
 import {
@@ -115,8 +116,24 @@ export function createUserApi(core: Core, onLlmGranted: () => void): UserApi {
           added: added.length, duplicates, source: candidates[0]?.source ?? 'unknown',
         })
         syncExpectedBills(draft.bank)
+        // logging a purchase is showing up: it checks in for the day
+        draft.checkIns = recordCheckIn(draft.checkIns, draft.bank.today).checkIns
       }
       return { added: added.length, duplicates }
+    })
+  }
+
+  /** The daily check-in (finance/checkin): once a day, it stamps the card and makes today a logged day. */
+  function checkIn(): { ok: boolean; added: boolean; streak: number; earned: boolean } {
+    if (core.lock.locked || !store.get().profile) return { ok: false, added: false, streak: 0, earned: false }
+    syncClock(core)
+    return store.mutate((draft) => {
+      const r = recordCheckIn(draft.checkIns, draft.bank.today)
+      if (r.added) {
+        draft.checkIns = r.checkIns
+        appendAudit(draft, core.now(), 'user', 'user_action', `Daily check-in (day ${r.streak} in a row)`, { day: draft.bank.today, streak: r.streak, goldenBun: r.earned })
+      }
+      return { ok: true, added: r.added, streak: r.streak, earned: r.earned }
     })
   }
 
@@ -246,6 +263,7 @@ export function createUserApi(core: Core, onLlmGranted: () => void): UserApi {
     addSpending,
     markBillPaid,
     unmarkBillPaid,
+    checkIn,
     transactions: (filter) => filterTransactions(store.get().bank.transactions, filter),
 
     // ── sandbox / demo controls ──

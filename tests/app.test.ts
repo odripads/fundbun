@@ -1438,6 +1438,37 @@ describe('bills with no bank connected: Bun watches and reminds, the user pays a
   })
 })
 
+describe('the daily check-in', () => {
+  it('stamps the card once a day, keeps the streak, and survives a reload', async () => {
+    const storage = memoryStorage()
+    let clock = '2026-11-10T09:00:00+08:00'
+    const open = () => createFundBunApp({ storage, llmBaseUrl: null, now: () => new Date(clock) })
+    const app = open()
+    app.completeOnboarding(onboardingInput({ dataSource: { kind: 'csv', startingBalance: 2_000_000, text: 'Date,Description,Amount\n2026-11-03,Hema Fresh,-120.00' } }))
+    expect(app.getSnapshot().derived.checkIn).toMatchObject({ done: false, streak: 0, next: 1 })
+    expect(app.checkIn()).toEqual({ ok: true, added: true, streak: 1, earned: false })
+    expect(app.checkIn()).toEqual({ ok: true, added: false, streak: 1, earned: false })
+    expect(app.getSnapshot().derived.checkIn).toMatchObject({ done: true, streak: 1 })
+    expect(app.getSnapshot().state.audit.at(-1)).toMatchObject({ type: 'user_action', data: { day: '2026-11-10', streak: 1 } })
+    await app.flush()
+    // the next day, after a reload: the streak is alive and today is open again
+    clock = '2026-11-11T09:00:00+08:00'
+    const next = open()
+    expect(next.getSnapshot().derived.checkIn).toMatchObject({ done: false, streak: 1, next: 2 })
+    // logging a purchase checks in by itself
+    next.addSpending([{ id: 'manual_ci', merchant: 'Coffee', amount: 2_500, currency: 'CNY', date: '2026-11-11', category: 'coffee_tea', description: 'Coffee', source: 'manual' }])
+    expect(next.getSnapshot().derived.checkIn).toMatchObject({ done: true, streak: 2 })
+    expect(next.verifyAudit().ok).toBe(true)
+  })
+
+  it('the demo personas arrive with a streak to keep', () => {
+    expect(demoKit('arif').app.getSnapshot().derived.checkIn).toMatchObject({ done: false, streak: 4, next: 5 })
+    const jing = demoKit('mei').app
+    expect(jing.getSnapshot().derived.checkIn).toMatchObject({ done: false, streak: 2 })
+    expect(jing.checkIn()).toMatchObject({ ok: true, added: true, streak: 3 })
+  })
+})
+
 describe('spending added by hand', () => {
   it('counts toward the month at once, and a big one trips the single-purchase wire', () => {
     const { app } = demoKit('mei')

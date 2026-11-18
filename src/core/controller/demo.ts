@@ -1,3 +1,4 @@
+import { addDays } from '../dates'
 import { loadPersona, primeTripwires } from '../sandbox/personas'
 import { createPin } from '../security/pin'
 import type { AppState, ISODateTime } from '../types'
@@ -6,6 +7,9 @@ import { DEMO_PIN, DEMO_SETTINGS, DEMO_TODAY } from './constants'
 import { welcomeMessage } from './messages'
 import { emptyState, safeDefaultMandate } from './state'
 import { errorMessage, safely } from './util'
+
+/** How many days in a row each persona has already checked in before the demo's "today". */
+const DEMO_CHECKIN_DAYS: Record<string, number> = { mei: 2, arif: 4 }
 
 /**
  * One-tap demo: a sandbox persona fully onboarded on the sandbox date, copilot autonomy, PIN 2580.
@@ -35,6 +39,8 @@ export function buildDemoState(personaId: string, now: ISODateTime): AppState {
     mandate: { ...safeDefaultMandate(), autonomy: 'copilot', ...createPin(DEMO_PIN), failedPinAttempts: 0 },
     settings: { ...DEMO_SETTINGS },
     chat: [welcomeMessage(profile, now)],
+    // a few days of check-ins before today (fictional, like the rest of the persona), so the card has a streak to keep
+    checkIns: { days: Array.from({ length: DEMO_CHECKIN_DAYS[personaId] ?? 2 }, (_, i) => addDays(bank.today, -(i + 1))).sort(), best: DEMO_CHECKIN_DAYS[personaId] ?? 2, golden: 0 },
   }
   appendAudit(state, now, 'system', 'session_start', `Demo session started (${profile.name})`, {
     personaId, sandboxToday: bank.today, seed: bank.seed,

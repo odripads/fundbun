@@ -23,9 +23,10 @@ import { unpaidBillsDue } from './summary'
  *  - every COOL_DOWN_DAYS good days in a row take a step off, down to "uneasy". Behaving well makes the stick go
  *    away, which is the part that teaches.
  *
- * A good day is a finished day with spending on the ledger, all of it within the day limit. A day with nothing
+ * A good day is a finished, logged day with all its spending within the day limit. Logged means there is spending
+ * on the ledger, or the user checked in and said there was nothing to log (finance/checkin). A day with nothing
  * logged is skipped: it neither counts nor breaks the streak, so going quiet never calms Bun down (the reward is
- * for logging and staying inside the line, not for hiding), and a gap of GAP_DAYS empty days ends the streak. A
+ * for showing up and staying inside the line, not for hiding), and a gap of GAP_DAYS empty days ends the streak. A
  * finished month keeps its verdict: no blowouts, no cooling.
  *
  * The gentle tone softens the face by one step from "cross" up; the numbers stay the same.
@@ -88,9 +89,13 @@ export function dayLimitOf(ctx: FinanceContext, s: MonthSummary): Minor {
   return s.daysInMonth > 0 ? Math.max(0, Math.round((s.target - fixed - due) / s.daysInMonth / unit) * unit) : 0
 }
 
-/** Day-to-day spending per day; a day with only fixed costs is on the map at 0 (it was logged). */
-function dayTotals(txns: Transaction[]): Map<ISODate, Minor> {
+/**
+ * Day-to-day spending per logged day. A day with only fixed costs is on the map at 0, and so is a day the user
+ * checked in on without spending: "nothing to log today" is a logged day.
+ */
+function dayTotals(txns: Transaction[], checkedDays: readonly ISODate[] = []): Map<ISODate, Minor> {
   const totals = new Map<ISODate, Minor>()
+  for (const d of checkedDays) totals.set(d, 0)
   for (const t of txns) {
     if (isSpending(t)) totals.set(t.date, (totals.get(t.date) ?? 0) + (isDayToDay(t) ? -t.amount : 0))
   }
@@ -123,7 +128,7 @@ export function bunTemper(ctx: FinanceContext, s: MonthSummary, status: MirrorSt
   const f = copyFmt(ctx.profile.currency)
   const today = ctx.bank.today
   const dayLimit = dayLimitOf(ctx, s)
-  const totals = dayTotals(upTo(ctx.bank.transactions, today))
+  const totals = dayTotals(upTo(ctx.bank.transactions, today), (ctx.checkedDays ?? []).filter((d) => d <= today))
   const future = s.month > ym(today)
   const spentToday = s.isCurrent ? (totals.get(today) ?? 0) : 0
 
