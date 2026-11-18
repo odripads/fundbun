@@ -33,13 +33,14 @@ An AI money buddy ("Bun", logo = a bao bun with a ¥ filling) that helps young p
   offline engine / mock provider — see §7).
 - Positioning vs Claude/ChatGPT/Perplexity personal finance (all read-only): FundBun's edge is safe
   action + user-set tripwires. Weak spot: no real bank data, only CSV import + sandbox.
-- China pitch: a safety layer that runs **inside WeBank's own channel** (WeBank hosts and executes, a filed
-  Chinese model, synthetic-data test). The ask: a named WeBank technical contact after the final.
-  "WeBun" is only a working name on one concept slide; the public brand is FundBun.
+- Our proposal for a bank setting (nothing is agreed with any bank): FundBun as a safety layer **inside the
+  bank's own app**. The bank hosts it, holds the money and executes; FundBun proposes and enforces the rules.
+  "WeBun" is only a working name on one concept slide; the public brand is FundBun. The pitch script and
+  coaching notes are private, in `~/Desktop/STARTUP/pitch-practice/` (not in this repo).
 
-**Never say to a bank or judge:** "China's Plaid", "compliant", "legal under PIPL", "first",
-"our agent moves money", "WeBank sub-accounts", bank logins, "Claude for Chinese users".
-Say "bank-side confirmation bound to amount and payee", not just "PIN".
+**Claims FundBun does not make, because they are not true or not ours to make:** "China's Plaid", "compliant",
+"legal under PIPL", "first", "our agent moves money", any bank's sub-accounts or logins, any named bank as a
+partner. Say "bank-side confirmation bound to amount and payee", not just "PIN".
 
 ## 4. Where everything lives (our data)
 All under `~/Desktop/STARTUP/` (iCloud Desktop — if a read hangs, the Mac is low on disk; free space first):

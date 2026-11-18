@@ -40,8 +40,8 @@ prompt injection (30%), and innovation (30%). A surprise brief arrives on hackat
 The app is a mobile-first web app; on desktop it renders a phone-sized app beside the **Glass Box**
 (a live agent trace, policy decisions, audit tail, and sandbox controls). Demo users are synthetic
 personas (Jing, with a "Mei" alias), reachable via `?demo=jing`; there is no real bank or user data.
-The China pitch positions FundBun as a safety layer that could run inside WeBank's own channel — the
-ask is a named WeBank technical contact. Public brand is FundBun ("WeBun" is a working name only).
+Our proposal for a bank setting (nothing is agreed with any bank) is FundBun as a safety layer inside the
+bank's own app, where the bank hosts and executes. Public brand is FundBun ("WeBun" is a working name only).
 
 ## Capabilities and Constraints
 
@@ -58,7 +58,7 @@ Constraints:
 - **No real bank or user data.** Only CSV import and a deterministic synthetic sandbox bank.
 - **The offline "on-device AI" is text matching + rules (27 intents), not a neural model.** An optional LLM gateway (Anthropic / any OpenAI-compatible endpoint / mock) provides the AI mode; it was not yet live-tested against a real model.
 - Browser-only state; no backend persistence.
-- Never claim, to a bank or judge: "China's Plaid", "compliant" or "legal under PIPL", "first", "our agent moves money", WeBank sub-accounts, or bank logins. Say "bank-side confirmation bound to amount and payee", not just "PIN".
+- Claims FundBun does not make, because they are not true or not ours to make: "China's Plaid", "compliant" or "legal under PIPL", "first", "our agent moves money", any bank's sub-accounts or logins, or any named bank as a partner. Say "bank-side confirmation bound to amount and payee", not just "PIN".
 
 ## Brand Commitments
 
