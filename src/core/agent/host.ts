@@ -41,6 +41,13 @@ export interface AgentHost {
   audit(actor: AuditActor, type: AuditType, summary: string, data?: Record<string, unknown>): void
   /** LLM client when the LLM engine is enabled, consented and reachable — otherwise null (use the offline engine) */
   llm(): LlmClient | null
+  /**
+   * Tell the host an LLM call just failed (timeout, network, provider error). The controller switches the LLM engine
+   * off for a short cool-down so the next messages answer on-device at once instead of waiting for another timeout.
+   */
+  llmFailed?(error: unknown): void
+  /** Tell the host an LLM turn completed, so the cool-down back-off starts from the beginning next time. */
+  llmOk?(): void
   /** call after transactions were added: evaluates tripwires, stores events, audits; returns new events */
   afterTransactions(txns: Transaction[]): TripwireEvent[]
 }

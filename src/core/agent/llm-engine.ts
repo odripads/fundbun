@@ -19,7 +19,8 @@ import { composeReply, suggestionsFor } from './voice'
  * wrapped, the final reply is grounding-checked, and any LLM failure falls back to the on-device engine.
  */
 export const MAX_ROUNDS = 5
-export const LLM_TIMEOUT_MS = 30_000
+/** One model call may take this long. Kept short on purpose: on a bad network the user gets an on-device answer in seconds. */
+export const LLM_TIMEOUT_MS = 10_000
 const HISTORY_MESSAGES = 9
 const MAX_MESSAGE_CHARS = 2000
 
@@ -37,6 +38,7 @@ export async function respondLlm(host: AgentHost, turn: Turn, text: string, clie
   const reads: ReadResult[] = []
   try {
     const finalText = await toolLoop(host, turn, client, reads)
+    host.llmOk?.()
     return finish(host, turn, text, finalText, reads)
   } catch (e) {
     return fallback(host, turn, text, e, reads)
@@ -234,6 +236,19 @@ function fallback(host: AgentHost, turn: Turn, text: string, e: unknown, reads: 
   trace(turn, 'error', 'LLM unavailable — answered with the on-device engine', { error: errorText(e).slice(0, 200), code })
   host.audit('agent', 'llm_response', 'LLM call failed — fell back to the on-device engine', { error: errorText(e).slice(0, 200), code: code ?? null, turnId: turn.id })
   turn.engine = 'offline'
+  host.llmFailed?.(e)
+  const lang = turn.lang ?? 'en'
+  addNotice(
+    turn,
+    'info',
+    lang === 'zh' ? '这次由设备端引擎回答' : lang === 'id' ? 'Dijawab di perangkat ini' : 'Answered on this device',
+    lang === 'zh'
+      ? 'AI模型没有及时响应，所以这次由设备端规则引擎回答。我过一会儿会再试一次模型。'
+      : lang === 'id'
+        ? 'Model AI tidak merespons tepat waktu, jadi kali ini dijawab mesin aturan di perangkat. Sebentar lagi modelnya kucoba lagi.'
+        : 'The AI model didn’t answer in time, so the on-device rules engine took this one. I’ll try the model again shortly.',
+    'llm_fallback',
+  )
   if (reads.length || turn.proposals.length) {
     const t = offlineSummary(host, turn, reads)
     return { text: t, intent: reads[0] ? TOOL_INTENT[reads[0].tool] ?? 'unknown' : 'unknown' }

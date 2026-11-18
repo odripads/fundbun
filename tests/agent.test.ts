@@ -599,6 +599,13 @@ describe('LLM path end-to-end: createFundBunApp + real gateway (mock provider)',
     expect(msg.engine).toBe('offline')
     expect(cards(msg)).toContain('mirror')
     expect(msg.trace?.some((t) => t.kind === 'error')).toBe(true)
+    expect(msg.cards?.some((c) => c.type === 'notice' && /Answered on this device/.test(c.title))).toBe(true)
+    // cool-down: the LLM engine is switched off, so the next message answers on-device at once, with no second timeout
+    expect(app.getSnapshot().derived.engine).toBe('offline')
+    expect(app.getSnapshot().derived.llm.reason).toMatch(/did not answer/)
+    const next = await app.sendMessage('Where did my money go?')
+    expect(next.engine).toBe('offline')
+    expect(next.trace?.some((t) => t.kind === 'error')).toBe(false)
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => resolve()))
   })
 })

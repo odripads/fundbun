@@ -132,7 +132,9 @@ describe('LLM engine: tool loop', () => {
     const msg = await engine.respond('How am I doing this month?')
     expect(msg.engine).toBe('offline')
     expect(msg.trace?.some((t) => t.kind === 'error')).toBe(true)
-    expect(msg.cards?.[0].type).toBe('mirror')
+    expect(msg.cards?.some((c) => c.type === 'mirror')).toBe(true)
+    // the user is told, in plain words, that this answer came from the device
+    expect(msg.cards?.some((c) => c.type === 'notice' && c.level === 'info' && /Answered on this device/.test(c.title))).toBe(true)
     expect(auditOf(host, 'llm_response').at(-1)?.summary).toMatch(/fell back/)
   })
 

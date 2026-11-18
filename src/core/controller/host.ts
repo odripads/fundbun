@@ -20,8 +20,41 @@ export interface HostDeps {
  * - mutate(): structuredClone draft + live SandboxBank(draft.bank); commit on return, discard on throw; nested
  *   calls (including audit() and afterTransactions()) join the outer transaction. Recipes must be synchronous.
  */
+/** After a failed LLM call the engine stays on-device this long (doubling per failure in a row, capped). */
+export const LLM_COOLDOWN_MS = 60_000
+export const LLM_COOLDOWN_MAX_MS = 10 * 60_000
+
 export function createHost({ store, now, llmClient }: HostDeps): AgentHost {
+  let failuresInARow = 0
+  let retryTimer: ReturnType<typeof setTimeout> | undefined
+
+  /** Ask the gateway again once the cool-down is over; a healthy answer switches the LLM engine back on. */
+  async function recheck(): Promise<void> {
+    retryTimer = undefined
+    if (!llmClient) return
+    try {
+      const h = await llmClient.health()
+      const prev = store.runtime().llm
+      store.setRuntime({ llm: { ...prev, checked: true, available: h.ok === true, ...(h.ok ? { reason: undefined } : { reason: h.reason ?? 'LLM gateway unavailable' }) } })
+    } catch {
+      // still unreachable: stay on-device; the next settings change or reload checks again
+    }
+  }
+
   return {
+    llmOk() {
+      failuresInARow = 0
+    },
+    llmFailed() {
+      failuresInARow++
+      const wait = Math.min(LLM_COOLDOWN_MAX_MS, LLM_COOLDOWN_MS * 2 ** (failuresInARow - 1))
+      const prev = store.runtime().llm
+      store.setRuntime({ llm: { ...prev, checked: true, available: false, reason: `The AI model did not answer. Using the on-device engine and trying the model again in ${Math.round(wait / 60_000)} min.` } })
+      if (retryTimer) clearTimeout(retryTimer)
+      retryTimer = setTimeout(() => void recheck(), wait)
+      // never keep a Node process (tests, scripts) alive just for this timer
+      ;(retryTimer as { unref?: () => void }).unref?.()
+    },
     state: () => store.get(),
     ctx(): FinanceContext {
       const ctx = financeFor(store.get()).ctx
