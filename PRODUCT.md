@@ -20,8 +20,14 @@ FundBun ("Bun") is an AI money buddy that helps young people actually stick to t
 It turns abstract overspending into something you can see — *"You could've gotten a Birkin."* — so
 the cost of a splurge is felt as a dream delayed, not a red number. It warns before self-set
 thresholds are crossed (Tripwires) and, unlike read-only assistants, completes safe money tasks.
-Success means the user stays under budget more often, saves toward a goal, and trusts the agent
+Success means the user stays within their budget more often, saves toward a goal, and trusts the agent
 enough to let it act.
+
+It works in two steps. **Without a bank connected** (a user's own statements, receipts and typed-in purchases)
+Bun watches and reminds: it mirrors the month, warns at the user's own lines, predicts bills from repeating
+charges, and keeps count of what the user sets aside. The user pays in their bank app and taps "Mark as paid".
+**With a bank connected**, the same screens can act: pay the bill, move the money, behind the PIN and the safety
+rules. Today the only connected bank is the simulated one behind the demo personas, labelled "Bank demo".
 
 ## Positioning
 
@@ -77,7 +83,7 @@ Constraints:
 
 ## Product Principles
 
-1. **Make overspending visible, not shameful** — show the dream it cost, never scold.
+1. **Make the consequence felt, at once and in proportion** — the carrot and the stick. Overspending shows the dream it cost the moment it is logged, and Bun gets visibly cross about it (furious, with a broken mirror, when the month is far past the target). Staying inside the line earns praise, a streak and a calmer Bun. The stick is for the spending, never for telling Bun about it; there is always a stated way back; and the gentle tone softens it.
 2. **Warn before, act safely** — tripwires fire ahead of the line; money only moves with the exact amount and payee bound bank-side.
 3. **The model proposes, the policy engine decides** — no action without the permission gate.
 4. **Be honest about limits** — synthetic sandbox, no real bank data; never overclaim capability.

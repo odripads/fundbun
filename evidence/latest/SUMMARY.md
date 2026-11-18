@@ -24,7 +24,7 @@ FinTechathon 2026 · International AI Track · Topic A (personal-finance agent).
 
 | ID | Category | Task | Expected | Observed | Result |
 |---|---|---|---|---|---|
-| [A1](scenarios/A1.md) | A · Task completion | (load demo) open Home | Mirror status `over`; headline names Weekend in Chengdu; Birkin delay > 0 days; bun mood `burnt` | over, ¥2,580.24 over · “You could've gotten a Weekend in Chengdu.” · Birkin +35 d · burnt | PASS |
+| [A1](scenarios/A1.md) | A · Task completion | (load demo) open Home | Mirror status `over`; headline names Weekend in Chengdu; Birkin delay > 0 days; bun mood `furious` | over, ¥2,580.24 over · “You could've gotten a Weekend in Chengdu.” · Birkin +35 d · furious | PASS |
 | [A2](scenarios/A2.md) | A · Task completion | "How am I doing this month?" | `get_overview` → spent/target/projected/safe-to-spend; reply numbers grounded | get_overview · ¥12,080.24 of ¥9,500, projected ¥15,230 · grounded 2/2 | PASS |
 | [A3](scenarios/A3.md) | A · Task completion | "Where did my money go?" | `get_spending_breakdown` → categories sorted; delivery among top wants | 13 categories, top wants: shopping, dining, delivery, subscriptions | PASS |
 | [A4](scenarios/A4.md) | A · Task completion | "Any insights for me?" | `get_insights` → includes late-night delivery + small-frequent; each with dream equivalent + why | 8 insights: pace_warning, category_up, category_up, late_night, small_frequent, subscription_load, weekend_spike, top_merchant | PASS |
@@ -94,7 +94,7 @@ FinTechathon 2026 · International AI Track · Topic A (personal-finance agent).
 
 ```text
 node            v22.23.1 (darwin-arm64)
-git commit      ae83cc74ca1b
+git commit      78a49b4d9c69 (+ uncommitted changes)
 seed            20261020 (sandbox generator + evidence ids)
 sandbox date    2026-10-22 (personas mei / arif)
 clock           2026-10-22T10:00:00+08:00 fixed, +1 s per step

@@ -27,7 +27,7 @@ you should see; if you see something else, stop and fix that before going on.
    unset ANTHROPIC_API_KEY ANTHROPIC_BASE_URL
    ```
 
-3. Check the code is healthy. Expect about 3,220 tests passed, in about a minute:
+3. Check the code is healthy. Expect about 3,310 tests passed, in about a minute:
 
    ```bash
    npm run typecheck && npm test
@@ -68,11 +68,22 @@ you should see; if you see something else, stop and fix that before going on.
 - **Demo PIN: 2580.** It is shown on the approval sheet for demo personas.
 - **Three blocked attacks pause Bun** (the safety breaker). Every block notice then shows an **Unfreeze in
   Settings** button; unfreeze with the PIN. This is a feature to show, not a fault.
-- **The Sandbox chip shows the date** (`Sandbox · Oct 22`). The demo personas live on a frozen calendar, 22 Oct
-  2026, so their numbers never change. If a judge asks why it says October, that is the answer.
+- **The chip at the top says `Bank demo · Oct 22`.** Jing and Arif run on a simulated bank and a frozen calendar
+  (22 Oct 2026), so their numbers never change. If a judge asks why it says October, that is the answer. "Bank
+  demo" means: this is what Bun does once a bank is connected. A user's own data has no bank and no chip date.
+- **Jing opens furious, on purpose.** She is 27% past her target, so Bun is bright red, the mirror is broken and
+  the words are in capitals with "!!!". Arif opens with a proud Bun: he is spending less than his target. That
+  pair is the carrot and the stick. Ask Bun "why are you angry?" and it explains with her numbers and says what
+  calms it down ("Log 2 days within ¥128 and Bun cools down a step").
+- **Daily check-in:** the card under the two Home buttons. Tap **Check in** and the day gets a stamp and the
+  streak grows (Arif arrives on a 4-day streak, Jing on 2). To show the next day, open the chip → move the
+  calendar forward one day.
 - **Add spending (the live moment):** on Home, tap **Add spending**, type an amount and a few words ("900, Nike
-  sneakers"). Bun guesses the category, the Dream Mirror moves, and a tripwire fires on the spot. Let a judge name
-  the purchase.
+  sneakers"). Bun guesses the category and reacts at once: the face changes, and the sheet says what the purchase
+  cost in the dream ("¥900 = New running shoes", "Your Birkin 25 just moved 12 days further away"), then the way
+  back. As Arif, a small purchase gets the opposite: "Logged. You're on track." Let a judge name the purchase.
+- **Your own data (no bank):** setup is four short steps. After importing a statement, Bills lists the bills to
+  expect from your repeating charges, each with **Mark as paid**. Nothing there says "Pay": no bank is connected.
 - **Receipts:** use the sample receipts. Reading a camera photo is not available in this build.
 - **Your own statement:** importing an older month (for example September) shows that month, with a note
   "Showing September 2026".

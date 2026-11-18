@@ -28,6 +28,15 @@ An AI money buddy ("Bun", logo = a bao bun with a ¥ filling) that helps young p
 - **Dream Mirror** (Odri's core idea): when you overspend, it shows what that money could have bought
   toward your dream ("You could've gotten a …"); under budget, it shows goal progress or a guilt-free treat.
 - **Tripwires** (the crux): spending rules the user sets themselves; Bun warns before they're crossed.
+- **The carrot and the stick** (why the two above exist): behaviour follows its consequences, and a consequence
+  teaches best when it is immediate, consistent and in proportion. So Bun's face is one ladder computed from the
+  ledger (`finance/temper.ts`): happy → calm → worried → angry → furious (bright red, broken mirror, capitals).
+  Good logged days cool Bun down; a daily check-in keeps a streak. The stick is for the spending, never for
+  logging it, and there is always a stated way back.
+- **Two steps, one app** (`finance/expected.ts`, `hasBank`): with no bank connected Bun watches and reminds
+  (bills are predicted from the user's own repeating charges and "marked as paid"; pots are envelopes, "set
+  aside"). With a bank connected the same screens act (pay, move), behind the PIN. Only the demo personas have a
+  bank, and it is simulated ("Bank demo").
 - **Safe action, not just advice**: moves money only between the user's own pots; any payment needs a
   bank-side confirmation bound to the exact amount and payee. 24/24 scripted attacks blocked (with the
   offline engine / mock provider — see §7).
@@ -71,7 +80,7 @@ https://odripads.github.io/fundbun/?demo=jing · demo video https://youtu.be/Se5
 ```
 npm install            # never `npm ci` (it deletes node_modules and its iCloud-ignore flag)
 npm run dev            # web (vite) + API together; the terminal prints the address to open
-npm test               # vitest, ~3,220 tests, about 1 minute — must stay green
+npm test               # vitest, ~3,310 tests, about 1 minute — must stay green
 npm run typecheck
 npm run evidence       # scripted scenarios → evidence/
 npm start              # production server on port 8787 (needed if the demo should call a real AI model)
@@ -115,6 +124,25 @@ latest month (`viewDateOf` in `controller/derive.ts`); the approval sheet shows 
 personas; a paused Bun shows an "Unfreeze in Settings" button. 19 Nov: **Add spending** on Home (`QuickAdd.tsx`,
 `manualCandidate` in `home/model.ts`): type an amount and a few words, no file needed; it counts at once and can
 trip a wire (`addSpending` now applies tripwires for this month's purchases).
+
+**What changed on 19 Nov 2026, later the same day:**
+- Importing is safe to repeat: several statement files for one month, overlapping files, and typed-in purchases
+  are each counted once (`mergeTransactions` in `controller/data.ts`). Known limit: a wallet export plus the bank
+  card that funded it shows one purchase under two names, and both are kept.
+- Bun's temper (`finance/temper.ts`): the ladder above; a blowout day adds a step, every two logged days within
+  the day limit take one off, a day with nothing logged is skipped. New faces `angry` and `furious` in
+  `components/brand` (drawn in code; `burnt` still draws for saved cards). When Bun is angry the Home hero breaks
+  the mirror and shouts (`shout`, `isAngry` in `home/model.ts`; "the broken mirror" in `MirrorHero.module.css`).
+- Bun reacts the moment a purchase is added (`spendReaction` in `home/model.ts`, shown by `QuickAdd.tsx`), and
+  answers "why are you angry?" in three languages (`R-ABOUT-MOOD`).
+- Wording: the good state is "On target", with "left over" and "spend less than your target"; the bad one is
+  "Over budget". Never write "under target" or "under budget" in the app: it reads like falling short.
+- Bills with no bank connected (`finance/expected.ts`, `app.markBillPaid`): predicted from repeating charges,
+  "Mark as paid" / "Undo", no PIN because FundBun pays nothing. Asked to pay, Bun says no bank is connected.
+- Daily check-in (`finance/checkin.ts`, `CheckInCard.tsx`): seven-day stamp card, streak, a golden bun every
+  seventh day. A check-in counts as a logged day for the temper; logging a purchase checks in by itself.
+- Setup is four steps by default (`QUICK_FLOW` in `onboarding/logic.ts`); "Set up every detail instead" gives the
+  full seven.
 
 ## 8. Rules for you
 - Run `npm test` after every change; don't leave the app broken. Small commits with clear messages.
