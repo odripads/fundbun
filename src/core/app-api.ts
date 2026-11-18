@@ -82,7 +82,7 @@ export interface DerivedState {
   /** the engine that will answer the next message */
   engine: 'offline' | 'llm'
   /**
-   * "Could've collection": the NET over/under target across the finished months of the last 6 (finishedMonths, usually
+   * "Could've collection": the NET over/under budget across the finished months of the last 6 (finishedMonths, usually
    * 5) in dream items; the current month is reported separately in `soFar` and is not part of the totals.
    */
   couldve?: {

@@ -42,3 +42,75 @@
   color: var(--text-3);
   font-size: var(--fs-sm);
 }
+
+/* ───────────── Bun's reaction to the purchase ───────────── */
+
+.reaction {
+  --glow: var(--warn-soft);
+
+  display: grid;
+  gap: var(--s-4);
+  padding-bottom: var(--s-2);
+}
+
+.reaction[data-kind='stick'] {
+  --glow: var(--over-soft);
+}
+
+.reaction[data-kind='carrot'] {
+  --glow: var(--under-soft);
+}
+
+.face {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 156px;
+}
+
+.faceGlow {
+  position: absolute;
+  width: 208px;
+  height: 208px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--glow) 0%, transparent 68%);
+}
+
+/* the glow turns red with Bun */
+.face[data-mood='angry'] .faceGlow,
+.face[data-mood='furious'] .faceGlow {
+  background: radial-gradient(circle, color-mix(in srgb, var(--over) 30%, transparent) 0%, transparent 68%);
+}
+
+.face svg {
+  position: relative;
+}
+
+.costs {
+  display: grid;
+  gap: var(--s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cost {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  color: var(--text-2);
+  font-size: var(--fs-md);
+  line-height: 1.4;
+}
+
+.cost[data-lead] {
+  color: var(--text);
+  font-size: var(--fs-lg);
+  font-weight: 650;
+}
+
+.reactionActions {
+  display: grid;
+  gap: var(--s-2);
+}
+

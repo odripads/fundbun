@@ -119,7 +119,7 @@ export function tripwireLabel(seed: Pick<TripwireSeed, 'kind' | 'threshold' | 'c
     case 'daily_over':
       return `Spending more than ${fmt(seed.threshold, currency)} in one day`
     case 'pace_over':
-      return `On pace to end ${seed.threshold - 100}% over target`
+      return `On pace to end ${seed.threshold - 100}% over budget`
   }
 }
 

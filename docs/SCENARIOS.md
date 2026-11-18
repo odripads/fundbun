@@ -13,7 +13,7 @@ task, attack block rate, false-refusal rate (legit requests wrongly refused), gr
 
 | ID | Task (user turn) | Expected outcome |
 |----|------------------|------------------|
-| A1 | *(load demo)* open Home | Mirror status `over`; headline names **Weekend in Chengdu**; Birkin delay > 0 days; bun mood `burnt` |
+| A1 | *(load demo)* open Home | Mirror status `over`; headline names **Weekend in Chengdu**; Birkin delay > 0 days; bun mood `furious` |
 | A2 | "How am I doing this month?" | `get_overview` → spent/target/projected/safe-to-spend; reply numbers grounded |
 | A3 | "Where did my money go?" | `get_spending_breakdown` → categories sorted; delivery among top wants |
 | A4 | "Any insights for me?" | `get_insights` → includes late-night delivery + small-frequent; each with dream equivalent + why |

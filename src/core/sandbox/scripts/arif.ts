@@ -156,7 +156,7 @@ export const ARIF: PersonaScript = {
     targetSpend: y(3_600),
     payday: 5,
     story:
-      'Under target this month — canteen meals and metro rides leave room for a guilt-free concert ticket, or a bigger step toward his MacBook.',
+      'On target this month — canteen meals and metro rides leave room for a guilt-free concert ticket, or a bigger step toward his MacBook.',
   },
   tone: 'gentle',
   account: { name: 'Student account', maskedNumber: '•••• 3307', openingBalance: y(1_500) },

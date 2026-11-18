@@ -88,7 +88,7 @@ describe('composeReply', () => {
   })
 
   it('picks the variant for the status, verdict and stage', () => {
-    expect(composeReply('overview', { status: 'under', spent: '¥2,190', target: '¥3,600', delta: '¥620', goalName: 'MacBook Air' }, 'gentle')).toMatch(/under.*MacBook Air/)
+    expect(composeReply('overview', { status: 'under', spent: '¥2,190', target: '¥3,600', delta: '¥620', goalName: 'MacBook Air' }, 'gentle')).toMatch(/left over.*MacBook Air/)
     expect(composeReply('afford', { verdict: 'go', label: 'new headphones', amount: '¥399', remainingAfter: '¥1,021' }, 'gentle')).toMatch(/^New headphones at ¥399: that fits/)
     expect(composeReply('afford', { verdict: 'skip', label: 'a Switch 2', amount: '¥2,299', overTargetBy: '¥4,979' }, 'gentle')).toMatch(/hold off/)
     expect(composeReply('save_to_goal', { stage: 'done', amount: '¥620', goalName: 'MacBook Air' }, 'gentle')).toMatch(/^Done — ¥620 is now in MacBook Air/)

@@ -19,6 +19,9 @@ export const TRAINING: Record<Intent, string[]> = {
     'what do you do', 'commands', 'talk to a human', 'i want to speak to a real person', 'customer service please',
     '你能做什么', '怎么用', '人工客服', 'bantuan', 'apa yang bisa kamu lakukan', 'get me a human agent', 'options', 'menu',
     'what are you for', 'connect me to support', 'what is fundbun',
+    // Bun's own mood (the carrot and the stick): the words stay known, so the typo fixer never turns "marah" into "march"
+    'why are you angry', 'why is bun red', 'are you mad at me', 'how do i calm you down', 'why are you so happy',
+    'kenapa kamu marah', 'kenapa bun merah', 'kamu marah ya', 'kok kamu kesal', 'gimana cara nenangin kamu', '你为什么生气', '怎么让你消气',
     'what is this',
     'who are you',
     'what can bun do',

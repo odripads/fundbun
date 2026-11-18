@@ -47,7 +47,7 @@ describe('HomeScreen — the Dream Mirror', () => {
     expect(hero).not.toBeNull()
     expect(hero.querySelector('h2')!.textContent).toBe("You could've gotten a Weekend in Chengdu.")
     expect(hero.textContent).toContain('Dream Mirror · October')
-    expect(hero.textContent).toContain('Over target')
+    expect(hero.textContent).toContain('Over budget')
     expect(hero.querySelector('[aria-label="The numbers behind it"]')!.textContent).toContain('Birkin 25 delay')
     expect(hero.querySelector('[aria-label^="AI-generated"]')).not.toBeNull()
     expect(hero.querySelector('img[alt="Weekend in Chengdu"]')).not.toBeNull()
@@ -233,7 +233,7 @@ describe('HomeScreen — the Dream Mirror', () => {
 
   it('shows the six-month could’ve strip with captions per month', async () => {
     const { container } = await renderHome(demo('mei'))
-    const strip = container.querySelector('[aria-label="Over and under target by month"]')!
+    const strip = container.querySelector('[aria-label="Over budget or money left over, by month"]')!
     const cols = strip.querySelectorAll('button')
     expect(cols.length).toBe(6)
     expect(cols[5].getAttribute('aria-pressed')).toBe('true')

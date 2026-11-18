@@ -128,6 +128,7 @@ export type NluFocus =
   | 'explain_mirror'
   | 'explain_pots'
   | 'explain_xray'
+  | 'mood'
 
 export interface NluContext {
   currency: Currency
@@ -1221,6 +1222,15 @@ const BANK_LINK_RE = /\b(?:is|are)\s+(?:this|it|you|bun|fundbun|the app)\b[^.?!]
 const BANK_LINK_ZH_RE = /(?:连接|连着|连上|绑定|接入|关联|对接).{0,6}(?:真实|真的|我的)?(?:银行|账户|支付宝|微信|卡)|真(?:的|实)(?:的)?(?:钱|银行|账户|数据|交易)吗|是(?:演示|模拟|假的|沙盒)(?:的)?吗|沙盒是什么|什么是沙盒|(?:数据|数字|交易)(?:是)?(?:从)?哪(?:里|儿)?来|钱(?:是)?真的(?:会)?(?:动|转|扣)/
 const BANK_LINK_ID_RE = /\b(?:terhubung|tersambung|nyambung|konek)\b[^.?!]{0,20}\b(?:bank|rekening)\b|\b(?:uang|bank|rekening|data)(?:nya)? (?:asli|beneran|sungguhan)\b|\bini (?:cuma )?(?:demo|simulasi)\b|\bapa itu sandbox\b/i
 
+/** "Why are you angry?", "why is Bun red?", "how do I calm you down?": Bun's face, explained with the user's own numbers. */
+const MOOD_WORD = '(?:angry|mad|furious|upset|cross|grumpy|fuming|annoyed|red|happy|proud|worried|sad|shaking|shouting)'
+const MOOD_RE = new RegExp(
+  `\\bwhy\\b[^.?!]{0,30}\\b(?:you|u|bun|he|it|your face)\\b[^.?!]{0,24}\\b${MOOD_WORD}\\b|\\bwhy (?:so|the) ${MOOD_WORD}\\b|\\b(?:are|r) (?:you|u) (?:still |really |so )?(?:${MOOD_WORD}|ok|okay|alright)(?: (?:at|with) me)?\\b|\\bhow (?:do|can|could|should) (?:i|we) (?:calm|cool|cheer|make) (?:you|u|bun|him)\\b|\\b(?:calm|cool) (?:down )?(?:you|bun)(?: down)?\\b|\\bcarrots? and (?:the )?sticks?\\b|\\bwhat(?:'?s| is) (?:wrong|up) with (?:you|bun|your face)\\b|\\bwhy (?:do|does|did) (?:you|bun) (?:turn|go|get|look) \\w+\\b`,
+  'i',
+)
+const MOOD_ZH_RE = /为什么.{0,8}(?:生气|变红|发火|发怒|红了|不高兴|不开心|这么开心|担心)|你(?:是不是)?(?:生气|不高兴|不开心)了?吗?|(?:怎么|怎样|如何).{0,6}(?:消气|让你.{0,4}(?:开心|冷静|高兴)|哄你)|胡萝卜加大棒/
+const MOOD_ID_RE = /\b(?:kenapa|mengapa|kok)\b[^.?!]{0,24}\b(?:marah|merah|kesal|ngambek|senang|sedih|khawatir)\b|\b(?:kamu|bun) (?:lagi |masih )?(?:marah|kesal|ngambek)\b|\b(?:gimana|bagaimana)\b[^.?!]{0,20}\b(?:tenang|reda|nenangin|menenangkan)\b|\bwortel dan tongkat\b/i
+
 const IDENTITY_RE = /\b(?:are|r) (?:you|u) (?:an? |the )?(?:real |actual |true |just an? )?(?:ai|a\.i\.|bot|robot|human|person|llm|chatbot|chatgpt|gpt|claude|deepseek|qwen|gemini|machine|program|language model)\b|\b(?:which|what) (?:ai |language |large language )?(?:model|llm|ai|engine)\b[^.?!]{0,24}\b(?:are you|do you use|is this|powers?|runs?|running|behind|under the hood|using)\b|\b(?:which|what) (?:ai|model|llm) (?:is this|are you)\b|\bwho (?:made|built|created|trained|developed|makes|designed) (?:you|this|bun|fundbun)\b|\bare you (?:powered|run|built|made) (?:by|on|with)\b|\bwhat are you(?: exactly| really| actually)?\s*\??$|\bhow do you (?:actually |really )?work\b|\bis (?:this|it|bun) (?:really |actually )?(?:an? )?(?:real )?(?:ai|a\.i\.|llm)\b|\bdo you use (?:an? |the )?(?:ai|llm|chatgpt|gpt|deepseek|claude|qwen|cloud|model)\b|\bare you (?:real|alive|sentient)\b/i
 const IDENTITY_ZH_RE = /你是(?:不是)?(?:真的|一个|个)?(?:人工智能|ai|机器人|真人|人类|人吗|大模型|模型|chatgpt|gpt|deepseek|通义|千问|文心|豆包)|(?:用|是)(?:的)?(?:是)?(?:什么|哪个|哪家|啥)(?:的)?(?:大|ai)?模型|什么(?:大)?模型|哪个(?:大)?模型|谁(?:开发|做|创造|训练|设计)(?:了|的)?你|你是谁(?:做|开发|创造)的|你是怎么(?:工作|运作|运行)的|是真的ai吗|背后是什么/i
 const IDENTITY_ID_RE = /\b(?:kamu|anda|ini)\s+(?:itu\s+)?(?:ai|bot|robot|manusia|orang)\b|\bmodel (?:ai )?apa\b|\bpakai (?:ai|model) apa\b|\bsiapa yang (?:buat|bikin|membuat|menciptakan)\b|\bkamu (?:manusia|robot) (?:bukan|atau)\b/i
@@ -1281,6 +1291,7 @@ function aboutRule(p: Parsed): RuleHit | null {
   if (n.length > 160 || p.amount !== undefined || LONG_DIGITS_RE.test(n) || EMAIL_RE.test(n) || isOverrideAttempt(n)) return null
   if (TRANSFER_VERB_RE.test(n) && (hasHardExternalSignal(p) || ALL_MONEY_RE.test(n))) return null
   const hit = (focus: NluFocus, rule: string): RuleHit => ({ intent: 'help', rule, confidence: 0.95, slots: { focus } })
+  if (MOOD_RE.test(n) || MOOD_ZH_RE.test(n) || MOOD_ID_RE.test(n)) return hit('mood', 'R-ABOUT-MOOD')
   if (DELETE_DATA_RE.test(n)) return hit('delete_data', 'R-ABOUT-DELETE')
   if (CONSENT_RE.test(n)) return hit('consent', 'R-ABOUT-CONSENT')
   if (MY_DATA_RE.test(n)) return hit('my_data', 'R-ABOUT-DATA')

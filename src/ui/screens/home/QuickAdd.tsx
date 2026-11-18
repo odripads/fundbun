@@ -1,18 +1,22 @@
-import { Plus } from 'lucide-react'
-import { useId, useMemo, useRef, useState, type FormEvent } from 'react'
+import { MessageCircleHeart, Plus } from 'lucide-react'
+import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from 'react'
 import type { AppSnapshot } from '../../../core/app-api'
 import { CATEGORIES } from '../../../core/categories'
+import { checkAffordability } from '../../../core/finance/affordability'
 import { categorize } from '../../../core/finance/categorize'
+import { MIRROR_PLAN_PROMPT } from '../../../core/finance/mirror'
 import { dateLabel } from '../../../core/dates'
 import { CURRENCY_SYMBOL, MINOR_PER_MAJOR, fmt, parseAmount } from '../../../core/money'
 import { similarSpend } from '../../../core/receipt/dedupe'
-import type { CategoryId } from '../../../core/types'
+import type { BunMood, CategoryId } from '../../../core/types'
+import { BunMascot, DreamImage } from '../../components/brand'
 import { MAX_PRICE_MAJOR } from '../../components/dreams/logic'
 import { Button, Callout, Sheet, TextField } from '../../components/ds'
 import { useToast } from '../../components/ds/Toast'
 import { PURCHASE_CATEGORIES } from '../../components/sandbox/logic'
+import { navigate } from '../../router'
 import { shallowEqual, useApp, useSnapshot } from '../../state'
-import { manualCandidate } from './model'
+import { MOOD_WORDS, manualCandidate, spendReaction, type SpendReaction } from './model'
 import styles from './QuickAdd.module.css'
 
 const selectQuickAdd = (s: AppSnapshot) => ({
@@ -27,9 +31,16 @@ export interface QuickAddProps {
   onClose: () => void
 }
 
+/** How long Bun keeps the old face before it changes, so the change is seen. */
+const FACE_CHANGE_MS = 520
+
 /**
  * Add spending by hand in five seconds: an amount, what it was, and a category Bun guesses from the words. No file,
  * no bank. The purchase lands on today, updates the Dream Mirror and can trip a wire like any other.
+ *
+ * Then Bun reacts, at once: the consequence right after the behaviour is what makes it stick. Over budget or a
+ * tripped wire gets the stick (what it cost in the user's dream, and the way back); a purchase that fits gets the
+ * carrot (what is still safe today, and the streak it keeps). See home/model.spendReaction.
  */
 export function QuickAdd({ open, onClose }: QuickAddProps) {
   const app = useApp()
@@ -42,6 +53,15 @@ export function QuickAdd({ open, onClose }: QuickAddProps) {
   const catId = useId()
   const seq = useRef(0)
   const amountRef = useRef<HTMLInputElement | null>(null)
+  const [reaction, setReaction] = useState<(SpendReaction & { added: string }) | null>(null)
+  const [face, setFace] = useState<BunMood>('calm')
+
+  // show the face Bun had, then let it change: the mascot squashes and its colour runs to the new mood
+  useEffect(() => {
+    if (!reaction || reaction.mood === reaction.from) return
+    const timer = window.setTimeout(() => setFace(reaction.mood), FACE_CHANGE_MS)
+    return () => window.clearTimeout(timer)
+  }, [reaction])
 
   const guess = useMemo(() => (what.trim() ? categorize(what, what, -1, rules).category : null), [what, rules])
   // the same amount a day or two away is probably already here (from a statement, or typed earlier): say so, don't block
@@ -52,7 +72,14 @@ export function QuickAdd({ open, onClose }: QuickAddProps) {
 
   function close() {
     setError(null)
+    setReaction(null)
     onClose()
+  }
+
+  function plan() {
+    close()
+    void app.sendMessage(MIRROR_PLAN_PROMPT.prompt).catch(() => undefined)
+    navigate('chat')
   }
 
   function submit(e: FormEvent) {
@@ -68,16 +95,69 @@ export function QuickAdd({ open, onClose }: QuickAddProps) {
       return
     }
     const candidate = manualCandidate({ amount, what, category, today, currency, rules, seq: `${Date.now().toString(36)}_${seq.current++}` })
+    const before = app.getSnapshot()
+    // "Should I buy it?" for this purchase, worked out before it lands: what it does to today, the month and the dream
+    const check = before.derived.ctx ? checkAffordability(before.derived.ctx, candidate.amount, candidate.merchant, candidate.category) : null
     const { added } = app.addSpending([candidate])
-    toast.show({
-      tone: added > 0 ? 'success' : 'neutral',
-      title: added > 0 ? `Added ${fmt(candidate.amount, currency)}` : 'Nothing added',
-      message: added > 0 ? `${candidate.merchant} · ${CATEGORIES[candidate.category].label}. You can change the category in Insights.` : 'That one could not be added.',
-    })
     setAmountText('')
     setWhat('')
     setCategory('')
+    const after = app.getSnapshot()
+    const label = `${candidate.merchant} · ${CATEGORIES[candidate.category].label}`
+    if (added > 0 && check && before.derived.mirror && after.derived.mirror && after.derived.summary) {
+      const known = new Set(before.derived.unseenEvents.map((e) => e.id))
+      const r = spendReaction({
+        amount: candidate.amount,
+        currency,
+        tone: after.derived.mirror.tone,
+        check,
+        before: before.derived.mirror,
+        after: after.derived.mirror,
+        safeAfter: after.derived.summary.safeToSpendToday,
+        tripped: after.derived.unseenEvents.filter((e) => !known.has(e.id)).length,
+      })
+      setFace(r.from)
+      setReaction({ ...r, added: `Added ${fmt(candidate.amount, currency)} · ${label}` })
+      return
+    }
+    toast.show({
+      tone: added > 0 ? 'success' : 'neutral',
+      title: added > 0 ? `Added ${fmt(candidate.amount, currency)}` : 'Nothing added',
+      message: added > 0 ? `${label}. You can change the category in Insights.` : 'That one could not be added.',
+    })
     close()
+  }
+
+  if (reaction) {
+    return (
+      <Sheet open={open} onClose={close} title={reaction.title} description={reaction.added}>
+        <div className={styles.reaction} data-kind={reaction.kind}>
+          <div className={styles.face} data-mood={face}>
+            <span className={styles.faceGlow} aria-hidden="true" />
+            <BunMascot mood={face} size={136} title={MOOD_WORDS[face]} />
+          </div>
+          <p className="sr-only" role="status">{MOOD_WORDS[reaction.mood]}.</p>
+          <ul className={styles.costs}>
+            {reaction.lines.map((line, i) => (
+              <li key={line} className={styles.cost} data-lead={i === 0 || undefined}>
+                {i === 0 && reaction.dream ? <DreamImage image={reaction.dream.image} alt="" size={44} /> : null}
+                <span>{line}</span>
+              </li>
+            ))}
+          </ul>
+          {reaction.wayBack ? <Callout tone="info" title="The way back">{reaction.wayBack}</Callout> : null}
+          {reaction.thanks ? <p className={styles.note}>{reaction.thanks}</p> : null}
+          <div className={styles.reactionActions}>
+            {reaction.plan ? (
+              <Button variant="secondary" size="lg" fullWidth iconStart={<MessageCircleHeart />} onClick={plan}>
+                {MIRROR_PLAN_PROMPT.label}
+              </Button>
+            ) : null}
+            <Button size="lg" fullWidth onClick={close}>{reaction.kind === 'carrot' ? 'Nice' : 'Got it'}</Button>
+          </div>
+        </div>
+      </Sheet>
+    )
   }
 
   return (

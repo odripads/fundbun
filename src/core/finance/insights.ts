@@ -64,7 +64,7 @@ function pace(env: Env): Scored[] {
   const evidence = { spent: s.spent, projected: s.projected, target: s.target, dayOfMonth: s.dayOfMonth, daysInMonth: s.daysInMonth, safeToSpendToday: s.safeToSpendToday }
   if (status === 'over') {
     return [make(env, 'pace_warning', 'over', 100, {
-      title: byTone(env.tone, { gentle: `${f(over)} past your target`, cheeky: `${f(over)} over — ouch`, numbers: `Over target by ${f(over)}` }),
+      title: byTone(env.tone, { gentle: `${f(over)} past your target`, cheeky: `${f(over)} over — ouch`, numbers: `Over budget by ${f(over)}` }),
       body: `You've spent ${f(s.spent)} against a ${f(s.target)} target${s.isCurrent ? `, with ${plural(daysLeft(s), 'day')} to go` : ''}.${thats(dream)}`,
       amount: over,
       severity: 'warn',
@@ -75,7 +75,7 @@ function pace(env: Env): Scored[] {
     })]
   }
   return [make(env, 'pace_warning', 'pace', 100, {
-    title: byTone(env.tone, { gentle: `On pace to overshoot by ${f(over)}`, cheeky: `This pace overshoots by ${f(over)}`, numbers: `Projected ${f(over)} over target` }),
+    title: byTone(env.tone, { gentle: `On pace to overshoot by ${f(over)}`, cheeky: `This pace overshoots by ${f(over)}`, numbers: `Projected ${f(over)} over budget` }),
     body: `At this pace you'll end near ${f(s.projected)} vs your ${f(s.target)} target. Keeping to ${f(s.safeToSpendToday)} a day closes the gap.${thats(dream)}`,
     amount: over,
     severity: 'warn',
@@ -95,7 +95,7 @@ function underBudget(env: Env): Scored[] {
   const dream = dreamFor(surplus, env)
   const closer = progress ? ` Stash it and your ${progress.name} gets ${f(surplus)} closer.` : ''
   return [make(env, 'under_budget', '', 85, {
-    title: s.isCurrent ? `On pace to finish ${f(surplus)} under target` : `You finished ${f(surplus)} under target`,
+    title: s.isCurrent ? `On pace to have ${f(surplus)} left over` : `You finished with ${f(surplus)} left over`,
     body: `${s.isCurrent ? 'Projected' : 'Final'} spend ${f(s.projected)} vs your ${f(s.target)} target.${closer}`,
     amount: surplus,
     severity: 'positive',

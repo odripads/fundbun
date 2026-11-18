@@ -200,7 +200,7 @@ describe('tone preview — the real Dream Mirror engine', () => {
     const p = previewMirror(d)
     expect(p.overspend).toBe(89_900)
     expect(p.headline).toBe("You could've gotten New sneakers.")
-    expect(p.mood).toBe('burnt')
+    expect(p.mood).toBe('angry')
   })
 
   it('a big goal: a realistic month over, in slices, with the goal delay', () => {
@@ -210,8 +210,10 @@ describe('tone preview — the real Dream Mirror engine', () => {
     expect(cheeky.subline).toMatch(/Birkin just moved about \d+ weeks further away/)
     const gentle = previewMirror(complete({ tone: 'gentle' }))
     expect(gentle.headline).toBe("This month's extra ¥2,900 = 3% of your Birkin.")
-    expect(gentle.mood).toBe('worried')
-    expect(previewMirror(complete({ tone: 'numbers' })).headline).toBe('¥2,900 over target.')
+    // a big overshoot: furious, which the gentle tone softens to angry
+    expect(cheeky.mood).toBe('furious')
+    expect(gentle.mood).toBe('angry')
+    expect(previewMirror(complete({ tone: 'numbers' })).headline).toBe('¥2,900 over budget.')
   })
 
   it('works before any dream exists (an example trip)', () => {

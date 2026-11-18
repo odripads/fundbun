@@ -1,6 +1,5 @@
 import { monthLabel, monthsBack, ym } from '../dates'
 import type {
-  BunMood,
   DreamEquivalent,
   DreamItem,
   FinanceContext,
@@ -18,6 +17,7 @@ import { byTone, copyFmt, delayPhrase, type Fmt, pctText, plural, withArticle } 
 import { dreamEquivalents, equivalentOf, fallbackMonthlyRate, goalDelayDays, goalProgress, hoursOfWork, potFor, primaryGoal } from './dreams'
 import { isSpending } from './ledger'
 import { summarizeMonth } from './summary'
+import { bunTemper } from './temper'
 
 /** Early-month projections are mostly noise (research note §5): no pace verdicts before this day. */
 export const PACE_FROM_DAY = 5
@@ -60,14 +60,6 @@ function biggestTreatCovered(amount: Minor, dreams: DreamItem[]): DreamItem | un
   return openItems(dreams)
     .filter((d) => d.kind === 'treat' && d.price <= amount)
     .sort((a, b) => b.price - a.price)[0]
-}
-
-function moodFor(status: MirrorStatus, tone: Tone): BunMood {
-  if (status === 'over') return tone === 'gentle' ? 'worried' : 'burnt'
-  if (status === 'pace_over') return 'worried'
-  if (status === 'under') return 'happy'
-  if (status === 'no_data') return 'sleepy'
-  return 'calm'
 }
 
 // ───────────────────────────── copy ─────────────────────────────
@@ -122,7 +114,7 @@ function overCopy(c: CopyInput): Copy {
     headline: byTone(c.tone, {
       cheeky: !c.item ? `${f(delta)} past your target.` : c.quantity ? `You could've gotten ${itemPhrase(c)}.` : `You could've had ${itemPhrase(c)}.`,
       gentle: c.item ? `${extra} = ${itemPhrase(c)}.` : `${extra} went past your target.`,
-      numbers: `${f(delta)} over target.`,
+      numbers: `${f(delta)} over budget.`,
     }),
     subline: byTone(c.tone, {
       cheeky: `${base}${hasDelay ? ` — and your ${c.goal!.name} just moved ${delayPhrase(c.delayDays)} further away.` : '.'}`,
@@ -141,7 +133,7 @@ function paceOverCopy(c: CopyInput): Copy {
     headline: byTone(c.tone, {
       cheeky: c.item ? `Careful — at this pace you'll trade away ${itemPhrase(c)}.` : `Careful — this pace overshoots by ${f(delta)}.`,
       gentle: c.item ? `Heads up — this pace would cost ${itemPhrase(c)}.` : `Heads up — this pace runs ${f(delta)} over.`,
-      numbers: `Projected ${f(delta)} over target.`,
+      numbers: `Projected ${f(delta)} over budget.`,
     }),
     subline: byTone(c.tone, {
       cheeky: `You're heading for ${f(s.projected)} against a ${f(s.target)} target — ${f(delta)} over, with ${plural(left, 'day')} to turn it around.`,
@@ -176,18 +168,20 @@ function goalPctAfter(goal: GoalProgress, extra: Minor): string {
 function underCopy(c: CopyInput, split: SurplusSplit): Copy {
   const { f, s, delta, goal } = c
   const { treat, stash, rest } = split
-  const pace = s.isCurrent ? `You're on pace to finish ${f(delta)} under your ${f(s.target)} target.` : `You finished ${f(delta)} under your ${f(s.target)} target.`
+  // said as good news: "under" reads like falling short, "less than" and "left over" do not
+  const pace = s.isCurrent ? `You're on pace to spend ${f(delta)} less than your ${f(s.target)} target.` : `You spent ${f(delta)} less than your ${f(s.target)} target.`
+  const left = s.isCurrent ? `On pace for ${f(delta)} left over` : `${f(delta)} left over`
   if (!goal) {
-    const headline = treat ? `You're ${f(delta)} under target — that's ${withArticle(treat.name)}, guilt-free!` : `You're ${f(delta)} under target.`
-    return { headline: c.tone === 'numbers' ? `${f(delta)} under target.` : headline, subline: `${pace} Spend it or save it — your call.` }
+    const headline = treat ? `${left} — that's ${withArticle(treat.name)}, guilt-free!` : `${left}.`
+    return { headline: c.tone === 'numbers' ? `${left}.` : headline, subline: `${pace} Spend it or save it — your call.` }
   }
   const now = `${Math.floor(goal.pct)}%`
   // "(0% there)" reads like a scolding — an empty pot gets a fresh-start line instead
   const started = goal.saved > 0
   const headline = byTone(c.tone, {
-    gentle: started ? `${f(delta)} closer to your ${goal.name} (${now} there).` : `${f(delta)} under target — a first stash for your ${goal.name}?`,
-    cheeky: `${f(delta)} under target — your ${goal.name} is blushing.`,
-    numbers: `${f(delta)} under target.`,
+    gentle: started ? `${f(delta)} closer to your ${goal.name} (${now} there).` : `${left} — a first stash for your ${goal.name}?`,
+    cheeky: `${left} — your ${goal.name} is blushing.`,
+    numbers: `${left}.`,
   })
   const proj = s.isCurrent ? `Projected ${f(s.projected)}` : `Spent ${f(s.spent)}`
   const saved = started ? `${now} saved` : 'nothing saved yet'
@@ -297,12 +291,12 @@ export const MIRROR_PLAN_PROMPT = { label: 'Make a plan with Bun', prompt: 'Help
  *   'over'      spent > target                                   → "You could've gotten a {item}."
  *   'pace_over' current month, spent <= target but projected > target × 1.05
  *                                                                → "Careful — at this pace you'll trade away {item}."
- *   'under'     past month under target, or current month projected < target × 0.95
+ *   'under'     past month under budget, or current month projected < target × 0.95
  *                                                                → "You're ¥X under — that's {treat}, guilt-free!" or
  *                                                                  "¥X closer to your {goal} (62% there)."
  *   'on_track'  otherwise; 'no_data' when no spending.
  * Item choice: the most expensive dream item fully covered by |delta| (quantity >= 1); if none, the primary
- * goal with `fraction`. Under target with a goal the headline is goal-led, so `item` is the goal (with
+ * goal with `fraction`. Under budget with a goal the headline is goal-led, so `item` is the goal (with
  * `fraction` = surplus ÷ goal price). Fill goalDelayDays, hoursOfWork, goal progress, mood and the CTAs:
  *   over/pace_over → `ctaPrompt` "Make a plan with Bun" (primary: starts the get-back-on-track plan in chat)
  *                    and `cta`, a rule that still bites this month (finance/actions.overspendAction);
@@ -333,7 +327,7 @@ export function computeMirror(ctx: FinanceContext, month?: YearMonth): MirrorSta
   const goal = goalItem ? goalProgress(goalItem, ctx) : undefined
   const losing = status === 'over' || status === 'pace_over'
   const under = status === 'under'
-  // under target with a goal, the headline (and so the hero) is about the goal, not the covered item
+  // under budget with a goal, the headline (and so the hero) is about the goal, not the covered item
   const goalLed = under && goalItem !== undefined && delta > 0
   const pick = goalLed
     ? { item: goalItem, fraction: Math.round((delta / goalItem.price) * 10_000) / 10_000 }
@@ -352,6 +346,7 @@ export function computeMirror(ctx: FinanceContext, month?: YearMonth): MirrorSta
     : status === 'on_track' ? onTrackCopy(input)
     : noDataCopy(input, firstMonth ? name : undefined)
   const treat = split?.treat ? equivalentOf(split.rest, split.treat) : undefined
+  const temper = bunTemper(ctx, s, status, tone)
   const secondaryCta = split?.treat ? earmarkAction(ctx, split.treat, split.rest) : undefined
 
   return {
@@ -370,7 +365,8 @@ export function computeMirror(ctx: FinanceContext, month?: YearMonth): MirrorSta
     ...(losing && goal ? { goalDelayDays: delayDays } : {}),
     ...(status !== 'on_track' && status !== 'no_data' ? { hoursOfWork: hoursOfWork(Math.abs(delta), ctx.profile) } : {}),
     tone,
-    mood: moodFor(status, tone),
+    mood: temper.mood,
+    temper,
     ...(cta ? { cta } : {}),
     ...(losing ? { ctaPrompt: { ...MIRROR_PLAN_PROMPT } } : {}),
     ...(treat ? { treat } : {}),
@@ -398,9 +394,9 @@ export function mirrorHistory(ctx: FinanceContext, months: number): MirrorHistor
 
 /** The "could've" tally of the last few months (DerivedState.couldve). */
 export interface CouldveCollection {
-  /** net amount over target across the FINISHED months of the window (0 when they net out under) */
+  /** net amount over budget across the FINISHED months of the window (0 when they net out under) */
   totalOver: Minor
-  /** net amount kept under target across the same finished months (0 when they net out over) */
+  /** net amount kept under budget across the same finished months (0 when they net out over) */
   totalUnder: Minor
   /** dream items totalOver adds up to */
   equivalents: DreamEquivalent[]
@@ -411,7 +407,7 @@ export interface CouldveCollection {
 }
 
 /**
- * "Could've collection": one definition for every story — the NET over/under target across the finished months of
+ * "Could've collection": one definition for every story — the NET over/under budget across the finished months of
  * the last `months` months (an over month and an under month cancel out), with the current month reported separately
  * as `soFar` (a projected surplus or an overshoot still in progress hasn't happened yet). `finishedMonths` says how
  * many months the totals cover.

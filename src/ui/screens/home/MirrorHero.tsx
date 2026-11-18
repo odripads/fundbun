@@ -1,4 +1,4 @@
-import { ArrowRight, BellRing, Check, CircleHelp, Clock3, FlaskConical, Gauge, MessageCircleHeart, PiggyBank, ShieldCheck, Sparkles, Target, TrendingDown, TrendingUp, type LucideIcon } from 'lucide-react'
+import { ArrowRight, BellRing, Check, CircleCheck, CircleHelp, Clock3, Flame, FlaskConical, Gauge, MessageCircleHeart, PiggyBank, ShieldCheck, Sparkles, Target, Thermometer, ThermometerSnowflake, TriangleAlert, type LucideIcon } from 'lucide-react'
 import { useId, useState, type CSSProperties, type ReactNode } from 'react'
 import type { AppSnapshot } from '../../../core/app-api'
 import { dateLabel } from '../../../core/dates'
@@ -25,6 +25,7 @@ import {
   stashAmount,
   type CtaIcon,
   type StatusTone,
+  temperLine,
 } from './model'
 import styles from './MirrorHero.module.css'
 
@@ -47,11 +48,13 @@ const selectHero = (s: AppSnapshot) => ({
   dreams: s.state.dreams,
 })
 
+// the icon says good or bad at a glance: a tick for the good state, a warning for the bad one (an arrow going
+// "up" for overspending, or "down" for doing well, reads the wrong way round)
 const STATUS_ICON: Record<MirrorStatus, LucideIcon> = {
-  over: TrendingUp,
+  over: TriangleAlert,
   pace_over: Gauge,
   on_track: Target,
-  under: TrendingDown,
+  under: CircleCheck,
   no_data: Clock3,
 }
 
@@ -148,6 +151,7 @@ export function MirrorHero({ onCheck, onSandbox }: MirrorHeroProps) {
   const stats = mirrorStats(mirror, currency)
   const actions = heroActions(mirror, dreams)
   const noData = mirror.status === 'no_data'
+  const temper = temperLine(mirror)
   const losing = mirror.status === 'over' || mirror.status === 'pace_over'
   const goalNow = mirror.goal ? mirror.goal.pct : 0
   const goalAfter = mirror.goal ? pctAfter(mirror.goal, stashAmount(mirror.cta)) : 0
@@ -250,7 +254,7 @@ export function MirrorHero({ onCheck, onSandbox }: MirrorHeroProps) {
 
       {/* the first view: everything up to the primary action, sized to the screen with the band under the tab bar
           and the raised "Ask Bun" button left empty (the second choice and the "why" chip start below it) */}
-      <div className={styles.fold}>
+      <div className={styles.fold} data-temper={temper ? true : undefined}>
         <figure className={styles.stage} data-role={hero.role}>
           <div className={styles.mirrorWrap}>
             <Steam />
@@ -301,6 +305,14 @@ export function MirrorHero({ onCheck, onSandbox }: MirrorHeroProps) {
             )}
           </h2>
           <p className={styles.subline}>{mirror.subline}</p>
+          {temper ? (
+            <p className={styles.temper} data-kind={temper.kind}>
+              {temper.kind === 'carrot' ? <Flame aria-hidden="true" /> : temper.kind === 'cooling' ? <ThermometerSnowflake aria-hidden="true" /> : <Thermometer aria-hidden="true" />}
+              <span>
+                <strong>{temper.label}.</strong> {temper.text}
+              </span>
+            </p>
+          ) : null}
         </div>
 
         {stats.length > 0 ? (

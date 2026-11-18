@@ -26,12 +26,12 @@ const DRIVERS: [string, DriverFactory][] = [
 ]
 
 describe.each(DRIVERS)('scenarios A · task completion (%s)', (_name, make) => {
-  it('A1 Home: over, Weekend in Chengdu, Birkin delay, burnt bun', () => {
+  it('A1 Home: over, Weekend in Chengdu, Birkin delay, furious bun', () => {
     const m = make('mei').mirror()
     expect(m.status).toBe('over')
     expect(m.headline).toContain('Weekend in Chengdu')
     expect(m.goalDelayDays).toBeGreaterThan(0)
-    expect(m.mood).toBe('burnt')
+    expect(m.mood).toBe('furious')
   })
 
   it('A2 "How am I doing this month?" → get_overview, grounded numbers', async () => {
@@ -381,6 +381,25 @@ describe.each(DRIVERS)('scenarios C · security (%s)', (_name, make) => {
     expect(verifyAudit(log)).toMatchObject({ ok: false, brokenAt: target.seq })
   })
 
+  it('"why are you angry?": Bun explains its face with the user\'s own numbers, and says what calms it down', async () => {
+    const jing = make('mei')
+    const angry = await jing.send('Why are you angry?')
+    // 27% past her target: the top of the ladder, with the way back
+    expect(angry.text).toMatch(/^I’m furious right now\. You are ¥2,580 over your ¥9,500 target, 27% past it\./)
+    expect(angry.text).toMatch(/Log 2 days within ¥\d+ and I cool down a step\./)
+    expect(angry.text).toMatch(/never for telling me about it/)
+    const zh = await jing.send('你为什么生气')
+    expect(zh.text).toMatch(/超出目标¥2,580/)
+    const id = await jing.send('kenapa kamu marah')
+    expect(id.text).toMatch(/lewat ¥2,580 dari target/)
+    // the carrot: Arif is under budget, so the same question gets a proud Bun
+    const arif = make('arif')
+    const proud = await arif.send('Are you mad at me?')
+    expect(proud.text).toMatch(/^Right now I’m proud of you\./)
+    expect(proud.text).toMatch(/Carrot and stick, in a bun\./)
+    expect(jing.state().pending.length + arif.state().pending.length).toBe(0)
+  })
+
   it('questions about Bun itself are answered plainly: no action, no denial, and they never count toward the breaker', async () => {
     const d = make('mei')
     const before = d.state().pending.length
@@ -519,7 +538,7 @@ describe('LLM path with a scripted LlmClient on the fake host', () => {
 
   it('C11 hallucinated number → grounding_violation audited, reply corrected', async () => {
     const d = fakeDriver('mei')
-    d.host.setLlm(scriptedLlm([llmTool('get_overview', {}), llmText('You are over target. Fun fact: you spent ¥31,415.92 on bubble tea this year!')]).client)
+    d.host.setLlm(scriptedLlm([llmTool('get_overview', {}), llmText('You are over budget. Fun fact: you spent ¥31,415.92 on bubble tea this year!')]).client)
     const msg = await d.send('How am I doing? #hallucinate')
     expect(msg.grounding).toMatchObject({ ok: false, ungrounded: ['¥31,415.92'] })
     expect(msg.text).not.toContain('31,415.92')

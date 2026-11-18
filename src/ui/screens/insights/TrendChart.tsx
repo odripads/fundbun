@@ -90,7 +90,7 @@ export function TrendChart({ bars, selected, currency, onSelect }: TrendChartPro
 
       <ul className={styles.legend} aria-hidden="true">
         <li><span className={cx(styles.swatch, styles.swatchIn)} /> Within target</li>
-        {bars.some((b) => b.over) ? <li><span className={cx(styles.swatch, styles.swatchOver)} /> Over target</li> : null}
+        {bars.some((b) => b.over) ? <li><span className={cx(styles.swatch, styles.swatchOver)} /> Over budget</li> : null}
         {pace ? <li><span className={cx(styles.swatch, styles.swatchGhost, (pace.projected ?? 0) <= pace.target && styles.swatchGhostUnder)} /> Pace</li> : null}
         <li><span className={styles.swatchLine} /> Target{sameTarget && bars[0] ? ` ${fmt(bars[0].target, currency)}` : ''}</li>
       </ul>

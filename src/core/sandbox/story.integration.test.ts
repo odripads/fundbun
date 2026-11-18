@@ -19,7 +19,7 @@ function ctxOf(b: PersonaBundle): FinanceContext {
   return { profile: b.profile, bank: b.bank, dreams: b.dreams, budget: b.budget, tripwires: b.tripwires }
 }
 
-describe('story — Jing is over target', () => {
+describe('story — Jing is over budget', () => {
   const mei = loadPersona('mei', TODAY)
   const ctx = ctxOf(mei)
 
@@ -80,7 +80,7 @@ describe('story — Jing is over target', () => {
   })
 })
 
-describe('story — Arif is under target', () => {
+describe('story — Arif is under budget', () => {
   const arif = loadPersona('arif', TODAY)
   const ctx = ctxOf(arif)
 

@@ -30,7 +30,7 @@ function focusAfterDismiss(card: HTMLElement | null, after: Element | null): voi
 }
 
 function EventArt({ event, size }: { event: TripwireEvent; size: number }) {
-  return event.dream ? <DreamImage image={event.dream.image} alt="" size={size} /> : <BunMascot mood="worried" size={size} />
+  return event.dream ? <DreamImage image={event.dream.image} alt="" size={size} /> : <BunMascot mood="angry" size={size} />
 }
 
 /**

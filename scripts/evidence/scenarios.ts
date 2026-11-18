@@ -69,13 +69,13 @@ const A: ScenarioDef[] = [
   {
     id: 'A1', category: 'A', title: 'Home: Dream Mirror (Jing, over)', persona: 'mei', engine: 'offline',
     task: '(load demo) open Home',
-    expected: 'Mirror status `over`; headline names Weekend in Chengdu; Birkin delay > 0 days; bun mood `burnt`',
+    expected: 'Mirror status `over`; headline names Weekend in Chengdu; Birkin delay > 0 days; bun mood `furious`',
     async run(s) {
       const m = await openHome(s)
       s.check('mirror status is over', m.status === 'over', m.status)
       s.check('headline names Weekend in Chengdu', m.headline.includes('Weekend in Chengdu'), m.headline)
       s.check('primary goal is the Birkin and it is delayed > 0 days', m.goal?.name === 'Birkin 25' && (m.goalDelayDays ?? 0) > 0, `${m.goal?.name} +${m.goalDelayDays} d`)
-      s.check('bun mood is burnt', m.mood === 'burnt', m.mood)
+      s.check('bun mood is furious (27% past the target)', m.mood === 'furious', m.mood)
       s.check('October-to-date spend is ¥12,000–¥12,400 against a ¥9,500 target', m.spent >= 1_200_000 && m.spent <= 1_240_000 && m.target === 950_000, `${s.fmt(m.spent)} / ${s.fmt(m.target)}`)
       s.observe(`${m.status}, ${s.fmt(m.delta)} over · “${m.headline}” · Birkin +${m.goalDelayDays} d · ${m.mood}`)
     },
@@ -92,7 +92,7 @@ const A: ScenarioDef[] = [
       s.check('mirror card with spent, target and projected', Boolean(m && m.spent > 0 && m.target > 0 && m.projected > 0), m ? `${s.fmt(m.spent)} / ${s.fmt(m.target)} → ${s.fmt(m.projected)}` : 'no card')
       s.check('reply quotes spent and target', Boolean(m && msg.text.includes(s.fmtCopy(m.spent)) && msg.text.includes(s.fmtCopy(m.target))), clip(msg.text, 160))
       s.check('projected month-end shown on the card matches the month summary', Boolean(m && summary && m.projected === summary.projected && m.projected > m.target), summary ? `projected ${s.fmt(summary.projected)} > target` : 'no summary')
-      s.check('safe-to-spend today is ¥0 — the month is already over target', summary?.safeToSpendToday === 0, summary ? s.fmt(summary.safeToSpendToday) : 'no summary')
+      s.check('safe-to-spend today is ¥0 — the month is already over budget', summary?.safeToSpendToday === 0, summary ? s.fmt(summary.safeToSpendToday) : 'no summary')
       s.check('reply numbers are grounded (≥ 2 checked, none invented)', msg.grounding?.ok === true && (msg.grounding?.checked ?? 0) >= 2, msg.grounding)
       s.observe(`get_overview · ${m ? `${s.fmt(m.spent)} of ${s.fmt(m.target)}, projected ${s.fmt(m.projected)}` : '?'} · grounded ${msg.grounding?.checked}/${msg.grounding?.checked}`)
     },
@@ -170,7 +170,7 @@ const A: ScenarioDef[] = [
       const r = card(msg, 'affordability')?.result
       s.check('tool check_affordability', tools(msg).includes('check_affordability'), tools(msg))
       s.check('amount ¥1,299 parsed', r?.amount === 129_900, r?.amount)
-      s.check('verdict skip (already over target)', r?.verdict === 'skip', r?.verdict)
+      s.check('verdict skip (already over budget)', r?.verdict === 'skip', r?.verdict)
       s.check('hours of work > 0', (r?.hoursOfWork ?? 0) > 0, r?.hoursOfWork)
       s.check('Birkin 25 delay > 0 days', r?.goalName === 'Birkin 25' && (r?.goalDelayDays ?? 0) > 0, `${r?.goalName} +${r?.goalDelayDays} d`)
       s.observe(`verdict ${r?.verdict}, ${r?.hoursOfWork} h of work, ${r?.goalName} +${r?.goalDelayDays} d`)
@@ -272,7 +272,7 @@ const A: ScenarioDef[] = [
     async run(s) {
       const m = await openHome(s)
       s.check('mirror status is under', m.status === 'under', m.status)
-      s.check('under target by ¥500–¥700 (projected ≈ ¥3,000)', m.delta >= 50_000 && m.delta <= 70_000, `${s.fmt(m.delta)} under, projected ${s.fmt(m.projected)}`)
+      s.check('under budget by ¥500–¥700 (projected ≈ ¥3,000)', m.delta >= 50_000 && m.delta <= 70_000, `${s.fmt(m.delta)} under, projected ${s.fmt(m.projected)}`)
       s.check('headline leads with MacBook progress', /MacBook/.test(m.headline) && m.item?.id === 'dream_macbook', m.headline)
       const stash = m.cta?.tool === 'transfer_to_goal' ? Number(m.cta.args.amount) : 0
       const rest = m.delta - stash

@@ -7,6 +7,7 @@ import { useState, type ReactNode } from 'react'
 import { CATEGORIES } from '../../core/categories'
 import type { Autonomy, CategoryId, Tier, Tone } from '../../core/types'
 import { BunMascot, DreamImage, Logo } from '../components/brand'
+import { BUN_MOODS, MOODS } from '../components/brand/moods'
 import {
   AiBadge,
   Badge,
@@ -154,8 +155,8 @@ function BadgesAndChips() {
       <Row>
         <Badge>Neutral</Badge>
         <Badge variant="accent">Goal</Badge>
-        <Badge variant="under">Under target</Badge>
-        <Badge variant="over">Over target</Badge>
+        <Badge variant="under">On target</Badge>
+        <Badge variant="over">Over budget</Badge>
         <Badge variant="warn">Due in 3 days</Badge>
         <Badge variant="info">New</Badge>
         <Badge variant="solid">Sandbox</Badge>
@@ -221,11 +222,11 @@ function Cards() {
       </Card>
       <div className={styles.cardGrid}>
         <Card variant="over" padding="sm">
-          <p className={styles.caption}>Over target</p>
+          <p className={styles.caption}>Over budget</p>
           <Money amount={yuan(2740)} size="lg" tone="over" />
         </Card>
         <Card variant="under" padding="sm">
-          <p className={styles.caption}>Under target</p>
+          <p className={styles.caption}>On target</p>
           <Money amount={yuan(640)} size="lg" tone="under" />
         </Card>
         <Card variant="accent" padding="sm">
@@ -526,9 +527,27 @@ function Overlays() {
   )
 }
 
+/** Every face on the ladder, at the hero size and at the small cut. */
+function Moods() {
+  return (
+    <Group title="Bun’s moods" note="The carrot and the stick: happy → calm → worried → angry → furious.">
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--sp-4, 16px)', alignItems: 'flex-end' }}>
+        {BUN_MOODS.map((mood) => (
+          <figure key={mood} style={{ margin: 0, display: 'grid', justifyItems: 'center', gap: 6 }}>
+            <BunMascot mood={mood} size={104} title={MOODS[mood].label} />
+            <BunMascot mood={mood} size={44} />
+            <figcaption className={styles.small}>{mood}</figcaption>
+          </figure>
+        ))}
+      </div>
+    </Group>
+  )
+}
+
 function Showcase() {
   return (
     <div className={styles.showcase}>
+      <Moods />
       <TypeAndColour />
       <Buttons />
       <BadgesAndChips />

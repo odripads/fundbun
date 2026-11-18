@@ -26,7 +26,10 @@ describe('computeMirror — over', () => {
     const s = summarizeMonth(ctx)
     const m = computeMirror(ctx)
     const delta = s.spent - s.target
-    expect(m).toMatchObject({ status: 'over', month: '2026-10', spent: s.spent, target: yuan(9_500), delta, quantity: 1, tone: 'cheeky', mood: 'burnt' })
+    expect(m).toMatchObject({ status: 'over', month: '2026-10', spent: s.spent, target: yuan(9_500), delta, quantity: 1, tone: 'cheeky', mood: 'furious' })
+    // more than a fifth past the target: the top of the ladder
+    expect(m.temper).toMatchObject({ heat: 4, mood: 'furious', cooling: false })
+    expect(m.temper!.overBy).toBeGreaterThan(0.2)
     expect(delta).toBeGreaterThan(yuan(2_400))
     expect(m.item?.id).toBe('dream_chengdu')
     expect(m.fraction).toBeUndefined()
@@ -61,9 +64,12 @@ describe('computeMirror — over', () => {
     expect(gentle.headline).toMatch(/^This month's extra ¥[\d,]+ = a Weekend in Chengdu\.$/)
     expect(gentle.subline).toContain('nudges your Birkin 25 back')
     expect(gentle.subline).not.toMatch(/could've|should|fail|bad|waste/i)
-    expect(gentle.mood).toBe('worried')
+    // gentle softens the face one step; the numbers behind it are the same
+    expect(gentle.mood).toBe('angry')
+    expect(gentle.temper?.heat).toBe(4)
     const numbers = computeMirror(meiLike('numbers'))
-    expect(numbers.headline).toMatch(/^¥[\d,]+ over target\.$/)
+    expect(numbers.mood).toBe('furious')
+    expect(numbers.headline).toMatch(/^¥[\d,]+ over budget\.$/)
     expect(numbers.subline).toContain('Equals a Weekend in Chengdu.')
     // the goal delay on the shared unit convention (days under two weeks, then weeks) — never raw "35 days"
     expect(numbers.subline).toMatch(/Birkin 25 delayed about \d+ weeks\./)
@@ -81,7 +87,7 @@ describe('computeMirror — over', () => {
     expect(computeMirror(ctx).cta).toMatchObject({ tool: 'create_tripwire', args: { kind: 'category_pct', threshold: 80, category: 'delivery' }, label: 'Alert me at 80% of Food delivery' })
   })
 
-  it('never an 80% alert for a category already past 80%: over target it offers a daily line below the current pace', () => {
+  it('never an 80% alert for a category already past 80%: over budget it offers a daily line below the current pace', () => {
     const ctx = meiLike()
     ctx.budget = { month: '2026-10', total: yuan(800), categories: [{ category: 'delivery', limit: yuan(800) }], method: 'custom', createdBy: 'user', createdAt: '2026-10-01T00:00:00Z' }
     const m = computeMirror(ctx)
@@ -158,7 +164,7 @@ describe('computeMirror — under', () => {
     expect(m.headline).toMatch(/^¥6\d\d closer to your MacBook Air \(46% there\)\.$/)
     const stash = m.cta!.args.amount as number
     const after = Math.floor(((m.goal!.saved + stash) / m.goal!.price) * 100)
-    expect(m.subline).toBe(`You're on pace to finish ¥${delta / 100} under your ¥3,600 target. Stash ¥${stash / 100} and your MacBook Air is ${after}% there — or keep it as breathing room. Your call.`)
+    expect(m.subline).toBe(`You're on pace to spend ¥${delta / 100} less than your ¥3,600 target. Stash ¥${stash / 100} and your MacBook Air is ${after}% there — or keep it as breathing room. Your call.`)
     // ¥3xx left after the stash covers neither the ¥480 ticket nor the ¥399 sneakers: no treat is offered
     expect(m.treat).toBeUndefined()
     expect(m.goalDelayDays).toBeUndefined()
@@ -186,10 +192,10 @@ describe('computeMirror — under', () => {
 
   it('cheeky and numbers variants', () => {
     const cheeky = computeMirror(arifLike('cheeky'))
-    expect(cheeky.headline).toMatch(/^¥6\d\d under target — your MacBook Air is blushing\.$/)
+    expect(cheeky.headline).toMatch(/^On pace for ¥6\d\d left over — your MacBook Air is blushing\.$/)
     expect(cheeky.subline).toMatch(/Stash ¥3\d0 and you're \d\d% of the way there, or keep it as breathing room — your call, legend\.$/)
     const numbers = computeMirror(arifLike('numbers'))
-    expect(numbers.headline).toMatch(/^¥6\d\d under target\.$/)
+    expect(numbers.headline).toMatch(/^On pace for ¥6\d\d left over\.$/)
     expect(numbers.subline).toMatch(/MacBook Air: 46% saved, \d\d% with ¥3\d0 stashed\.$/)
     const ctx = arifLike('numbers')
     ctx.dreams = [...ARIF_DREAMS, makeDream('dream_gig', 'Gig ticket', 250, 'treat')]
@@ -200,16 +206,18 @@ describe('computeMirror — under', () => {
     const ctx = arifLike()
     ctx.dreams = ARIF_DREAMS.filter((d) => d.kind === 'treat')
     const m = computeMirror(ctx)
-    expect(m.headline).toMatch(/^You're ¥6\d\d under target — that's a Concert ticket, guilt-free!$/)
+    expect(m.headline).toMatch(/^On pace for ¥6\d\d left over — that's a Concert ticket, guilt-free!$/)
     expect(m.cta).toBeUndefined()
   })
 
-  it('a finished month under target stashes the whole surplus', () => {
+  it('a finished month with money left over stashes the whole surplus', () => {
     const ctx = arifLike()
     const s = summarizeMonth(ctx, '2026-09')
     const m = computeMirror(ctx, '2026-09')
     expect(m).toMatchObject({ status: 'under', delta: s.target - s.spent, projected: s.spent })
-    expect(m.subline).toContain('You finished')
+    // said as good news: "spent less than", never "under"
+    expect(m.subline).toMatch(/^You spent ¥\d+ less than your ¥3,600 target\./)
+    expect(m.subline).not.toMatch(/\bunder\b/)
     expect(m.cta?.args.amount).toBe(Math.floor(m.delta / 1000) * 1000)
   })
 })
@@ -304,7 +312,7 @@ describe('mirrorHistory & couldveCollection', () => {
     expect(c.finishedMonths).toBe(3)
     expect(c.totalOver).toBe(Math.max(0, net))
     expect(c.totalUnder).toBe(Math.max(0, -net))
-    // October is over target, but it isn't finished: it is shown on its own, not added to the total
+    // October is over budget, but it isn't finished: it is shown on its own, not added to the total
     expect(c.soFar).toEqual({ month: '2026-10', status: 'over', delta: h[3].delta })
     if (c.totalOver > 0) expect(c.equivalents.length).toBeGreaterThan(0)
   })
@@ -389,17 +397,17 @@ describe('computeMirror — brand-new users', () => {
     ctx.dreams = [japan, ...ARIF_DREAMS.filter((d) => d.kind === 'treat')]
     const m = computeMirror(ctx)
     expect(m.status).toBe('under')
-    expect(m.headline).toMatch(/^¥6\d\d under target — a first stash for your Trip to Japan\?$/)
+    expect(m.headline).toMatch(/^On pace for ¥6\d\d left over — a first stash for your Trip to Japan\?$/)
     expect(computeMirror(withTone(ctx, 'numbers')).subline).toContain('Trip to Japan: nothing saved yet')
   })
 
-  it('a newcomer who is already over target still sees the honest over mirror', () => {
+  it('a newcomer who is already over budget still sees the honest over mirror', () => {
     const ctx = makeCtx({ today: '2026-10-08', txns: daily('2026-10-01', '2026-10-08', 'Taobao', 'shopping', 1_200), dreams: [japan], profile: { targetSpend: yuan(8_000) } })
     expect(computeMirror(ctx).status).toBe('over')
   })
 })
 
-describe('computeMirror — treat & secondary CTA (under target)', () => {
+describe('computeMirror — treat & secondary CTA (under budget)', () => {
   const withGig = (balance?: number) => {
     const ctx = arifLike()
     ctx.dreams = [...ARIF_DREAMS, makeDream('dream_gig', 'Gig ticket', 250, 'treat', { image: 'preset:ticket' })]

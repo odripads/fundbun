@@ -86,7 +86,7 @@ Below are 30 representative operations, chosen across all four categories. **Tim
 
 | Line | Time | Scenario | Action | Result | Screenshot / link |
 |---|---|---|---|---|---|
-| 10 | 10:00:01 | A1 · Jing opens Home | UI reads the Dream Mirror | Status **over**: "You could've gotten a Weekend in Chengdu." ¥2,580 over a ¥9,500 target; Birkin 25 about 5 weeks further away; bun mood burnt | Figure 1 · [A1](../evidence/latest/scenarios/A1.md) |
+| 10 | 10:00:01 | A1 · Jing opens Home | UI reads the Dream Mirror | Status **over**: "You could've gotten a Weekend in Chengdu." ¥2,580 over a ¥9,500 target; Birkin 25 about 5 weeks further away; bun mood furious | Figure 1 · [A1](../evidence/latest/scenarios/A1.md) |
 | 24–25 | 10:00:01 | A2 · "How am I doing this month?" | `get_overview` (T0, ALLOW) | "October 2026: spent ¥12,080.24 of ¥9,500 (over)"; reply grounded, 2/2 numbers traced | [A2](../evidence/latest/scenarios/A2.md) |
 | 78 | 10:00:01 | A5 · "Check my bills" | `analyze_bills` (T0) | 6 findings: Tencent Video charged twice, iQIYI price hike, electricity +57%, three video services, bills due soon, annual cost | Figure 2 · [A5](../evidence/latest/scenarios/A5.md) |
 | 114 | 10:00:01 | A7 · "Can I afford ¥1,299 sneakers?" | `check_affordability` (T0) | Verdict **skip**: 12.2 hours of work; Birkin 25 delayed 18 more days | [A7](../evidence/latest/scenarios/A7.md) |
@@ -193,7 +193,7 @@ npm run dev            # web on http://localhost:5173, LLM gateway on :8787
 
 | Try | Expected result |
 |---|---|
-| Home as Jing | "You could've gotten a Weekend in Chengdu."; Birkin pushed back about 5 weeks; burnt bun (A1) |
+| Home as Jing | "You could've gotten a Weekend in Chengdu."; Birkin pushed back about 5 weeks; a furious red Bun (A1) |
 | "Help me get back on track this month" | A 7-step plan: reads run; the delivery cap and tripwire apply; the Youku cancellation waits for your PIN (A11) |
 | "Move ¥300 to my Chengdu fund" → Approve → Undo | Confirm card → executed → undone within 30 s (B1) |
 | "Pay my electricity bill" → wrong PIN, then 2580 | Wrong PIN refused; ¥486.20 paid to the verified payee (B5) |

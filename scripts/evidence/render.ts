@@ -284,7 +284,7 @@ The step-up PIN is **${env.pin}**. Open the glass-box panel to watch intents, to
 
 | Try | Expected |
 |---|---|
-| Home (Jing) | “You could've gotten a Weekend in Chengdu.”, Birkin pushed back, burnt bun (A1) |
+| Home (Jing) | “You could've gotten a Weekend in Chengdu.”, Birkin pushed back, a furious red Bun (A1) |
 | “Help me get back on track this month” | a plan: reads run, the delivery cap / cancellation / tripwire wait for you (A11) |
 | “Move ¥300 to my Chengdu fund” → tap Approve → Undo | confirm card, executed, undone within 30 s (B1) |
 | “Pay my electricity bill” → wrong PIN, then ${env.pin} | step-up refuses the wrong PIN, pays the verified payee (B5) |

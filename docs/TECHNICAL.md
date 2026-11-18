@@ -415,13 +415,13 @@ Limits round to whole yuan, or to ¥10 at ¥500 and above, and the remainder goe
 - **Goal delay.** round(delta / monthly rate × 30.4) days. Monthly rate is the average net inflow to the goal's pot over the last 3 complete months, or 10% of income if there is no history. Every surface (hero, chat text, cards, "Why am I seeing this?") shows it on one unit convention (`finance/copy.durationText`): days under two weeks, then weeks, then months.
 - **Hours of work.** delta / (monthly income / work hours per month); work hours default to 174.
 - **Copy.** Over, cheeky: "You could've gotten a Weekend in Chengdu." Over, gentle: "This month's extra ¥X = [item]." Pace over: "Careful — at this pace you'll trade away [item]." Under: "¥X closer to your [goal] (N% there)."
-- **Mood.** Over: burnt (worried in the gentle tone). Pace over: worried. Under: happy. On track: calm. No data: sleepy.
+- **Mood (the carrot and the stick).** One ladder, computed from the ledger in `finance/temper`: under → happy; on track → calm; heading over → worried; over → angry; 20% or more past the target → furious (bright red). Day by day it moves: a blowout (today alone is three times the day limit while the month is over or heading over) adds a step, and every two logged days in a row within the day limit take a step off, down to worried. A day with nothing logged is skipped, so going quiet never calms Bun. The gentle tone softens the angry faces one step. The day limit is the user's own daily tripwire, or an even share of the target after fixed costs. No data: sleepy.
 - **Call to action**, built by code:
   - over or pace over: an 80% tripwire on the biggest "want" category if it has a budget, otherwise a tighter cap;
   - under: stash half the projected surplus, capped at what the goal still needs and rounded down to ¥10. A treat is only ever the user's own choice.
 
 Measured results:
-- Jing is ¥2,580.24 over, which pushes her Birkin back 35 days (shown as about 5 weeks); mood burnt (A1).
+- Jing is ¥2,580.24 over, which pushes her Birkin back 35 days (shown as about 5 weeks); 27% past her target, so mood furious (A1).
 - Arif is ¥668 under; call to action "Stash ¥330 in MacBook Air" (A13).
 - ¥1,299 sneakers would cost Jing 12.2 hours of work and 18 Birkin days (A7).
 

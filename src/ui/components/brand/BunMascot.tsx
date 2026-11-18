@@ -3,6 +3,7 @@ import type { BunMood } from '../../../core/types'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
 import { cx } from '../ds/cx'
 import {
+  ANGER_VEIN,
   BODY_PATH,
   CUTS,
   FACES,
@@ -11,17 +12,21 @@ import {
   KNOT_TWIST,
   MOUTHS,
   POCKET_STOPS,
+  SHOUT,
+  SHOUT_TEETH,
   SMALL_BODY_TRANSFORM,
   SNORE,
   SPARKLE,
   SWEAT_DROP,
   VIEW,
+  angryBrowPath,
   bodyStroke,
   browPath,
   closedEyePath,
   crumbPath,
   cutForSize,
   eyeHighlight,
+  glareEyePath,
   spiralPath,
   yenPath,
   zPath,
@@ -103,6 +108,7 @@ export function BunMascot({ mood = 'calm', size = 96, animated = true, className
       data-cut={cut}
       data-pocket={parts.pocket}
       data-toasted={parts.toasted || undefined}
+      data-flush={parts.flush || undefined}
       data-animated={moving || undefined}
       role={title ? 'img' : undefined}
       aria-label={title || undefined}
@@ -112,14 +118,16 @@ export function BunMascot({ mood = 'calm', size = 96, animated = true, className
       {title ? <title>{title}</title> : null}
       <Defs ids={ids} />
       <Vapour cut={cut} kind={parts.vapour} />
-      <g className={styles.bob}>
-        <g ref={bodyRef} className={styles.squish}>
-          <Body cut={cut} ids={ids} />
-          <g ref={faceRef} className={styles.face}>
-            <Face cut={cut} parts={parts} />
+      <g className={parts.shake ? styles.shake : undefined}>
+        <g className={styles.bob}>
+          <g ref={bodyRef} className={styles.squish}>
+            <Body cut={cut} ids={ids} />
+            <g ref={faceRef} className={styles.face}>
+              <Face cut={cut} parts={parts} />
+            </g>
+            <Pocket cut={cut} ids={ids} />
+            <Accessory cut={cut} kind={parts.accessory} />
           </g>
-          <Pocket cut={cut} ids={ids} />
-          <Accessory cut={cut} kind={parts.accessory} />
         </g>
       </g>
     </svg>
@@ -190,7 +198,7 @@ function Face({ cut, parts }: { cut: Cut; parts: MoodParts }) {
         <ellipse cx={b.right} cy={b.cy} rx={b.rx} ry={b.ry} />
       </g>
       <Eyes cut={cut} style={parts.eyes} blink={parts.blink} />
-      {parts.brows ? <Brows cut={cut} /> : null}
+      {parts.brows !== 'none' ? <Brows cut={cut} angry={parts.brows === 'angry'} /> : null}
       <Mouth cut={cut} style={parts.mouth} />
     </>
   )
@@ -230,6 +238,15 @@ function Eye({ cut, x, style }: { cut: Cut; x: number; style: EyeStyle }) {
       )
     case 'closed':
       return <path d={closedEyePath(x, cy, rx, ry)} className={styles.lash} strokeWidth={line} />
+    case 'glare': {
+      const inner = x < VIEW / 2 ? 1 : -1
+      return (
+        <g>
+          <path d={glareEyePath(x, cy, rx, ry)} className={styles.pupil} />
+          <circle cx={x - inner * rx * 0.3} cy={cy + ry * 0.12} r={rx * 0.2} className={styles.glint} />
+        </g>
+      )
+    }
     default:
       return (
         <g>
@@ -240,13 +257,14 @@ function Eye({ cut, x, style }: { cut: Cut; x: number; style: EyeStyle }) {
   }
 }
 
-function Brows({ cut }: { cut: Cut }) {
+function Brows({ cut, angry }: { cut: Cut; angry: boolean }) {
   const e = CUTS[cut].eyes
   const lift = FACES[cut].browLift
+  const brow = (x: number) => (angry ? angryBrowPath(x, e.cy, e.rx, e.ry) : browPath(x, e.cy, e.rx, e.ry, lift))
   return (
-    <g className={styles.lash} strokeWidth={CUTS[cut].mouthWidth}>
-      <path d={browPath(e.left, e.cy, e.rx, e.ry, lift)} />
-      <path d={browPath(e.right, e.cy, e.rx, e.ry, lift)} />
+    <g className={styles.lash} strokeWidth={CUTS[cut].mouthWidth * (angry ? 1.3 : 1)}>
+      <path d={brow(e.left)} />
+      <path d={brow(e.right)} />
     </g>
   )
 }
@@ -263,6 +281,11 @@ function Mouth({ cut, style }: { cut: Cut; style: MouthStyle }) {
         </>
       ) : style === 'snore' ? (
         <ellipse {...SNORE} className={styles.mouthFill} />
+      ) : style === 'shout' ? (
+        <>
+          <path d={SHOUT} className={styles.mouthFill} strokeWidth={width * 0.6} />
+          <path d={SHOUT_TEETH} className={styles.teeth} />
+        </>
       ) : (
         <path d={MOUTHS[style]} className={styles.lash} strokeWidth={width} />
       )}
@@ -302,10 +325,13 @@ function Vapour({ cut, kind }: { cut: Cut; kind: MoodParts['vapour'] }) {
       </g>
     )
   }
-  const paths = kind === 'smoke' ? f.smoke : g.steam
+  const paths = kind === 'smoke' ? f.smoke : kind === 'fume' ? f.fume : g.steam
   if (!paths.length) return null
   return (
-    <g className={kind === 'smoke' ? styles.smoke : styles.steam} strokeWidth={kind === 'smoke' ? g.mouthWidth * 1.4 : g.steamWidth}>
+    <g
+      className={kind === 'smoke' ? styles.smoke : kind === 'fume' ? styles.fume : styles.steam}
+      strokeWidth={kind === 'smoke' ? g.mouthWidth * 1.4 : kind === 'fume' ? Math.max(g.steamWidth, g.mouthWidth * 1.3) : g.steamWidth}
+    >
       {paths.map((d) => (
         <path key={d} d={d} className={styles.wisp} />
       ))}
@@ -323,6 +349,14 @@ function Accessory({ cut, kind }: { cut: Cut; kind: MoodParts['accessory'] }) {
             <path d={SPARKLE} className={styles.sparkle} />
           </g>
         ))}
+      </g>
+    )
+  }
+  if (kind === 'vein') {
+    const [x, y, s] = f.vein
+    return (
+      <g transform={`translate(${x} ${y}) scale(${s})`}>
+        <path d={ANGER_VEIN} className={styles.vein} strokeWidth={4.4} />
       </g>
     )
   }

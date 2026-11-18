@@ -7,6 +7,7 @@
 import type { DataSource, OnboardingInput, TripwireInput } from '../../../core/app-api'
 import { dateLabel } from '../../../core/dates'
 import { computeMirror } from '../../../core/finance/mirror'
+import { moodOf, overShare } from '../../../core/finance/temper'
 import { fmt, MINOR_PER_MAJOR, parseAmount } from '../../../core/money'
 import { importCsv, type CsvImportResult } from '../../../core/sandbox/csv'
 import { isValidPinFormat } from '../../../core/security/pin'
@@ -340,9 +341,9 @@ export function previewMirror(d: OnboardingDraft): MirrorPreview {
     const copy: Record<Tone, string> = {
       gentle: `This month’s extra ${f(overspend)} went past your target.`,
       cheeky: `You could’ve gotten ${dream.name}.`,
-      numbers: `${f(overspend)} over target.`,
+      numbers: `${f(overspend)} over budget.`,
     }
-    return { headline: copy[d.tone], subline: `You’re ${f(overspend)} over your ${f(target)} target.`, mood: d.tone === 'gentle' ? 'worried' : 'burnt', dream, overspend, target }
+    return { headline: copy[d.tone], subline: `You’re ${f(overspend)} over your ${f(target)} target.`, mood: moodOf('over', d.tone, overShare(target + overspend, target)), dream, overspend, target }
   }
 }
 

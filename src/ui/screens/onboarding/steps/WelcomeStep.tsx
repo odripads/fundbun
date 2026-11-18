@@ -103,7 +103,7 @@ export function WelcomeStep({ headingRef, resumable, onboarded, demoLoading, onS
                   <span className={styles.demoHead}>
                     <span className={styles.avatar}>
                       <DreamImage image={d.image} alt="" size={48} />
-                      <BunMascot mood={d.status === 'over' ? 'burnt' : 'happy'} size={28} className={styles.avatarBun} animated={false} />
+                      <BunMascot mood={d.status === 'over' ? 'angry' : 'happy'} size={28} className={styles.avatarBun} animated={false} />
                     </span>
                     <span className={styles.who}>
                       <span className={styles.demoName}>
@@ -113,7 +113,7 @@ export function WelcomeStep({ headingRef, resumable, onboarded, demoLoading, onS
                     </span>
                   </span>
                   <Badge variant={d.status} size="sm" icon={<Trend />}>
-                    {d.status === 'over' ? 'Over target' : 'Under target'}
+                    {d.status === 'over' ? 'Over budget' : 'On target'}
                   </Badge>
                   <span className={styles.mirror}>{d.mirror}</span>
                   <span className={styles.open}>

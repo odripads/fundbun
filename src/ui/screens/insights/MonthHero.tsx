@@ -1,7 +1,7 @@
 import { ArrowDownRight, ArrowRight, ArrowUpRight, CalendarDays, Target } from 'lucide-react'
 import { useId } from 'react'
 import { fmt } from '../../../core/money'
-import type { Currency, MonthSummary, Tone } from '../../../core/types'
+import type { BunMood, Currency, MonthSummary, Tone } from '../../../core/types'
 import { BunMascot } from '../../components/brand'
 import { Money, cx } from '../../components/ds'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
@@ -14,6 +14,8 @@ export interface MonthHeroProps {
   comparison: Comparison | null
   tone: Tone
   currency: Currency
+  /** Bun's face for this month (insights/model.monthMood); falls back to the verdict alone */
+  mood?: BunMood
 }
 
 const ARROW = { up: <ArrowUpRight />, down: <ArrowDownRight />, flat: <ArrowRight /> }
@@ -38,7 +40,7 @@ function StatTile({ stat, currency, delay }: { stat: StatView; currency: Currenc
  * The month at a glance: the spend in big Fraunces numerals, a meter on one honest scale (target tick,
  * over-target hatch, the pace ghost for the current month), Bun's mood, and three headline stats.
  */
-export function MonthHero({ s, comparison, tone, currency }: MonthHeroProps) {
+export function MonthHero({ s, comparison, tone, currency, mood }: MonthHeroProps) {
   const headingId = useId()
   const reduced = useReducedMotion()
   const shown = useCountUp(s.spent, !reduced)
@@ -77,7 +79,7 @@ export function MonthHero({ s, comparison, tone, currency }: MonthHeroProps) {
         </div>
         <div className={styles.bun}>
           <span className={styles.bunGlow} aria-hidden="true" />
-          <BunMascot mood={moodFor(status, tone)} size={84} animated />
+          <BunMascot mood={mood ?? moodFor(status, tone, s.target > 0 ? overBy / s.target : 0)} size={84} animated />
         </div>
       </div>
 

@@ -9,10 +9,10 @@ const HEADROOM = 0.1
 
 /**
  * "Should I buy it?" — one verdict rule shared with the Dream Mirror (finance/mirror):
- *  · 'skip' when checking can't cover it, when the month is already over target (or this purchase takes spending
- *    past it), or when — with the purchase — the month heads more than 5% over target (the mirror's pace band)
+ *  · 'skip' when checking can't cover it, when the month is already over budget (or this purchase takes spending
+ *    past it), or when — with the purchase — the month heads more than 5% over budget (the mirror's pace band)
  *    and the price is more than today's safe-to-spend;
- *  · 'think' when it fits but the month would end over target (within the band, or the purchase is within today's
+ *  · 'think' when it fits but the month would end over budget (within the band, or the purchase is within today's
  *    safe-to-spend while the pace runs hot), leaves < 10% headroom, or breaches a category budget;
  *  · 'go' otherwise.
  * Where the month is heading is the projection (pace + bills still due) — except in the first PACE_FROM_DAY days,

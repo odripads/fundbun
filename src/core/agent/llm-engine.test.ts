@@ -67,11 +67,11 @@ describe('LLM engine: tool loop', () => {
   })
 
   it('hallucinated numbers fail grounding: audited, sentence removed, notice shown', async () => {
-    const { host, engine } = setup([llmTool('get_overview', {}), llmText('Your month is over target. Fun fact: you spent ¥31,415.92 on bubble tea this year!')])
+    const { host, engine } = setup([llmTool('get_overview', {}), llmText('Your month is over budget. Fun fact: you spent ¥31,415.92 on bubble tea this year!')])
     const msg = await engine.respond('How am I doing? #hallucinate')
     expect(msg.grounding).toMatchObject({ ok: false, ungrounded: ['¥31,415.92'] })
     expect(msg.text).not.toContain('31,415')
-    expect(msg.text).toContain('over target')
+    expect(msg.text).toContain('over budget')
     expect(auditOf(host, 'grounding_violation')[0].data).toMatchObject({ ungrounded: ['¥31,415.92'], engine: 'llm' })
     expect(msg.cards?.some((c) => c.type === 'notice' && c.title === 'Unverified number removed')).toBe(true)
   })

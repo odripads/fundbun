@@ -50,7 +50,7 @@ export function starterGoal(dreams: Pick<DreamItem, 'name' | 'price' | 'kind' | 
 
 /**
  * Six starter prompts covering the judged tasks: overview, breakdown, bills, affordability, a multi-step plan
- * and a policy-gated transfer. The plan prompt matches the month (under target → put the surplus to work).
+ * and a policy-gated transfer. The plan prompt matches the month (under budget → put the surplus to work).
  */
 export function starterPrompts(opts: { currency: Currency; dreams: Pick<DreamItem, 'name' | 'price' | 'kind' | 'achievedAt'>[]; status?: MirrorStatus | null }): StarterPrompt[] {
   const sym = CURRENCY_SYMBOL[opts.currency] ?? '¥'

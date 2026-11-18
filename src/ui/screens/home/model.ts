@@ -6,8 +6,8 @@ import { toolTier } from '../../../core/agent/specs'
 import { CATEGORIES } from '../../../core/categories'
 import { diffDays, monthLabel, parseDate } from '../../../core/dates'
 import { categorize } from '../../../core/finance/categorize'
-import { delayPhrase, delayShort, durationText, pctText } from '../../../core/finance/copy'
-import { fmt } from '../../../core/money'
+import { delayPhrase, delayShort, durationText, pctText, plural } from '../../../core/finance/copy'
+import { fmt, fmtCopy } from '../../../core/money'
 import type {
   AffordabilityResult,
   Bill,
@@ -39,10 +39,11 @@ export interface StatusMeta {
 
 /** Text + tone per mirror status — the badge always carries words so colour is never the only cue. */
 export const STATUS_META: Record<MirrorStatus, StatusMeta> = {
-  over: { label: 'Over target', tone: 'over' },
+  over: { label: 'Over budget', tone: 'over' },
   pace_over: { label: 'Pace runs over', tone: 'warn' },
   on_track: { label: 'On track', tone: 'accent' },
-  under: { label: 'Under target', tone: 'under' },
+  // the good state is named as good: "under" reads like falling short
+  under: { label: 'On target', tone: 'under' },
   no_data: { label: 'No spending yet', tone: 'neutral' },
 }
 
@@ -92,7 +93,7 @@ export interface HeroDream {
 }
 
 /**
- * Under target with a goal, the headline is about the goal ("¥668 closer to your MacBook Air"), so the frame
+ * Under budget with a goal, the headline is about the goal ("¥668 closer to your MacBook Air"), so the frame
  * shows the goal even when the core's mirror item is the treat the surplus could cover. Otherwise: the mirror item.
  */
 export function heroDream(m: MirrorState, dreams: DreamItem[]): HeroDream {
@@ -152,7 +153,7 @@ export function mirrorStats(m: MirrorState, currency: Currency): HeroStat[] {
       stats.push({ id: 'item', value: pctText(m.fraction), label: `of ${shortName(m.item.name)}`, description: `The difference is ${pctText(m.fraction)} of your ${m.item.name}.`, tone })
     } else {
       // one whole item is already the headline — the tile carries the amount instead
-      stats.push({ id: 'delta', value: fmtWhole(m.delta, currency), label: m.status === 'over' ? 'over target' : 'projected over', description: `${fmtWhole(m.delta, currency)} over target.`, tone })
+      stats.push({ id: 'delta', value: fmtWhole(m.delta, currency), label: m.status === 'over' ? 'over budget' : 'projected over', description: `${fmtWhole(m.delta, currency)} over budget.`, tone })
     }
     if (m.hoursOfWork) {
       stats.push({ id: 'hours', value: hoursText(m.hoursOfWork), label: 'of your work', description: `About ${m.hoursOfWork} hours of your work.`, tone: 'neutral' })
@@ -161,7 +162,7 @@ export function mirrorStats(m: MirrorState, currency: Currency): HeroStat[] {
       stats.push({ id: 'delay', value: `+${shortDelay(m.goalDelayDays)}`, label: `${shortName(m.goal.name)} delay`, description: `${m.goal.name} pushed back ${delayPhrase(m.goalDelayDays)}.`, tone })
     }
   } else if (m.status === 'under') {
-    stats.push({ id: 'delta', value: fmtWhole(m.delta, currency), label: 'under target', description: `On pace to finish ${fmtWhole(m.delta, currency)} under target.`, tone: 'under' })
+    stats.push({ id: 'delta', value: fmtWhole(m.delta, currency), label: 'left over', description: `On pace to have ${fmtWhole(m.delta, currency)} left over.`, tone: 'under' })
     if (m.hoursOfWork) {
       stats.push({ id: 'hours', value: hoursText(m.hoursOfWork), label: 'of work kept', description: `About ${m.hoursOfWork} hours of your work kept.`, tone: 'neutral' })
     }
@@ -179,7 +180,7 @@ export function mirrorStats(m: MirrorState, currency: Currency): HeroStat[] {
   return stats
 }
 
-/** The guilt-free treat (under target only): the mirror's own `treat`, else its item when it is a treat. */
+/** The guilt-free treat (under budget only): the mirror's own `treat`, else its item when it is a treat. */
 export function treatOf(m: MirrorState): DreamEquivalent | undefined {
   if (m.treat) return m.treat
   if (m.status !== 'under' || !m.item || m.item.kind !== 'treat' || !m.quantity) return undefined
@@ -296,12 +297,12 @@ export function safeToSpendNote(s: MonthSummary, tone: Tone, currency: Currency)
   const daysLeft = Math.max(0, s.daysInMonth - s.dayOfMonth)
   if (s.remaining <= 0) {
     if (tone === 'cheeky') return 'The wallet is on a diet until the 1st.'
-    if (tone === 'numbers') return `${f(-s.remaining)} over target, ${daysLeft} days left.`
+    if (tone === 'numbers') return `${f(-s.remaining)} over budget, ${daysLeft} days left.`
     return 'Past this month’s target — every yuan you keep now still counts.'
   }
-  if (tone === 'cheeky') return 'Stay under it and the month lands on target.'
+  if (tone === 'cheeky') return 'Stay within it and the month lands on target.'
   if (tone === 'numbers') return `${f(s.remaining)} left over ${daysLeft} days.`
-  return `Staying under it keeps the month on target for the ${daysLeft} days left.`
+  return `Staying within it keeps the month on target for the ${daysLeft} days left.`
 }
 
 // ───────────────────────────── tripwire events ─────────────────────────────
@@ -492,9 +493,9 @@ export function couldveHeadline(c: CouldveTotals, months: number, currency: Curr
   // the totals cover finished months only (the month in progress has its own line below the chart), so say so
   const span = `${months} finished month${months === 1 ? '' : 's'}`
   if (c.totalOver <= 0 && c.totalUnder <= 0) return `Nothing to tally from the last ${months} months yet.`
-  if (c.totalOver <= 0) return `${f(c.totalUnder)} kept under target in ${span}.`
+  if (c.totalOver <= 0) return `${f(c.totalUnder)} left over in ${span}.`
   const eq = c.equivalents[0]
-  return `${f(c.totalOver)} over target in ${span}${eq ? ` — ${eq.label}` : ''}.`
+  return `${f(c.totalOver)} over budget in ${span}${eq ? ` — ${eq.label}` : ''}.`
 }
 
 // ───────────────────────────── "Should I buy it?" ─────────────────────────────
@@ -513,7 +514,7 @@ export function verdictMeta(verdict: AffordabilityResult['verdict'], tone: Tone)
   if (verdict === 'think') {
     return { badge: 'Think it over', tone: 'warn', mood: 'worried', title: tone === 'cheeky' ? 'Hmm — think twice' : tone === 'numbers' ? 'Thin margin' : 'Maybe sleep on it' }
   }
-  return { badge: 'Skip for now', tone: 'over', mood: tone === 'gentle' ? 'worried' : 'burnt', title: tone === 'cheeky' ? 'Your dreams say no' : tone === 'numbers' ? 'Over budget' : 'Better to skip it for now' }
+  return { badge: 'Skip for now', tone: 'over', mood: tone === 'gentle' ? 'worried' : 'angry', title: tone === 'cheeky' ? 'Your dreams say no' : tone === 'numbers' ? 'Over budget' : 'Better to skip it for now' }
 }
 
 /** The question "Ask Bun" sends to chat. */
@@ -527,8 +528,8 @@ export function affordabilityQuestion(amount: Minor, label: string, currency: Cu
 export function statusRule(status: MirrorStatus): string {
   switch (status) {
     case 'over': return 'You’ve already spent more than your monthly target, so the mirror shows what the extra could have bought.'
-    case 'pace_over': return 'You’re under target today, but your pace projects more than 5% over by month end.'
-    case 'under': return 'Your pace projects more than 5% under target, so the mirror shows what the surplus can do.'
+    case 'pace_over': return 'You’re still within your target today, but your pace projects more than 5% over by month end.'
+    case 'under': return 'Your pace projects spending more than 5% less than your target, so the mirror shows what the money left over can do.'
     case 'on_track': return 'Your projected month end is within 5% of your target.'
     default: return 'There’s no spending recorded this month yet.'
   }
@@ -538,10 +539,10 @@ export function statusRule(status: MirrorStatus): string {
 export function itemReason(m: MirrorState, currency: Currency): string | null {
   if (!m.item) return null
   const f = (x: Minor) => fmtWhole(x, currency)
-  // under target with a goal the mirror is goal-led: the surplus is shown moving the goal, not as what it buys
+  // under budget with a goal the mirror is goal-led: the surplus is shown moving the goal, not as what it buys
   if (m.status === 'under' && m.goal && m.item.id === m.goal.itemId) {
     const stash = stashAmount(m.cta)
-    return `Under target, Bun leads with your main goal, ${m.item.name} (${f(m.item.price)})${stash > 0 ? `: stashing ${f(stash)} of the ${f(m.delta)} takes it to ${Math.floor(pctAfter(m.goal, stash))}%` : ''}.${m.treat ? ` The rest covers ${m.treat.label}, if you’d like it.` : ''}`
+    return `With money left over, Bun leads with your main goal, ${m.item.name} (${f(m.item.price)})${stash > 0 ? `: stashing ${f(stash)} of the ${f(m.delta)} takes it to ${Math.floor(pctAfter(m.goal, stash))}%` : ''}.${m.treat ? ` The rest covers ${m.treat.label}, if you’d like it.` : ''}`
   }
   if (m.quantity) {
     return `${m.item.name} (${f(m.item.price)}) is the biggest dream on your list that ${f(m.delta)} fully covers${m.quantity >= 2 ? ` — ${m.quantity} times over` : ''}.`
@@ -603,3 +604,126 @@ export function manualCandidate(m: ManualSpend): SpendingCandidate {
     source: 'manual',
   }
 }
+
+// ───────────────────────────── the carrot and the stick ─────────────────────────────
+
+/** How Bun's face is named in a sentence. */
+export const MOOD_WORDS: Record<BunMood, string> = {
+  happy: 'Bun is proud',
+  calm: 'Bun is content',
+  worried: 'Bun is worried',
+  angry: 'Bun is cross',
+  furious: 'Bun is furious',
+  burnt: 'Bun got toasted',
+  sleepy: 'Bun is napping',
+}
+
+export interface TemperLine {
+  kind: 'carrot' | 'stick' | 'cooling'
+  label: string
+  text: string
+}
+
+/**
+ * The one line under the hero that says how Bun feels and what changes it: the way back when Bun is cross, the
+ * streak when things go well. Nothing when there is nothing to add to the headline.
+ */
+export function temperLine(m: Pick<MirrorState, 'mood' | 'temper' | 'status'>): TemperLine | null {
+  const t = m.temper
+  if (!t) return null
+  const streak = `${plural(t.goodDays, 'good day')} in a row.`
+  if (t.cooling) return { kind: 'cooling', label: 'Bun is cooling down', text: `${streak} ${t.wayBack ?? ''}`.trim() }
+  if (m.status === 'over' && t.wayBack) return { kind: 'stick', label: MOOD_WORDS[m.mood], text: t.wayBack }
+  if (t.heat <= 1 && t.goodDays >= 2) return { kind: 'carrot', label: MOOD_WORDS[m.mood], text: `${streak} Each one stayed within your day limit.` }
+  return null
+}
+
+export interface SpendReaction {
+  /** carrot: it fits and the month is fine · nudge: more than today's share, nothing lost yet · stick: over budget, or a wire tripped */
+  kind: 'carrot' | 'nudge' | 'stick'
+  /** Bun's face before the purchase, so the screen can show it change */
+  from: BunMood
+  mood: BunMood
+  title: string
+  /** what it cost, or what it kept: one to three short lines, the dream first */
+  lines: string[]
+  /** the dream this purchase is measured in */
+  dream?: DreamEquivalent
+  /** what calms Bun down again */
+  wayBack?: string
+  /** said with a stick or a nudge: the stick is for the spending, never for telling Bun about it */
+  thanks?: string
+  /** offer "Make a plan with Bun" */
+  plan: boolean
+}
+
+export interface SpendReactionInput {
+  amount: Minor
+  currency: Currency
+  tone: Tone
+  /** "Should I buy it?" for this amount, worked out just before it was added */
+  check: Pick<AffordabilityResult, 'safeToSpendToday' | 'equivalents' | 'goalName' | 'goalDelayDays' | 'delayText' | 'hoursOfWork'>
+  before: Pick<MirrorState, 'mood'>
+  after: Pick<MirrorState, 'mood' | 'status' | 'delta' | 'temper' | 'goal'>
+  /** safe to spend today once the purchase is in */
+  safeAfter: Minor
+  /** how many tripwire alerts this purchase set off */
+  tripped: number
+}
+
+const REACTION_TITLES: Record<'furious' | 'stick' | 'nudge' | 'carrot', Record<Tone, string>> = {
+  furious: { cheeky: 'Bun is fuming.', gentle: 'That was a big one.', numbers: 'Way past the line.' },
+  stick: { cheeky: 'That one stung.', gentle: 'That one costs a little.', numbers: 'Over the line.' },
+  nudge: { cheeky: 'Hmm. More than today’s share.', gentle: 'A bit more than today’s share.', numbers: 'Above today’s safe amount.' },
+  carrot: { cheeky: 'Nice. That fits.', gentle: 'Logged. You’re on track.', numbers: 'Within today’s safe amount.' },
+}
+
+/**
+ * Bun's reaction the moment a purchase is logged: the consequence, right away, in the user's own dream. Over
+ * target or a tripped wire gets the stick (what it cost, and the way back); more than today's share gets a nudge;
+ * a purchase that fits gets the carrot (what is still safe, and the streak it keeps).
+ */
+export function spendReaction(i: SpendReactionInput): SpendReaction {
+  const f = (m: Minor) => fmt(m, i.currency)
+  // the purchase is exact; what is left to spend reads as whole yuan from ¥100
+  const fc = (m: Minor) => fmtCopy(m, i.currency)
+  const t = i.after.temper
+  const heat = t?.heat ?? (i.after.status === 'over' ? 3 : i.after.status === 'pace_over' ? 2 : 1)
+  const kind: SpendReaction['kind'] = heat >= 3 || i.tripped > 0 ? 'stick' : heat === 2 || i.amount > i.check.safeToSpendToday ? 'nudge' : 'carrot'
+  // a tripped wire is a line the user drew themselves: Bun is at least cross about it (worried in the gentle tone)
+  const mood: BunMood =
+    kind === 'stick' ? (heat >= 3 ? i.after.mood : i.tone === 'gentle' ? 'worried' : 'angry')
+    : kind === 'nudge' ? 'worried'
+    : i.after.mood === 'happy' ? 'happy' : 'calm'
+  const dream = i.check.equivalents[0]
+  const goal = i.check.goalName
+  const lines: string[] = []
+  if (kind === 'carrot') {
+    lines.push(i.safeAfter > 0 ? `${fc(i.safeAfter)} is still safe to spend today.` : 'That uses up today’s safe amount.')
+    if (i.after.goal) lines.push(`Your ${i.after.goal.name} stays on schedule.`)
+    if (t && t.goodDays >= 2) lines.push(`${plural(t.goodDays, 'good day')} in a row. Keep it going.`)
+  } else {
+    if (dream) lines.push(`${f(i.amount)} = ${dream.label}.`)
+    // only the part past the target sets the goal back; the rest was budgeted spending
+    const past = i.after.status === 'over' ? Math.min(i.amount, Math.max(0, i.after.delta)) : 0
+    const lost = i.check.goalDelayDays && i.amount > 0 ? Math.round((i.check.goalDelayDays * past) / i.amount) : 0
+    if (goal && lost >= 1) lines.push(`Your ${goal} just moved ${delayPhrase(lost)} further away.`)
+    else if (kind === 'nudge') lines.push(`Today’s safe amount was ${fc(i.check.safeToSpendToday)}.`)
+    else if (goal && i.check.delayText) lines.push(`That is ${i.check.delayText} of saving for your ${goal}.`)
+    if (i.tripped > 0) lines.push(i.tripped === 1 ? 'It tripped a wire you set.' : `It tripped ${i.tripped} wires you set.`)
+    else if (kind === 'stick' && i.check.hoursOfWork > 0) lines.push(`About ${i.check.hoursOfWork} hours of work.`)
+  }
+  const titleKey = kind === 'stick' && mood === 'furious' ? 'furious' : kind
+  return {
+    kind,
+    from: i.before.mood,
+    mood,
+    title: REACTION_TITLES[titleKey][i.tone] ?? REACTION_TITLES[titleKey].gentle,
+    lines,
+    ...(kind !== 'carrot' && dream ? { dream } : {}),
+    ...(kind !== 'carrot' && t?.wayBack ? { wayBack: t.wayBack } : {}),
+    ...(kind !== 'carrot' ? { thanks: 'Thanks for logging it. Honest numbers are how you get back.' } : {}),
+    plan: kind === 'stick' || i.after.status === 'pace_over',
+  }
+}
+

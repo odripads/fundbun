@@ -423,7 +423,34 @@ export interface Insight {
 // ───────────────────────────── dream mirror ─────────────────────────────
 
 export type MirrorStatus = 'over' | 'pace_over' | 'on_track' | 'under' | 'no_data'
-export type BunMood = 'happy' | 'calm' | 'worried' | 'burnt' | 'sleepy'
+/** `burnt` is an older face for "over budget"; the mirror now shows `angry` and `furious` (it still draws, for saved cards). */
+export type BunMood = 'happy' | 'calm' | 'worried' | 'angry' | 'furious' | 'burnt' | 'sleepy'
+
+/**
+ * How Bun feels about the user's spending, as one ladder: the carrot at the bottom, the stick at the top.
+ * Computed from the ledger alone (finance/temper), so the same spending always gets the same face.
+ */
+export interface BunTemper {
+  mood: BunMood
+  /** 0 proud (under budget) · 1 content (on track) · 2 uneasy (heading over) · 3 cross (over) · 4 furious (way over) */
+  heat: 0 | 1 | 2 | 3 | 4
+  /** share of the target already overspent (0.2 = 20% past it); 0 when not over */
+  overBy: number
+  /** what one day of day-to-day spending may be: the user's own daily tripwire, else an even share of the flexible budget */
+  dayLimit: Minor
+  /** day-to-day spending today */
+  spentToday: Minor
+  /** finished days in a row kept within the day limit (the streak) */
+  goodDays: number
+  /** today alone is several days' worth while the month is over or heading over */
+  blowout: boolean
+  /** good days have taken at least one step off Bun's anger */
+  cooling: boolean
+  /** why Bun feels this way, in one or two plain sentences */
+  reason: string
+  /** over or heading over: what calms Bun down */
+  wayBack?: string
+}
 
 export interface MirrorState {
   status: MirrorStatus
@@ -451,6 +478,8 @@ export interface MirrorState {
   hoursOfWork?: number
   tone: Tone
   mood: BunMood
+  /** the ladder behind `mood` (absent on cards saved by older versions) */
+  temper?: BunTemper
   /** call-to-action the hero offers (over/pace_over: a rule such as a cap or tripwire; under: "Stash ¥X") */
   cta?: SuggestedAction
   /**
@@ -458,7 +487,7 @@ export interface MirrorState {
    * `prompt` is sent to Bun as the user's message (e.g. the "get back on track" task plan).
    */
   ctaPrompt?: { label: string; prompt: string }
-  /** under target: the guilt-free treat what's left after the stash covers (secondary option, never pushed) */
+  /** under budget: the guilt-free treat what's left after the stash covers (secondary option, never pushed) */
   treat?: DreamEquivalent
   /** secondary CTA, e.g. "Earmark ¥338 for Concert ticket" (only when the treat has its own pot) */
   secondaryCta?: SuggestedAction
@@ -518,7 +547,7 @@ export interface AffordabilityResult {
   safeToSpendToday: Minor
   /** remaining monthly budget after the purchase (may be negative) */
   remainingAfter: Minor
-  /** how far over target the month would end (0 if not) */
+  /** how far over budget the month would end (0 if not) */
   overTargetBy: Minor
   /**
    * where the month would end with the purchase, on `basis` (optional for older saved cards).

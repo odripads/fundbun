@@ -1,5 +1,5 @@
-import { computeMirror } from '../finance'
-import type { AppState, PendingAction, Tone, ToolName } from '../types'
+import { COOL_DOWN_DAYS, computeMirror } from '../finance'
+import type { AppState, BunMood, PendingAction, Tone, ToolName } from '../types'
 import { newCall, policyContext, rejectPending, runGated, undoPending, type ActionResult, type GateResult } from './actions'
 import {
   choicesOf,
@@ -166,8 +166,11 @@ function chips(turn: Turn, intent: Intent): string[] {
 
 // ───────────────────────────── chat, fallback, disambiguation ─────────────────────────────
 
+/** How Bun names its own mood in a sentence ("I'm cross"). */
+const MOOD_NAMES: Record<BunMood, string> = { happy: 'proud of you', calm: 'content', worried: 'worried', angry: 'cross', furious: 'furious', burnt: 'toasted', sleepy: 'half asleep' }
+
 /** Help focuses that answer a question about Bun itself (nlu R-ABOUT-*). */
-const ABOUT_FOCUS = new Set(['safety', 'bank_link', 'identity', 'limits', 'tripwire_list', 'delete_data', 'my_data', 'consent', 'explain_tripwire', 'explain_mirror', 'explain_pots', 'explain_xray'])
+const ABOUT_FOCUS = new Set(['safety', 'bank_link', 'identity', 'limits', 'tripwire_list', 'delete_data', 'my_data', 'consent', 'explain_tripwire', 'explain_mirror', 'explain_pots', 'explain_xray', 'mood'])
 
 const ADD_DREAM_LABEL_RE = /(?:dream|wish(?:list)?|goal|梦想|心愿|impian)\s*(?:called|named|for|of|:|：|-)?\s*(.+)$/i
 
@@ -217,6 +220,31 @@ function chatReply(host: AgentHost, turn: Turn, intent: Intent, focus: string | 
     if (on.length) facts.list = joinList(on.slice(0, 4).map((t) => t.label), langOf(turn)) + (on.length > 4 ? ` (+${on.length - 4})` : '')
   }
   if (focus === 'bank_link') facts.source = state.profile?.personaId ? 'demo' : 'own'
+  if (focus === 'mood') {
+    // Bun's face is a function of the ledger (finance/temper): say why, and what changes it
+    try {
+      const m = computeMirror(host.ctx())
+      const t = m.temper
+      if (t) {
+        // the temper lines are written about Bun; in chat Bun is the one talking
+        const mine = (s: string) => s.replace(/\bBun cools down\b/g, 'I cool down').replace(/\bcalmed Bun down\b/g, 'calmed me down')
+        facts.mood = MOOD_NAMES[t.mood]
+        facts.reason = mine(t.reason)
+        if (t.wayBack) facts.wayBack = mine(t.wayBack)
+        facts.dayLimit = c(t.dayLimit)
+        if (m.status === 'over' && t.heat >= 3) {
+          facts.hot = '1'
+          facts.overBy = c(m.delta)
+        }
+        addSource(turn, {
+          status: m.status, heat: t.heat, goodDays: t.goodDays, dayLimit: t.dayLimit, spentToday: t.spentToday, spent: m.spent, target: m.target, projected: m.projected,
+          delta: m.delta, overPct: Math.round(t.overBy * 100), coolDownDays: COOL_DOWN_DAYS, blowoutTimes: t.dayLimit > 0 ? Math.floor(t.spentToday / t.dayLimit) : 0,
+        })
+      }
+    } catch {
+      // no mirror before onboarding data exists: the plain help line answers instead
+    }
+  }
   if (focus && ABOUT_FOCUS.has(focus)) trace(turn, 'policy', `Question about Bun answered in plain words (${focus}): no tool, no action`, { rule: 'R-ABOUT' })
   return { text: compose(host, turn, intent, facts), intent, suggestions: chips(turn, intent) }
 }

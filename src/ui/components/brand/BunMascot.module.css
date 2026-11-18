@@ -22,6 +22,12 @@
   --fb-glint: var(--c-cream-50);
   --fb-steam: var(--c-bamboo-500);
   --fb-smoke: color-mix(in srgb, var(--c-soy-700) 50%, var(--c-cream-100));
+  /* anger: a flushed dough (angry) and a bright red one (furious) */
+  --fb-flush: color-mix(in srgb, var(--c-chili-400) 58%, var(--fb-dough));
+  --fb-flush-shade: color-mix(in srgb, var(--c-chili-500) 62%, var(--fb-dough-shade));
+  --fb-fury: #ee3a26;
+  --fb-fury-shade: var(--c-chili-600);
+  --fb-fume: color-mix(in srgb, var(--c-chili-500) 70%, var(--c-cream-100));
   --fb-zzz: var(--fb-theme-zzz, var(--c-bamboo-600));
   --fb-sweat: color-mix(in srgb, var(--info) 32%, #ffffff);
   --fb-keyline: var(--fb-theme-keyline, transparent);
@@ -106,6 +112,39 @@
   opacity: 0.32;
 }
 
+/* anger runs through the dough: flushed (angry), then bright red (furious) */
+.root[data-flush='1'] .dough {
+  fill: var(--fb-flush);
+}
+
+.root[data-flush='1'] .shade {
+  fill: var(--fb-flush-shade);
+}
+
+.root[data-flush='1'] .pleat {
+  stroke: var(--c-chili-600);
+}
+
+.root[data-flush='2'] .dough {
+  fill: var(--fb-fury);
+}
+
+.root[data-flush='2'] .shade {
+  fill: var(--fb-fury-shade);
+}
+
+.root[data-flush='2'] .pleat {
+  stroke: color-mix(in srgb, var(--c-chili-600) 60%, var(--c-soy-900));
+}
+
+.root[data-flush] .shine {
+  opacity: 0.5;
+}
+
+.root[data-flush] .blush {
+  fill: var(--c-chili-600);
+}
+
 /* ───── face ───── */
 
 .pupil {
@@ -128,6 +167,19 @@
 
 .tongue {
   fill: var(--fb-tongue);
+}
+
+.teeth {
+  fill: var(--fb-glint);
+}
+
+.vein {
+  fill: none;
+  stroke: var(--c-chili-600);
+}
+
+.root[data-flush='2'] .vein {
+  stroke: var(--fb-ink-deep);
 }
 
 .blush {
@@ -226,6 +278,11 @@
   stroke: var(--fb-smoke);
 }
 
+.fume {
+  fill: none;
+  stroke: var(--fb-fume);
+}
+
 .zzz {
   fill: none;
   stroke: var(--fb-zzz);
@@ -290,6 +347,28 @@
   animation: fb-smoke 4.4s ease-in-out infinite;
 }
 
+.animated .fume .wisp {
+  animation: fb-steam 1.5s ease-in-out infinite;
+}
+
+.animated[data-flush='2'] .fume .wisp {
+  animation-duration: 0.8s;
+}
+
+.animated .fume .wisp:nth-child(2) {
+  animation-delay: -0.6s;
+}
+
+.animated .shake {
+  animation: fb-shake 0.34s linear infinite;
+}
+
+.animated .vein {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: fb-throb 0.7s ease-in-out infinite;
+}
+
 .animated .wisp:nth-child(2) {
   animation-delay: -1.7s;
 }
@@ -322,7 +401,7 @@
   animation: fb-hop 2.4s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
 }
 
-/* mood changes cross-fade colours (toast, dim pocket, blush) only while animated */
+/* mood changes cross-fade colours (toast, flush, dim pocket, blush) only while animated */
 .animated .dough,
 .animated .shade,
 .animated .pleat,
@@ -336,6 +415,32 @@
     fill var(--dur-3, 420ms) ease,
     stroke var(--dur-3, 420ms) ease,
     opacity var(--dur-3, 420ms) ease;
+}
+
+@keyframes fb-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-5px);
+  }
+
+  75% {
+    transform: translateX(5px);
+  }
+}
+
+@keyframes fb-throb {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.22);
+  }
 }
 
 @keyframes fb-bob {

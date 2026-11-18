@@ -144,6 +144,15 @@
   justify-content: center;
 }
 
+/* the temper line needs room: a smaller mirror keeps the main button in the first view */
+.fold[data-temper] .mirrorWrap {
+  width: min(128px, 37cqi);
+}
+
+.fold[data-temper] > .stage {
+  margin-top: var(--s-3);
+}
+
 /* ───────────── the mirror ───────────── */
 
 .stage {
@@ -486,6 +495,45 @@
   font-size: 0.9375rem;
   line-height: 1.5;
   text-wrap: pretty;
+}
+
+/* how Bun feels and what changes it: the way back (stick), or the streak (carrot) */
+.temper {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-2);
+  margin: var(--s-2) 0 0;
+  padding: 6px var(--s-3);
+  border-radius: var(--r-md);
+  background: var(--over-soft);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+  text-align: left;
+}
+
+.temper strong {
+  color: var(--over-text);
+}
+
+.temper svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  color: var(--over-text);
+}
+
+.temper[data-kind='carrot'],
+.temper[data-kind='cooling'] {
+  background: var(--under-soft);
+}
+
+.temper[data-kind='carrot'] strong,
+.temper[data-kind='carrot'] svg,
+.temper[data-kind='cooling'] strong,
+.temper[data-kind='cooling'] svg {
+  color: var(--under-text);
 }
 
 /* ───────────── evidence tiles ───────────── */

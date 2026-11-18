@@ -866,7 +866,7 @@ function scenes(facts: Facts): Scene[] {
         await d.settle(1000)
         await d.at(5)
         d.caption('Jing is ¥2,580 over her target.')
-        await d.point(d.app.getByText('Over target'))
+        await d.point(d.app.getByText('Over budget'))
         await d.mark('mirror-mei')
         await d.at(10)
         d.caption('The mirror shows what that cost her: a weekend in Chengdu.')
@@ -1091,11 +1091,11 @@ function scenes(facts: Facts): Scene[] {
       },
     },
     {
-      title: 'Under target',
+      title: 'Under budget',
       len: 23,
       run: async (d) => {
-        await d.chapter('Under target')
-        d.caption('Arif is under target. Bun celebrates saving.')
+        await d.chapter('Under budget')
+        d.caption('Arif is under budget. Bun celebrates saving.')
         await d.tap(d.glassTab('Sandbox'))
         await d.settle(400)
         await d.tap(d.app.getByRole('radio', { name: /Arif/ }))

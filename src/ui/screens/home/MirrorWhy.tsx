@@ -20,7 +20,7 @@ export function MirrorWhy() {
   const { mirror, currency, income, workHours, dayOfMonth, daysInMonth } = useSnapshot(selectWhy, shallowEqual)
   if (!mirror) return null
   const over = mirror.status === 'over' || mirror.status === 'pace_over'
-  const deltaLabel = mirror.status === 'over' ? 'Over target' : mirror.status === 'pace_over' ? 'Projected over' : mirror.status === 'under' ? 'Projected under' : 'Difference'
+  const deltaLabel = mirror.status === 'over' ? 'Over budget' : mirror.status === 'pace_over' ? 'Projected over' : mirror.status === 'under' ? 'Projected under' : 'Difference'
   const reasons = [
     { title: 'The rule', text: statusRule(mirror.status) },
     { title: 'Why this dream', text: itemReason(mirror, currency) },

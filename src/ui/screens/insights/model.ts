@@ -4,7 +4,7 @@
  */
 import { CATEGORIES } from '../../../core/categories'
 import { dateLabel, dayOfMonth, daysInMonth, monthLabel, shiftMonth, weekday } from '../../../core/dates'
-import { generateInsights, isSpending, mirrorStatus, netSpend, summarizeMonth } from '../../../core/finance'
+import { bunTemper, generateInsights, isSpending, mirrorStatus, moodOf, netSpend, summarizeMonth } from '../../../core/finance'
 import { fmt, parseAmount } from '../../../core/money'
 import type {
   BunMood,
@@ -83,20 +83,14 @@ export function statusOf(s: MonthSummary): MirrorStatus {
   return mirrorStatus(s)
 }
 
-/** Bun's face for the month. Gentle tone never gets the burnt bun. */
-export function moodFor(status: MirrorStatus, tone: Tone): BunMood {
-  switch (status) {
-    case 'over':
-      return tone === 'gentle' ? 'worried' : 'burnt'
-    case 'pace_over':
-      return 'worried'
-    case 'under':
-      return 'happy'
-    case 'on_track':
-      return 'calm'
-    default:
-      return 'sleepy'
-  }
+/** Bun's face for a month by its verdict (core/finance/temper): gentle softens the angry faces by one step. */
+export function moodFor(status: MirrorStatus, tone: Tone, overBy = 0): BunMood {
+  return moodOf(status, tone, overBy)
+}
+
+/** Bun's face for a month on the ledger: the same ladder the Dream Mirror uses (blowouts and cooling included). */
+export function monthMood(ctx: FinanceContext, s: MonthSummary): BunMood {
+  return bunTemper(ctx, s, mirrorStatus(s)).mood
 }
 
 function pick(tone: Tone, copy: Record<Tone, string>): string {
@@ -115,28 +109,28 @@ export function headlineCopy(s: MonthSummary, tone: Tone, currency: Currency): s
   switch (status) {
     case 'over': {
       const over = f(s.spent - s.target)
-      if (!s.isCurrent) return pick(tone, { gentle: `Finished ${over} past target. A fresh month is a fresh start.`, cheeky: `Closed ${over} over. We don't talk about it.`, numbers: `Final: ${over} over target.` })
+      if (!s.isCurrent) return pick(tone, { gentle: `Finished ${over} over budget. A fresh month is a fresh start.`, cheeky: `Closed ${over} over. We don't talk about it.`, numbers: `Final: ${over} over budget.` })
       return pick(tone, {
         gentle: `${over} past your target, ${days(left)} to steer back.`,
         cheeky: `${over} over, with ${days(left)} to go. Bun is sweating.`,
-        numbers: `${over} over target · ${days(left)} left.`,
+        numbers: `${over} over budget · ${days(left)} left.`,
       })
     }
     case 'pace_over': {
       const over = f(s.projected - s.target)
       return pick(tone, {
-        gentle: `Heading ${over} past target. Still time to steer.`,
+        gentle: `Heading ${over} over budget. Still time to steer.`,
         cheeky: `This pace overshoots by ${over}. Brakes, maybe?`,
-        numbers: `Projected ${over} over target.`,
+        numbers: `Projected ${over} over budget.`,
       })
     }
     case 'under': {
       const under = f(s.isCurrent ? s.target - s.projected : s.target - s.spent)
-      if (!s.isCurrent) return pick(tone, { gentle: `Finished ${under} under target. Lovely work.`, cheeky: `${under} under. Look at you go.`, numbers: `Final: ${under} under target.` })
+      if (!s.isCurrent) return pick(tone, { gentle: `Finished with ${under} left over. Lovely work.`, cheeky: `${under} left over. Look at you go.`, numbers: `Final: ${under} left over.` })
       return pick(tone, {
-        gentle: `On pace to finish ${under} under. Lovely.`,
-        cheeky: `On pace for ${under} under. Who are you?`,
-        numbers: `Projected ${under} under target.`,
+        gentle: `On pace to finish with ${under} left over. Lovely.`,
+        cheeky: `On pace for ${under} left over. Who are you?`,
+        numbers: `Projected ${under} left over.`,
       })
     }
     case 'on_track':
@@ -650,7 +644,7 @@ export interface StatView {
   /** money for the value slot */
   amount: Minor
   label: string
-  /** delta line, e.g. "over target" / "+23% vs Sep 1–22" */
+  /** delta line, e.g. "over budget" / "+23% vs Sep 1–22" */
   note: string
   direction: 'up' | 'down' | 'flat'
   /** whether this is good news (spending less = good) */
@@ -659,10 +653,10 @@ export interface StatView {
 
 export function vsTargetStat(s: MonthSummary): StatView {
   const diff = s.spent - s.target
-  if (diff > 0) return { amount: diff, label: 'Over target', note: `${pctText(diff, s.target)} over`, direction: 'up', good: false }
+  if (diff > 0) return { amount: diff, label: 'Over budget', note: `${pctText(diff, s.target)} over`, direction: 'up', good: false }
   const left = -diff
   if (s.isCurrent) return { amount: left, label: 'Left to target', note: `${Math.max(0, s.daysInMonth - s.dayOfMonth)} days left`, direction: 'down', good: true }
-  return { amount: left, label: 'Under target', note: `${pctText(left, s.target)} under`, direction: 'down', good: true }
+  return { amount: left, label: 'Left over', note: `${pctText(left, s.target)} less than target`, direction: 'down', good: true }
 }
 
 export function vsPrevStat(c: Comparison | null): StatView | null {
@@ -765,8 +759,8 @@ export function trendSummary(bars: TrendBar[], currency: Currency): string {
   const cur = bars.find((b) => b.current)
   const parts: string[] = []
   const avgText = fmt(Math.round(avg / 100) * 100, currency)
-  if (done.length && over === 0) parts.push(`All ${done.length} finished months came in under target, averaging ${avgText}.`)
-  else if (done.length) parts.push(`${over} of the last ${done.length} finished months went over target; they averaged ${avgText}.`)
+  if (done.length && over === 0) parts.push(`All ${done.length} finished months stayed within target, averaging ${avgText}.`)
+  else if (done.length) parts.push(`${over} of the last ${done.length} finished months went over budget; they averaged ${avgText}.`)
   if (cur) parts.push(`${monthName(cur.month)} so far: ${fmt(Math.round(cur.spent / 100) * 100, currency)}${cur.projected ? `, heading for about ${fmt(Math.round(cur.projected / 100) * 100, currency)}` : ''}.`)
   return parts.join(' ')
 }

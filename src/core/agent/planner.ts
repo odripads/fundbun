@@ -723,9 +723,9 @@ export function planReply(outcome: PlanOutcome, state: AppState, tone: Tone): st
   const list = listJoin(actions.map((s) => lower(s.label)))
   const lead = status === 'under'
     ? byTone(tone, {
-      gentle: `You’re on course to finish${delta ? ` ${delta}` : ''} under — let’s put it to work. My plan: ${list}.`,
-      cheeky: `Look at you, finishing${delta ? ` ${delta}` : ''} under! Let’s make that money count: ${list}.`,
-      numbers: `Projected under target${delta ? ` by ${delta}` : ''}. Plan: ${list}.`,
+      gentle: `You’re on course to have ${delta || 'money'} left over — let’s put it to work. My plan: ${list}.`,
+      cheeky: `Look at you, finishing with ${delta || 'money'} left over! Let’s make that money count: ${list}.`,
+      numbers: `Projected ${delta || 'money'} left over. Plan: ${list}.`,
     })
     : byTone(tone, {
       gentle: `Here’s a plan to get back on track${spent && target ? ` (you’re at ${spent} of your ${target} target)` : ''}. I checked where the money went and your bills, then lined up ${actions.length} fixes: ${list}.`,

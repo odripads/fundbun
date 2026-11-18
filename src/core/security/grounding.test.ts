@@ -43,7 +43,7 @@ describe('checkGrounding — grounded replies pass', () => {
   })
 
   it('accepts numbers that only appear inside source strings', () => {
-    expect(checkGrounding('Overspent by ¥3,450.', ['You are ¥3,450 over target'], 'CNY').ok).toBe(true)
+    expect(checkGrounding('Overspent by ¥3,450.', ['You are ¥3,450 over budget'], 'CNY').ok).toBe(true)
   })
 
   it('accepts negative amounts written with a minus sign', () => {
@@ -53,7 +53,7 @@ describe('checkGrounding — grounded replies pass', () => {
 
 describe('checkGrounding — invented numbers fail', () => {
   it.each([
-    ['You are ¥5,000 over target.', ['¥5,000']],
+    ['You are ¥5,000 over budget.', ['¥5,000']],
     ['Cut back ¥3,460 next month.', ['¥3,460']],
     ['That is 45% of the trip.', ['45%']],
     ['A 3.9k overspend.', ['3.9k']],

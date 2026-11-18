@@ -41,7 +41,7 @@ describe('InsightsScreen', () => {
     expect(hero).not.toBeNull()
     expect(hero.textContent).toContain('October · day 22 of 31')
     expect(hero.textContent).toContain('¥12,080.24 spent')
-    expect(hero.textContent).toContain('Over target')
+    expect(hero.textContent).toContain('Over budget')
     expect(hero.textContent).toContain('vs Sep 1–22')
     expect(hero.textContent).toContain('Per day')
     const first = container.querySelector('article')!

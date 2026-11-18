@@ -68,7 +68,7 @@ describe('starter prompts', () => {
     ])
   })
 
-  it('turns the plan prompt toward the surplus when under target, and falls back without goals', () => {
+  it('turns the plan prompt toward the surplus when under budget, and falls back without goals', () => {
     const prompts = starterPrompts({ currency: 'USD', dreams: [], status: 'under' })
     expect(prompts.find((p) => p.id === 'plan')?.text).toBe('Make a plan for my surplus')
     expect(prompts.find((p) => p.id === 'save')?.text).toBe('Move $300 to my goal')

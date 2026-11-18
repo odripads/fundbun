@@ -237,7 +237,13 @@ export const MOUTHS = {
   grin: 'M-21 -8Q0 26 21 -8Q0 -2 -21 -8Z',
   wobble: 'M-14 0Q-7 -6 0 0T14 0',
   omega: 'M-12 -3Q-6 5 0 -1Q6 5 12 -3',
+  frown: 'M-13 5Q0 -7 13 5',
 } as const
+/** An open, shouting mouth (filled) and the strip of teeth along its top. */
+export const SHOUT = 'M-15 -7Q0 -13 15 -7Q18 9 0 11Q-18 9 -15 -7Z'
+export const SHOUT_TEETH = 'M-11.5 -6.5Q0 -10.5 11.5 -6.5L10.5 -2.5Q0 -5.5 -10.5 -2.5Z'
+/** The comic-book anger mark: four hooks pinched around 0,0 (≈20 across). */
+export const ANGER_VEIN = 'M-3 -10Q-3 -3 -10 -3M3 -10Q3 -3 10 -3M-10 3Q-3 3 -3 10M10 3Q3 3 3 10'
 export const GRIN_TONGUE: Ellipse = { cx: 0, cy: 4.5, rx: 8.5, ry: 4.5 }
 export const SNORE: Ellipse = { cx: 0, cy: 2, rx: 7.5, ry: 9.5 }
 
@@ -256,6 +262,10 @@ export interface FaceGeometry {
   smoke: readonly string[]
   /** toasted patches on a burnt bun (body space) */
   toastSpots: readonly Ellipse[]
+  /** the anger mark, up on the right shoulder */
+  vein: Placement
+  /** hot fumes off the top (the small cut has no steam, so it gets its own short jets) */
+  fume: readonly string[]
 }
 
 const TOAST_SPOTS: readonly Ellipse[] = [
@@ -280,6 +290,8 @@ export const FACES: Record<Cut, FaceGeometry> = {
     ],
     smoke: ['M318 88C302 74 326 62 312 46C304 36 310 26 316 20', 'M350 70C340 60 354 50 346 40'],
     toastSpots: TOAST_SPOTS,
+    vein: [412, 132, 2.5],
+    fume: ['M206 84C190 70 214 58 200 42C192 32 198 22 204 16', 'M318 84C302 70 326 58 312 42C304 32 310 22 316 16'],
   },
   small: {
     browLift: 0.5,
@@ -294,6 +306,8 @@ export const FACES: Record<Cut, FaceGeometry> = {
     ],
     smoke: ['M384 98C368 82 396 68 380 50'],
     toastSpots: TOAST_SPOTS,
+    vein: [446, 104, 3.8],
+    fume: ['M150 60C134 44 162 30 146 12', 'M362 60C346 44 374 30 358 12'],
   },
 }
 
@@ -308,3 +322,21 @@ export function browPath(cx: number, cy: number, rx: number, ry: number, lift: n
 export function closedEyePath(cx: number, cy: number, rx: number, ry: number): string {
   return `M${pt(cx - rx * 1.1, cy)}Q${pt(cx, cy + ry * 0.8)} ${pt(cx + rx * 1.1, cy)}`
 }
+
+/** Angry brow: a heavy stroke whose inner end is pulled down onto the eye. */
+export function angryBrowPath(cx: number, cy: number, rx: number, ry: number): string {
+  const inner = cx < VIEW / 2 ? 1 : -1
+  return `M${pt(cx - inner * rx * 1.3, cy - ry * 1.18)}L${pt(cx + inner * rx * 1.15, cy - ry * 0.42)}`
+}
+
+/**
+ * Glaring eye: the round eye with its top sliced off along the brow, lower towards the face centre. One arc round
+ * the bottom of the ellipse, closed by the straight lid.
+ */
+export function glareEyePath(cx: number, cy: number, rx: number, ry: number): string {
+  const left = cx < VIEW / 2
+  const at = (deg: number) => pt(cx + rx * Math.cos((deg * Math.PI) / 180), cy + ry * Math.sin((deg * Math.PI) / 180))
+  // screen angles (y down): the lid runs from high on the outer side to just above the middle on the inner side
+  return left ? `M${at(-5)}A${rx} ${ry} 0 1 1 ${at(-140)}Z` : `M${at(-175)}A${rx} ${ry} 0 1 0 ${at(-40)}Z`
+}
+

@@ -75,14 +75,14 @@ const ONBOARDING_DRAFT = JSON.stringify({
 const SHOTS: Shot[] = [
   {
     name: 'home-mei',
-    description: 'Home · Dream Mirror, Jing over target: "You could\'ve gotten a Weekend in Chengdu.", Birkin +5 wks',
+    description: 'Home · Dream Mirror, Jing over budget: "You could\'ve gotten a Weekend in Chengdu.", Birkin +5 wks',
     kind: 'mobile',
     path: '#/home',
     demo: 'mei',
   },
   {
     name: 'home-arif',
-    description: 'Home · Dream Mirror, Arif under target: ¥668 closer to his MacBook Air, "Stash ¥330" CTA',
+    description: 'Home · Dream Mirror, Arif under budget: ¥668 closer to his MacBook Air, "Stash ¥330" CTA',
     kind: 'mobile',
     path: '#/home',
     demo: 'arif',

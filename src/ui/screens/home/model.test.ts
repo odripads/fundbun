@@ -4,6 +4,7 @@ import type { AppSnapshot } from '../../../core/app-api'
 import type { Bill, DreamItem, GoalProgress, Insight, MirrorState, MonthSummary, TripwireEvent } from '../../../core/types'
 import {
   STATUS_META,
+  temperLine,
   affordabilityQuestion,
   barPx,
   billIcon,
@@ -39,6 +40,7 @@ import {
   sameIds,
   shortDate,
   shortDelay,
+  spendReaction,
   splitHeadline,
   stashAmount,
   statusRule,
@@ -141,7 +143,7 @@ describe('copy helpers', () => {
 
   it('splits a headline around the dream name, or returns null', () => {
     expect(splitHeadline("You could've gotten a Weekend in Chengdu.", 'Weekend in Chengdu')).toEqual(["You could've gotten a ", 'Weekend in Chengdu', '.'])
-    expect(splitHeadline('¥620 under target.', 'MacBook Air')).toBeNull()
+    expect(splitHeadline('¥620 under budget.', 'MacBook Air')).toBeNull()
     expect(splitHeadline('anything')).toBeNull()
   })
 
@@ -167,11 +169,11 @@ describe('heroDream', () => {
   })
 
   it('keeps the treat when the headline names it', () => {
-    const m = mirror({ status: 'under', headline: "You're ¥620 under target — that's a Concert ticket, guilt-free!", item: ticket, quantity: 1, goal: goal() })
+    const m = mirror({ status: 'under', headline: "You're ¥620 under budget — that's a Concert ticket, guilt-free!", item: ticket, quantity: 1, goal: goal() })
     expect(heroDream(m, [macbook, ticket])).toEqual({ item: ticket, role: 'item' })
   })
 
-  it('shows the could-have item when over target, and nothing when there is no item', () => {
+  it('shows the could-have item when over budget, and nothing when there is no item', () => {
     const plane = dream({ id: 'dream_plane', name: 'Weekend in Chengdu' })
     expect(heroDream(mirror({ item: plane, quantity: 1 }), [plane])).toEqual({ item: plane, role: 'item' })
     expect(heroDream(mirror({ status: 'no_data', headline: 'Nothing to mirror yet.' }), [])).toEqual({ role: 'none' })
@@ -188,7 +190,7 @@ describe('mirrorStats', () => {
     const m = mirror({ item: dream({ name: 'Weekend in Chengdu' }), quantity: 1, hoursOfWork: 24.3, goal: goal({ name: 'Birkin 25' }), goalDelayDays: 35 })
     const stats = mirrorStats(m, 'CNY')
     expect(stats.map((s) => s.value)).toEqual(['¥2,580', '24 h', '+5 wks'])
-    expect(stats[0].label).toBe('over target')
+    expect(stats[0].label).toBe('over budget')
     expect(stats[2].label).toBe('Birkin 25 delay')
     expect(stats[2].description).toContain('about 5 weeks')
   })
@@ -198,7 +200,7 @@ describe('mirrorStats', () => {
     expect(mirrorStats(mirror({ item: dream({ name: 'Birkin' }), fraction: 0.026 }), 'CNY')[0]).toMatchObject({ value: '2.6%', label: 'of Birkin' })
   })
 
-  it('under target shows the surplus, hours kept and goal progress after the stash', () => {
+  it('under budget shows the surplus, hours kept and goal progress after the stash', () => {
     const m = mirror({
       status: 'under',
       delta: 66_800,
@@ -211,7 +213,7 @@ describe('mirrorStats', () => {
     expect(stats.every((s) => s.tone === 'under' || s.tone === 'neutral')).toBe(true)
   })
 
-  it('under target without a stash CTA shows plain goal progress; no_data shows nothing', () => {
+  it('under budget without a stash CTA shows plain goal progress; no_data shows nothing', () => {
     expect(mirrorStats(mirror({ status: 'under', delta: 1000, goal: goal() }), 'CNY').at(-1)!.value).toBe('46%')
     expect(mirrorStats(mirror({ status: 'no_data', delta: 0 }), 'CNY')).toEqual([])
   })
@@ -228,7 +230,7 @@ describe('mirrorStats', () => {
 })
 
 describe('treat and CTA helpers', () => {
-  it('offers a treat only under target', () => {
+  it('offers a treat only under budget', () => {
     const ticket = dream({ name: 'Concert ticket', kind: 'treat', price: 48_000 })
     expect(treatOf(mirror({ status: 'under', delta: 66_800, item: ticket, quantity: 1 }))?.itemName).toBe('Concert ticket')
     expect(treatOf(mirror({ status: 'over', item: ticket, quantity: 1 }))).toBeUndefined()
@@ -282,7 +284,7 @@ describe('month track', () => {
         expect(note.length).toBeGreaterThan(10)
       }
     }
-    expect(safeToSpendNote(summary(), 'numbers', 'CNY')).toBe('¥2,580 over target, 9 days left.')
+    expect(safeToSpendNote(summary(), 'numbers', 'CNY')).toBe('¥2,580 over budget, 9 days left.')
   })
 })
 
@@ -403,8 +405,8 @@ describe("could've collection", () => {
 
   it('sums six months in one line', () => {
     const eq = [{ itemId: 'c', itemName: 'Chengdu', image: 'preset:plane', fraction: 1.7, label: 'a Weekend in Chengdu' }]
-    expect(couldveHeadline({ totalOver: 413_213, totalUnder: 5_531, equivalents: eq }, 6, 'CNY')).toBe('¥4,132 over target in 6 finished months — a Weekend in Chengdu.')
-    expect(couldveHeadline({ totalOver: 0, totalUnder: 156_818, equivalents: [] }, 6, 'CNY')).toBe('¥1,568 kept under target in 6 finished months.')
+    expect(couldveHeadline({ totalOver: 413_213, totalUnder: 5_531, equivalents: eq }, 6, 'CNY')).toBe('¥4,132 over budget in 6 finished months — a Weekend in Chengdu.')
+    expect(couldveHeadline({ totalOver: 0, totalUnder: 156_818, equivalents: [] }, 6, 'CNY')).toBe('¥1,568 left over in 6 finished months.')
     expect(couldveHeadline({ totalOver: 0, totalUnder: 0, equivalents: [] }, 6, 'CNY')).toMatch(/Nothing to tally/)
   })
 })
@@ -414,7 +416,7 @@ describe('"Should I buy it?"', () => {
     expect(verdictMeta('go', 'gentle')).toMatchObject({ badge: 'Fits', tone: 'under', mood: 'happy' })
     expect(verdictMeta('think', 'cheeky')).toMatchObject({ tone: 'warn', mood: 'worried' })
     expect(verdictMeta('skip', 'gentle').mood).toBe('worried')
-    expect(verdictMeta('skip', 'cheeky')).toMatchObject({ tone: 'over', mood: 'burnt', title: 'Your dreams say no' })
+    expect(verdictMeta('skip', 'cheeky')).toMatchObject({ tone: 'over', mood: 'angry', title: 'Your dreams say no' })
     expect(verdictMeta('skip', 'numbers').title).toBe('Over budget')
   })
 
@@ -442,7 +444,7 @@ describe('"Why am I seeing this?"', () => {
       goal: goal({ itemId: 'dream_macbook', name: 'MacBook Air', saved: 370_000, price: 799_900, pct: 46.3 }),
       cta: { tool: 'transfer_to_goal', args: { goalId: 'dream_macbook', amount: 33_000 }, label: 'Stash ¥330 in MacBook Air' },
     })
-    expect(itemReason(under, 'CNY')).toBe('Under target, Bun leads with your main goal, MacBook Air (¥7,999): stashing ¥330 of the ¥668 takes it to 50%.')
+    expect(itemReason(under, 'CNY')).toBe('With money left over, Bun leads with your main goal, MacBook Air (¥7,999): stashing ¥330 of the ¥668 takes it to 50%.')
     expect(delayReason(m, 'CNY')).toBe('You save about ¥2,233 a month toward Birkin 25 (3-month average), so ¥2,580 is roughly 5 weeks of saving.')
     expect(delayReason(mirror({ goal: goal({ monthlyRate: 0 }), goalDelayDays: 12 }), 'CNY')).toContain('10% of your income')
     expect(delayReason(mirror(), 'CNY')).toBeNull()
@@ -537,3 +539,88 @@ describe('manualCandidate — a purchase typed in by hand', () => {
     expect(manualCandidate({ ...base, what: 'Luckin', category: '', seq: 'b' }).id).not.toBe(manualCandidate({ ...base, what: 'Luckin', category: '' }).id)
   })
 })
+
+describe('temperLine — the line under the hero', () => {
+  const temper = (over: Partial<NonNullable<MirrorState['temper']>> = {}): NonNullable<MirrorState['temper']> => ({
+    mood: 'furious', heat: 4, overBy: 0.27, dayLimit: 19_400, spentToday: 0, goodDays: 0, blowout: false, cooling: false, reason: 'r', wayBack: 'Log 2 days within ¥194 and Bun cools down a step.', ...over,
+  })
+
+  it('the stick comes with the way back', () => {
+    expect(temperLine(mirror({ mood: 'furious', temper: temper() }))).toEqual({ kind: 'stick', label: 'Bun is furious', text: 'Log 2 days within ¥194 and Bun cools down a step.' })
+    expect(temperLine(mirror({ mood: 'angry', temper: temper({ heat: 3, mood: 'angry' }) }))?.label).toBe('Bun is cross')
+  })
+
+  it('good days that calmed Bun down are named', () => {
+    const line = temperLine(mirror({ mood: 'angry', temper: temper({ heat: 3, mood: 'angry', goodDays: 2, cooling: true }) }))
+    expect(line).toEqual({ kind: 'cooling', label: 'Bun is cooling down', text: '2 good days in a row. Log 2 days within ¥194 and Bun cools down a step.' })
+  })
+
+  it('the carrot: a streak while the month is fine', () => {
+    const line = temperLine(mirror({ status: 'under', mood: 'happy', temper: temper({ heat: 0, mood: 'happy', goodDays: 5, wayBack: undefined }) }))
+    expect(line).toEqual({ kind: 'carrot', label: 'Bun is proud', text: '5 good days in a row. Each one stayed within your day limit.' })
+  })
+
+  it('says nothing when there is nothing to add: heading over (the headline covers it), one good day, or an older saved card', () => {
+    expect(temperLine(mirror({ status: 'pace_over', mood: 'worried', temper: temper({ heat: 2, mood: 'worried' }) }))).toBeNull()
+    expect(temperLine(mirror({ status: 'on_track', mood: 'calm', temper: temper({ heat: 1, mood: 'calm', goodDays: 1, wayBack: undefined }) }))).toBeNull()
+    expect(temperLine(mirror({ mood: 'burnt' }))).toBeNull()
+  })
+})
+
+describe('spendReaction — Bun reacts the moment a purchase is logged', () => {
+  const birkin = { itemId: 'dream_birkin', itemName: 'Birkin 25', image: 'preset:bag', fraction: 0.0092, label: '0.9% of your Birkin 25' }
+  const check = (over: Partial<Parameters<typeof spendReaction>[0]['check']> = {}) => ({
+    safeToSpendToday: 20_000, equivalents: [birkin], goalName: 'Birkin 25', goalDelayDays: 12, delayText: '12 days', hoursOfWork: 8.5, ...over,
+  })
+  const temper = (over: Partial<NonNullable<MirrorState['temper']>> = {}): NonNullable<MirrorState['temper']> => ({
+    mood: 'calm', heat: 1, overBy: 0, dayLimit: 19_400, spentToday: 0, goodDays: 0, blowout: false, cooling: false, reason: 'r', ...over,
+  })
+  const base = { amount: 90_000, currency: 'CNY' as const, tone: 'cheeky' as const, check: check(), before: { mood: 'worried' as const }, safeAfter: 0, tripped: 0 }
+
+  it('the stick: over budget, it shows what the purchase cost in the dream and how to calm Bun down', () => {
+    const r = spendReaction({ ...base, tripped: 1, after: { mood: 'furious', status: 'over', delta: 300_000, goal: goal(), temper: temper({ mood: 'furious', heat: 4, wayBack: 'Log 2 days within ¥194 and Bun cools down a step.' }) } })
+    expect(r).toMatchObject({ kind: 'stick', from: 'worried', mood: 'furious', title: 'Bun is fuming.', plan: true, dream: birkin })
+    // the whole ¥900 is past the target, so the whole delay counts
+    expect(r.lines).toEqual(['¥900 = 0.9% of your Birkin 25.', 'Your Birkin 25 just moved 12 days further away.', 'It tripped a wire you set.'])
+    expect(r.wayBack).toBe('Log 2 days within ¥194 and Bun cools down a step.')
+    // the stick is for the spending, never for telling Bun about it
+    expect(r.thanks).toMatch(/^Thanks for logging it\./)
+  })
+
+  it('only the part past the target sets the goal back', () => {
+    const r = spendReaction({ ...base, after: { mood: 'angry', status: 'over', delta: 30_000, goal: goal(), temper: temper({ mood: 'angry', heat: 3 }) } })
+    expect(r).toMatchObject({ kind: 'stick', mood: 'angry', title: 'That one stung.' })
+    // ¥300 of the ¥900 went past the target: a third of the 12 days
+    expect(r.lines).toEqual(['¥900 = 0.9% of your Birkin 25.', 'Your Birkin 25 just moved 4 days further away.', 'About 8.5 hours of work.'])
+  })
+
+  it('a tripped wire in a month that is still fine: Bun is cross (worried in the gentle tone), and it is measured in saving time', () => {
+    const after = { mood: 'calm' as const, status: 'on_track' as const, delta: 0, goal: goal(), temper: temper() }
+    const r = spendReaction({ ...base, tripped: 1, after })
+    expect(r).toMatchObject({ kind: 'stick', mood: 'angry' })
+    expect(r.lines).toEqual(['¥900 = 0.9% of your Birkin 25.', 'That is 12 days of saving for your Birkin 25.', 'It tripped a wire you set.'])
+    expect(spendReaction({ ...base, tone: 'gentle', tripped: 1, after }).mood).toBe('worried')
+  })
+
+  it('the nudge: more than today’s share, nothing lost yet', () => {
+    const r = spendReaction({ ...base, amount: 30_000, after: { mood: 'calm', status: 'on_track', delta: 0, goal: goal(), temper: temper() } })
+    expect(r).toMatchObject({ kind: 'nudge', mood: 'worried', title: 'Hmm. More than today’s share.', plan: false })
+    expect(r.lines).toEqual(['¥300 = 0.9% of your Birkin 25.', 'Today’s safe amount was ¥200.'])
+  })
+
+  it('the carrot: it fits, so Bun says what is still safe and names the streak', () => {
+    const r = spendReaction({ ...base, amount: 2_500, safeAfter: 17_500, before: { mood: 'happy' }, after: { mood: 'happy', status: 'under', delta: 50_000, goal: goal(), temper: temper({ mood: 'happy', heat: 0, goodDays: 4 }) } })
+    expect(r).toMatchObject({ kind: 'carrot', mood: 'happy', title: 'Nice. That fits.', plan: false })
+    expect(r.lines).toEqual(['¥175 is still safe to spend today.', 'Your MacBook Air stays on schedule.', '4 good days in a row. Keep it going.'])
+    expect(r.dream).toBeUndefined()
+    expect(r.thanks).toBeUndefined()
+    expect(r.wayBack).toBeUndefined()
+  })
+
+  it('each tone has its own words', () => {
+    const after = { mood: 'furious' as const, status: 'over' as const, delta: 300_000, temper: temper({ mood: 'furious', heat: 4 }) }
+    expect(spendReaction({ ...base, tone: 'gentle', after: { ...after, mood: 'angry' } }).title).toBe('That one costs a little.')
+    expect(spendReaction({ ...base, tone: 'numbers', after }).title).toBe('Way past the line.')
+  })
+})
+

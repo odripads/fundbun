@@ -84,7 +84,7 @@ describe('pickCap', () => {
 })
 
 describe('runRecoveryPlan', () => {
-  it('over target: a DAG of reads then policy-gated proposals', () => {
+  it('over budget: a DAG of reads then policy-gated proposals', () => {
     const host = fakeHost()
     const turn = startTurn(host, 'chat')
     const { plan: p, overview } = runRecoveryPlan(host, turn)
@@ -103,7 +103,7 @@ describe('runRecoveryPlan', () => {
     expect(text).toMatch(/needs your OK/)
   })
 
-  it('under target: goals then a stash transfer within caps and a tripwire', () => {
+  it('under budget: goals then a stash transfer within caps and a tripwire', () => {
     const host = fakeHost({ persona: 'arif' })
     const { plan: p } = runRecoveryPlan(host, startTurn(host, 'chat'))
     expect(p.steps.map((s) => s.tool)).toEqual(['get_overview', 'get_goals', 'transfer_to_goal', 'create_tripwire'])

@@ -52,7 +52,7 @@ export function CouldveStrip() {
       <div
         className={styles.chart}
         role="group"
-        aria-label="Over and under target by month"
+        aria-label="Over budget or money left over, by month"
         aria-describedby={captionId}
         style={{ '--up': `${scale.up}px`, '--down': `${scale.down}px` } as CSSProperties}
       >

@@ -63,7 +63,7 @@ describe('acceptance — Jing (the OVER story)', () => {
     expect(spent).toBeLessThanOrEqual(yuan(12_400))
   })
 
-  it('is over target by ¥2,500–2,900, enough for a Weekend in Chengdu but not the AirPods on top', () => {
+  it('is over budget by ¥2,500–2,900, enough for a Weekend in Chengdu but not the AirPods on top', () => {
     const over = octToDate(mei.bank) - mei.profile.targetSpend
     expect(over).toBeGreaterThanOrEqual(yuan(2_500))
     expect(over).toBeLessThanOrEqual(yuan(2_900))
@@ -444,7 +444,7 @@ describe('primeTripwires', () => {
     expect(evaluateTripwires({ ...ctx(mei), tripwires }, { now: NOW }).events).toEqual([])
   })
 
-  it('Arif (under target) primes no events and is not changed', () => {
+  it('Arif (under budget) primes no events and is not changed', () => {
     const { tripwires, events } = primeTripwires(arif, NOW)
     expect(events).toEqual([])
     expect(tripwires).toEqual(arif.tripwires)
@@ -508,7 +508,7 @@ describe('historyBudget', () => {
     expect(plan.rationale).toContain('trimmed 32%')
   })
 
-  it('spreads headroom across wants when history is under target', () => {
+  it('spreads headroom across wants when history is under budget', () => {
     const bank = bankWith([
       ['2026-09-01', -yuan(900), 'housing'],
       ['2026-09-05', -yuan(500), 'dining'],
@@ -553,6 +553,6 @@ describe('tripwireLabel', () => {
     expect(tripwireLabel({ kind: 'daily_over', threshold: yuan(300) }, 'USD')).toBe('Spending more than $300 in one day')
     expect(tripwireLabel({ kind: 'category_pct', threshold: 100, category: 'delivery' }, 'CNY')).toBe('Food delivery reaches 100% of its budget')
     expect(tripwireLabel({ kind: 'category_pct', threshold: 90 }, 'CNY')).toBe('A category reaches 90% of its budget')
-    expect(tripwireLabel({ kind: 'pace_over', threshold: 110 }, 'CNY')).toBe('On pace to end 10% over target')
+    expect(tripwireLabel({ kind: 'pace_over', threshold: 110 }, 'CNY')).toBe('On pace to end 10% over budget')
   })
 })

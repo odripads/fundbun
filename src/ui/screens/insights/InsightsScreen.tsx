@@ -9,6 +9,7 @@ import { shallowEqual, useApp, useSafeAction, useSnapshot } from '../../state'
 import { CategorySheet } from './CategorySheet'
 import { MonthHero } from './MonthHero'
 import {
+  monthMood,
   insightMonthOf,
   insightsFor,
   insightsQuery,
@@ -69,6 +70,7 @@ function InsightsView({ ctx, current, history, currentInsights }: ViewProps) {
   const s = useMemo(() => summaryFor(ctx, month, current), [ctx, month, current])
   const insights = useMemo(() => insightsFor(ctx, month, currentMonth, currentInsights), [ctx, month, currentMonth, currentInsights])
   const comparison = useMemo(() => previousComparison(ctx, s), [ctx, s])
+  const mood = useMemo(() => monthMood(ctx, s), [ctx, s])
   const potIds = useMemo(() => new Set(ctx.bank.accounts.filter((a) => a.type === 'pot').map((a) => a.id)), [ctx.bank.accounts])
   // the controller's own filter (month / category / search). `ctx` is a dependency on purpose: a new
   // snapshot (e.g. after a recategorise) must re-read the ledger. The pot side of a checking→pot move is
@@ -157,7 +159,7 @@ function InsightsView({ ctx, current, history, currentInsights }: ViewProps) {
         options={choices.map((c) => ({ value: c.value, label: c.current ? <>{c.short}<span className="sr-only"> (this month)</span></> : c.short }))}
       />
 
-      <MonthHero s={s} comparison={comparison} tone={ctx.profile.tone} currency={currency} />
+      <MonthHero s={s} comparison={comparison} tone={ctx.profile.tone} currency={currency} mood={mood} />
 
       <Tabs
         label="Insights views"

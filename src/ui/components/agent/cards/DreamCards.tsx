@@ -1,4 +1,4 @@
-import { CalendarClock, CircleCheck, Clock3, Gauge, Hourglass, CirclePause, PiggyBank, Scale, Sparkles, Target, TrendingDown, TrendingUp, type LucideIcon } from 'lucide-react'
+import { CalendarClock, CircleCheck, Clock3, Gauge, Hourglass, CirclePause, PiggyBank, Scale, Sparkles, Target, TriangleAlert, type LucideIcon } from 'lucide-react'
 import type { AppSnapshot } from '../../../../core/app-api'
 import { monthLabel } from '../../../../core/dates'
 import { delayShort } from '../../../../core/finance/copy'
@@ -16,10 +16,10 @@ import styles from './cards.module.css'
 // ───────────────────────────── mirror ─────────────────────────────
 
 const MIRROR_META: Record<MirrorStatus, { label: string; icon: LucideIcon; variant: CardVariant }> = {
-  over: { label: 'Over target', icon: TrendingUp, variant: 'over' },
+  over: { label: 'Over budget', icon: TriangleAlert, variant: 'over' },
   pace_over: { label: 'On pace to go over', icon: Gauge, variant: 'accent' },
   on_track: { label: 'On track', icon: Target, variant: 'accent' },
-  under: { label: 'Under target', icon: TrendingDown, variant: 'under' },
+  under: { label: 'On target', icon: CircleCheck, variant: 'under' },
   no_data: { label: 'No data yet', icon: Clock3, variant: 'default' },
 }
 

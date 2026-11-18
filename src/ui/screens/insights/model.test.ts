@@ -187,29 +187,32 @@ describe('headline', () => {
     const gentle = headlineCopy(mei.s, 'gentle', 'CNY')
     expect(gentle).toMatch(/past your target/)
     expect(gentle).not.toMatch(/ouch|sweat|over —/i)
-    expect(headlineCopy(mei.s, 'numbers', 'CNY')).toBe('¥2,580 over target · 9 days left.')
-    expect(headlineCopy(arif.s, 'gentle', 'CNY')).toMatch(/^On pace to finish ¥\d{3} under\. Lovely\.$/)
+    expect(headlineCopy(mei.s, 'numbers', 'CNY')).toBe('¥2,580 over budget · 9 days left.')
+    expect(headlineCopy(arif.s, 'gentle', 'CNY')).toMatch(/^On pace to finish with ¥\d{3} left over\. Lovely\.$/)
   })
 
   it('speaks about finished months in the past tense', () => {
     const sep = summarizeMonth(arif.ctx, '2026-09')
-    expect(headlineCopy(sep, 'gentle', 'CNY')).toMatch(/^Finished ¥381 under target/)
+    expect(headlineCopy(sep, 'gentle', 'CNY')).toMatch(/^Finished with ¥381 left over/)
     expect(headlineCopy({ ...sep, spent: 0 }, 'gentle', 'CNY')).toBe('No spending recorded this month.')
   })
 
-  it('picks Bun’s mood from the status; gentle never gets the burnt bun', () => {
-    expect(moodFor('over', 'cheeky')).toBe('burnt')
+  it('picks Bun’s mood from the status; way over is furious, and gentle softens the angry faces one step', () => {
+    expect(moodFor('over', 'cheeky')).toBe('angry')
+    expect(moodFor('over', 'cheeky', 0.25)).toBe('furious')
     expect(moodFor('over', 'gentle')).toBe('worried')
+    expect(moodFor('over', 'gentle', 0.25)).toBe('angry')
+    expect(moodFor('pace_over', 'numbers')).toBe('worried')
     expect(moodFor('under', 'gentle')).toBe('happy')
     expect(moodFor('no_data', 'numbers')).toBe('sleepy')
   })
 
   it('builds the target and previous-month stats with direction and good/bad', () => {
     const t = vsTargetStat(mei.s)
-    expect(t).toMatchObject({ label: 'Over target', amount: mei.s.spent - mei.s.target, direction: 'up', good: false })
+    expect(t).toMatchObject({ label: 'Over budget', amount: mei.s.spent - mei.s.target, direction: 'up', good: false })
     const a = vsTargetStat(arif.s)
     expect(a).toMatchObject({ label: 'Left to target', direction: 'down', good: true, note: '9 days left' })
-    expect(vsTargetStat(summarizeMonth(arif.ctx, '2026-09'))).toMatchObject({ label: 'Under target', note: '11% under' })
+    expect(vsTargetStat(summarizeMonth(arif.ctx, '2026-09'))).toMatchObject({ label: 'Left over', note: '11% less than target' })
     expect(t.note).toBe('27% over')
     expect(dailyStat(mei.s)).toMatchObject({ label: 'Per day', amount: mei.s.dailyAvg, note: '22-day average' })
     const prev = vsPrevStat(previousComparison(mei.ctx, mei.s))
@@ -308,10 +311,10 @@ describe('trend', () => {
 
   it('summarises the trend in words', () => {
     const text = trendSummary(trendBars(mei.snap.derived.history, mei.s), 'CNY')
-    expect(text).toMatch(/^4 of the last 5 finished months went over target/)
+    expect(text).toMatch(/^4 of the last 5 finished months went over budget/)
     expect(text).toMatch(/October so far: ¥12,080, heading for about ¥15,230\./)
     expect(trendSummary([], 'CNY')).toBe('No months to compare yet.')
-    expect(trendSummary(trendBars(arif.snap.derived.history, arif.s), 'CNY')).toMatch(/^All 5 finished months came in under target, averaging ¥3,286\./)
+    expect(trendSummary(trendBars(arif.snap.derived.history, arif.s), 'CNY')).toMatch(/^All 5 finished months stayed within target, averaging ¥3,286\./)
   })
 
   it('labels bar tops compactly in major units', () => {

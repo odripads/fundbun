@@ -34,8 +34,9 @@ export function HomeScreen() {
   const [pull, setPull] = useState(0)
   const touchY = useRef<number | null>(null)
   const clearCheck = useCallback(() => setCheck(null), [])
-  // the open sandbox sheet shows each purchase's tripwires inline; a toast on top would only hide them
-  useTripwireToasts({ quiet: sandbox })
+  // the open sandbox sheet shows each purchase's tripwires inline, and "Add spending" answers with Bun's own
+  // reaction; a toast on top would only hide them
+  useTripwireToasts({ quiet: sandbox || adding })
 
   // swipe down when the page is already at the top opens the camera — the quick way to scan a receipt
   const onTouchStart = (e: TouchEvent<HTMLDivElement>) => {

@@ -54,7 +54,7 @@ describe('BunMascot', () => {
   })
 
   it('falls back to a sane size and to calm for bad input', () => {
-    const html = mascot({ size: Number.NaN, mood: 'furious' as BunMood })
+    const html = mascot({ size: Number.NaN, mood: 'livid' as BunMood })
     expect(attr(html, 'width')).toBe('96')
     expect(attr(html, 'data-mood')).toBe('calm')
     expect(attr(mascot({ size: -4 }), 'width')).toBe('96')
