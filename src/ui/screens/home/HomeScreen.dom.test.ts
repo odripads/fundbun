@@ -129,6 +129,28 @@ describe('HomeScreen — the Dream Mirror', () => {
     expect(spy.mock.calls[0][0]).toMatchObject({ tool: 'pay_bill', args: { billId: expect.stringContaining('electricity') } })
   })
 
+  it('"Add spending" takes an amount and a few words, and the purchase lands on the month', async () => {
+    const app = demo('mei')
+    const spent = app.getSnapshot().derived.summary!.spent
+    const { container } = await renderHome(app)
+    await click(byText(container, 'Add spending', 'button'))
+    const sheet = document.querySelector('[role="dialog"]')!
+    expect(sheet.textContent).toContain('Type it in. It stays on this device.')
+    const [amount, what] = Array.from(sheet.querySelectorAll('input')) as HTMLInputElement[]
+    // an empty amount is refused in plain words
+    await click(byText(sheet, 'Add it', 'button'))
+    expect(sheet.textContent).toContain('Type an amount, like 25')
+    await changeValue(amount, '25')
+    await changeValue(what, 'Luckin coffee')
+    expect(sheet.querySelector('select')!.textContent).toContain('Coffee & milk tea')
+    await click(byText(sheet, 'Add it', 'button'))
+    await flush()
+    const after = app.getSnapshot()
+    expect(after.derived.summary!.spent).toBe(spent + toMinor(25, 'CNY'))
+    expect(after.state.bank.transactions.find((t) => t.id.startsWith('manual_'))).toMatchObject({ merchant: 'Luckin coffee', category: 'coffee_tea' })
+    expect(document.body.textContent).toContain('Added ¥25')
+  })
+
   it('shows the two alerts the demo primes at load, and clears them on "Clear all"', async () => {
     const app = demo('mei')
     expect(app.getSnapshot().derived.unseenEvents).toHaveLength(2)

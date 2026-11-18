@@ -1,0 +1,44 @@
+.form {
+  display: grid;
+  gap: var(--s-4);
+  padding-bottom: var(--s-2);
+}
+
+.selectField {
+  display: grid;
+  gap: var(--s-2);
+}
+
+.selectLabel {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.select {
+  width: 100%;
+  min-height: 52px;
+  padding: 0 40px 0 var(--s-4);
+  border: 0;
+  border-radius: var(--r-md);
+  background:
+    linear-gradient(45deg, transparent 50%, var(--text-3) 50%) calc(100% - 22px) 50% / 6px 6px no-repeat,
+    linear-gradient(-45deg, transparent 50%, var(--text-3) 50%) calc(100% - 16px) 50% / 6px 6px no-repeat,
+    var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-md);
+  appearance: none;
+}
+
+.select:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--gold);
+}
+
+.note {
+  margin: 0;
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+}

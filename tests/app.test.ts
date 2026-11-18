@@ -1369,3 +1369,29 @@ describe('an older statement is mirrored, not an empty month', () => {
     expect(derived.viewDate).toBe(derived.today)
   })
 })
+
+describe('spending added by hand', () => {
+  it('counts toward the month at once, and a big one trips the single-purchase wire', () => {
+    const { app } = demoKit('mei')
+    const before = app.getSnapshot()
+    const alerts = before.derived.unseenEvents.length
+    const small = app.addSpending([{ id: 'manual_t1', merchant: 'Coffee', amount: 2_500, currency: 'CNY', date: before.derived.today, category: 'coffee_tea', description: 'Coffee', source: 'manual' }])
+    expect(small).toEqual({ added: 1, duplicates: 0 })
+    expect(app.getSnapshot().derived.summary!.spent).toBe(before.derived.summary!.spent + 2_500)
+    // Jing keeps a tripwire on any single purchase over ¥800
+    app.addSpending([{ id: 'manual_t2', merchant: 'Shoes', amount: 129_900, currency: 'CNY', date: before.derived.today, category: 'shopping', description: 'Shoes', source: 'manual' }])
+    const after = app.getSnapshot()
+    expect(after.derived.unseenEvents.length).toBeGreaterThan(alerts)
+    expect(after.state.audit.at(-1)).toMatchObject({ type: 'data_import', data: { source: 'manual' } })
+    // the same id twice is one purchase
+    expect(app.addSpending([{ id: 'manual_t2', merchant: 'Shoes', amount: 129_900, currency: 'CNY', date: before.derived.today, category: 'shopping', description: 'Shoes', source: 'manual' }])).toEqual({ added: 0, duplicates: 1 })
+    expect(app.verifyAudit().ok).toBe(true)
+  })
+
+  it('an old purchase is recorded without a stale alert', () => {
+    const { app } = demoKit('mei')
+    const alerts = app.getSnapshot().derived.unseenEvents.length
+    app.addSpending([{ id: 'manual_old', merchant: 'Old shoes', amount: 129_900, currency: 'CNY', date: '2026-08-03', category: 'shopping', description: '', source: 'manual' }])
+    expect(app.getSnapshot().derived.unseenEvents.length).toBe(alerts)
+  })
+})

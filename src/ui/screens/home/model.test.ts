@@ -44,6 +44,7 @@ import {
   statusRule,
   treatOf,
   verdictMeta,
+  manualCandidate,
 } from './model'
 
 function demo(id: 'mei' | 'arif'): AppSnapshot {
@@ -514,5 +515,25 @@ describe('shortName (F62)', () => {
     expect(shortName('Noise-cancelling headphones for long flights')).toBe('Noise-cancelling…')
     expect(shortName('Noise-cancelling headphones for long flights').length).toBeLessThanOrEqual(24)
     expect(shortName('Supercalifragilisticexpialidocious-thing')).toBe('Supercalifragilisticexp…')
+  })
+})
+
+describe('manualCandidate — a purchase typed in by hand', () => {
+  const base = { amount: 2_500, today: '2026-10-22', currency: 'CNY' as const, seq: 'a' }
+
+  it('lets Bun guess the category from the words, and dates it today', () => {
+    const c = manualCandidate({ ...base, what: ' Luckin coffee ', category: '' })
+    expect(c).toMatchObject({ id: 'manual_a', merchant: 'Luckin coffee', amount: 2_500, date: '2026-10-22', category: 'coffee_tea', source: 'manual' })
+  })
+  it('keeps the category the user picked, whatever the words say', () => {
+    expect(manualCandidate({ ...base, what: 'Luckin coffee', category: 'groceries' }).category).toBe('groceries')
+  })
+  it('works with no description: the category names it', () => {
+    expect(manualCandidate({ ...base, what: '', category: '' })).toMatchObject({ category: 'other', merchant: 'Other', description: '' })
+    expect(manualCandidate({ ...base, what: '  ', category: 'transport' }).merchant).toBe('Transport')
+  })
+  it('takes the size of a negative amount, and gives two identical coffees two ids', () => {
+    expect(manualCandidate({ ...base, amount: -900, what: 'x', category: '' }).amount).toBe(900)
+    expect(manualCandidate({ ...base, what: 'Luckin', category: '', seq: 'b' }).id).not.toBe(manualCandidate({ ...base, what: 'Luckin', category: '' }).id)
   })
 })

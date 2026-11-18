@@ -70,6 +70,9 @@ you should see; if you see something else, stop and fix that before going on.
   Settings** button; unfreeze with the PIN. This is a feature to show, not a fault.
 - **The Sandbox chip shows the date** (`Sandbox · Oct 22`). The demo personas live on a frozen calendar, 22 Oct
   2026, so their numbers never change. If a judge asks why it says October, that is the answer.
+- **Add spending (the live moment):** on Home, tap **Add spending**, type an amount and a few words ("900, Nike
+  sneakers"). Bun guesses the category, the Dream Mirror moves, and a tripwire fires on the spot. Let a judge name
+  the purchase.
 - **Receipts:** use the sample receipts. Reading a camera photo is not available in this build.
 - **Your own statement:** importing an older month (for example September) shows that month, with a note
   "Showing September 2026".

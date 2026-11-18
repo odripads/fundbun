@@ -112,7 +112,9 @@ and Indonesian (`nlu.ts` rules `R-ABOUT-*`, copy in `voice.ts` / `voice-i18n.ts`
 better and block reasons are translated (`REASONS_I18N`); a failed AI call falls back to the on-device engine in
 10 s with a notice and a cool-down (`llm-engine.ts`, `controller/host.ts`); an older statement is mirrored from its
 latest month (`viewDateOf` in `controller/derive.ts`); the approval sheet shows the sandbox demo PIN for demo
-personas; a paused Bun shows an "Unfreeze in Settings" button.
+personas; a paused Bun shows an "Unfreeze in Settings" button. 19 Nov: **Add spending** on Home (`QuickAdd.tsx`,
+`manualCandidate` in `home/model.ts`): type an amount and a few words, no file needed; it counts at once and can
+trip a wire (`addSpending` now applies tripwires for this month's purchases).
 
 ## 8. Rules for you
 - Run `npm test` after every change; don't leave the app broken. Small commits with clear messages.

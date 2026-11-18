@@ -1,4 +1,4 @@
-import { Camera, ChevronDown, FlaskConical } from 'lucide-react'
+import { Camera, ChevronDown, FlaskConical, Plus } from 'lucide-react'
 import { useCallback, useRef, useState, type TouchEvent } from 'react'
 import { SandboxPanel } from '../../components/sandbox'
 import type { AppSnapshot } from '../../../core/app-api'
@@ -12,6 +12,7 @@ import { CouldveStrip } from './CouldveStrip'
 import { InsightsPeek } from './InsightsPeek'
 import { MirrorHero, type CheckRequest } from './MirrorHero'
 import { MonthCard } from './MonthCard'
+import { QuickAdd } from './QuickAdd'
 import { QuickCheck } from './QuickCheck'
 import { TripwireStack, useTripwireToasts } from './TripwireStack'
 import styles from './HomeScreen.module.css'
@@ -28,6 +29,7 @@ const selectLookBack = (s: AppSnapshot): string | null => (s.derived.viewDate !=
 export function HomeScreen() {
   const [sandbox, setSandbox] = useState(false)
   const lookBack = useSnapshot(selectLookBack)
+  const [adding, setAdding] = useState(false)
   const [check, setCheck] = useState<CheckRequest | null>(null)
   const [pull, setPull] = useState(0)
   const touchY = useRef<number | null>(null)
@@ -71,10 +73,14 @@ export function HomeScreen() {
       ) : null}
       <MirrorHero onCheck={setCheck} onSandbox={() => setSandbox(true)} />
       <div className={styles.scanRow}>
+        <Button variant="soft" size="lg" iconStart={<Plus />} onClick={() => setAdding(true)}>
+          Add spending
+        </Button>
         <Button variant="soft" size="lg" iconStart={<Camera />} onClick={() => navigate('receipt')}>
           Scan a receipt
         </Button>
       </div>
+      <QuickAdd open={adding} onClose={() => setAdding(false)} />
       <div className={styles.sections}>
         <TripwireStack />
         <MonthCard />

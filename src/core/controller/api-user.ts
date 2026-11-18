@@ -5,6 +5,7 @@ import { clipForDisplay } from '../security/redact'
 import type { AppState, Mandate, SpendingCandidate, Transaction } from '../types'
 import { appendAudit, verifyAuditAnchored } from './audit'
 import { LOCKED_MSG, NOT_SET_UP_MSG, expirePending, syncClock, userTx, userTxValue, type Core } from './core'
+import { applyTripwires } from './tripwires'
 import {
   advanceDaysIn,
   filterTransactions,
@@ -106,6 +107,9 @@ export function createUserApi(core: Core, onLlmGranted: () => void): UserApi {
     return store.mutate((draft) => {
       const { added, duplicates } = mergeTransactions(draft, txns)
       if (added.length) {
+        // a purchase the user just logged counts like any other: this month's ones can trip a wire (older ones stay quiet)
+        const month = draft.bank.today.slice(0, 7)
+        applyTripwires(draft, added.filter((t) => t.date.slice(0, 7) === month), core.now())
         appendAudit(draft, core.now(), 'user', 'data_import', `Added ${added.length} spending${added.length === 1 ? '' : 's'}`, {
           added: added.length, duplicates, source: candidates[0]?.source ?? 'unknown',
         })

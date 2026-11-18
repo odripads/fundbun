@@ -120,7 +120,7 @@ export interface SpendingCandidate {
   category: CategoryId
   /** raw counterparty description — UNTRUSTED CONTENT */
   description: string
-  source: 'email' | 'receipt'
+  source: 'email' | 'receipt' | 'manual'
 }
 
 export type PayeeKind = 'utility' | 'telco' | 'landlord' | 'subscription' | 'person' | 'merchant' | 'card'

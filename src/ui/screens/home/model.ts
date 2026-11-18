@@ -3,7 +3,9 @@
  * Every amount is integer minor units; formatting goes through money.fmt.
  */
 import { toolTier } from '../../../core/agent/specs'
+import { CATEGORIES } from '../../../core/categories'
 import { diffDays, monthLabel, parseDate } from '../../../core/dates'
+import { categorize } from '../../../core/finance/categorize'
 import { delayPhrase, delayShort, durationText, pctText } from '../../../core/finance/copy'
 import { fmt } from '../../../core/money'
 import type {
@@ -25,6 +27,7 @@ import type {
   Tone,
   TripwireEvent,
   YearMonth,
+  SpendingCandidate,
 } from '../../../core/types'
 
 export type StatusTone = 'over' | 'warn' | 'under' | 'accent' | 'neutral'
@@ -567,4 +570,36 @@ export const TONE_LABEL: Record<Tone, string> = {
   cheeky: 'Cheeky',
   gentle: 'Gentle',
   numbers: 'Just the numbers',
+}
+
+// ───────────────────────────── quick add ─────────────────────────────
+
+export interface ManualSpend {
+  amount: Minor
+  /** what it was, or where: "coffee", "Hema" — may be empty */
+  what: string
+  /** the user's pick; '' lets the on-device categoriser guess from `what` */
+  category: CategoryId | ''
+  today: ISODate
+  currency: Currency
+  /** the user's own merchant → category rules */
+  rules?: Record<string, CategoryId>
+  /** makes the id unique: two identical coffees are two purchases */
+  seq: string
+}
+
+/** A typed-in purchase as a spending candidate: dated today, in the category the user picked or Bun guessed. */
+export function manualCandidate(m: ManualSpend): SpendingCandidate {
+  const what = m.what.trim().slice(0, 60)
+  const category = m.category || (what ? categorize(what, what, -1, m.rules ?? {}).category : 'other')
+  return {
+    id: `manual_${m.seq}`,
+    merchant: what || CATEGORIES[category].label,
+    amount: Math.abs(m.amount),
+    currency: m.currency,
+    date: m.today,
+    category,
+    description: what,
+    source: 'manual',
+  }
 }
