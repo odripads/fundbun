@@ -12,6 +12,8 @@ export interface PermissionsStepProps extends StepProps {
   pinSet: boolean
   /** the confirmed PIN (kept in memory by the screen, never persisted), or null to clear it */
   onPin: (pin: string | null) => void
+  /** the short setup: only the PIN, on Bun's default permissions */
+  quick?: boolean
 }
 
 const LANES: readonly { id: Exclude<Lane, 'off'>; title: string; icon: LucideIcon }[] = [
@@ -23,9 +25,31 @@ const LANES: readonly { id: Exclude<Lane, 'off'>; title: string; icon: LucideIco
 const CAP_HINT: Record<CapKey, string> = { perAction: 'each move', daily: 'in total', monthly: 'in total' }
 
 /** Autonomy dial + what-runs-where matrix, money caps, and a confirmed 4–6 digit PIN. */
-export function PermissionsStep({ draft, update, errors, pinSet, onPin }: PermissionsStepProps) {
+export function PermissionsStep({ draft, update, errors, pinSet, onPin, quick = false }: PermissionsStepProps) {
   const byLane = lanes(draft.autonomy)
   const symbol = CURRENCY_SYMBOL[draft.currency]
+  if (quick) {
+    // the short setup: Bun starts on "Suggest" (it proposes, you tap) with small limits; only the PIN is yours to pick
+    return (
+      <>
+        <p className={s.lede}>
+          Last thing: a PIN. It guards payments and any loosening of Bun’s limits, so only you can change what Bun may do. Bun starts careful: it suggests, you tap.
+        </p>
+        <section id="ob-pin" className={s.section} aria-labelledby="ob-pin-title">
+          <h2 id="ob-pin-title" className="sr-only">Your PIN</h2>
+          {errors.pin ? (
+            <p className={s.error} role="alert">
+              <CircleAlert aria-hidden="true" />
+              {errors.pin}
+            </p>
+          ) : null}
+          <div className={cx(p.pinCard, errors.pin && s.cardError)}>
+            <PinSetup pinSet={pinSet} onPin={onPin} />
+          </div>
+        </section>
+      </>
+    )
+  }
   return (
     <>
       <p className={s.lede}>You decide how much Bun does on its own. Loosening later needs your PIN; tightening never does.</p>

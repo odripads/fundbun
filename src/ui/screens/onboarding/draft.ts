@@ -54,6 +54,12 @@ export interface OnboardingDraft {
   mode: ModeKind
   /** the AUTO consent (WHAT/WHY/WHERE) — false until the user toggles it on */
   emailConsent: boolean
+  /**
+   * The short setup (the default): only what Bun cannot guess — consent, the month's numbers, one dream, a PIN.
+   * Tripwires, tone, permissions and where the data comes from start on Bun's defaults and can be changed from the
+   * summary or later in Settings. false = walk through every step.
+   */
+  quick: boolean
 }
 
 export const TRIPWIRE_KEYS: readonly TripwireKey[] = ['month80', 'month100', 'single', 'pace']
@@ -81,6 +87,7 @@ export function emptyDraft(): OnboardingDraft {
     data: { kind: null, personaId: null, csvName: '', csvText: '', balance: '' },
     mode: 'manual',
     emailConsent: false,
+    quick: true,
   }
 }
 
@@ -144,6 +151,8 @@ export function sanitizeDraft(raw: unknown): OnboardingDraft {
     },
     mode: oneOf(raw.mode, MODE_KINDS, base.mode),
     emailConsent: bool(raw.emailConsent),
+    // the short setup is the default, also for a draft saved before it existed (its choices are all kept)
+    quick: raw.quick !== false,
   }
 }
 

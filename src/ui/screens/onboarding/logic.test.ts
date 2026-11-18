@@ -7,6 +7,8 @@ import { isValidPinFormat } from '../../../core/security/pin'
 import type { Autonomy, Profile, Tier } from '../../../core/types'
 import { emptyDraft, type OnboardingDraft } from './draft'
 import {
+  flowOf,
+  FLOW,
   buildOnboardingInput,
   clampStep,
   decodeCsvBytes,
@@ -296,8 +298,10 @@ describe('data source', () => {
   })
 
   it('validates each kind of source', () => {
-    const base = complete()
+    // the full walk-through asks where the data comes from; the short setup starts empty without asking
+    const base = complete({ quick: false })
     expect(validateData({ ...base, data: { ...base.data, kind: null } }, null).source).toBeTruthy()
+    expect(validateData({ ...base, quick: true, data: { ...base.data, kind: null } }, null)).toEqual({})
     expect(validateData({ ...base, data: { ...base.data, kind: 'persona', personaId: null } }, null).persona).toBeTruthy()
     expect(validateData({ ...base, data: { ...base.data, kind: 'empty', balance: '' } }, null).balance).toBeTruthy()
     expect(validateData({ ...base, data: { ...base.data, kind: 'empty', balance: '0' } }, null)).toEqual({})
@@ -307,9 +311,46 @@ describe('data source', () => {
 
 describe('buildOnboardingInput → the real controller', () => {
   it('lists what is missing per step when incomplete', () => {
-    const r = buildOnboardingInput(emptyDraft(), null, null)
+    const r = buildOnboardingInput({ ...emptyDraft(), quick: false }, null, null)
     expect(r.ok).toBe(false)
     if (!r.ok) expect(new Set(r.problems.map((p) => p.step))).toEqual(new Set(['consent', 'money', 'dreams', 'permissions', 'data']))
+    // the short setup needs one thing fewer: where the data comes from defaults to "start empty"
+    const quick = buildOnboardingInput(emptyDraft(), null, null)
+    if (!quick.ok) expect(new Set(quick.problems.map((p) => p.step))).toEqual(new Set(['consent', 'money', 'dreams', 'permissions']))
+  })
+
+  it('the short setup: four steps, then straight to the summary, and it onboards with Bun’s defaults', () => {
+    const d = emptyDraft()
+    expect(d.quick).toBe(true)
+    expect(flowOf(d)).toEqual(['consent', 'money', 'dreams', 'permissions'])
+    expect(nextStep('welcome', d)).toBe('consent')
+    expect(nextStep('dreams', d)).toBe('permissions')
+    expect(nextStep('permissions', d)).toBe('done')
+    expect(prevStep('permissions', d)).toBe('dreams')
+    expect(prevStep('done', d)).toBe('permissions')
+    expect(flowPosition('permissions', d)).toBe(4)
+    // a skipped step opened from the summary still knows its neighbours
+    expect(nextStep('tripwires', d)).toBe('permissions')
+    expect(prevStep('data', d)).toBe('permissions')
+    expect(flowPosition('data', d)).toBeNull()
+    // the full walk-through is unchanged
+    const full = { ...d, quick: false }
+    expect(flowOf(full)).toEqual(FLOW)
+    expect(nextStep('dreams', full)).toBe('tripwires')
+    expect(nextStep('data', full)).toBe('done')
+
+    // filled in on the short path: no data source chosen, no balance typed
+    const filled = complete({ data: { kind: null, personaId: null, csvName: '', csvText: '', balance: '' } })
+    const built = buildOnboardingInput(filled, '135790', null)
+    expect(built.ok).toBe(true)
+    if (!built.ok) return
+    expect(built.input.dataSource).toEqual({ kind: 'empty', startingBalance: 0 })
+    expect(built.input.autonomy).toBe('suggest')
+    const app = createTestApp({ storage: memoryStorage(), llmBaseUrl: null })
+    expect(app.completeOnboarding(built.input)).toEqual({ ok: true })
+    // all four default tripwires are on, and the mirror is ready to fill in
+    expect(app.getSnapshot().state.tripwires.filter((t) => t.enabled).length).toBe(4)
+    expect(app.getSnapshot().derived.mirror?.status).toBe('no_data')
   })
 
   it('refuses without a PIN even when everything else is filled', () => {

@@ -4,7 +4,7 @@ import { fmt } from '../../../../core/money'
 import { DreamImage } from '../../../components/brand'
 import { Button, Callout } from '../../../components/ds'
 import type { OnboardingDraft, StepId } from '../draft'
-import { AUTONOMY_STEPS, CSV_FORMAT_LABEL, ordinal, parseBalance, parseCaps, parseIncome, parseTarget, SANDBOX_LEDGERS, STEP_META, summarizeCsv, TONE_COPY, type Problem } from '../logic'
+import { AUTONOMY_STEPS, CSV_FORMAT_LABEL, dataKindOf, ordinal, parseBalance, parseCaps, parseIncome, parseTarget, type Problem, SANDBOX_LEDGERS, STEP_META, summarizeCsv, TONE_COPY } from '../logic'
 import s from './Steps.module.css'
 import x from './DoneStep.module.css'
 
@@ -28,7 +28,7 @@ interface Row {
 function dataLine(d: OnboardingDraft): string {
   const bal = parseBalance(d)
   const balance = bal.ok ? fmt(bal.minor, d.currency) : null
-  switch (d.data.kind) {
+  switch (dataKindOf(d)) {
     case 'persona':
       return `${SANDBOX_LEDGERS.find((l) => l.id === d.data.personaId)?.owner ?? 'Sandbox ledger'} · simulated`
     case 'csv': {
@@ -36,7 +36,8 @@ function dataLine(d: OnboardingDraft): string {
       return csv && csv.count ? `${csv.count} transactions · ${CSV_FORMAT_LABEL[csv.format]}` : 'CSV import'
     }
     case 'empty':
-      return balance ? `Starting fresh with ${balance}` : 'Starting fresh'
+      // the short setup starts empty without asking: say how spending gets in
+      return !d.data.kind ? 'Starting fresh · add spending by hand or import a statement later' : balance ? `Starting fresh with ${balance}` : 'Starting fresh'
     default:
       return 'Not chosen yet'
   }
@@ -51,7 +52,7 @@ export function DoneStep({ draft, pinSet, problems, error, onEdit }: DoneStepPro
   const main = draft.dreams.find((d) => d.kind === 'goal') ?? draft.dreams[0]
   const on = draft.tripwires.filter((t) => t.enabled).length
   const autonomy = AUTONOMY_STEPS.find((a) => a.value === draft.autonomy)?.label ?? draft.autonomy
-  const DataIcon = draft.data.kind === 'csv' ? FileSpreadsheet : draft.data.kind === 'empty' ? Sprout : Landmark
+  const DataIcon = dataKindOf(draft) === 'csv' ? FileSpreadsheet : dataKindOf(draft) === 'empty' ? Sprout : Landmark
 
   const rows: Row[] = [
     {

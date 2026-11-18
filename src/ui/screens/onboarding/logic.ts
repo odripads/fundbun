@@ -38,21 +38,45 @@ export const STEP_META: Record<StepId, StepMeta> = {
 /** The steps the progress bar counts (welcome and done sit outside it). */
 export const FLOW: readonly StepId[] = ['consent', 'money', 'dreams', 'tripwires', 'permissions', 'mode', 'data']
 
+/**
+ * The short setup: only what Bun cannot guess. Tripwires and tone, how much Bun may do, and where the data comes
+ * from keep their defaults (all on, gentle, "Suggest", start empty) and stay editable from the summary.
+ */
+export const QUICK_FLOW: readonly StepId[] = ['consent', 'money', 'dreams', 'permissions']
+
+type FlowChoice = Pick<OnboardingDraft, 'quick'>
+
+/** The steps this setup walks through. */
+export function flowOf(d?: FlowChoice): readonly StepId[] {
+  return d?.quick ? QUICK_FLOW : FLOW
+}
+
+function pathOf(d?: FlowChoice): StepId[] {
+  return ['welcome', ...flowOf(d), 'done']
+}
+
 export function stepIndex(step: StepId): number {
   return STEPS.indexOf(step)
 }
 
-export function nextStep(step: StepId): StepId {
-  return STEPS[Math.min(STEPS.length - 1, stepIndex(step) + 1)]
+/** The step after this one on the chosen path (a step the short setup skips continues along the full order). */
+export function nextStep(step: StepId, d?: FlowChoice): StepId {
+  const path = pathOf(d)
+  const i = path.indexOf(step)
+  if (i >= 0) return path[Math.min(path.length - 1, i + 1)]
+  return path.find((s) => stepIndex(s) > stepIndex(step)) ?? 'done'
 }
 
-export function prevStep(step: StepId): StepId {
-  return STEPS[Math.max(0, stepIndex(step) - 1)]
+export function prevStep(step: StepId, d?: FlowChoice): StepId {
+  const path = pathOf(d)
+  const i = path.indexOf(step)
+  if (i >= 0) return path[Math.max(0, i - 1)]
+  return [...path].reverse().find((s) => stepIndex(s) < stepIndex(step)) ?? 'welcome'
 }
 
-/** 1-based position within FLOW, or null for welcome/done. */
-export function flowPosition(step: StepId): number | null {
-  const i = FLOW.indexOf(step)
+/** 1-based position within the chosen flow, or null for welcome/done (and for a step the short setup skips). */
+export function flowPosition(step: StepId, d?: FlowChoice): number | null {
+  const i = flowOf(d).indexOf(step)
   return i === -1 ? null : i + 1
 }
 
@@ -480,11 +504,18 @@ export function summarizeCsv(text: string, currency: Currency): CsvSummary {
 export { decodeCsvBytes } from '../../lib/csvFile'
 
 export function parseBalance(d: OnboardingDraft): MoneyParse {
+  // the short setup never asks for a balance: it starts at zero and can be set later
+  if (d.quick && !d.data.kind && !d.data.balance.trim()) return { ok: true, minor: 0 }
   return parseMoney(d.data.balance, d.currency, { what: 'your current balance', example: '6,500', allowZero: true })
 }
 
+/** Where the data comes from: the user's choice, or "start empty" on the short setup until they choose. */
+export function dataKindOf(d: OnboardingDraft): OnboardingDraft['data']['kind'] {
+  return d.data.kind ?? (d.quick ? 'empty' : null)
+}
+
 export function validateData(d: OnboardingDraft, csv: CsvSummary | null): Errors {
-  const k = d.data.kind
+  const k = dataKindOf(d)
   if (!k) return { source: 'Choose where Bun should look — a sandbox bank is the quickest.' }
   if (k === 'persona') return d.data.personaId ? {} : { persona: 'Pick one of the two sandbox ledgers' }
   const e: Errors = {}
@@ -499,7 +530,7 @@ export function validateData(d: OnboardingDraft, csv: CsvSummary | null): Errors
 
 export function dataSource(d: OnboardingDraft): DataSource | null {
   const bal = parseBalance(d)
-  switch (d.data.kind) {
+  switch (dataKindOf(d)) {
     case 'persona':
       return d.data.personaId ? { kind: 'persona', personaId: d.data.personaId } : null
     case 'csv':

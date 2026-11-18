@@ -17,7 +17,7 @@ import {
   buildOnboardingInput,
   clampStep,
   firstInvalidStep,
-  FLOW,
+  flowOf,
   flowPosition,
   nextStep,
   prevStep,
@@ -133,10 +133,10 @@ export function OnboardingScreen() {
       requestAnimationFrame(() => focusFirstError(errs))
       return
     }
-    pushStep(returnToSummary ? clampStep('done', draft, flowCtx) : nextStep(step))
+    pushStep(returnToSummary ? clampStep('done', draft, flowCtx) : clampStep(nextStep(step, draft), draft, flowCtx))
   }
 
-  const goBack = () => backTo(prevStep(step))
+  const goBack = () => backTo(prevStep(step, draft))
   const editFromSummary = (target: StepId) => {
     setReturnToSummary(true)
     pushStep(target)
@@ -222,12 +222,13 @@ export function OnboardingScreen() {
   }
 
   const meta = STEP_META[step]
-  const position = flowPosition(step)
+  const flow = flowOf(draft)
+  const position = flowPosition(step, draft)
   const errorCount = Object.keys(errors).length
   let body: ReactNode
   let action: ReactNode = (
     <Button size="lg" fullWidth onClick={goNext} iconEnd={<ArrowRight />}>
-      {returnToSummary ? 'Back to summary' : step === 'data' ? 'Review my setup' : 'Continue'}
+      {returnToSummary ? 'Back to summary' : nextStep(step, draft) === 'done' ? 'Review my setup' : 'Continue'}
     </Button>
   )
   switch (step) {
@@ -244,7 +245,7 @@ export function OnboardingScreen() {
       body = <TripwiresStep {...props} />
       break
     case 'permissions':
-      body = <PermissionsStep {...props} pinSet={pin !== null} onPin={setPin} />
+      body = <PermissionsStep {...props} pinSet={pin !== null} onPin={setPin} quick={draft.quick && !returnToSummary} />
       break
     case 'data':
       body = <DataStep {...props} csv={csv} />
@@ -264,12 +265,12 @@ export function OnboardingScreen() {
 
   return (
     <div ref={rootRef} className={styles.root} data-step={step}>
-      <StepBar step={step} onBack={goBack} />
+      <StepBar step={step} flow={flow} onBack={goBack} />
       <div key={step} className={styles.body} data-dir={view.dir} onKeyDown={onBodyKeyDown}>
         <StepIntro
           headingRef={headingRef}
-          eyebrow={position ? `Step ${position} of ${FLOW.length}` : 'Ready when you are'}
-          title={step === 'done' && draft.name.trim() ? `You’re all set, ${draft.name.trim()}` : meta.title}
+          eyebrow={position ? `Step ${position} of ${flow.length}` : step === 'done' ? 'Ready when you are' : 'Optional'}
+          title={step === 'done' && draft.name.trim() ? `You’re all set, ${draft.name.trim()}` : step === 'permissions' && draft.quick && !returnToSummary ? 'One last thing: a PIN' : meta.title}
           mood={meta.mood}
           big={step === 'done'}
           art={step === 'done' ? <DreamOrbit items={doneOrbit(draft)} mascotSize={112} radius={96} height={draft.dreams.length <= 2 ? 184 : 232} /> : undefined}
@@ -283,17 +284,24 @@ export function OnboardingScreen() {
           </p>
         ) : null}
         {action}
+        {step !== 'done' && !returnToSummary ? (
+          <button type="button" className={styles.flowSwitch} onClick={() => update((d) => ({ ...d, quick: !d.quick }))}>
+            {draft.quick ? 'Set up every detail instead (7 steps)' : 'Use the short setup (4 steps)'}
+          </button>
+        ) : null}
       </footer>
     </div>
   )
 }
 
 /** Sticky top bar: back, segmented progress over the six flow steps, "n of 6". */
-function StepBar({ step, onBack }: { step: StepId; onBack: () => void }) {
+function StepBar({ step, flow, onBack }: { step: StepId; flow: readonly StepId[]; onBack: () => void }) {
   const sentinel = useRef<HTMLDivElement>(null)
   const stuck = useStuck(sentinel)
-  const position = flowPosition(step) ?? FLOW.length + 1
-  const done = Math.min(FLOW.length, position - 1)
+  const at = flow.indexOf(step)
+  // a step the short setup skips (opened from the summary) sits where it would fall in the short flow
+  const position = at >= 0 ? at + 1 : step === 'done' ? flow.length + 1 : flow.filter((s) => stepIndex(s) < stepIndex(step)).length + 1
+  const done = Math.min(flow.length, position - 1)
   return (
     <>
       <div ref={sentinel} className={styles.sentinel} aria-hidden="true" />
@@ -305,16 +313,16 @@ function StepBar({ step, onBack }: { step: StepId; onBack: () => void }) {
             role="progressbar"
             aria-label="Setup progress"
             aria-valuemin={0}
-            aria-valuemax={FLOW.length}
+            aria-valuemax={flow.length}
             aria-valuenow={done}
-            aria-valuetext={step === 'done' ? 'All steps complete' : `Step ${position} of ${FLOW.length}: ${STEP_META[step].short}`}
+            aria-valuetext={step === 'done' ? 'All steps complete' : `Step ${Math.min(position, flow.length)} of ${flow.length}: ${STEP_META[step].short}`}
           >
-            {FLOW.map((s, i) => (
+            {flow.map((s, i) => (
               <span key={s} className={styles.seg} data-state={i < done ? 'done' : i === done && step !== 'done' ? 'current' : 'todo'} />
             ))}
           </div>
           <span className={styles.count} aria-hidden="true">
-            {step === 'done' ? 'Done' : `${position}/${FLOW.length}`}
+            {step === 'done' ? 'Done' : `${Math.min(position, flow.length)}/${flow.length}`}
           </span>
         </div>
       </div>
