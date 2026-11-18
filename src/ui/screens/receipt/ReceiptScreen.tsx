@@ -103,7 +103,9 @@ export function ReceiptScreen() {
       if (r.ok) applyParse(r)
       else setError(r.error)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'The photo could not be read.')
+      // the text reader for photos is not bundled in this build (and a phone on plain http has no camera): say so
+      setError('Photo reading isn’t available in this build. Try one of the sample receipts below, or type the amount in.')
+      void e
     } finally {
       setScanning(false)
     }

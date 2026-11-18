@@ -151,7 +151,7 @@ describe('HomeScreen — the Dream Mirror', () => {
     app.markEventsSeen()
     const { container } = await renderHome(app)
     expect(container.textContent).toContain('No alerts right now')
-    await click(byText(container, 'Sandbox', 'button'))
+    await click(byText(container, 'Sandbox · Oct 22', 'button'))
     const sheet = document.querySelector('[role="dialog"]')!
     expect(sheet.textContent).toContain('No real money moves')
     await click(byText(sheet, 'Done', 'button'))
@@ -176,7 +176,7 @@ describe('HomeScreen — the Dream Mirror', () => {
   it('the sandbox sheet stays open after a purchase to show the result, and closes on Done', async () => {
     const app = demo('mei')
     const { container } = await renderHome(app)
-    await click(byText(container, 'Sandbox', 'button'))
+    await click(byText(container, 'Sandbox · Oct 22', 'button'))
     const sheet = () => document.querySelector('[role="dialog"]')
     await click(sheet()!.querySelector('button[title^="A big purchase"]'))
     await flush()

@@ -1,6 +1,7 @@
 import { ArrowRight, BellRing, Check, CircleHelp, Clock3, FlaskConical, Gauge, MessageCircleHeart, PiggyBank, ShieldCheck, Sparkles, Target, TrendingDown, TrendingUp, type LucideIcon } from 'lucide-react'
 import { useId, useState, type CSSProperties, type ReactNode } from 'react'
 import type { AppSnapshot } from '../../../core/app-api'
+import { dateLabel } from '../../../core/dates'
 import type { Minor, MirrorStatus, SuggestedAction } from '../../../core/types'
 import { suggestionReceipt, useProposeAction } from '../../components/agent'
 import { BunMascot, DreamImage } from '../../components/brand'
@@ -112,6 +113,8 @@ function GoalRing({ now, after }: { now: number; after: number }) {
  * items inside an arched vanity mirror, with Bun reacting beside it. All copy and numbers come from
  * derived.mirror (computed on-device); every action goes through the policy engine via useProposeAction.
  */
+const selectSandboxDate = (s: AppSnapshot): string | null => (s.derived.clock === 'sandbox' ? dateLabel(s.derived.today) : null)
+
 export function MirrorHero({ onCheck, onSandbox }: MirrorHeroProps) {
   const app = useApp()
   const { mirror, currency, dreams } = useSnapshot(selectHero, shallowEqual)
@@ -122,6 +125,7 @@ export function MirrorHero({ onCheck, onSandbox }: MirrorHeroProps) {
   // what each button proposed: once it ran, the button becomes a receipt of what ran (undo brings it back)
   const [pids, setPids] = useState<{ primary?: string; secondary?: string }>({})
   const pending = useSnapshot(selectPending)
+  const sandboxDate = useSnapshot(selectSandboxDate)
 
   if (!mirror) {
     return (
@@ -239,8 +243,9 @@ export function MirrorHero({ onCheck, onSandbox }: MirrorHeroProps) {
     <section className={styles.hero} data-status={mirror.status} aria-labelledby={headingId}>
       <Ambient />
 
+      {/* a demo persona's calendar is frozen: say the date, so "October" on a November stage is not a mystery */}
       <Chip size="sm" icon={<FlaskConical />} onClick={onSandbox} aria-label="Open the sandbox (demo controls)" className={styles.sandbox}>
-        Sandbox
+        {sandboxDate ? `Sandbox · ${sandboxDate}` : 'Sandbox'}
       </Chip>
 
       {/* the first view: everything up to the primary action, sized to the screen with the band under the tab bar
