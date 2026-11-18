@@ -639,7 +639,7 @@ function overPlan(host: AgentHost, runner: PlanRunner, s1: string): OverFixes {
   const findings = Array.isArray(runner.data(s3).findings) ? (runner.data(s3).findings as { kind?: string }[]) : []
   const sub = findings.some((x) => x.kind === 'subscription_overlap') ? cheapestOverlapping(safeRecurring(host)) : undefined
   if (sub) proposals.push(runner.add({ tool: 'cancel_subscription', args: { recurringId: sub.id }, dependsOn: [s3], label: `Cancel ${sub.merchant} (overlapping video app)` }))
-  if (!hasPaceWire(state)) proposals.push(runner.add({ tool: 'create_tripwire', args: { kind: 'pace_over', threshold: 100 }, dependsOn: [s2], label: 'Warn me if I’m on pace to overshoot' }))
+  if (!hasPaceWire(state)) proposals.push(runner.add({ tool: 'create_tripwire', args: { kind: 'pace_over', threshold: 100 }, dependsOn: [s2], label: 'Warn you if you’re on pace to overshoot' }))
   for (const id of proposals) runner.run(id)
   const row = cap ? (Array.isArray(runner.data(s2).categories) ? (runner.data(s2).categories as { category: string; spent: number; prevMonth?: number }[]) : []).find((r) => r.category === cap.category) : undefined
   return {
@@ -660,7 +660,7 @@ function underPlan(host: AgentHost, runner: PlanRunner, s1: string, goalId?: str
     const name = findDream(state, stash.goalId)?.name ?? 'your goal'
     proposals.push(runner.add({ tool: 'transfer_to_goal', args: { goalId: stash.goalId, amount: stash.amount }, dependsOn: [s2], label: `Stash ${f(stash.amount)} in ${name}` }))
   }
-  if (!hasPaceWire(state)) proposals.push(runner.add({ tool: 'create_tripwire', args: { kind: 'pace_over', threshold: 100 }, dependsOn: [s1], label: 'Protect the surplus: warn me if I’m on pace to overshoot' }))
+  if (!hasPaceWire(state)) proposals.push(runner.add({ tool: 'create_tripwire', args: { kind: 'pace_over', threshold: 100 }, dependsOn: [s1], label: 'Protect the surplus: warn you if you’re on pace to overshoot' }))
   for (const id of proposals) runner.run(id)
 }
 
@@ -670,7 +670,7 @@ function onTrackPlan(host: AgentHost, runner: PlanRunner, s1: string): void {
   runner.run(s2)
   runner.run(s3)
   if (!hasPaceWire(host.state())) {
-    const s4 = runner.add({ tool: 'create_tripwire', args: { kind: 'pace_over', threshold: 100 }, dependsOn: [s2], label: 'Warn me if I’m on pace to overshoot' })
+    const s4 = runner.add({ tool: 'create_tripwire', args: { kind: 'pace_over', threshold: 100 }, dependsOn: [s2], label: 'Warn you if you’re on pace to overshoot' })
     runner.run(s4)
   }
 }

@@ -2,9 +2,10 @@ import { ArrowRight, CalendarClock, CircleCheck, CircleHelp, CircleX, Clock3, Sp
 import { useEffect, useId, useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import type { AppSnapshot } from '../../../core/app-api'
 import { checkAffordability } from '../../../core/finance'
-import { CURRENCY_SYMBOL, parseAmount } from '../../../core/money'
+import { CURRENCY_SYMBOL, MINOR_PER_MAJOR, fmt, parseAmount } from '../../../core/money'
 import type { AffordabilityResult, Currency, Tone } from '../../../core/types'
 import { BunMascot, DreamImage } from '../../components/brand'
+import { MAX_PRICE_MAJOR } from '../../components/dreams/logic'
 import { AiBadge, Badge, Button, Money, Sheet, TextField, type BadgeVariant } from '../../components/ds'
 import { navigate } from '../../router'
 import { shallowEqual, useApp, useSnapshot } from '../../state'
@@ -59,6 +60,11 @@ export function QuickCheck({ request, onRequestHandled }: QuickCheckProps) {
     const amount = parseAmount(amountText, currency)
     if (amount === null || amount <= 0) {
       setError('Type a price, like 299')
+      return
+    }
+    const ceiling = MAX_PRICE_MAJOR * MINOR_PER_MAJOR[currency]
+    if (amount > ceiling) {
+      setError(`Keep it under ${fmt(ceiling, currency)}`)
       return
     }
     setError(null)

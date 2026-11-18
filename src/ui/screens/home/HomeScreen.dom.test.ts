@@ -139,7 +139,10 @@ describe('HomeScreen — the Dream Mirror', () => {
     await click(byText(deck, 'Clear all', 'button'))
     await flush()
     expect(app.getSnapshot().derived.unseenEvents).toHaveLength(0)
-    expect(container.textContent).toContain('No tripwires yet')
+    // the demo persona still has tripwires on: an empty deck must not read as "no tripwires"
+    expect(container.textContent).toContain('No alerts right now')
+    expect(container.textContent).toMatch(/\d+ tripwires are watching your spending/)
+    expect(container.textContent).not.toContain('No tripwires yet')
   })
 
   it('toasts a new tripwire with its dream picture and stacks it until "Got it"', async () => {
@@ -147,7 +150,7 @@ describe('HomeScreen — the Dream Mirror', () => {
     // start from a clean deck: the demo's two primed alerts are covered by the test above
     app.markEventsSeen()
     const { container } = await renderHome(app)
-    expect(container.textContent).toContain('No tripwires yet')
+    expect(container.textContent).toContain('No alerts right now')
     await click(byText(container, 'Sandbox', 'button'))
     const sheet = document.querySelector('[role="dialog"]')!
     expect(sheet.textContent).toContain('No real money moves')

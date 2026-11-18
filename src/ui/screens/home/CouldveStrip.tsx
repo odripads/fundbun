@@ -47,7 +47,7 @@ export function CouldveStrip() {
   return (
     <section className={styles.root} aria-labelledby={headingId}>
       <p className={styles.eyebrow}>Last {MONTHS} months</p>
-      <h2 id={headingId} className={styles.title}>{couldveHeadline(data.totals, MONTHS, currency)}</h2>
+      <h2 id={headingId} className={styles.title}>{couldveHeadline(data.totals, bars.filter((b) => !b.current).length || MONTHS, currency)}</h2>
 
       <div
         className={styles.chart}

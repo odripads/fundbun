@@ -486,10 +486,12 @@ export interface CouldveTotals {
 /** One line that sums up six months — leads with the kept money when it outweighs the overspend. */
 export function couldveHeadline(c: CouldveTotals, months: number, currency: Currency): string {
   const f = (m: Minor) => fmtWhole(m, currency)
+  // the totals cover finished months only (the month in progress has its own line below the chart), so say so
+  const span = `${months} finished month${months === 1 ? '' : 's'}`
   if (c.totalOver <= 0 && c.totalUnder <= 0) return `Nothing to tally from the last ${months} months yet.`
-  if (c.totalOver <= 0) return `${f(c.totalUnder)} kept under target in ${months} months.`
+  if (c.totalOver <= 0) return `${f(c.totalUnder)} kept under target in ${span}.`
   const eq = c.equivalents[0]
-  return `${f(c.totalOver)} over target in ${months} months${eq ? ` — ${eq.label}` : ''}.`
+  return `${f(c.totalOver)} over target in ${span}${eq ? ` — ${eq.label}` : ''}.`
 }
 
 // ───────────────────────────── "Should I buy it?" ─────────────────────────────

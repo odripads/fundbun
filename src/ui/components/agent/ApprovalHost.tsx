@@ -8,11 +8,14 @@ import { useToast } from '../ds/Toast'
 import { ActionCard } from './ActionCard'
 import { closeApproval, useApprovalTarget } from './approvalStore'
 import { useApprovalFlow, useNow } from './hooks'
+import { DEMO_PIN } from '../sandbox/logic'
 import { actionTitle, needsPin, pinLockedFor } from './logic'
 import styles from './ApprovalHost.module.css'
 
 const selectLock = (s: AppSnapshot) => s.state.mandate.pinLockedUntil
 const selectToday = (s: AppSnapshot) => sandboxToday(s)
+/** A demo persona's PIN is public (it is printed in the sandbox controls); a real user's PIN is never hinted. */
+const selectDemo = (s: AppSnapshot) => Boolean(s.state.profile?.personaId)
 
 /** The single approval sheet (tap to approve; PIN for step_up). Mounted once inside the app frame. */
 export function ApprovalHost() {
@@ -21,6 +24,7 @@ export function ApprovalHost() {
   const p = useSnapshot((s) => (id ? s.state.pending.find((x) => x.id === id) : undefined))
   const lockedUntil = useSnapshot(selectLock)
   const today = useSnapshot(selectToday)
+  const demo = useSnapshot(selectDemo)
   const flow = useApprovalFlow(id, () => closeApproval())
   const open = Boolean(id && p && p.status === 'pending')
   const pin = p ? needsPin(p) : false
@@ -76,7 +80,7 @@ export function ApprovalHost() {
                 minLength={4}
                 maxLength={6}
                 label="Enter your PIN to approve"
-                description="Checked on this device only"
+                description={demo ? `Sandbox demo PIN: ${DEMO_PIN} · checked on this device only` : 'Checked on this device only'}
                 onComplete={(value) => void flow.approve(value)}
                 error={flow.error}
                 errorKey={flow.errorKey}

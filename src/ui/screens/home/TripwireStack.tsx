@@ -10,6 +10,7 @@ import { freshEvents, leadEvent, newestFirst, sameIds } from './model'
 import styles from './TripwireStack.module.css'
 
 const selectUnseen = (s: AppSnapshot) => s.derived.unseenEvents
+const selectWatching = (s: AppSnapshot) => s.state.tripwires.filter((t) => t.enabled).length
 const selectClock = (s: AppSnapshot) => ({ today: sandboxToday(s), txns: s.state.bank.transactions })
 
 /** Settings › Tripwires, scrolled to and focused (the section id SettingsScreen jumps to). */
@@ -77,6 +78,7 @@ export function useTripwireToasts(opts: TripwireToastOptions = {}) {
 export function TripwireStack() {
   const app = useApp()
   const events = useSnapshot(selectUnseen, sameIds)
+  const watching = useSnapshot(selectWatching)
   const clock = useSnapshot(selectClock, shallowEqual)
   const headingId = useId()
   const rootRef = useRef<HTMLElement>(null)
@@ -106,10 +108,15 @@ export function TripwireStack() {
             <BunMascot mood="calm" size={48} />
           </span>
           <div className={styles.emptyBody}>
-            <p className={styles.emptyTitle}>No tripwires yet</p>
-            <p className={styles.emptyText}>Set one and Bun will warn you before you overspend.</p>
+            {/* no unseen alerts is not the same as no tripwires: say which one it is */}
+            <p className={styles.emptyTitle}>{watching > 0 ? 'No alerts right now' : 'No tripwires yet'}</p>
+            <p className={styles.emptyText}>
+              {watching > 0
+                ? `${watching} tripwire${watching === 1 ? ' is' : 's are'} watching your spending. Bun warns you the moment one is crossed.`
+                : 'Set one and Bun will warn you before you overspend.'}
+            </p>
             <Button size="sm" iconStart={<BellRing />} className={styles.tap} onClick={openTripwireSettings}>
-              Set a tripwire
+              {watching > 0 ? 'Edit tripwires' : 'Set a tripwire'}
             </Button>
           </div>
         </div>

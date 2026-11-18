@@ -402,8 +402,8 @@ describe("could've collection", () => {
 
   it('sums six months in one line', () => {
     const eq = [{ itemId: 'c', itemName: 'Chengdu', image: 'preset:plane', fraction: 1.7, label: 'a Weekend in Chengdu' }]
-    expect(couldveHeadline({ totalOver: 413_213, totalUnder: 5_531, equivalents: eq }, 6, 'CNY')).toBe('¥4,132 over target in 6 months — a Weekend in Chengdu.')
-    expect(couldveHeadline({ totalOver: 0, totalUnder: 156_818, equivalents: [] }, 6, 'CNY')).toBe('¥1,568 kept under target in 6 months.')
+    expect(couldveHeadline({ totalOver: 413_213, totalUnder: 5_531, equivalents: eq }, 6, 'CNY')).toBe('¥4,132 over target in 6 finished months — a Weekend in Chengdu.')
+    expect(couldveHeadline({ totalOver: 0, totalUnder: 156_818, equivalents: [] }, 6, 'CNY')).toBe('¥1,568 kept under target in 6 finished months.')
     expect(couldveHeadline({ totalOver: 0, totalUnder: 0, equivalents: [] }, 6, 'CNY')).toMatch(/Nothing to tally/)
   })
 })

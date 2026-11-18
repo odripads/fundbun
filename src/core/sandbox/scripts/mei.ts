@@ -197,7 +197,7 @@ const electricity: BillSeriesSpec = {
       fields: [
         ['Bill no. 账单编号', `SZPS-${period.replace('-', '')}-0458`],
         ['Account no. 户号', '0755 3318 0458'],
-        ['Customer 户名', 'LIN M**'],
+        ['Customer 户名', 'LIN J**'],
         ['Service address 用电地址', 'Futian District, Shenzhen (masked)'],
         ['Billing period 计费周期', periodRange(period)],
         ['Issue date 出账日期', issueDate],
@@ -232,7 +232,7 @@ const water: BillSeriesSpec = {
       header: ['深圳市水务（集团）有限公司 Shenzhen Water Group', 'Water Bill 水费账单'],
       fields: [
         ['Customer no. 用户号', '2290 4417 2291'],
-        ['Customer 户名', 'LIN M**'],
+        ['Customer 户名', 'LIN J**'],
         ['Billing period 计费周期', periodRange(period)],
         ['Issue date 出账日期', issueDate],
         ['Usage 用水量', quote.usage ?? ''],

@@ -230,7 +230,7 @@ export function MirrorHero({ onCheck, onSandbox }: MirrorHeroProps) {
     return (
       <p className={styles.hint}>
         {a.kind === 'prompt' ? <Sparkles aria-hidden="true" /> : <ShieldCheck aria-hidden="true" />}
-        {a.kind === 'prompt' ? 'Bun lines up fixes — nothing changes without your OK.' : ctaHint(a.action)}
+        {a.kind === 'prompt' ? 'Bun lines up fixes — money never moves without your OK.' : ctaHint(a.action)}
       </p>
     )
   }

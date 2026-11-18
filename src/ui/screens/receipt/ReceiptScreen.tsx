@@ -184,7 +184,7 @@ export function ReceiptScreen() {
       {!photoUrl && !parseResult ? (
         <Card className={styles.choose}>
           <p className={styles.lead}>
-            Photograph a 小票 / struk and Bun turns it into a spending item — on this device, never uploaded. You
+            Photograph a paper receipt and Bun turns it into a spending item — on this device, never uploaded. You
             confirm before anything is added.
           </p>
           <Button iconStart={<Camera />} onClick={() => inputRef.current?.click()}>Take a photo</Button>

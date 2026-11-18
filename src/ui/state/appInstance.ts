@@ -57,7 +57,7 @@ export function createBrowserApp(): FundBunApp {
 export function applyBootParams(app: FundBunApp, loc: Location | undefined = globalThis.location): void {
   if (!loc) return
   const params = new URLSearchParams(loc.search)
-  const demo = params.get('demo')
+  const demo = params.get('demo')?.trim().toLowerCase() || null
   const reset = params.get('reset')
   if (!demo && !reset) return
   if (reset === '1') app.resetAll()

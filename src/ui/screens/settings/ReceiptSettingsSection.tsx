@@ -33,7 +33,7 @@ export function ReceiptSettingsSection() {
         <div className={styles.toggleRow}>
           <Toggle
             label="Scan receipts with the camera"
-            description="Photograph a 小票 / struk; Bun turns it into a spending item on this device. You confirm before anything is added, and the photo is discarded afterwards."
+            description="Photograph a paper receipt; Bun turns it into a spending item on this device. You confirm before anything is added, and the photo is discarded afterwards."
             checked={receiptScans}
             onChange={(receiptScans) => app.setSettings({ receiptScans })}
             tone="accent"

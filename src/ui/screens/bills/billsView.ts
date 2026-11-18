@@ -267,7 +267,7 @@ export function severityCounts(findings: BillFinding[]): Record<BillFinding['sev
   return out
 }
 
-const MONEY_KEYS = new Set(['amount', 'from', 'to', 'extraPerYear', 'amountDue', 'average', 'monthlyTotal', 'annualTotal'])
+const MONEY_KEYS = new Set(['amount', 'from', 'to', 'extraPerYear', 'amountDue', 'average', 'monthlyTotal', 'annualTotal', 'savesPerMonth', 'savesPerYear'])
 const DATE_KEYS = new Set(['since', 'firstDate', 'secondDate', 'dueDate'])
 
 const EVIDENCE_LABEL: Record<string, string> = {
