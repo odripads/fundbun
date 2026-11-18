@@ -26,6 +26,8 @@ import {
   type CtaIcon,
   type StatusTone,
   temperLine,
+  isAngry,
+  shout,
 } from './model'
 import styles from './MirrorHero.module.css'
 
@@ -95,6 +97,50 @@ function Steam() {
   )
 }
 
+/** The glass is drawn in a 100 × 114 frame; the blow landed up and to the right of centre. */
+const CRACK_RAYS = [
+  'M63 43L71 30L69 18L76 4L74 0',
+  'M63 43L78 40L88 46L100 42',
+  'M63 43L70 56L82 66L88 84L100 92',
+  'M63 43L55 58L58 74L48 92L52 114',
+  'M63 43L47 45L36 38L20 44L0 38',
+  'M63 43L52 31L38 26L30 12L18 4',
+]
+const CRACK_WEB = ['M71 30L78 40L70 56L55 58L47 45L52 31Z']
+/** Furious: the glass is shattered, not just cracked. */
+const SHATTER_RAYS = ['M63 43L66 62L60 80L66 100L62 114', 'M63 43L80 52L92 62L100 70', 'M63 43L58 22L62 8L56 0', 'M63 43L44 54L30 66L14 70L0 80', 'M63 43L84 30L92 16L100 10']
+const SHATTER_WEB = ['M69 18L84 30L88 46L92 62L82 66L60 80L58 74L30 66L36 38L38 26L58 22Z']
+const SHARDS = ['M63 43L78 40L70 56Z', 'M63 43L47 45L55 58Z', 'M88 46L92 62L82 66Z']
+
+/**
+ * The mirror breaks when Bun is angry: fractures run out from one blow, and when Bun is furious the glass is
+ * shattered. Drawn in code, each line twice (a shadow under a bright edge) so it reads as broken glass.
+ */
+function Cracks({ shattered }: { shattered: boolean }) {
+  const rays = shattered ? [...CRACK_RAYS, ...SHATTER_RAYS] : CRACK_RAYS
+  const web = shattered ? [...CRACK_WEB, ...SHATTER_WEB] : CRACK_WEB
+  return (
+    <span className={styles.cracks} aria-hidden="true">
+      <svg viewBox="0 0 100 114" preserveAspectRatio="none" focusable="false">
+        {shattered ? SHARDS.map((d, i) => <path key={d} d={d} className={i === 1 ? styles.shardDark : styles.shard} />) : null}
+        <g className={styles.crackShadow} transform="translate(0.7 0.9)">
+          {rays.map((d) => (
+            <path key={d} d={d} pathLength={1} />
+          ))}
+        </g>
+        <g className={styles.crackEdge}>
+          {rays.map((d) => (
+            <path key={d} d={d} pathLength={1} />
+          ))}
+          {web.map((d) => (
+            <path key={d} d={d} pathLength={1} className={styles.web} />
+          ))}
+        </g>
+      </svg>
+    </span>
+  )
+}
+
 /** Goal progress around the dream: the solid arc is saved today, the faint arc is where a stash would take it. */
 function GoalRing({ now, after }: { now: number; after: number }) {
   const size = 200
@@ -147,7 +193,11 @@ export function MirrorHero({ onCheck, onSandbox }: MirrorHeroProps) {
   const meta = STATUS_META[mirror.status]
   const StatusIcon = STATUS_ICON[mirror.status]
   const hero = heroDream(mirror, dreams)
-  const parts = splitHeadline(mirror.headline, hero.item?.name)
+  // Bun is angry: the mirror breaks, the dream goes dark and the words are shouted (see "the broken mirror" in the stylesheet)
+  const broken = isAngry(mirror.mood)
+  const headline = broken ? shout(mirror.headline) : mirror.headline
+  const subline = broken ? shout(mirror.subline) : mirror.subline
+  const parts = splitHeadline(headline, hero.item?.name)
   const stats = mirrorStats(mirror, currency)
   const actions = heroActions(mirror, dreams)
   const noData = mirror.status === 'no_data'
@@ -244,7 +294,7 @@ export function MirrorHero({ onCheck, onSandbox }: MirrorHeroProps) {
   }
 
   return (
-    <section className={styles.hero} data-status={mirror.status} aria-labelledby={headingId}>
+    <section className={styles.hero} data-status={mirror.status} data-mood={mirror.mood} aria-labelledby={headingId}>
       <Ambient />
 
       {/* a demo persona's calendar is frozen: say the date, so "October" on a November stage is not a mystery */}
@@ -272,6 +322,7 @@ export function MirrorHero({ onCheck, onSandbox }: MirrorHeroProps) {
                 </span>
               )}
               <span className={styles.floor} aria-hidden="true" />
+              {broken ? <Cracks shattered={mirror.mood === 'furious'} /> : null}
             </div>
             {hero.item ? (
               <span className={styles.bun} data-mood={mirror.mood}>
@@ -301,15 +352,15 @@ export function MirrorHero({ onCheck, onSandbox }: MirrorHeroProps) {
                 {parts[2]}
               </>
             ) : (
-              mirror.headline
+              headline
             )}
           </h2>
-          <p className={styles.subline}>{mirror.subline}</p>
+          <p className={styles.subline}>{subline}</p>
           {temper ? (
             <p className={styles.temper} data-kind={temper.kind}>
               {temper.kind === 'carrot' ? <Flame aria-hidden="true" /> : temper.kind === 'cooling' ? <ThermometerSnowflake aria-hidden="true" /> : <Thermometer aria-hidden="true" />}
               <span>
-                <strong>{temper.label}.</strong> {temper.text}
+                <strong>{temper.label}{temper.kind === 'stick' && broken ? '!!!' : '.'}</strong> {temper.text}
               </span>
             </p>
           ) : null}

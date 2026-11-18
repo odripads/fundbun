@@ -157,7 +157,8 @@ export interface Bill {
   lineItems?: BillLineItem[]
   /** raw bill text as received — UNTRUSTED CONTENT, may contain prompt injection */
   rawText?: string
-  source: 'sandbox' | 'import' | 'xray'
+  /** 'expected': predicted from the user's own repeating charges (no bank connected; finance/expected) */
+  source: 'sandbox' | 'import' | 'xray' | 'expected'
 }
 
 export interface Dispute {

@@ -497,6 +497,199 @@
   text-wrap: pretty;
 }
 
+/* ───────────── the broken mirror ─────────────
+ * When Bun is angry the dream turns into what was lost: the glass cracks (and shatters when Bun is furious), the
+ * scene inside goes dark with a red glow on the horizon, the brass tarnishes, the air fills with ash, the name
+ * plate is struck through, and the words are in capitals. It is the stick, made visible. */
+
+.cracks {
+  position: absolute;
+  inset: 7px;
+  z-index: 2;
+  overflow: hidden;
+  border-radius: 999px 999px calc(var(--r-xl) - 6px) calc(var(--r-xl) - 6px);
+  pointer-events: none;
+}
+
+.cracks svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.cracks path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 1;
+  animation: crack-in 560ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+.crackShadow path {
+  stroke: color-mix(in srgb, var(--c-soy-900) 62%, transparent);
+  stroke-width: 1.5px;
+}
+
+.crackEdge path {
+  stroke: color-mix(in srgb, var(--c-cream-50) 88%, transparent);
+  stroke-width: 0.7px;
+}
+
+/* the rings between the fractures are hairlines, so the glass reads as broken rather than drawn on */
+.cracks path.web {
+  stroke-width: 0.45px;
+  opacity: 0.7;
+}
+
+.cracks path.shard,
+.cracks path.shardDark {
+  stroke: none;
+  fill: color-mix(in srgb, var(--c-cream-50) 16%, transparent);
+  animation: none;
+}
+
+.cracks path.shardDark {
+  fill: color-mix(in srgb, var(--c-soy-900) 38%, transparent);
+}
+
+@keyframes crack-in {
+  from {
+    stroke-dashoffset: 1;
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.hero[data-mood='angry'],
+.hero[data-mood='furious'] {
+  --tint: var(--c-chili-600);
+  --tint-2: var(--c-soy-700);
+}
+
+/* ash in the air: the warm haze turns grey and gritty */
+.hero[data-mood='angry'] .ambient,
+.hero[data-mood='furious'] .ambient {
+  background:
+    radial-gradient(90% 42% at 50% 24%, color-mix(in srgb, var(--c-chili-600) 26%, transparent) 0%, transparent 72%),
+    linear-gradient(180deg, color-mix(in srgb, var(--c-soy-700) 30%, var(--bg)) 0%, color-mix(in srgb, var(--c-soy-700) 12%, var(--bg)) 46%, transparent 100%);
+}
+
+.hero[data-mood='angry'] .orbC,
+.hero[data-mood='furious'] .orbC {
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--c-soy-700) 46%, transparent), transparent);
+}
+
+.hero[data-mood='angry'] .grain,
+.hero[data-mood='furious'] .grain {
+  opacity: 0.16;
+}
+
+/* the brass tarnishes */
+.hero[data-mood='angry'] .mirror,
+.hero[data-mood='furious'] .mirror {
+  background:
+    linear-gradient(160deg,
+      color-mix(in srgb, var(--accent) 34%, var(--c-soy-700)) 0%,
+      color-mix(in srgb, var(--accent-strong) 30%, var(--c-soy-800)) 40%,
+      color-mix(in srgb, var(--accent) 22%, var(--c-soy-700)) 64%,
+      var(--c-soy-800) 100%);
+  box-shadow:
+    0 22px 46px -16px color-mix(in srgb, var(--c-chili-600) 62%, transparent),
+    0 8px 18px -10px color-mix(in srgb, var(--c-soy-900) 60%, transparent);
+}
+
+/* inside the glass: night, with fire on the horizon */
+.hero[data-mood='angry'] .glass,
+.hero[data-mood='furious'] .glass {
+  background:
+    radial-gradient(120% 46% at 50% 104%, color-mix(in srgb, var(--c-chili-500) 78%, transparent) 0%, transparent 72%),
+    linear-gradient(180deg, var(--c-soy-900) 0%, color-mix(in srgb, var(--c-soy-900) 70%, var(--c-chili-600)) 100%);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--c-soy-900) 60%, transparent),
+    inset 0 0 26px color-mix(in srgb, var(--c-soy-900) 80%, transparent);
+}
+
+.hero[data-mood='angry'] .sheen,
+.hero[data-mood='furious'] .sheen,
+.hero[data-mood='angry'] .steam,
+.hero[data-mood='furious'] .steam {
+  display: none;
+}
+
+/* the dream itself, drained of colour */
+.hero[data-mood='angry'] .dream,
+.hero[data-mood='furious'] .dream {
+  filter: grayscale(0.92) brightness(0.5) contrast(1.2);
+}
+
+.hero[data-mood='furious'] .mirror {
+  transform: rotate(-2.4deg);
+}
+
+.hero[data-mood='furious'] .glass {
+  animation: alarm 2.2s ease-in-out infinite;
+}
+
+@keyframes alarm {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+
+  50% {
+    filter: brightness(1.5);
+  }
+}
+
+.hero[data-mood='angry'] .plate,
+.hero[data-mood='furious'] .plate {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--over) 55%, transparent), var(--shadow-1);
+}
+
+.hero[data-mood='angry'] .plateName,
+.hero[data-mood='furious'] .plateName {
+  text-decoration: line-through;
+  text-decoration-color: var(--over);
+  text-decoration-thickness: 2px;
+}
+
+/* the words, in capitals */
+.hero[data-mood='angry'] .headline,
+.hero[data-mood='furious'] .headline {
+  font-size: clamp(1.5rem, 7.7cqi, 2.15rem);
+  line-height: 1.06;
+  letter-spacing: -0.012em;
+  text-transform: uppercase;
+}
+
+.hero[data-mood='angry'] .headline[data-long],
+.hero[data-mood='furious'] .headline[data-long] {
+  font-size: clamp(1.3rem, 6.6cqi, 1.85rem);
+}
+
+.hero[data-mood='angry'] .headline[data-long='xl'],
+.hero[data-mood='furious'] .headline[data-long='xl'] {
+  font-size: clamp(1.15rem, 5.6cqi, 1.55rem);
+}
+
+.hero[data-mood='angry'] .itemName,
+.hero[data-mood='furious'] .itemName {
+  color: var(--over-text);
+}
+
+.hero[data-mood='angry'] .subline,
+.hero[data-mood='furious'] .subline {
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 620;
+  line-height: 1.5;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+
 /* how Bun feels and what changes it: the way back (stick), or the streak (carrot) */
 .temper {
   display: flex;
@@ -745,7 +938,9 @@
   .float,
   .floor,
   .sheen::before,
-  .ringAfter {
+  .ringAfter,
+  .cracks path,
+  .glass {
     animation: none;
   }
 
@@ -759,6 +954,11 @@
 :global(html[data-motion='reduce']) .floor,
 :global(html[data-motion='reduce']) .sheen::before,
 :global(html[data-motion='reduce']) .ringAfter {
+  animation: none;
+}
+
+:global(html[data-motion='reduce']) .cracks path,
+:global(html[data-motion='reduce']) .glass {
   animation: none;
 }
 

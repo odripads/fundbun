@@ -4,6 +4,8 @@ import type { AppSnapshot } from '../../../core/app-api'
 import type { Bill, DreamItem, GoalProgress, Insight, MirrorState, MonthSummary, TripwireEvent } from '../../../core/types'
 import {
   STATUS_META,
+  isAngry,
+  shout,
   temperLine,
   affordabilityQuestion,
   barPx,
@@ -621,6 +623,22 @@ describe('spendReaction — Bun reacts the moment a purchase is logged', () => {
     const after = { mood: 'furious' as const, status: 'over' as const, delta: 300_000, temper: temper({ mood: 'furious', heat: 4 }) }
     expect(spendReaction({ ...base, tone: 'gentle', after: { ...after, mood: 'angry' } }).title).toBe('That one costs a little.')
     expect(spendReaction({ ...base, tone: 'numbers', after }).title).toBe('Way past the line.')
+  })
+})
+
+describe('shout — an angry Bun ends every sentence with "!!!"', () => {
+  it('changes sentence ends only, never the amounts', () => {
+    expect(shout("You could've gotten a Weekend in Chengdu.")).toBe("You could've gotten a Weekend in Chengdu!!!")
+    expect(shout("You're ¥2,580.24 over your ¥9,500 target — and your Birkin 25 just moved about 5 weeks further away.")).toBe("You're ¥2,580.24 over your ¥9,500 target — and your Birkin 25 just moved about 5 weeks further away!!!")
+    expect(shout('Spent ¥12,080 of ¥9,500. Equals a Weekend in Chengdu. Birkin 25 delayed about 5 weeks.')).toBe('Spent ¥12,080 of ¥9,500!!! Equals a Weekend in Chengdu!!! Birkin 25 delayed about 5 weeks!!!')
+    expect(shout('Still worth it?')).toBe('Still worth it!!!')
+    expect(shout('No full stop')).toBe('No full stop')
+  })
+
+  it('only the two angry faces shout', () => {
+    expect(isAngry('angry')).toBe(true)
+    expect(isAngry('furious')).toBe(true)
+    for (const m of ['happy', 'calm', 'worried', 'burnt', 'sleepy'] as const) expect(isAngry(m)).toBe(false)
   })
 })
 

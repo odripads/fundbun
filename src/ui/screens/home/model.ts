@@ -72,6 +72,19 @@ export function splitHeadline(headline: string, itemName?: string): [string, str
   return [headline.slice(0, i), itemName, headline.slice(i + itemName.length)]
 }
 
+/**
+ * An angry Bun shouts: every sentence ends in "!!!". Only sentence ends change (a full stop or question mark
+ * before a space or the end), so amounts like ¥2,580.24 are left alone.
+ */
+export function shout(text: string): string {
+  return text.replace(/[.?!]+(?=\s|$)/g, '!!!')
+}
+
+/** Is Bun angry enough to break the mirror and raise its voice? */
+export function isAngry(mood: BunMood): boolean {
+  return mood === 'angry' || mood === 'furious'
+}
+
 /** 35 → '5 wks', 9 → '9 days', 120 → '4 mo' — for tight tiles. */
 export function shortDelay(days: number): string {
   return delayShort(days)

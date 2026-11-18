@@ -45,7 +45,10 @@ describe('HomeScreen — the Dream Mirror', () => {
     const { container } = await renderHome(demo('mei'))
     const hero = container.querySelector('section[data-status="over"]')!
     expect(hero).not.toBeNull()
-    expect(hero.querySelector('h2')!.textContent).toBe("You could've gotten a Weekend in Chengdu.")
+    // Bun is furious (27% past the target): the words are shouted, the mirror is broken
+    expect(hero.querySelector('h2')!.textContent).toBe("You could've gotten a Weekend in Chengdu!!!")
+    expect(hero.getAttribute('data-mood')).toBe('furious')
+    expect(hero.querySelectorAll('svg[viewBox="0 0 100 114"] path').length).toBeGreaterThan(10)
     expect(hero.textContent).toContain('Dream Mirror · October')
     expect(hero.textContent).toContain('Over budget')
     expect(hero.querySelector('[aria-label="The numbers behind it"]')!.textContent).toContain('Birkin 25 delay')

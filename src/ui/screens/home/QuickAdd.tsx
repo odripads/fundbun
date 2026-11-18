@@ -16,7 +16,7 @@ import { useToast } from '../../components/ds/Toast'
 import { PURCHASE_CATEGORIES } from '../../components/sandbox/logic'
 import { navigate } from '../../router'
 import { shallowEqual, useApp, useSnapshot } from '../../state'
-import { MOOD_WORDS, manualCandidate, spendReaction, type SpendReaction } from './model'
+import { MOOD_WORDS, isAngry, manualCandidate, shout, spendReaction, type SpendReaction } from './model'
 import styles from './QuickAdd.module.css'
 
 const selectQuickAdd = (s: AppSnapshot) => ({
@@ -129,8 +129,10 @@ export function QuickAdd({ open, onClose }: QuickAddProps) {
   }
 
   if (reaction) {
+    // an angry Bun shouts what it cost; the way back stays calm
+    const loud = isAngry(reaction.mood)
     return (
-      <Sheet open={open} onClose={close} title={reaction.title} description={reaction.added}>
+      <Sheet open={open} onClose={close} title={loud ? shout(reaction.title) : reaction.title} description={reaction.added}>
         <div className={styles.reaction} data-kind={reaction.kind}>
           <div className={styles.face} data-mood={face}>
             <span className={styles.faceGlow} aria-hidden="true" />
@@ -141,7 +143,7 @@ export function QuickAdd({ open, onClose }: QuickAddProps) {
             {reaction.lines.map((line, i) => (
               <li key={line} className={styles.cost} data-lead={i === 0 || undefined}>
                 {i === 0 && reaction.dream ? <DreamImage image={reaction.dream.image} alt="" size={44} /> : null}
-                <span>{line}</span>
+                <span>{loud ? shout(line) : line}</span>
               </li>
             ))}
           </ul>
