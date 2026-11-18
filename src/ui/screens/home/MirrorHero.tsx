@@ -321,7 +321,7 @@ export function MirrorHero({ onCheck, onSandbox }: MirrorHeroProps) {
               <Button size="lg" fullWidth iconStart={<FlaskConical />} onClick={onSandbox}>
                 Try a sandbox purchase
               </Button>
-              <p className={styles.hint}>Or import a bank CSV in Settings — it stays on this device.</p>
+              <p className={styles.hint}>Or import a statement file in Bills — it stays on this device.</p>
             </>
           ) : null}
         </div>

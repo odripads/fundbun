@@ -4,9 +4,10 @@ import type { AppSnapshot } from '../../../../core/app-api'
 import { dateLabel, monthLabel } from '../../../../core/dates'
 import { fmt } from '../../../../core/money'
 import type { DreamItem } from '../../../../core/types'
+import { navigate } from '../../../router'
 import { useSnapshot } from '../../../state'
 import { DreamImage } from '../../brand'
-import { Badge, Callout, Card, CardHeader, Money, cx, type CalloutTone } from '../../ds'
+import { Badge, Button, Callout, Card, CardHeader, Money, cx, type CalloutTone } from '../../ds'
 import { signalLabel } from '../logic'
 import { useCurrency, useSend, type CardProps } from './shared'
 import styles from './cards.module.css'
@@ -90,11 +91,22 @@ const NOTICE: Record<'info' | 'warn' | 'block', { tone: CalloutTone; icon: React
   block: { tone: 'block', icon: <ShieldX /> },
 }
 
+const selectFrozen = (s: AppSnapshot): boolean => s.state.mandate.frozen === true
+
 export function NoticeCard({ card }: CardProps<'notice'>) {
   const n = NOTICE[card.level]
+  // while Bun is paused, every block notice carries the way out: one tap to the kill switch, where the PIN unfreezes it
+  const frozen = useSnapshot(selectFrozen)
   return (
     <Callout tone={n.tone} icon={n.icon} title={card.title} className={cx(styles.notice, card.level === 'block' && styles.noticeBlock)}>
       {card.text}
+      {card.level === 'block' && frozen ? (
+        <div className={styles.noticeAction}>
+          <Button size="sm" variant="secondary" onClick={() => navigate('settings')}>
+            Unfreeze in Settings
+          </Button>
+        </div>
+      ) : null}
     </Callout>
   )
 }

@@ -1,8 +1,12 @@
 import { Camera, ChevronDown, FlaskConical } from 'lucide-react'
 import { useCallback, useRef, useState, type TouchEvent } from 'react'
 import { SandboxPanel } from '../../components/sandbox'
-import { Button, Sheet } from '../../components/ds'
+import type { AppSnapshot } from '../../../core/app-api'
+import { monthLabel } from '../../../core/dates'
+import type { YearMonth } from '../../../core/types'
+import { Button, Callout, Sheet } from '../../components/ds'
 import { navigate } from '../../router'
+import { useSnapshot } from '../../state'
 import { BillsStrip } from './BillsStrip'
 import { CouldveStrip } from './CouldveStrip'
 import { InsightsPeek } from './InsightsPeek'
@@ -18,8 +22,12 @@ import styles from './HomeScreen.module.css'
  */
 const PULL_OPEN_PX = 140
 
+/** Set when the analyses look back at an older month (an imported statement with nothing in the current month). */
+const selectLookBack = (s: AppSnapshot): string | null => (s.derived.viewDate !== s.derived.today ? s.derived.viewDate.slice(0, 7) : null)
+
 export function HomeScreen() {
   const [sandbox, setSandbox] = useState(false)
+  const lookBack = useSnapshot(selectLookBack)
   const [check, setCheck] = useState<CheckRequest | null>(null)
   const [pull, setPull] = useState(0)
   const touchY = useRef<number | null>(null)
@@ -54,6 +62,13 @@ export function HomeScreen() {
         <ChevronDown className={styles.pullIcon} />
         <span>Pull to scan a receipt</span>
       </div>
+      {lookBack ? (
+        <div className={styles.lookBack}>
+          <Callout tone="info" title={`Showing ${monthLabel(lookBack as YearMonth)}`}>
+            That is the latest month in your data. Import a newer statement in Bills to see this month.
+          </Callout>
+        </div>
+      ) : null}
       <MirrorHero onCheck={setCheck} onSandbox={() => setSandbox(true)} />
       <div className={styles.scanRow}>
         <Button variant="soft" size="lg" iconStart={<Camera />} onClick={() => navigate('receipt')}>

@@ -744,6 +744,10 @@
   height: 14px;
 }
 
+.noticeAction {
+  margin-top: var(--s-3);
+}
+
 .noticeBlock {
   box-shadow:
     inset 0 0 0 1px color-mix(in srgb, var(--over) 45%, transparent),

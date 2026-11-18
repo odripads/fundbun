@@ -1138,10 +1138,13 @@ describe('F24 / F55 · one clock', () => {
     const { state, derived } = b.getSnapshot()
     expect(state.bank.today).toBe('2026-11-15')
     expect(derived.today).toBe('2026-11-15')
-    expect(derived.summary).toMatchObject({ month: '2026-11', dayOfMonth: 15 })
+    // nothing spent in November yet: the analyses look back at October (the latest month with data) and say so
+    expect(derived.viewDate).toBe('2026-10-31')
+    expect(derived.summary).toMatchObject({ month: '2026-10' })
     expect(state.audit.at(-1)).toMatchObject({ type: 'session_start', actor: 'system', data: { clock: 'real', from: '2026-10-08', to: '2026-11-15' } })
     expect(b.importCsv('Date,Description,Amount\n2026-11-10,Taobao,-300.00\n2026-11-12,Haidilao,-250.00')).toMatchObject({ added: 2 })
-    expect(b.getSnapshot().derived.summary?.spent).toBe(55_000)
+    // the first November rows bring the view back to the device date
+    expect(b.getSnapshot().derived).toMatchObject({ viewDate: '2026-11-15', summary: { month: '2026-11', dayOfMonth: 15, spent: 55_000 } })
     expect(b.simulatePurchase({ merchant: 'Luckin', amount: 1_500 }).txn.date).toBe('2026-11-15')
     expect(b.verifyAudit().ok).toBe(true)
   })
@@ -1342,5 +1345,27 @@ describe('F38 · the vault unlock throttle survives a reload', () => {
     const c = open()
     expect(await c.unlock(PIN)).toEqual({ ok: true })
     expect(storage.getItem(`${STORAGE_KEY}.unlock`)).toBeNull()
+  })
+})
+
+describe('an older statement is mirrored, not an empty month', () => {
+  it('a statement that ends before this month shows its latest month everywhere, and says so', () => {
+    // imported in late November: the sample statement covers September and October only
+    const k = kit()
+    k.clock.now = new Date('2026-11-29T10:00:00+08:00')
+    expect(k.app.completeOnboarding(onboardingInput({ dataSource: { kind: 'csv', text: SAMPLE_CSV, startingBalance: 2_000_000 } })).ok).toBe(true)
+    const { derived } = k.app.getSnapshot()
+    expect(derived.today).toBe('2026-11-29')
+    expect(derived.viewDate).toBe('2026-10-31')
+    expect(derived.summary?.month).toBe('2026-10')
+    expect(derived.summary?.spent ?? 0).toBeGreaterThan(0)
+    expect(derived.mirror).not.toBeNull()
+  })
+
+  it('a statement with spending this month is mirrored as usual', () => {
+    const k = kit()
+    expect(k.app.completeOnboarding(onboardingInput({ dataSource: { kind: 'csv', text: SAMPLE_CSV, startingBalance: 2_000_000 } })).ok).toBe(true)
+    const { derived } = k.app.getSnapshot()
+    expect(derived.viewDate).toBe(derived.today)
   })
 })

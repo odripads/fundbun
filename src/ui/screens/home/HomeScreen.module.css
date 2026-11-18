@@ -88,3 +88,7 @@
     animation: none;
   }
 }
+
+.lookBack {
+  padding: var(--s-3) var(--gutter) 0;
+}

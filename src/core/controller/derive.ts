@@ -1,6 +1,6 @@
 import { agentRecords } from '../agent/actions'
 import type { CapUsage, DerivedState, LlmStatus } from '../app-api'
-import { compareDate } from '../dates'
+import { compareDate, endOfMonth } from '../dates'
 import {
   allGoalProgress,
   analyzeBills,
@@ -22,7 +22,7 @@ import type {
   MirrorState,
   MonthHistoryPoint,
   MonthSummary,
-  RecurringSeries,
+  RecurringSeries, ISODate, YearMonth,
 } from '../types'
 import { agentMoneyUsed, utcOffsetMinutesAt } from '../security/policy'
 import { ctxOf } from './state'
@@ -66,8 +66,29 @@ export function financeFor(state: AppState): FinanceDerived {
   return f
 }
 
+/**
+ * The date the analyses look from. Someone who imported an older statement has no spending in the current calendar
+ * month, and mirroring an empty month helps nobody — so the analyses look from the end of the latest month that
+ * has spending. Demo personas (sandbox clock) and anyone with spending this month are untouched: for them this is
+ * simply `bank.today`. Only the read-only analyses use it; bills, tripwires and the clock keep the real date.
+ */
+export function viewDateOf(state: Pick<AppState, 'bank'>): ISODate {
+  const today = state.bank.today
+  if (state.bank.personaId) return today
+  const month = today.slice(0, 7)
+  let latest = ''
+  for (const t of state.bank.transactions) {
+    if (t.amount >= 0 || t.date > today) continue
+    if (t.date.slice(0, 7) === month) return today
+    if (t.date > latest) latest = t.date
+  }
+  return latest ? endOfMonth(latest.slice(0, 7) as YearMonth) : today
+}
+
 function lazyFinance(state: AppState): FinanceDerived {
-  const ctx = ctxOf(state)
+  const base = ctxOf(state)
+  const view = base ? viewDateOf(state) : undefined
+  const ctx = base && view && view !== base.bank.today ? { ...base, bank: { ...base.bank, today: view } } : base
   const memo = new Map<string, unknown>()
   function once<T>(key: string, fallback: T, fn: (c: FinanceContext) => T): T {
     if (!memo.has(key)) memo.set(key, ctx ? safely(key, () => fn(ctx), fallback) : fallback)
@@ -125,6 +146,7 @@ export function createDerived(state: AppState, rt: RuntimeFlags, now: () => stri
   let caps: CapUsage | undefined
   return Object.freeze({
     today: state.bank.today,
+    viewDate: viewDateOf(state),
     clock: state.bank.personaId ? 'sandbox' as const : 'real' as const,
     get ctx() { return fin.ctx },
     get summary() { return fin.summary },

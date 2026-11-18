@@ -53,6 +53,11 @@ export interface DerivedState {
    * (moved by advanceDays), the device's date for real-data users (kept in step by syncClock).
    */
   today: ISODate
+  /**
+   * The date the analyses (mirror, summary, insights, history) look from. Equal to `today`, except for a real-data
+   * user with no spending this month: then it is the end of the latest month that has spending (an older statement).
+   */
+  viewDate: ISODate
   /** which clock `today` follows */
   clock: 'sandbox' | 'real'
   /** null until onboarded */

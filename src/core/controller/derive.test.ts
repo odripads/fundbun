@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as mirror from '../finance/mirror'
 import { buildDemoState } from './demo'
-import { capUsageOf, createDerived, financeFor } from './derive'
+import { capUsageOf, createDerived, financeFor, viewDateOf } from './derive'
 import { emptyState } from './state'
 
 vi.mock('../finance/mirror', async (importOriginal) => {
@@ -77,5 +77,26 @@ describe('createDerived — capUsage', () => {
     })
     const withMoves = { ...state, pending: [p('a', 'offline', NOW, 30_000), p('b', 'user', NOW, 20_000), p('c', 'offline', '2026-10-02T02:00:00.000Z', 10_000)] } as typeof state
     expect(capUsageOf(withMoves, NOW)).toMatchObject({ today: 30_000, month: 40_000 })
+  })
+})
+
+describe('viewDateOf — the date the analyses look from', () => {
+  type Row = { date: string; amount: number }
+  const st = (today: string, transactions: Row[], personaId?: string) => ({ bank: { today, personaId, transactions } }) as unknown as Parameters<typeof viewDateOf>[0]
+
+  it('is today for a demo persona, whatever its data', () => {
+    expect(viewDateOf(st('2026-10-22', [{ date: '2026-08-03', amount: -500 }], 'mei'))).toBe('2026-10-22')
+  })
+  it('is today when this month has spending', () => {
+    expect(viewDateOf(st('2026-11-29', [{ date: '2026-09-12', amount: -500 }, { date: '2026-11-02', amount: -100 }]))).toBe('2026-11-29')
+  })
+  it('looks back to the end of the latest month with spending when this month is empty', () => {
+    expect(viewDateOf(st('2026-11-29', [{ date: '2026-08-30', amount: -100 }, { date: '2026-09-12', amount: -500 }]))).toBe('2026-09-30')
+    expect(viewDateOf(st('2027-03-01', [{ date: '2026-02-10', amount: -100 }]))).toBe('2026-02-28')
+  })
+  it('ignores income and future-dated rows, and stays on today with no spending at all', () => {
+    expect(viewDateOf(st('2026-11-29', [{ date: '2026-10-05', amount: 15_000 }]))).toBe('2026-11-29')
+    expect(viewDateOf(st('2026-11-29', [{ date: '2026-12-01', amount: -50 }]))).toBe('2026-11-29')
+    expect(viewDateOf(st('2026-11-29', []))).toBe('2026-11-29')
   })
 })
