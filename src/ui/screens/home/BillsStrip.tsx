@@ -2,9 +2,9 @@ import { BookOpen, ChevronRight, CircleCheck, House, Receipt, Repeat, Shield, Sm
 import { useId, useState, type ReactNode } from 'react'
 import type { AppSnapshot } from '../../../core/app-api'
 import { useProposeAction } from '../../components/agent'
-import { Badge, Button, Money, buttonClass } from '../../components/ds'
+import { Badge, Button, Money, buttonClass, useToast } from '../../components/ds'
 import { href } from '../../router'
-import { sandboxToday, shallowEqual, useSnapshot } from '../../state'
+import { sandboxToday, shallowEqual, useApp, useSnapshot } from '../../state'
 import { billIcon, dueLabel, dueTone, nextBills, payAction, shortDate, type BillIcon } from './model'
 import styles from './BillsStrip.module.css'
 
@@ -29,6 +29,8 @@ const selectBills = (s: AppSnapshot) => ({
 export function BillsStrip() {
   const { bills, hasAnyBill, today, currency } = useSnapshot(selectBills, shallowEqual)
   const propose = useProposeAction()
+  const app = useApp()
+  const toast = useToast()
   const headingId = useId()
   const [paying, setPaying] = useState<string | null>(null)
   const next = nextBills(bills, 3)
@@ -69,6 +71,25 @@ export function BillsStrip() {
                 </span>
                 {scheduled ? (
                   <Badge size="sm" variant="info" className={styles.scheduled}>Scheduled</Badge>
+                ) : b.source === 'expected' ? (
+                  // no bank connected: the user pays in their bank app, then says so
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    fullWidth
+                    className={styles.pay}
+                    aria-label={`Mark ${b.name} as paid`}
+                    onClick={() => {
+                      const r = app.markBillPaid(b.id)
+                      toast.show(
+                        r.ok
+                          ? { tone: 'success', title: `${b.name} marked as paid`, message: 'Counted in this month.', actions: [{ label: 'Undo', onClick: () => app.unmarkBillPaid(b.id) }] }
+                          : { tone: 'danger', title: 'Could not mark it as paid', message: r.reason ?? 'Try again.' },
+                      )
+                    }}
+                  >
+                    Paid it
+                  </Button>
                 ) : (
                   <Button
                     size="sm"

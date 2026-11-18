@@ -204,6 +204,28 @@
 
 /* ───────────── notes & filter ───────────── */
 
+/* no bank connected: how bills work here, in one line */
+.noBank {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-2);
+  margin: 0;
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-md);
+  background: var(--info-soft, var(--surface-2));
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+
+.noBank svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  color: var(--info, var(--text-2));
+}
+
 .overdueNote {
   display: flex;
   align-items: flex-start;

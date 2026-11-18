@@ -328,6 +328,7 @@ function checkEntities(tool: ToolName, args: Record<string, unknown>, ctx: Polic
       const bill = findBill(bank, args.billId)
       if (!bill) return "That bill doesn't exist, so it can't be paid."
       if (bill.status === 'paid' || bill.paidTxnId) return `The ${bill.name} bill is already paid.`
+      if (bill.source === 'expected') return `No bank is connected, so the assistant can't pay ${bill.name}. Pay it in your bank app, then mark it as paid in Bills.`
       const payee = bank.payees.find((p) => p.id === bill.payeeId)
       if (!payee) return `The ${bill.name} bill has no known payee, so the assistant can't pay it.`
       if (!payee.verified) return `${payee.name} isn't a verified payee, so the assistant can't pay them. Verify the payee in your bank app first.`

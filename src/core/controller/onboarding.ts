@@ -1,3 +1,4 @@
+import { syncExpectedBills } from '../finance/expected'
 import type { DataSource, OnboardingInput } from '../app-api'
 import { CURRENCY_SYMBOL } from '../money'
 import { diffDays, ym } from '../dates'
@@ -91,7 +92,10 @@ export function bankFor(input: OnboardingInput, realToday: ISODate): BankState {
     throw new Error(`No transactions could be read from that CSV${why}`)
   }
   const txns = [...parsed.transactions].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
-  return { ...bank, transactions: txns }
+  const own = { ...bank, transactions: txns }
+  // no bank connected: the bills to expect are read off the statement's repeating charges
+  syncExpectedBills(own)
+  return own
 }
 
 function buildProfile(input: OnboardingInput, now: ISODateTime): Profile {

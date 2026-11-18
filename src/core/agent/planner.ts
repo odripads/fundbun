@@ -1,3 +1,4 @@
+import { hasBank } from '../finance/expected'
 import { CATEGORIES } from '../categories'
 import { monthLabel, ym } from '../dates'
 import { computeMirror, goalProgress, primaryGoal, summarizeMonth } from '../finance'
@@ -183,6 +184,8 @@ function billChoices(state: AppState, ids?: string[]): Choice[] {
 /** Pay a bill: the one named, the oldest of several with the same name only after asking, never a different amount. */
 function payPlan(slots: Slots, text: string, host: AgentHost): IntentPlan {
   const state = host.state()
+  // no bank connected: Bun watches and reminds, the user pays in their own bank app
+  if (!hasBank(state.bank)) return { kind: 'chat', intent: 'help', focus: 'no_bank_pay' }
   const f = money(state)
   let billId = slots.billId
   if (!billId) {

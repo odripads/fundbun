@@ -170,7 +170,7 @@ function chips(turn: Turn, intent: Intent): string[] {
 const MOOD_NAMES: Record<BunMood, string> = { happy: 'proud of you', calm: 'content', worried: 'worried', angry: 'cross', furious: 'furious', burnt: 'toasted', sleepy: 'half asleep' }
 
 /** Help focuses that answer a question about Bun itself (nlu R-ABOUT-*). */
-const ABOUT_FOCUS = new Set(['safety', 'bank_link', 'identity', 'limits', 'tripwire_list', 'delete_data', 'my_data', 'consent', 'explain_tripwire', 'explain_mirror', 'explain_pots', 'explain_xray', 'mood'])
+const ABOUT_FOCUS = new Set(['safety', 'bank_link', 'identity', 'limits', 'tripwire_list', 'delete_data', 'my_data', 'consent', 'explain_tripwire', 'explain_mirror', 'explain_pots', 'explain_xray', 'mood', 'no_bank_pay'])
 
 const ADD_DREAM_LABEL_RE = /(?:dream|wish(?:list)?|goal|梦想|心愿|impian)\s*(?:called|named|for|of|:|：|-)?\s*(.+)$/i
 

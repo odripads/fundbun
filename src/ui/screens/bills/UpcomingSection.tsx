@@ -1,9 +1,10 @@
-import { Bell, BellRing, CreditCard, TrendingUp, X } from 'lucide-react'
+import { Bell, BellRing, CircleCheck, CreditCard, Info, TrendingUp, X } from 'lucide-react'
 import { useState } from 'react'
 import { dateLabel, diffDays, weekday } from '../../../core/dates'
 import { fmt } from '../../../core/money'
 import type { Bill, BillFinding, Currency, ISODate, Payee, PendingAction } from '../../../core/types'
-import { Badge, Chip, EmptyState, Money, cx } from '../../components/ds'
+import { Badge, Button, Chip, EmptyState, Money, cx, useToast } from '../../components/ds'
+import { useApp } from '../../state'
 import { PinHint, ProposeButton, type ActionRunner } from './actions'
 import {
   billIcon,
@@ -96,7 +97,15 @@ export function UpcomingSection({ currency, today, bills, payees, findings, remi
         </div>
       ) : (
         <>
-          {shown.some((b) => isOpen(b) && b.status !== 'scheduled') ? <PinHint tool="pay_bill">Paying or scheduling needs your PIN — Bun never pays on its own</PinHint> : null}
+          {shown.some((b) => isOpen(b) && b.status !== 'scheduled' && b.source !== 'expected') ? <PinHint tool="pay_bill">Paying or scheduling needs your PIN — Bun never pays on its own</PinHint> : null}
+          {shown.some((b) => isOpen(b) && b.source === 'expected') ? (
+            <p className={styles.noBank}>
+              <Info aria-hidden="true" />
+              <span>
+                No bank is connected, so Bun watches and reminds. Pay in your bank app, then tap <strong>Mark as paid</strong>. Amounts are Bun’s estimate from your last charges.
+              </span>
+            </p>
+          ) : null}
           <ul className={shared.list} aria-label={selected ? `Bills due ${dateLabel(selected)}` : 'Bills due in the next 14 days'}>
             {shown.map((bill) => (
               <BillRow
@@ -223,6 +232,26 @@ interface BillRowProps {
 }
 
 function BillRow({ bill, today, currency, payee, spike, reminder, awaiting, runner }: BillRowProps) {
+  const app = useApp()
+  const toast = useToast()
+  // predicted from the user's own repeating charges: no bank to pay through, so the user pays and then says so
+  const expected = bill.source === 'expected'
+  const markedHere = bill.paidTxnId === `manual_bill_${bill.id}`
+
+  function markPaid() {
+    const r = app.markBillPaid(bill.id)
+    if (!r.ok) {
+      toast.show({ tone: 'danger', title: 'Could not mark it as paid', message: r.reason ?? 'Try again.' })
+      return
+    }
+    toast.show({
+      tone: 'success',
+      title: `${bill.name} marked as paid`,
+      message: 'Counted in this month. If a statement shows it later, it is counted once.',
+      actions: [{ label: 'Undo', onClick: () => app.unmarkBillPaid(bill.id) }],
+    })
+  }
+
   const status = displayStatus(bill, today)
   const meta = billStatusMeta(bill, today)
   const payable = status === 'upcoming' || status === 'overdue'
@@ -240,17 +269,23 @@ function BillRow({ bill, today, currency, payee, spike, reminder, awaiting, runn
         </span>
         <div className={styles.billText}>
           <p className={styles.billName}>{bill.name}</p>
-          <p className={styles.billPayee}>
-            <span className={styles.payeeName}>{payee?.name ?? 'Unknown payee'}</span>
-            {payee?.verified ? (
-              <span className={styles.verified}>
-                {VERIFIED_ICON}
-                Verified
-              </span>
-            ) : (
-              <span className={styles.unverified}>Not verified</span>
-            )}
-          </p>
+          {expected ? (
+            <p className={styles.billPayee}>
+              <span className={styles.payeeName}>{markedHere ? 'You marked it as paid' : status === 'paid' ? 'Seen on your statement' : 'Expected, from your statements'}</span>
+            </p>
+          ) : (
+            <p className={styles.billPayee}>
+              <span className={styles.payeeName}>{payee?.name ?? 'Unknown payee'}</span>
+              {payee?.verified ? (
+                <span className={styles.verified}>
+                  {VERIFIED_ICON}
+                  Verified
+                </span>
+              ) : (
+                <span className={styles.unverified}>Not verified</span>
+              )}
+            </p>
+          )}
           <p className={styles.billDue}>{dueLine(bill, today)}</p>
           {reminder !== undefined && status !== 'paid' ? (
             <p className={styles.reminderOn}>
@@ -278,7 +313,11 @@ function BillRow({ bill, today, currency, payee, spike, reminder, awaiting, runn
 
       {status !== 'paid' && (payable || reminder === undefined) ? (
         <div className={styles.actions}>
-          {payable ? (
+          {payable && expected ? (
+            <Button size="sm" variant={urgent ? 'primary' : 'soft'} iconStart={<CircleCheck />} className={styles.grow} onClick={markPaid} aria-label={`Mark ${bill.name} as paid`}>
+              Mark as paid
+            </Button>
+          ) : payable ? (
             <ProposeButton
               action={payAction(bill, currency)}
               awaiting={awaiting}
@@ -291,7 +330,7 @@ function BillRow({ bill, today, currency, payee, spike, reminder, awaiting, runn
               ariaLabel={`Pay ${bill.name} ${fmt(bill.amountDue, currency)}`}
             />
           ) : null}
-          {payable && when ? (
+          {payable && when && !expected ? (
             <ProposeButton
               action={scheduleAction(bill, when)}
               awaiting={awaiting}

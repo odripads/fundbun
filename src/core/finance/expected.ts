@@ -1,5 +1,5 @@
-import { addDays, ym } from '../dates'
-import type { BankState, Bill, ISODate, RecurringSeries, Transaction } from '../types'
+import { addDays, dayOfMonth, daysInMonth, shiftMonth, ym } from '../dates'
+import type { BankState, Bill, ISODate, RecurringSeries, Transaction, YearMonth } from '../types'
 import { detectRecurring } from './recurring'
 
 /**
@@ -32,30 +32,66 @@ function seriesIdOf(bill: Bill): string {
   return bill.id.slice(PREFIX.length, bill.id.length - bill.period.length - 1)
 }
 
+/** Payments the user recorded with "Mark as paid" (controller/api-user.markBillPaid). */
+export const MARKED_PAID_PREFIX = 'manual_bill_'
+
+interface SeriesView {
+  series: RecurringSeries
+  /** the name as the user's statement writes it */
+  name: string
+  /** the day of the month it usually lands on (monthly charges) */
+  day: number
+  /** the last month a statement shows it in */
+  seenPeriod: YearMonth
+  seenTxnId?: string
+}
+
+function viewOf(series: RecurringSeries, byId: Map<string, Transaction>): SeriesView | null {
+  const all = series.txnIds.map((id) => byId.get(id)).filter((t): t is Transaction => !!t)
+  // a payment the user marked by hand says when they tapped the button, not when the bill falls due
+  const own = all.filter((t) => !t.id.startsWith(MARKED_PAID_PREFIX))
+  const base = (own.length ? own : all).slice().sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
+  const last = base[base.length - 1]
+  if (!last) return null
+  const days = base.map((t) => dayOfMonth(t.date)).sort((a, b) => a - b)
+  return { series, name: last.merchant, day: days[Math.floor(days.length / 2)], seenPeriod: ym(last.date), seenTxnId: last.id }
+}
+
 /**
  * The bills a user without a connected bank can expect, read off their own ledger: one per repeating charge
  * (rent, phone, a subscription) that is due soon or a little overdue, at the amount it last cost. They are
  * predictions, and the screen says so.
+ *
+ * A monthly charge is expected on its usual day in the month after the last one covered, where "covered" means a
+ * statement shows it or the user marked it as paid (`paidThrough`, by series id). Paying early therefore never
+ * moves next month's date. Other cadences use the detector's own next date.
  */
-export function expectedBills(recurring: RecurringSeries[], txns: Transaction[], today: ISODate): Bill[] {
+export function expectedBills(recurring: RecurringSeries[], txns: Transaction[], today: ISODate, paidThrough: ReadonlyMap<string, YearMonth> = new Map()): Bill[] {
   const byId = new Map(txns.map((t) => [t.id, t]))
   const from = addDays(today, -EXPECTED_STALE_DAYS)
   const to = addDays(today, EXPECTED_HORIZON_DAYS)
   const out: Bill[] = []
   for (const s of recurring) {
     if (s.status !== 'active' || s.cadence === 'weekly' || s.confidence < EXPECTED_MIN_CONFIDENCE || s.lastAmount <= 0) continue
-    if (s.nextExpected < from || s.nextExpected > to) continue
-    const period = ym(s.nextExpected)
+    const v = viewOf(s, byId)
+    if (!v) continue
+    let dueDate = s.nextExpected
+    if (s.cadence === 'monthly') {
+      const paid = paidThrough.get(s.id)
+      const period = shiftMonth(paid && paid > v.seenPeriod ? paid : v.seenPeriod, 1)
+      dueDate = `${period}-${String(Math.min(v.day, daysInMonth(period))).padStart(2, '0')}`
+    }
+    if (dueDate < from || dueDate > to) continue
+    const period = ym(dueDate)
     out.push({
       id: expectedBillId(s.id, period),
       payeeId: '',
-      // the name as the user's statement writes it
-      name: byId.get(s.txnIds[s.txnIds.length - 1] ?? '')?.merchant ?? s.merchant,
+      name: v.name,
       category: s.category,
       amountDue: s.lastAmount,
-      dueDate: s.nextExpected,
+      dueDate,
       period,
-      status: s.nextExpected < today ? 'overdue' : 'upcoming',
+      status: dueDate < today ? 'overdue' : 'upcoming',
       source: 'expected',
     })
   }
@@ -70,8 +106,19 @@ export function expectedBills(recurring: RecurringSeries[], txns: Transaction[],
 export function syncExpectedBills(bank: BankState): void {
   if (hasBank(bank)) return
   const recurring = detectRecurring(bank.transactions, bank.today, bank.cancelledMerchants)
-  const series = new Map(recurring.map((s) => [s.id, s]))
-  const fresh = new Map(expectedBills(recurring, bank.transactions, bank.today).map((b) => [b.id, b]))
+  const byId = new Map(bank.transactions.map((t) => [t.id, t]))
+  const views = new Map<string, SeriesView>()
+  for (const s of recurring) {
+    const v = viewOf(s, byId)
+    if (v) views.set(s.id, v)
+  }
+  const paidThrough = new Map<string, YearMonth>()
+  for (const b of bank.bills) {
+    if (b.source !== 'expected' || b.status !== 'paid') continue
+    const id = seriesIdOf(b)
+    if ((paidThrough.get(id) ?? '') < b.period) paidThrough.set(id, b.period)
+  }
+  const fresh = new Map(expectedBills(recurring, bank.transactions, bank.today, paidThrough).map((b) => [b.id, b]))
   const keepPaidFrom = addDays(bank.today, -PAID_KEEP_DAYS)
   const kept: Bill[] = []
   for (const b of bank.bills) {
@@ -86,9 +133,9 @@ export function syncExpectedBills(bank: BankState): void {
     } else if (now) {
       kept.push({ ...b, name: now.name, amountDue: now.amountDue, dueDate: now.dueDate, status: now.status })
     } else {
-      // no longer expected: either the charge arrived (the series moved on to its next date) or it went stale
-      const s = series.get(seriesIdOf(b))
-      if (s && s.lastDate >= addDays(b.dueDate, -10)) kept.push({ ...b, status: 'paid', paidTxnId: s.txnIds[s.txnIds.length - 1] })
+      // no longer expected: a statement now shows this month's charge (paid), or the bill went stale (dropped)
+      const v = views.get(seriesIdOf(b))
+      if (v && v.seenPeriod >= b.period) kept.push({ ...b, status: 'paid', paidTxnId: v.seenTxnId })
     }
   }
   bank.bills = [...kept, ...fresh.values()].sort((a, b) => (a.dueDate < b.dueDate ? -1 : a.dueDate > b.dueDate ? 1 : 0))

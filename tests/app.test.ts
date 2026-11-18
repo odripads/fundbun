@@ -1370,6 +1370,74 @@ describe('an older statement is mirrored, not an empty month', () => {
   })
 })
 
+describe('bills with no bank connected: Bun watches and reminds, the user pays and says so', () => {
+  const STATEMENT = [
+    'Date,Description,Amount',
+    '2026-08-01,Landlord Zhang,-3000.00', '2026-09-01,Landlord Zhang,-3000.00', '2026-10-01,Landlord Zhang,-3000.00',
+    '2026-08-05,China Mobile,-128.00', '2026-09-05,China Mobile,-128.00', '2026-10-05,China Mobile,-128.00',
+    '2026-10-20,Hema Fresh,-120.00',
+  ].join('\n')
+  const own = () => {
+    const app = createFundBunApp({ storage: memoryStorage(), llmBaseUrl: null, now: () => new Date('2026-10-28T12:00:00+08:00') })
+    expect(app.completeOnboarding(onboardingInput({ dataSource: { kind: 'csv', startingBalance: 2_000_000, text: STATEMENT } }))).toEqual({ ok: true })
+    return app
+  }
+  const bills = (app: ReturnType<typeof own>) => app.getSnapshot().state.bank.bills.map((b) => `${b.name} ${b.dueDate} ${b.status}`)
+
+  it('the statement’s repeating charges become the bills to expect', () => {
+    const app = own()
+    expect(bills(app)).toEqual(['Landlord Zhang 2026-11-01 upcoming', 'China Mobile 2026-11-05 upcoming'])
+    expect(app.getSnapshot().derived.upcomingBills.map((b) => b.source)).toEqual(['expected', 'expected'])
+    // nothing here offers to pay: there is no bank to pay through
+    expect(app.getSnapshot().derived.findings.some((f) => f.suggestedAction?.tool === 'pay_bill')).toBe(false)
+  })
+
+  it('"Mark as paid" closes the bill, counts the payment once, and next month’s bill appears', () => {
+    const app = own()
+    const rent = app.getSnapshot().state.bank.bills[0]
+    const spentBefore = app.getSnapshot().derived.summary!.spent
+    expect(app.markBillPaid(rent.id)).toEqual({ ok: true })
+    expect(bills(app)).toEqual(['Landlord Zhang 2026-11-01 paid', 'China Mobile 2026-11-05 upcoming', 'Landlord Zhang 2026-12-01 upcoming'])
+    expect(app.getSnapshot().derived.summary!.spent).toBe(spentBefore + 300_000)
+    expect(app.getSnapshot().state.audit.at(-1)).toMatchObject({ type: 'user_action', actor: 'user', data: { billId: rent.id, amount: 300_000 } })
+    // no approval, no PIN: FundBun paid nothing
+    expect(app.getSnapshot().state.pending).toEqual([])
+    // marking it twice does nothing
+    expect(app.markBillPaid(rent.id).ok).toBe(false)
+    // the bank statement shows the same payment later, under the bank's wording: counted once
+    expect(app.importCsv('Date,Description,Amount\n2026-10-28,LANDLORD ZHANG TRANSFER,-3000.00')).toMatchObject({ added: 0, matched: 1 })
+    expect(app.getSnapshot().derived.summary!.spent).toBe(spentBefore + 300_000)
+    expect(app.verifyAudit().ok).toBe(true)
+  })
+
+  it('"Undo" reopens the bill and takes the payment off the ledger', () => {
+    const app = own()
+    const rent = app.getSnapshot().state.bank.bills[0]
+    const spentBefore = app.getSnapshot().derived.summary!.spent
+    app.markBillPaid(rent.id)
+    expect(app.unmarkBillPaid(rent.id)).toEqual({ ok: true })
+    expect(bills(app)).toEqual(['Landlord Zhang 2026-11-01 upcoming', 'China Mobile 2026-11-05 upcoming'])
+    expect(app.getSnapshot().derived.summary!.spent).toBe(spentBefore)
+    expect(app.unmarkBillPaid(rent.id).ok).toBe(false)
+  })
+
+  it('asking Bun to pay gets a plain answer, not a payment: nothing is proposed and Bun is not paused', async () => {
+    const app = own()
+    const reply = await app.sendMessage('Pay my phone bill')
+    expect(reply.text).toMatch(/^I can’t pay that: no bank is connected/)
+    expect(reply.text).toMatch(/Mark as paid/)
+    expect(app.getSnapshot().state.pending).toEqual([])
+    expect(app.getSnapshot().state.mandate.frozen).toBe(false)
+  })
+
+  it('with a bank connected (the demo personas) nothing changes: bills are paid through the approval flow', () => {
+    const { app } = demoKit('mei')
+    const bill = app.getSnapshot().derived.upcomingBills[0]
+    expect(bill.source).not.toBe('expected')
+    expect(app.markBillPaid(bill.id)).toMatchObject({ ok: false, reason: expect.stringMatching(/approval flow/) })
+  })
+})
+
 describe('spending added by hand', () => {
   it('counts toward the month at once, and a big one trips the single-purchase wire', () => {
     const { app } = demoKit('mei')

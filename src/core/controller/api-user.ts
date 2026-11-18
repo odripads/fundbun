@@ -5,6 +5,7 @@ import { clipForDisplay } from '../security/redact'
 import type { AppState, Mandate, SpendingCandidate, Transaction } from '../types'
 import { appendAudit, verifyAuditAnchored } from './audit'
 import { LOCKED_MSG, NOT_SET_UP_MSG, expirePending, syncClock, userTx, userTxValue, type Core } from './core'
+import { MARKED_PAID_PREFIX, hasBank, syncExpectedBills } from '../finance/expected'
 import { applyTripwires } from './tripwires'
 import {
   advanceDaysIn,
@@ -113,8 +114,61 @@ export function createUserApi(core: Core, onLlmGranted: () => void): UserApi {
         appendAudit(draft, core.now(), 'user', 'data_import', `Added ${added.length} spending${added.length === 1 ? '' : 's'}`, {
           added: added.length, duplicates, source: candidates[0]?.source ?? 'unknown',
         })
+        syncExpectedBills(draft.bank)
       }
       return { added: added.length, duplicates }
+    })
+  }
+
+  /**
+   * No bank connected: the user paid the bill in their own bank app and says so. The bill is closed and the payment
+   * goes on the ledger as a hand-entered purchase, so the month is right at once and a later statement row for it
+   * is counted once (data.mergeTransactions). Nothing is paid by FundBun, so there is no PIN and no policy gate.
+   */
+  function markBillPaid(billId: string): { ok: boolean; reason?: string } {
+    if (core.lock.locked || !store.get().profile) return { ok: false, reason: 'Unlock the app first.' }
+    syncClock(core)
+    return store.mutate((draft) => {
+      if (hasBank(draft.bank)) return { ok: false, reason: 'With a bank connected, a bill is paid through the approval flow.' }
+      const bill = draft.bank.bills.find((b) => b.id === billId)
+      if (!bill || bill.status === 'paid') return { ok: false, reason: 'That bill is not open.' }
+      const ts = core.now()
+      const txn: Transaction = {
+        id: `${MARKED_PAID_PREFIX}${bill.id}`,
+        accountId: checkingAccountId(draft.bank),
+        date: draft.bank.today,
+        amount: -Math.abs(bill.amountDue),
+        currency: draft.profile!.currency,
+        merchant: bill.name,
+        description: `${bill.name} (marked as paid)`,
+        category: bill.category,
+        categorySource: 'import',
+        categoryConfidence: 1,
+        billId: bill.id,
+      }
+      const { added } = mergeTransactions(draft, [txn])
+      bill.status = 'paid'
+      bill.paidTxnId = added[0]?.id ?? txn.id
+      applyTripwires(draft, added.filter((t) => t.date.slice(0, 7) === draft.bank.today.slice(0, 7)), ts)
+      appendAudit(draft, ts, 'user', 'user_action', `Marked ${bill.name} as paid`, { billId: bill.id, amount: bill.amountDue, source: bill.source })
+      syncExpectedBills(draft.bank)
+      return { ok: true }
+    })
+  }
+
+  /** Take back "mark as paid": the bill is open again and the hand-entered payment leaves the ledger. */
+  function unmarkBillPaid(billId: string): { ok: boolean; reason?: string } {
+    if (core.lock.locked || !store.get().profile) return { ok: false, reason: 'Unlock the app first.' }
+    return store.mutate((draft) => {
+      const bill = draft.bank.bills.find((b) => b.id === billId)
+      const txnId = `${MARKED_PAID_PREFIX}${billId}`
+      if (hasBank(draft.bank) || !bill || bill.status !== 'paid' || bill.paidTxnId !== txnId) return { ok: false, reason: 'That bill was not marked as paid here.' }
+      draft.bank.transactions = draft.bank.transactions.filter((t) => t.id !== txnId)
+      bill.status = bill.dueDate < draft.bank.today ? 'overdue' : 'upcoming'
+      delete bill.paidTxnId
+      appendAudit(draft, core.now(), 'user', 'user_action', `Reopened ${bill.name}`, { billId: bill.id })
+      syncExpectedBills(draft.bank)
+      return { ok: true }
     })
   }
 
@@ -190,6 +244,8 @@ export function createUserApi(core: Core, onLlmGranted: () => void): UserApi {
     // ── data ──
     importCsv,
     addSpending,
+    markBillPaid,
+    unmarkBillPaid,
     transactions: (filter) => filterTransactions(store.get().bank.transactions, filter),
 
     // ── sandbox / demo controls ──

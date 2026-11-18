@@ -258,6 +258,13 @@ export interface AppApi {
   importCsv(text: string): { added: number; skipped: number; matched: number; errors: string[] }
   /** add parsed spending (from email or receipt) after the user confirms — dedupes against existing */
   addSpending(candidates: SpendingCandidate[]): { added: number; duplicates: number }
+  /**
+   * No bank connected: record that the user paid a bill in their own bank app. Closes the bill and puts the payment
+   * on the ledger (a later statement row for it is counted once). FundBun pays nothing, so there is no PIN.
+   */
+  markBillPaid(billId: string): { ok: boolean; reason?: string }
+  /** take back markBillPaid */
+  unmarkBillPaid(billId: string): { ok: boolean; reason?: string }
   /** Bill X-ray via the agent (xray_bill tool) — returns the assistant message with the xray card */
   xrayBill(text: string): Promise<ChatMessage>
   transactions(filter?: { month?: YearMonth; category?: CategoryId; query?: string }): Transaction[]

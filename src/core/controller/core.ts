@@ -1,3 +1,4 @@
+import { syncExpectedBills } from '../finance/expected'
 import type { AgentHost } from '../agent/host'
 import type { LlmClient } from '../agent/llm'
 import type { Result } from '../app-api'
@@ -90,6 +91,8 @@ export function syncClock(core: Core): boolean {
       draft.bank.today = real
       for (const b of draft.bank.bills) if (b.status === 'upcoming' && b.dueDate < real) b.status = 'overdue'
     }
+    // a new day: what is due soon has moved
+    syncExpectedBills(draft.bank)
     appendAudit(draft, ts, 'system', 'session_start', `Calendar moved to today (${real})`, {
       clock: 'real', from, to: real, days, txns: txns.length, events: events.length,
     })

@@ -129,6 +129,7 @@ export type NluFocus =
   | 'explain_pots'
   | 'explain_xray'
   | 'mood'
+  | 'no_bank_pay'
 
 export interface NluContext {
   currency: Currency

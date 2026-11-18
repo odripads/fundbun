@@ -178,17 +178,21 @@ function dueFindings(ctx: FinanceContext, f: Fmt): BillFinding[] {
   for (const b of ctx.bank.bills) {
     if (!isUnpaid(b)) continue
     const days = diffDays(today, b.dueDate)
+    // predicted from the user's own repeating charges: there is no bank to pay it through, so no Pay button
+    const expected = b.source === 'expected'
     const evidence = { amountDue: b.amountDue, dueDate: b.dueDate, daysLeft: days }
     if (b.status === 'overdue' || days < 0) {
       out.push({
         id: `f_overdue_${b.id}`,
         kind: 'overdue',
         severity: 'alert',
-        title: `${b.name} is overdue`,
-        detail: `${f(b.amountDue)} was due ${dateLabel(b.dueDate)} (${plural(Math.abs(days), 'day')} ago). Paying now avoids late fees.`,
+        title: expected ? `${b.name} looks overdue` : `${b.name} is overdue`,
+        detail: expected
+          ? `About ${f(b.amountDue)} was expected around ${dateLabel(b.dueDate)}, going by your earlier charges. If you have paid it, mark it as paid in Bills.`
+          : `${f(b.amountDue)} was due ${dateLabel(b.dueDate)} (${plural(Math.abs(days), 'day')} ago). Paying now avoids late fees.`,
         amount: b.amountDue,
         billId: b.id,
-        suggestedAction: payAction(b, f),
+        ...(expected ? {} : { suggestedAction: payAction(b, f) }),
         evidence,
       })
     } else if (days <= DUE_SOON_DAYS) {
@@ -196,11 +200,13 @@ function dueFindings(ctx: FinanceContext, f: Fmt): BillFinding[] {
         id: `f_due_soon_${b.id}`,
         kind: 'due_soon',
         severity: 'warn',
-        title: `${b.name} due ${days === 0 ? 'today' : days === 1 ? 'tomorrow' : `in ${days} days`}`,
-        detail: `${f(b.amountDue)} due ${dateLabel(b.dueDate)}.`,
+        title: `${b.name} ${expected ? 'expected' : 'due'} ${days === 0 ? 'today' : days === 1 ? 'tomorrow' : `in ${days} days`}`,
+        detail: expected
+          ? `About ${f(b.amountDue)} around ${dateLabel(b.dueDate)}, going by your earlier charges. Pay it in your bank app, then mark it as paid in Bills.`
+          : `${f(b.amountDue)} due ${dateLabel(b.dueDate)}.`,
         amount: b.amountDue,
         billId: b.id,
-        suggestedAction: payAction(b, f),
+        ...(expected ? {} : { suggestedAction: payAction(b, f) }),
         evidence,
       })
     }
