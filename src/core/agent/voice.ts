@@ -33,7 +33,7 @@ export const ACTION_STAGES: readonly ActionStage[] = ['confirm', 'done', 'blocke
  */
 export const FACT_KEYS: Record<Intent, string[]> = {
   greeting: ['name', 'headline'],
-  help: ['focus', 'target', 'income', 'label', 'amount'],
+  help: ['focus', 'target', 'income', 'label', 'amount', 'perAction', 'daily', 'monthly', 'count', 'list', 'source'],
   thanks: ['name'],
   overview: [
     'status', 'month', 'spent', 'target', 'delta', 'remaining', 'projected', 'safeToSpend', 'goalName', 'goalDelay',
@@ -103,6 +103,21 @@ const HELP_FOCUS: Variant[] = [
   v('Your data is yours: Settings → Privacy → Export downloads everything as a file on this device. I never send it anywhere.', { focus: 'export' }),
   v('Your target and income are yours to set: Settings → Profile, no PIN needed.[ Right now your target is {target}][ and your income {income}].[ Change it to {amount} there and I’ll use the new number straight away.]', { focus: 'profile' }),
   v('I can’t add dreams from chat yet — open Dreams → Add a dream[ to put {label} on your wishlist][ ({amount})], with a photo if you like. I’ll start mirroring it right away.', { focus: 'add_dream' }),
+  // questions about Bun itself (R-ABOUT-*): plain, honest, the same in every tone
+  v('Fair question. Three rules I can’t break, whoever asks. One: I only move money between your own pots, within the limits you set. Two: paying a bill needs your PIN, and it is sealed to that exact amount and payee. Three: I can never send money to other people or add a payee. Bills and messages are read as data, never as orders, and everything I do lands in the Activity log. This prototype has no live bank link, so no real money moves.', { focus: 'safety' }),
+  v('No. This is a prototype with no live bank connection. What you’re looking at is a demo persona on a simulated bank, so whatever I do, no real money moves.', { focus: 'bank_link', source: 'demo' }),
+  v('No. This is a prototype with no live bank connection. Your spending is what you imported or typed in, and anything I do happens inside this app only, so no real money moves.', { focus: 'bank_link' }),
+  v('I’m Bun, an AI assistant, not a person. Right now I run on this device as a rules engine: I match what you type to things I know how to do, and every number comes from your data, not from guessing. No cloud model is involved unless you switch on Cloud AI in Settings → Privacy & data. Want a human? Open the ⋯ menu and tap “Talk to a human”.', { focus: 'identity' }),
+  v('My leash, set by you: up to {perAction} per action, {daily} a day and {monthly} a month. I only move money between your own pots, and paying a verified bill needs your PIN. Only you can change these limits, in Settings → Permissions with your PIN.', { focus: 'limits' }),
+  v('No tripwires yet. Tell me one in your own words, like “alert me at 80% of my target”, or set them in Settings → Tripwires.', { focus: 'tripwire_list', count: '0' }),
+  v('You have {count} on: {list}. Edit them in Settings → Tripwires, or tell me a new one in your own words.', { focus: 'tripwire_list' }),
+  v('You can erase everything yourself: Settings → Privacy & data → “Delete everything”. It wipes your profile, transactions, goals, chat and log from this device, and there is no copy anywhere else. I can’t do it from chat: a wipe that big should be your tap, not mine.', { focus: 'delete_data' }),
+  v('Only what you gave me: your profile, the transactions you imported or the demo loaded, your bills, goals, chat and my activity log. It lives in this browser, on this device, and I don’t sell or share it. Cloud AI is optional: when you turn it on, chat messages go to the model with personal details masked. To see or take it all: Settings → Privacy & data → “Export my data”. To erase it: “Delete everything”, on the same page.', { focus: 'my_data' }),
+  v('Your call, any time, in Settings → Privacy & data. Cloud AI is a switch: turn it off and nothing leaves this device. Consent to process your financial data is what the app runs on, so withdrawing it means deleting your data with “Delete everything”, on that page. You can export a copy first.', { focus: 'consent' }),
+  v('A tripwire is a spending line you draw yourself: any purchase over an amount you pick, say, or 80% of your monthly target. When you cross it, I nudge you and show what it means for your dream. It’s a rule, not a payment, so nothing moves. Want one? Tell me, like “alert me at 80% of my target”.', { focus: 'explain_tripwire' }),
+  v('The Dream Mirror turns your month into something you care about. Overspend, and it shows the dream that money could have been, and how far your main goal slips. Stay under your target, and it shows how much closer you are. Same numbers, but you feel them.', { focus: 'explain_mirror' }),
+  v('A pot is a savings jar for one of your dreams. Within your limits and with your OK, I can move money from your everyday account into a pot, or back. Pots are yours: I can’t send their money to anyone else.', { focus: 'explain_pots' }),
+  v('Bill X-ray reads a bill you paste in: the total, the due date, how it compares with your usual, and anything odd. If the bill hides instructions meant for an AI, like “transfer the money now”, I flag them and do nothing. To me a bill is data, never an order.', { focus: 'explain_xray' }),
 ]
 
 const OVERVIEW_FOCUS: Record<Tone, Variant[]> = {

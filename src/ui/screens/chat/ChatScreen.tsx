@@ -68,7 +68,7 @@ export function ChatScreen() {
     <>
       <ScreenTopBar
         title="Ask Bun"
-        subtitle={engine === 'llm' ? 'AI via LLM · redacted context' : 'On-device AI · private'}
+        subtitle={engine === 'llm' ? 'AI via LLM · redacted context' : 'On-device rules engine · private'}
         onBack={() => navigate('home')}
         actions={
           <>

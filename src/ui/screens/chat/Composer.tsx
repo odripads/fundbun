@@ -84,7 +84,7 @@ export function Composer({ onSend, busy, engine, onHeight }: ComposerProps) {
       </div>
       <p id={hintId} className={styles.hint}>
         <ShieldCheck aria-hidden="true" />
-        {engine === 'llm' ? 'AI via LLM, redacted context' : 'On-device AI'} · money only moves with your OK
+        {engine === 'llm' ? 'AI via LLM, redacted context' : 'On-device rules engine'} · money only moves with your OK
       </p>
     </form>
   )

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { REFUSAL_INTENTS, understand, type Intent } from './nlu'
 import { ARIF_CTX, MEI_CTX } from './nlu.fixtures'
-import { CHIPS_I18N, I18N_TEMPLATES, LINES, REFUSALS_I18N, categoryName, dateName, delayIn, dueInPhrase, joinList, monthName, topicOf } from './voice-i18n'
+import { CHIPS_I18N, I18N_TEMPLATES, LINES, REFUSALS_I18N, categoryName, dateName, delayIn, dueInPhrase, joinList, monthName, topicOf, REASONS_I18N, reasonIn } from './voice-i18n'
 import { composeReply, line, refusal } from './voice'
 
 const LOCAL = ['zh', 'id'] as const
@@ -36,6 +36,28 @@ describe('localized templates', () => {
     expect(composeReply('overview', SAMPLE, 'cheeky', 'id')).toMatch(/target/)
     expect(composeReply('overview', { ...SAMPLE, focus: 'balance' }, 'gentle', 'zh')).toContain('¥50,189.17')
     expect(composeReply('afford', SAMPLE, 'gentle', 'zh')).toMatch(/^建议先缓一缓/)
+  })
+
+  it('answer every question about Bun itself in all three languages, with the limits and the honest prototype line', () => {
+    const about = ['safety', 'bank_link', 'identity', 'limits', 'tripwire_list', 'delete_data', 'my_data', 'consent', 'explain_tripwire', 'explain_mirror', 'explain_pots', 'explain_xray']
+    const facts = { perAction: '¥500', daily: '¥1,000', monthly: '¥5,000', count: '2', list: 'A and B', source: 'demo' }
+    const generic = { en: composeReply('help', {}, 'gentle', 'en'), zh: composeReply('help', {}, 'gentle', 'zh'), id: composeReply('help', {}, 'gentle', 'id') }
+    for (const lang of ['en', 'zh', 'id'] as const) {
+      const seen = new Set<string>()
+      for (const focus of about) {
+        const text = composeReply('help', { ...facts, focus }, 'gentle', lang)
+        clean(text, `${lang}/help/${focus}`)
+        expect(text, `${lang}/${focus} has its own copy`).not.toBe(generic[lang])
+        seen.add(text)
+      }
+      expect(seen.size, `${lang}: one distinct answer per question`).toBe(about.length)
+      expect(composeReply('help', { ...facts, focus: 'limits' }, 'cheeky', lang)).toContain('¥500')
+      expect(composeReply('help', { focus: 'tripwire_list', count: '0' }, 'gentle', lang)).not.toMatch(/\{|\}/)
+    }
+    expect(composeReply('help', { focus: 'safety' }, 'gentle', 'en')).toMatch(/no live bank link/)
+    expect(composeReply('help', { focus: 'bank_link', source: 'own' }, 'gentle', 'en')).toMatch(/no live bank connection/)
+    expect(composeReply('help', { focus: 'identity' }, 'gentle', 'en')).toMatch(/rules engine/)
+    expect(composeReply('help', { focus: 'safety' }, 'gentle', 'zh')).toMatch(/没有连接真实银行/)
   })
 
   it('fall back to English for intents without hand-written copy', () => {
@@ -79,6 +101,29 @@ describe('localized refusals and lines', () => {
     expect(refusal('external_transfer', 'cheeky').text).not.toMatch(/Nice try/)
     expect(refusal('external_transfer', 'cheeky', { attack: true }).text).toMatch(/^Nice try — sending money/)
     expect(refusal('change_permissions', 'cheeky').title).not.toBe('Nice try')
+  })
+})
+
+describe('reasonIn — why the rule engine said no, in the user\'s language', () => {
+  it('keeps the policy\'s own sentence in English', () => {
+    expect(reasonIn('¥800 is more than the ¥500 limit.', ['P-CAP-PER-ACTION'], 'en')).toBe('¥800 is more than the ¥500 limit.')
+  })
+  it('translates by rule id for zh and id, and never leaves English inside a local reply', () => {
+    for (const lang of ['zh', 'id'] as const) {
+      for (const [id, text] of Object.entries(REASONS_I18N[lang])) {
+        expect(reasonIn('English reason.', [id], lang)).toBe(text)
+        expect(text).not.toMatch(/[.。]$/)
+      }
+    }
+    expect(reasonIn('x', ['P-FROZEN'], 'zh')).toMatch(/暂停/)
+    expect(reasonIn('x', ['P-FROZEN'], 'id')).toMatch(/dijeda/)
+  })
+  it('falls back to the English reason for a rule it does not know', () => {
+    expect(reasonIn('Something new.', ['P-NEW-RULE'], 'zh')).toBe('Something new.')
+    expect(reasonIn(undefined, undefined, 'zh')).toBeUndefined()
+  })
+  it('covers the same rules in both languages', () => {
+    expect(Object.keys(REASONS_I18N.zh).sort()).toEqual(Object.keys(REASONS_I18N.id).sort())
   })
 })
 

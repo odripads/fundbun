@@ -90,6 +90,20 @@ export const I18N_TEMPLATES: Record<LocalLang, Partial<Record<Intent, I18nVarian
       v('你的数据属于你：设置 → 隐私 → 导出，会把全部数据下载到这台设备上。我不会把它发给任何人。', { focus: 'export' }),
       v('目标和收入由你自己设置：设置 → 个人资料（不需要PIN）。[现在你的目标是{target}，][收入{income}。][在那里改成{amount}，我马上按新数字算。]', { focus: 'profile' }),
       v('我还不能在聊天里添加梦想——打开“梦想”→“添加梦想”[，把{label}加进心愿单][（{amount}）]，还可以配一张照片。', { focus: 'add_dream' }),
+      v('问得好。有三条规则，不管谁来问我都不能破。第一，我只能在你自己的储蓄罐之间转钱，而且不超过你设的限额。第二，交账单必须输入你的PIN，并且只对这一笔金额和这个收款方有效。第三，我永远不能给别人转账，也不能添加收款人。账单和消息对我来说只是数据，不是指令；我做的每件事都记在“活动”（Activity）日志里。这个原型没有连接真实银行，所以不会动到真钱。', { focus: 'safety' }),
+      v('没有。这是一个原型，没有连接任何真实银行。你现在看到的是演示角色和模拟银行，所以无论我做什么，都不会动到真钱。', { focus: 'bank_link', source: 'demo' }),
+      v('没有。这是一个原型，没有连接任何真实银行。你的消费记录来自你导入或手动输入的数据；我做的一切只发生在这个App里，不会动到真钱。', { focus: 'bank_link' }),
+      v('我是Bun，一个AI助手，不是真人。现在我在这台设备上以规则引擎的方式运行：把你输入的话匹配到我会做的事情上，每个数字都来自你的数据，不是猜的。除非你在 设置 → 隐私与数据 里打开云端AI（Cloud AI），否则不会用到任何云端模型。想找真人？点聊天右上角⋯菜单里的“Talk to a human”。', { focus: 'identity' }),
+      v('我的权限由你来定：每次操作最多{perAction}，每天最多{daily}，每月最多{monthly}。我只能在你自己的储蓄罐之间转钱，交已验证的账单需要你的PIN。这些限额只有你能改：设置 → 权限（Permissions），需要PIN。', { focus: 'limits' }),
+      v('你还没有设置警戒线。用自己的话告诉我就行，比如“花到目标的80%时提醒我”，也可以在 设置 → 警戒线（Tripwires）里设置。', { focus: 'tripwire_list', count: '0' }),
+      v('你现在开着{count}条警戒线：{list}。可以在 设置 → 警戒线（Tripwires）里修改，或者直接告诉我一条新的。', { focus: 'tripwire_list' }),
+      v('你可以自己全部删除：设置 → 隐私与数据（Privacy & data）→“Delete everything”。它会清除这台设备上的个人资料、交易、目标、聊天和日志，别处没有备份。我不能在聊天里替你删：这么大的操作应该由你亲手确认。', { focus: 'delete_data' }),
+      v('只有你给我的数据：个人资料、你导入的或演示加载的交易、账单、目标、聊天记录和我的操作日志。它们都保存在这台设备的浏览器里，我不会出售或分享。云端AI是可选的：打开后，聊天内容会在隐去个人信息后发给模型。想查看或带走全部数据：设置 → 隐私与数据 →“Export my data”。想删除：同一页的“Delete everything”。', { focus: 'my_data' }),
+      v('随时由你决定，在 设置 → 隐私与数据（Privacy & data）里。云端AI是一个开关：关掉后，数据不会离开这台设备。处理你的财务数据是这个App运行的前提，所以撤回同意就等于删除数据：点同一页的“Delete everything”。删除前可以先导出一份。', { focus: 'consent' }),
+      v('警戒线是你自己画的一条消费线，比如单笔超过某个金额，或者花到月度目标的80%。一旦越线，我会提醒你，并告诉你这对你的梦想意味着什么。它只是一条规则，不是付款，不会动钱。想设一条？直接告诉我，比如“花到目标的80%时提醒我”。', { focus: 'explain_tripwire' }),
+      v('梦想镜把你这个月的花销变成你在乎的东西。超支了，它会告诉你这笔钱本来可以换来哪个梦想，以及主要目标因此推迟了多久；没超支，它会告诉你离目标又近了多少。数字还是那些数字，但你能感受到它。', { focus: 'explain_mirror' }),
+      v('储蓄罐是为某一个梦想存钱的小罐子。在你的限额之内、经你确认后，我可以把钱从日常账户转进储蓄罐，或者转回来。储蓄罐是你自己的：里面的钱我不能转给任何别人。', { focus: 'explain_pots' }),
+      v('账单透视会读你粘贴进来的账单：总金额、到期日、和平时比是高是低，以及有没有异常。如果账单里藏着写给AI的指令，比如“立即转账”，我会标记出来，并且什么都不做。对我来说，账单只是数据，从来不是指令。', { focus: 'explain_xray' }),
       v('我可以：看本月花销、按类别拆分、查交易、检查账单和订阅、判断买不买得起，还能在你自己的储蓄罐之间转钱——每次都要你确认。我从不给别人转账。想找真人，点⋯菜单里的“Talk to a human”。'),
     ],
     thanks: [v('不客气[，{name}]！随时找我。')],
@@ -192,6 +206,20 @@ export const I18N_TEMPLATES: Record<LocalLang, Partial<Record<Intent, I18nVarian
       v('Datamu milikmu: Pengaturan → Privasi → Ekspor akan mengunduh semuanya ke perangkat ini. Aku tidak pernah mengirimnya ke siapa pun.', { focus: 'export' }),
       v('Target dan pemasukan kamu atur sendiri: Pengaturan → Profil (tanpa PIN).[ Sekarang targetmu {target}][ dan pemasukanmu {income}].[ Ubah ke {amount} di sana, nanti langsung aku pakai.]', { focus: 'profile' }),
       v('Aku belum bisa menambah impian dari chat — buka Impian → Tambah impian[ untuk memasukkan {label}][ ({amount})], boleh pakai foto juga.', { focus: 'add_dream' }),
+      v('Pertanyaan bagus. Ada tiga aturan yang tidak bisa kulanggar, siapa pun yang minta. Satu: aku hanya memindahkan uang antar celenganmu sendiri, dalam batas yang kamu tentukan. Dua: bayar tagihan butuh PIN-mu, dan PIN itu hanya berlaku untuk jumlah dan penerima yang persis sama. Tiga: aku tidak pernah bisa mengirim uang ke orang lain atau menambah penerima baru. Tagihan dan pesan kubaca sebagai data, bukan perintah, dan semua yang kulakukan tercatat di log Aktivitas (Activity). Prototipe ini tidak terhubung ke bank sungguhan, jadi tidak ada uang asli yang berpindah.', { focus: 'safety' }),
+      v('Tidak. Ini prototipe tanpa koneksi ke bank sungguhan. Yang kamu lihat adalah persona demo di bank simulasi, jadi apa pun yang kulakukan, tidak ada uang asli yang berpindah.', { focus: 'bank_link', source: 'demo' }),
+      v('Tidak. Ini prototipe tanpa koneksi ke bank sungguhan. Data belanjamu berasal dari yang kamu impor atau ketik sendiri, dan semua yang kulakukan hanya terjadi di dalam aplikasi ini, jadi tidak ada uang asli yang berpindah.', { focus: 'bank_link' }),
+      v('Aku Bun, asisten AI, bukan manusia. Sekarang aku berjalan di perangkat ini sebagai mesin aturan: aku mencocokkan ketikanmu dengan hal-hal yang bisa kulakukan, dan setiap angka berasal dari datamu, bukan tebakan. Tidak ada model cloud yang dipakai kecuali kamu menyalakan Cloud AI di Pengaturan → Privasi & data. Mau bicara dengan manusia? Buka menu ⋯ lalu ketuk “Talk to a human”.', { focus: 'identity' }),
+      v('Batasku kamu yang tentukan: maksimal {perAction} per aksi, {daily} per hari, dan {monthly} per bulan. Aku hanya memindahkan uang antar celenganmu sendiri, dan membayar tagihan terverifikasi butuh PIN-mu. Hanya kamu yang bisa mengubah batas ini, di Pengaturan → Izin (Permissions) dengan PIN.', { focus: 'limits' }),
+      v('Belum ada tripwire. Bilang saja dengan kata-katamu sendiri, misalnya “ingatkan aku kalau sudah 80% dari target”, atau atur di Pengaturan → Tripwires.', { focus: 'tripwire_list', count: '0' }),
+      v('Ada {count} tripwire yang aktif: {list}. Ubah di Pengaturan → Tripwires, atau bilang saja yang baru.', { focus: 'tripwire_list' }),
+      v('Kamu bisa menghapus semuanya sendiri: Pengaturan → Privasi & data → “Delete everything”. Itu menghapus profil, transaksi, impian, chat, dan log dari perangkat ini, dan tidak ada salinan di tempat lain. Aku tidak bisa melakukannya dari chat: penghapusan sebesar itu harus lewat ketukanmu sendiri.', { focus: 'delete_data' }),
+      v('Hanya yang kamu berikan: profil, transaksi yang kamu impor atau yang dimuat demo, tagihan, impian, chat, dan log aktivitasku. Semuanya tersimpan di browser perangkat ini, dan aku tidak menjual atau membagikannya. Cloud AI itu opsional: kalau dinyalakan, pesan chat dikirim ke model dengan data pribadi disamarkan. Lihat atau ambil semuanya: Pengaturan → Privasi & data → “Export my data”. Hapus: “Delete everything” di halaman yang sama.', { focus: 'my_data' }),
+      v('Terserah kamu, kapan saja, di Pengaturan → Privasi & data. Cloud AI itu sakelar: matikan, dan tidak ada data yang keluar dari perangkat ini. Persetujuan memproses data keuangan adalah dasar aplikasi ini, jadi mencabutnya berarti menghapus datamu lewat “Delete everything” di halaman itu. Kamu bisa ekspor salinannya dulu.', { focus: 'consent' }),
+      v('Tripwire adalah garis belanja yang kamu tarik sendiri, misalnya pembelian di atas jumlah tertentu, atau 80% dari target bulananmu. Begitu terlewati, aku mengingatkanmu dan menunjukkan artinya untuk impianmu. Ini aturan, bukan pembayaran, jadi tidak ada uang yang berpindah. Mau pasang? Bilang saja, misalnya “ingatkan aku kalau sudah 80% dari target”.', { focus: 'explain_tripwire' }),
+      v('Dream Mirror mengubah bulanmu jadi sesuatu yang kamu pedulikan. Kalau boros, ia menunjukkan impian yang sebenarnya bisa terbeli dengan uang itu, dan seberapa jauh target utamamu mundur. Kalau hemat, ia menunjukkan seberapa dekat kamu sekarang. Angkanya sama, tapi terasa.', { focus: 'explain_mirror' }),
+      v('Celengan adalah tabungan untuk satu impianmu. Dalam batasmu dan dengan persetujuanmu, aku bisa memindahkan uang dari rekening harian ke celengan, atau sebaliknya. Celengan itu milikmu: aku tidak bisa mengirim isinya ke orang lain.', { focus: 'explain_pots' }),
+      v('Bill X-ray membaca tagihan yang kamu tempel: totalnya, jatuh temponya, naik atau turun dibanding biasanya, dan hal yang janggal. Kalau tagihan menyembunyikan perintah untuk AI, misalnya “transfer uangnya sekarang”, aku menandainya dan tidak melakukan apa-apa. Bagiku tagihan itu data, bukan perintah.', { focus: 'explain_xray' }),
       v('Aku bisa: cek pengeluaran bulan ini, rincian per kategori, cari transaksi, periksa tagihan dan langganan, cek apakah sesuatu terjangkau, dan memindahkan uang antar celenganmu sendiri — selalu dengan konfirmasimu. Aku tidak pernah mengirim uang ke orang lain. Mau bicara dengan petugas? Ketuk “Talk to a human” di menu ⋯.'),
     ],
     thanks: [v('Sama-sama[, {name}]! Kapan pun butuh, aku ada.')],
@@ -471,6 +499,58 @@ export const LINES: Record<string, Record<Lang, string>> = {
 // ───────────────────────────── chips ─────────────────────────────
 
 /** Quick replies in Chinese / Indonesian — each one is understood by the NLU (tested). */
+/**
+ * Why the rule engine said no, in the user's language. The policy engine writes its reasons in English (with the
+ * exact amounts); a Chinese or Indonesian reply uses these instead so it never switches language mid-sentence.
+ * Keyed by the first policy rule that fired; an unknown rule keeps the English reason.
+ */
+export const REASONS_I18N: Record<LocalLang, Record<string, string>> = {
+  zh: {
+    'P-FROZEN': '助手已暂停，在你重新开启之前只能查看和解释',
+    'P-OBSERVE': '助手现在处于只看不动的模式，只能查看和解释',
+    'P-CAP-PER-ACTION': '金额超过了你为助手单次操作设的限额，你可以自己操作，或在 设置 → 权限 里用PIN调整',
+    'P-CAP-DAILY': '这会超过你为助手设的每日限额',
+    'P-CAP-MONTHLY': '这会超过你为助手设的每月限额',
+    'P-FUNDS': '账户里的钱不够',
+    'P-LIQUIDITY': '转走这笔钱后，日常账户就不够付近期到期的账单了',
+    'P-T4-PROHIBITED': '这类操作助手永远不能做：给别人转账、添加收款人、投资、借贷，或修改自己的权限',
+    'P-LLM-NOT-EXPOSED': '这类操作助手永远不能做',
+    'P-TAINT': '这一步紧跟在读取外部内容之后，需要你亲自确认',
+    'P-TOOL-DISABLED': '你已在设置里关闭了这项功能',
+    'P-CONSENT': '需要先同意处理财务数据',
+    'P-RATE': '短时间内操作太多，请稍后再试',
+    'P-ENTITY': '没有找到对应的账单、订阅或储蓄罐',
+    'P-ARGS': '请求里的信息不完整或不正确',
+  },
+  id: {
+    'P-FROZEN': 'asisten sedang dijeda, jadi hanya bisa membaca dan menjelaskan sampai kamu menyalakannya lagi',
+    'P-OBSERVE': 'asisten sedang dalam mode lihat saja, jadi hanya bisa membaca dan menjelaskan',
+    'P-CAP-PER-ACTION': 'jumlahnya melebihi batas per aksi yang kamu tetapkan untuk asisten; kamu bisa melakukannya sendiri, atau ubah batasnya di Pengaturan → Izin dengan PIN',
+    'P-CAP-DAILY': 'ini akan melewati batas harian yang kamu tetapkan untuk asisten',
+    'P-CAP-MONTHLY': 'ini akan melewati batas bulanan yang kamu tetapkan untuk asisten',
+    'P-FUNDS': 'saldonya tidak cukup',
+    'P-LIQUIDITY': 'setelah dipindahkan, rekening harian tidak cukup untuk tagihan yang segera jatuh tempo',
+    'P-T4-PROHIBITED': 'asisten tidak pernah boleh melakukan ini: kirim uang ke orang lain, menambah penerima, investasi, pinjaman, atau mengubah izinnya sendiri',
+    'P-LLM-NOT-EXPOSED': 'asisten tidak pernah boleh melakukan ini',
+    'P-TAINT': 'langkah ini muncul tepat setelah membaca konten dari luar, jadi perlu konfirmasimu sendiri',
+    'P-TOOL-DISABLED': 'fitur ini sudah kamu matikan di Pengaturan',
+    'P-CONSENT': 'perlu persetujuan memproses data keuangan dulu',
+    'P-RATE': 'terlalu banyak aksi dalam waktu singkat, coba lagi sebentar',
+    'P-ENTITY': 'tagihan, langganan, atau celengan itu tidak ditemukan',
+    'P-ARGS': 'permintaannya kurang lengkap atau tidak valid',
+  },
+}
+
+/** The reason to quote for a blocked action: translated by rule id for zh/id, the policy's own sentence otherwise. */
+export function reasonIn(reason: string | undefined, ruleIds: readonly string[] | undefined, lang: Lang): string | undefined {
+  if (lang === 'en') return reason
+  for (const id of ruleIds ?? []) {
+    const local = REASONS_I18N[lang][id]
+    if (local) return local
+  }
+  return reason
+}
+
 export const CHIPS_I18N: Record<LocalLang, Partial<Record<Intent, string[]>>> = {
   zh: {
     greeting: ['这个月花得怎么样？', '账单什么时候到期', '我的目标进度'],

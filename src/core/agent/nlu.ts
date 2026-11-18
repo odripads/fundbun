@@ -115,6 +115,19 @@ export type NluFocus =
   | 'late_night'
   | 'largest'
   | 'what_if'
+  // questions about Bun itself (R-ABOUT-*): answered in plain words, never treated as a request to act
+  | 'safety'
+  | 'bank_link'
+  | 'identity'
+  | 'limits'
+  | 'tripwire_list'
+  | 'delete_data'
+  | 'my_data'
+  | 'consent'
+  | 'explain_tripwire'
+  | 'explain_mirror'
+  | 'explain_pots'
+  | 'explain_xray'
 
 export interface NluContext {
   currency: Currency
@@ -1187,14 +1200,103 @@ function sensitiveRule(p: Parsed): RuleHit | null {
     if (elsewhere || (EXPORT_VERB.test(n) && EXPORT_TARGET.test(n))) return { intent: 'sensitive_request', rule: 'R-DATA-EXFIL', confidence: 0.96 }
     if (EXPORT_VERB.test(n)) return { intent: 'help', rule: 'R-SELF-EXPORT', confidence: 0.95, slots: { focus: 'export' } }
   }
-  const zhSecret = /密码|验证码|安全码|cvv|完整(?:的)?(?:卡号|账号|银行卡号)|身份证号?|卡号/.test(n)
-  const zhWaive = /(?:不要|不用|别|免|跳过|取消).{0,6}(?:密码|验证)/.test(n)
+  // "我的PIN是多少": the secret is written in Latin letters inside a Chinese sentence, so the English reveal verbs miss it
+  const zhPinReveal = HAN.test(n) && /\bpin\b|pin码/.test(n) && /多少|什么|是啥|告诉|显示|给我|发给|发我|看看|看一下|查|说出|念/.test(n)
+  const zhSecret = zhPinReveal || /密码|验证码|安全码|cvv|完整(?:的)?(?:卡号|账号|银行卡号)|身份证号?|卡号/.test(n)
+  const zhWaive = /(?:不要|不用|别|免|跳过|取消).{0,6}(?:密码|验证|pin)/.test(n)
   if (zhSecret && !zhWaive) return { intent: 'sensitive_request', rule: 'R-SECRET-ZH', confidence: 0.95 }
   return null
 }
 
+// ───────────────────────────── questions about Bun itself ─────────────────────────────
+// What a careful user (or a judge) asks before trusting an agent with money: "is this safe?", "is that my real
+// bank?", "what are your limits?", "delete my data". They are questions, never requests to act, so each gets a
+// plain answer — and asking what the limits are must not be scored as an attempt to change them.
+
+const SAFETY_RE = /\b(?:is|are)\s+(?:this|it|that|you|bun|fundbun|the app|this app|this thing)\s+(?:really\s+|actually\s+|even\s+)?(?:safe|secure|trustworthy|legit|a scam|reliable)\b|\bis my (?:money|cash|account) (?:really\s+|actually\s+)?(?:safe|secure)\b|\bcan (?:i|we|anyone|people|users?) (?:really |actually |even )?trust (?:you|this|it|bun|fundbun|the app|an ai)\b|\b(?:why|how) (?:should|can|could|would|do) (?:i|we|anyone) trust\b|\b(?:can|could|will|would|what if|what happens if|what happens when|suppose)\s+(?:you|bun|it|the ai|the agent|someone|somebody|anyone|a hacker|hackers|a scammer|scammers|an attacker)\b[^.?!]{0,40}\b(?:steal(?:s|ing)?|hack(?:s|ed|ing)?|trick(?:s|ed|ing)?|scam(?:s|med|ming)?|fool(?:s|ed|ing)?|manipulat(?:e|es|ed|ing)|jailbreak(?:s|ed|ing)?|go(?:es)? rogue|drain(?:s|ed|ing)?)\b|\bhow (?:do|does|will|can) (?:you|bun|fundbun|this|it|the app)\s+(?:keep|protect|secure|guard)\b|\bwhat (?:stops|prevents|keeps) (?:you|bun|it|the ai|the agent)\b|\bwhat (?:can'?t|cannot|won'?t|will you never|can you not) (?:you )?do\b|\b(?:your|the) (?:safety|security) (?:rules|model|measures|features)\b|\bwhat are your rules\b|\bhow (?:safe|secure) (?:is|are)\b/i
+const SAFETY_ZH_RE = /安全吗|安不安全|靠谱吗|靠不靠谱|可靠吗|(?:能|可以|值得|敢)(?:信任|相信)你|(?:会不会|能不能|会|能|可以).{0,4}(?:偷|盗|骗走|卷走|转走|挪用)我的钱|被(?:骗|黑|盗|攻击|诱导|欺骗)了?(?:怎么办|会怎样)|(?:如果|万一|要是).{0,12}(?:骗|黑|诱导|攻击|欺骗)(?:了)?你|怎么(?:保护|保证|保障).{0,8}(?:钱|资金|安全)|你的安全规则|你的规则是什么|你不能做什么|你有什么限制/
+const SAFETY_ID_RE = /\b(?:apakah|apa)\b[^.?!]{0,24}\baman\b|\baman(?:kah)?\s*(?:nggak|gak|ga|tidak|kah|ya|sih)?\s*\??$|\bbisa dipercaya\b|\bbisa(?:kah)?\s+(?:kamu|anda)\s+(?:mencuri|curi|ambil|bawa kabur)\b|\b(?:kalau|gimana kalau|bagaimana jika)\b[^.?!]{0,20}\b(?:ditipu|dibobol|diretas|dibohongi)\b|\b(?:gimana|bagaimana)\b[^.?!]{0,12}\b(?:jaga|menjaga|melindungi)\b[^.?!]{0,10}\buang/i
+
+const BANK_LINK_RE = /\b(?:is|are)\s+(?:this|it|you|bun|fundbun|the app)\b[^.?!]{0,16}\b(?:connect(?:ed|s)?|link(?:ed|s)?|hooked up|tied|sync(?:ed|s)?|plugged)\b|\b(?:do|does|did|can|will)\s+(?:you|this|it|bun|fundbun|the app)\b[^.?!]{0,20}\b(?:real|actual|live)\b[^.?!]{0,12}\b(?:bank|account|money|data)\b|\bis (?:this|that|it|the money|my money|the bank|the data) (?:all )?(?:real|fake|simulated|a simulation|a demo|a sandbox)(?: money| data)?\b|\b(?:real|actual|live) bank (?:account|connection|link|data|api)\b|\bwhat(?:'s| is|s)? (?:the |a |this )?sandbox\b|\bsandbox (?:bank )?mean|\bwhere (?:does|do|did) (?:this|the|these|my) (?:data|numbers|transactions|figures) come from\b|\bdoes (?:any )?(?:real )?money (?:actually |really )?move\b|\bis (?:any|this) (?:real )?money (?:actually |really )?(?:moving|moved|real)\b/i
+const BANK_LINK_ZH_RE = /(?:连接|连着|连上|绑定|接入|关联|对接).{0,6}(?:真实|真的|我的)?(?:银行|账户|支付宝|微信|卡)|真(?:的|实)(?:的)?(?:钱|银行|账户|数据|交易)吗|是(?:演示|模拟|假的|沙盒)(?:的)?吗|沙盒是什么|什么是沙盒|(?:数据|数字|交易)(?:是)?(?:从)?哪(?:里|儿)?来|钱(?:是)?真的(?:会)?(?:动|转|扣)/
+const BANK_LINK_ID_RE = /\b(?:terhubung|tersambung|nyambung|konek)\b[^.?!]{0,20}\b(?:bank|rekening)\b|\b(?:uang|bank|rekening|data)(?:nya)? (?:asli|beneran|sungguhan)\b|\bini (?:cuma )?(?:demo|simulasi)\b|\bapa itu sandbox\b/i
+
+const IDENTITY_RE = /\b(?:are|r) (?:you|u) (?:an? |the )?(?:real |actual |true |just an? )?(?:ai|a\.i\.|bot|robot|human|person|llm|chatbot|chatgpt|gpt|claude|deepseek|qwen|gemini|machine|program|language model)\b|\b(?:which|what) (?:ai |language |large language )?(?:model|llm|ai|engine)\b[^.?!]{0,24}\b(?:are you|do you use|is this|powers?|runs?|running|behind|under the hood|using)\b|\b(?:which|what) (?:ai|model|llm) (?:is this|are you)\b|\bwho (?:made|built|created|trained|developed|makes|designed) (?:you|this|bun|fundbun)\b|\bare you (?:powered|run|built|made) (?:by|on|with)\b|\bwhat are you(?: exactly| really| actually)?\s*\??$|\bhow do you (?:actually |really )?work\b|\bis (?:this|it|bun) (?:really |actually )?(?:an? )?(?:real )?(?:ai|a\.i\.|llm)\b|\bdo you use (?:an? |the )?(?:ai|llm|chatgpt|gpt|deepseek|claude|qwen|cloud|model)\b|\bare you (?:real|alive|sentient)\b/i
+const IDENTITY_ZH_RE = /你是(?:不是)?(?:真的|一个|个)?(?:人工智能|ai|机器人|真人|人类|人吗|大模型|模型|chatgpt|gpt|deepseek|通义|千问|文心|豆包)|(?:用|是)(?:的)?(?:是)?(?:什么|哪个|哪家|啥)(?:的)?(?:大|ai)?模型|什么(?:大)?模型|哪个(?:大)?模型|谁(?:开发|做|创造|训练|设计)(?:了|的)?你|你是谁(?:做|开发|创造)的|你是怎么(?:工作|运作|运行)的|是真的ai吗|背后是什么/i
+const IDENTITY_ID_RE = /\b(?:kamu|anda|ini)\s+(?:itu\s+)?(?:ai|bot|robot|manusia|orang)\b|\bmodel (?:ai )?apa\b|\bpakai (?:ai|model) apa\b|\bsiapa yang (?:buat|bikin|membuat|menciptakan)\b|\bkamu (?:manusia|robot) (?:bukan|atau)\b/i
+
+const LIMITS_Q_RE = /^(?:(?:so|ok|okay|and|hey|bun|hey bun|wait)[\s,]*)*(?:what(?:'s| is| are|s)?|whats|which|how much|how many|tell me|show me|show|remind me|list)\b[^.?!]{0,40}\b(?:limits?|caps?|permissions?|leash|allowed to (?:do|move|spend|touch))\b|\bhow much (?:money )?(?:can|could|may) you (?:move|spend|transfer|touch)\b/i
+const LIMITS_ZH_RE = /(?:限额|额度|上限|权限)(?:是|有)?(?:多少|什么|哪些)|(?:最多|一次|每天|每月)(?:能|可以)(?:转|动|花|移)(?:多少)?|你(?:能|可以)(?:动|转|花)多少/
+const LIMITS_ID_RE = /\b(?:berapa|apa)\b[^.?!]{0,16}\b(?:limit|batas|izin)\b[^.?!]{0,10}\b(?:kamu|mu|anda)\b|\b(?:limit|batas)(?:mu| kamu)\b[^.?!]{0,10}\bberapa\b/i
+/** A change request is never an "about" question: "what's your limit? raise it" stays with the permission rule. */
+const LIMITS_CHANGE_RE = /\b(?:raise|increase|bump|lift|double|triple|remove|disable|drop|max out|boost|unlock|change|set|expand|extend|loosen|give|grant|turn off|switch off|skip|bypass)\b|提高|提升|增加|调高|放开|取消|解除|去掉|改成|设为|\b(?:naikkan|tambah|hapus|matikan|nonaktifkan|lewati|ubah)\b/i
+
+const TRIPWIRE_LIST_RE = /\b(?:what|which|show|list|see|view|display|how many|any|have)\b[^.?!]{0,24}\b(?:tripwires?|(?:spending )?alerts?)\b/i
+const TRIPWIRE_OWN_RE = /\b(?:my|i have|have i|do i|i set|i've set|ive set|are on|are set|are active|active|current|existing|already)\b/i
+const TRIPWIRE_LIST_ZH_RE = /(?:有|设了|设置了|开了)(?:哪些|什么|几个|多少)(?:警戒线|提醒|预警)|(?:查看|看看|列出|显示)(?:我的)?(?:警戒线|提醒规则|提醒|预警)/
+const TRIPWIRE_LIST_ID_RE = /\b(?:tripwire|pengingat|peringatan)(?:ku| saya| aku)? (?:apa|mana) (?:saja|aja)\b|\b(?:lihat|tampilkan|daftar) (?:tripwire|pengingat|peringatan)\b/i
+
+const DELETE_DATA_RE = /\b(?:delete|erase|wipe|purge|destroy)\b[^.?!]{0,24}\b(?:data|account|information|info|profile|everything)\b|\bforget (?:me|everything|all about me)\b|\bright to be forgotten\b|(?:删除|清除|抹掉|清空|注销).{0,8}(?:数据|资料|信息|账号|账户|所有|全部)|忘(?:掉|记)我|被遗忘权|\b(?:hapus|hapuskan|menghapus)\b[^.?!]{0,20}\b(?:data|akun|informasi|semua)\b|\blupakan (?:saya|aku)\b/i
+const CONSENT_RE = /\b(?:withdraw|revoke|remove|cancel|take back|pull)\b[^.?!]{0,16}\b(?:my )?consent\b|\bstop (?:using|processing|collecting|reading)\b[^.?!]{0,12}\bmy (?:data|information|transactions|financial data)\b|\bopt (?:me )?out\b|\bturn off (?:the )?(?:cloud )?(?:ai|llm) processing\b|(?:撤回|撤销|取消|收回).{0,6}(?:同意|授权)|(?:停止|不要|别).{0,4}(?:使用|处理|收集|读取)我的(?:数据|信息|交易)|\b(?:cabut|tarik|batalkan)\b[^.?!]{0,12}\b(?:persetujuan|izin)\b|\bberhenti (?:pakai|gunakan|memproses)\b[^.?!]{0,10}\bdata\b/i
+const MY_DATA_RE = /\bwhat\b[^.?!]{0,30}\b(?:data|information|info)\b[^.?!]{0,20}\byou\s+(?:have|hold|keep|store|collect|know|save)\b|\bwhat do you (?:know|store|keep|collect|have|save)\b[^.?!]{0,20}\b(?:about me|on me|of mine|my data)\b|\bwhere (?:is|are|do you (?:keep|store))\b[^.?!]{0,16}\bmy (?:data|information|info)\b|\bdo you (?:sell|share)\b[^.?!]{0,10}\bmy (?:data|information|info)\b|\bwho (?:can see|has access to|sees|gets)\b[^.?!]{0,10}\bmy (?:data|information|transactions|info)\b|\bis my (?:data|information|info) (?:safe|private|secure|shared|sold)\b|\bprivacy policy\b|(?:有|存|保存|收集|知道|掌握)(?:了)?我(?:的)?(?:哪些|什么|多少)(?:数据|信息|资料)|我的(?:数据|信息|资料)(?:存|放|保存)在哪|(?:卖|出售|分享|泄露).{0,6}我的(?:数据|信息)|我的(?:数据|信息)安全吗|隐私政策|\bdata apa\b[^.?!]{0,20}\b(?:kamu|anda)\b|\bdata(?:ku| saya| aku) (?:disimpan|aman)\b/i
+
+const EXPLAIN_LEAD_RE = /^(?:(?:ok|okay|so|hey|bun|hey bun|and|wait|sorry|um+|hmm+|but)[\s,]*)*(?:what(?:'s| is| are| does| do|s)?|whats|explain|define|describe|tell me (?:about|what)|how (?:do|does|did)|what do you mean by|meaning of|i don'?t (?:get|understand)|remind me what)\s+/i
+/** Filler after the feature's name ("… work", "… are for"), stripped one word at a time so "tripwires do I have" is left alone. */
+const EXPLAIN_TAIL_RE = /\s+(?:mean|means|work|works|working|do|does|for|thing|things|feature|exactly|again|anyway|actually|is|are|all|about)$/i
+
+/** "what is a tripwire?" · "梦想镜子是什么" — the whole message is one short question naming one of Bun's own features. */
+function explainTopic(n: string): NluFocus | undefined {
+  if (n.length > 60) return undefined
+  let rest: string | undefined
+  const lead = n.match(EXPLAIN_LEAD_RE)
+  if (lead) rest = n.slice(lead[0].length)
+  else {
+    const zh = n.match(/^(?:什么是|啥是|什么叫|解释一下|介绍一下)(.+)$/) ?? n.match(/^(.+?)(?:是什么(?:意思)?|是啥|什么意思|怎么用|是干嘛的|是干什么的|有什么用)/)
+    const id = n.match(/^(?:apa itu|apa sih|apaan sih|jelaskan|jelasin|maksudnya|apa maksud)\s+(.+)$/)
+    rest = zh?.[1] ?? id?.[1]
+  }
+  if (rest === undefined) return undefined
+  let t = rest
+    .replace(/[?？.。!！\s]+$/g, '')
+    .replace(/^(?:a|an|the|your|this|that|these|those|bun'?s|fundbun'?s)\s+/i, '')
+    .replace(/\s+(?:itu|sih|ya)$/i, '')
+    .trim()
+  for (let i = 0; i < 3 && EXPLAIN_TAIL_RE.test(t); i++) t = t.replace(EXPLAIN_TAIL_RE, '')
+  if (/^(?:spending )?tripwires?$|^警戒线$|^绊线$|^(?:消费)?提醒规则$/.test(t)) return 'explain_tripwire'
+  if (/^dream ?mirror$|^mirror$|^梦想镜子?$|^梦想之镜$|^cermin impian$/.test(t)) return 'explain_mirror'
+  if (/^(?:(?:goal|dream|savings) )?pots?$|^储蓄罐$|^存钱罐$|^梦想罐$|^celengan$/.test(t)) return 'explain_pots'
+  if (/^(?:bill )?x-?ray$|^账单透视$|^账单x光$|^透视$|^rontgen tagihan$/.test(t)) return 'explain_xray'
+  return undefined
+}
+
+/** Runs first: a short definitional question is answered before any action rule can read it as a request. */
+function explainRule(p: Parsed): RuleHit | null {
+  const focus = explainTopic(p.norm)
+  return focus ? { intent: 'help', rule: 'R-ABOUT-EXPLAIN', confidence: 0.95, slots: { focus } } : null
+}
+
+function aboutRule(p: Parsed): RuleHit | null {
+  const n = p.norm
+  // a question about Bun carries no amount, account or address — and never rides along with an override attempt
+  if (n.length > 160 || p.amount !== undefined || LONG_DIGITS_RE.test(n) || EMAIL_RE.test(n) || isOverrideAttempt(n)) return null
+  if (TRANSFER_VERB_RE.test(n) && (hasHardExternalSignal(p) || ALL_MONEY_RE.test(n))) return null
+  const hit = (focus: NluFocus, rule: string): RuleHit => ({ intent: 'help', rule, confidence: 0.95, slots: { focus } })
+  if (DELETE_DATA_RE.test(n)) return hit('delete_data', 'R-ABOUT-DELETE')
+  if (CONSENT_RE.test(n)) return hit('consent', 'R-ABOUT-CONSENT')
+  if (MY_DATA_RE.test(n)) return hit('my_data', 'R-ABOUT-DATA')
+  if (BANK_LINK_RE.test(n) || BANK_LINK_ZH_RE.test(n) || BANK_LINK_ID_RE.test(n)) return hit('bank_link', 'R-ABOUT-BANK')
+  if (IDENTITY_RE.test(n) || IDENTITY_ZH_RE.test(n) || IDENTITY_ID_RE.test(n)) return hit('identity', 'R-ABOUT-IDENTITY')
+  if (SAFETY_RE.test(n) || SAFETY_ZH_RE.test(n) || SAFETY_ID_RE.test(n)) return hit('safety', 'R-ABOUT-SAFETY')
+  const limitsQuestion = LIMITS_Q_RE.test(n) || LIMITS_ZH_RE.test(n) || LIMITS_ID_RE.test(n)
+  if (limitsQuestion && !p.category && !/\bcredit\b|信用|\bkredit\b/.test(n) && !LIMITS_CHANGE_RE.test(n)) return hit('limits', 'R-ABOUT-LIMITS')
+  const creating = /^(?:(?:please|pls|can you|could you)\s+)*(?:set|create|add|make|arm)\b/.test(n)
+  const listing = (TRIPWIRE_LIST_RE.test(n) && TRIPWIRE_OWN_RE.test(n)) || TRIPWIRE_LIST_ZH_RE.test(n) || TRIPWIRE_LIST_ID_RE.test(n)
+  if (listing && !creating && p.percent === undefined) return hit('tripwire_list', 'R-ABOUT-TRIPWIRES')
+  return null
+}
+
 const INVEST_RE = /\b(?:invest(?:ing|ment|ments|or|ed)?|stocks?|shares|equit(?:y|ies)|etfs?|index funds?|mutual funds?|bonds?|crypto(?:currency|currencies)?|bitcoin|btc|ethereum|eth|dogecoin|doge|solana|nfts?|forex|day trad(?:e|ing)|options trading|portfolio|brokerage|robo[- ]?advis[eo]r)\b|(?:买|投资|定投|申购|推荐)(?:点|些|一点|一些)?基金|股票|炒股|理财|比特币|加密货币|期货|\b(?:saham|reksa ?dana|investasi|obligasi|kripto)\b/i
-const CREDIT_RE = /\b(?:loans?|borrow(?:ing)?|lend me|credit cards?|credit lines?|line of credit|credit limit|cash advance|payday (?:loans?|lenders?|advances?)|overdraft|bnpl|buy now,? pay later|pay later|installments?|instalments?|financing|finance (?:this|it|the)|mortgage|apply for credit|get credit)\b|贷款|借钱|借款|花呗|借呗|白条|信用卡|分期|\b(?:pinjaman|pinjol|kredit|paylater|cicilan|utang)\b/i
+const CREDIT_RE = /\b(?:loans?|borrow(?:ing)?|lend me|credit cards?|credit lines?|line of credit|credit limit|cash advance|payday (?:loans?|lenders?|advances?)|overdraft|bnpl|buy now,? pay later|pay later|installments?|instalments?|financing|finance (?:this|it|the)|mortgage|apply for credit|get credit)\b|贷款|借钱|借款|借我|借点钱|借一点|想借(?!给)|能借(?!给)|花呗|借呗|白条|信用卡|分期|\b(?:pinjaman|pinjol|kredit|paylater|cicilan|utang)\b/i
 const PAY_START_RE = /^(?:(?:please|pls|plz|kindly|can you|could you|would you|will you|go ahead and|help me|帮我|请)[\s,]*)*(?:pay|settle|bayar|还(?:钱|款|信用卡|花呗)|交)/
 
 const CARD_BILL_RE = /\b(?:credit )?card (?:bill|statement|payment|repayment|due)\b|信用卡账单|还信用卡|\btagihan kartu kredit\b/
@@ -1237,8 +1339,9 @@ function payeeRule(p: Parsed): RuleHit | null {
 
 const LEAD_IN = '(?:(?:please|pls|plz|kindly|can you|could you|would you|will you|can u|could u|can i|could i|may i|bun|hey bun|ok|okay|now|also|and|then|just|go ahead and|help me|i want to|i wanna|i\'d like to|i would like to|i need to|let\'s|lets|let us|i want you to|tolong|bantu|帮我|请|麻烦你?)[\\s,]*)*'
 const MOVE_VERBS = 'transfer|send|wire|remit|e-?transfer|pay|give|lend|move|put|save|stash|add|deposit|top up|top-up|chuck|throw|park|feed|kirim|bayar|kasih|tabung|simpan|masukkan|pindahkan'
-const IMPERATIVE_MOVE_RE = new RegExp(`^${LEAD_IN}(?:(?:${MOVE_VERBS})\\b|存|放|转|往)`)
-const TRANSFER_VERB_RE = /\b(?:transfer|send|wire|remit|e-?transfer|pay|give|lend|move|venmo|zelle|paypal|kirim|bayar|kasih|pinjamkan)\b|转账|转钱|打钱|汇款|汇钱|转给|借给|打给|发红包|转\s*\d/
+// "把800块存到成都": the 把-construction puts the amount before the verb
+const IMPERATIVE_MOVE_RE = new RegExp(`^${LEAD_IN}(?:(?:${MOVE_VERBS})\\b|存|放|转|往|把[^，。,.]{0,14}?(?:存|放|转|挪))`)
+const TRANSFER_VERB_RE = /\b(?:transfer|send|wire|remit|e-?transfer|pay|give|lend|move|venmo|zelle|paypal|kirim|bayar|kasih|pinjamkan)\b|转账|转钱|打钱|汇款|汇钱|转给|借给|打给|发红包|转到|转入|转进|转去|汇到|汇入|打到|转\s*\d/
 const SEND_MONEY_RE = /\b(?:send|transfer|wire|remit|e-?transfer|kirim)\b[^.?!]{0,20}\b(?:money|cash|funds?|uang|duit)\b|汇款|打钱|转钱|转账/
 const OWN_DEST_RE = /\b(?:pots?|savings?|goals?|funds?|jars?|piggy ?bank|stash|dreams?|my (?:own )?account|own account|checking|tabungan|celengan|impian)\b|储蓄|存钱罐|目标|小金库|基金|梦想|心愿/
 const WITHDRAW_VERB_RE = /\b(?:withdraw|take|pull|move|get|transfer|grab|cash out|unstash|empty|dip into|break|ambil|tarik|pindahkan)\b|取出|拿出|转出|取钱|提取/
@@ -1516,8 +1619,10 @@ function smallTalkRule(p: Parsed): RuleHit | null {
 
 /** Ordered: untrusted pasted bills first, then every refusal, then specific actions. */
 const RULES: ((p: Parsed) => RuleHit | null)[] = [
+  explainRule,
   xrayRule,
   sensitiveRule,
+  aboutRule,
   investCreditRule,
   permissionRule,
   payeeRule,

@@ -38,6 +38,8 @@ export const TRAINING: Record<Intent, string[]> = {
     'thanks!!',
   ],
   overview: [
+    'will i run out of money before payday', 'am i going to make it to payday', 'will i make it to the end of the month',
+    'can i make it to payday', 'will my money last until payday',
     'how am i doing this month', "how's my month going", 'am i over budget', 'am i on track', 'how much have i spent this month',
     "what's my total spending so far", 'how much can i spend today', 'safe to spend today', 'how much is left in my budget',
     'give me a summary', 'monthly overview', 'status update', 'how much money do i have left for october',
@@ -109,6 +111,7 @@ export const TRAINING: Record<Intent, string[]> = {
     'my subs',
   ],
   bills: [
+    '电费为什么涨了', '电费怎么这么贵', '这个月账单为什么变多了', 'why did my electricity bill go up', 'why is my bill so high',
     'any bills due', 'what bills are coming up', 'check my bills', 'when is my electricity bill due',
     'is my electricity bill unusually high', 'any duplicate charges', 'was i charged twice', 'any price hikes',
     'upcoming payments this week', 'bill analysis', 'are there any problems with my bills', 'what do i owe this month',
@@ -371,7 +374,7 @@ export const CATEGORY_SYNONYMS: [CategoryId, string[]][] = [
 /** Concept groups for dream goals: a goal belongs to a group when its name or id contains one of the words. */
 export const GOAL_CONCEPTS: Record<string, string[]> = {
   bag: ['bag', 'bags', 'handbag', 'purse', 'birkin', 'hermes', 'kelly', '包', '包包', 'tas'],
-  trip: ['trip', 'travel', 'vacation', 'holiday', 'getaway', 'flight', 'flights', 'plane', 'chengdu', 'medan', '旅行', '旅游', '机票', '度假', 'liburan', 'mudik'],
+  trip: ['trip', 'travel', 'vacation', 'holiday', 'getaway', 'flight', 'flights', 'plane', 'chengdu', '成都', 'medan', '旅行', '旅游', '机票', '度假', 'liburan', 'mudik'],
   laptop: ['laptop', 'computer', 'macbook', 'notebook', 'mac', '电脑', '笔记本', 'laptopnya'],
   shoes: ['shoes', 'shoe', 'sneakers', 'sneaker', 'trainers', 'kicks', '鞋', '跑鞋', '球鞋', 'sepatu'],
   earbuds: ['earbuds', 'earphones', 'headphones', 'airpods', 'buds', '耳机'],

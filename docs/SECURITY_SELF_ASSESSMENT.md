@@ -274,7 +274,7 @@ The gateway logs one line per request (method, path, status, latency, provider),
 - **Audit export.** `exportAuditJSONL()` exports the audit chain for independent verification.
 - **Deletion.** "Delete everything" (`resetAll()`, behind a typed confirmation in Settings) removes the storage key and wipes memory (D4). The fresh in-memory chain records `data_wiped` and is not persisted.
 
-**AI-content labelling.** Every assistant message carries its `engine` (`offline` or `llm`) and shows an AI badge for it; the composer reads "On-device AI" or "AI via LLM, redacted context" (`src/ui/screens/chat/Message.tsx`, `Composer.tsx`). The system prompt makes Bun say it is an AI and point to "Talk to a human". This answers the CAC labelling measures in force since 2025-09-01 ([labelling][label]), GenAI Measures Art. 12 ([GenAI][genai]) and EU AI Act Art. 50 ([EU AI Act][euai]). Exported chats keep the `engine` field. A formal metadata-label scheme for downloaded files is **Roadmap**.
+**AI-content labelling.** Every assistant message carries its `engine` (`offline` or `llm`) and shows an AI badge for it; the composer reads "On-device rules engine" or "AI via LLM, redacted context" (`src/ui/screens/chat/Message.tsx`, `Composer.tsx`). The system prompt makes Bun say it is an AI and point to "Talk to a human". This answers the CAC labelling measures in force since 2025-09-01 ([labelling][label]), GenAI Measures Art. 12 ([GenAI][genai]) and EU AI Act Art. 50 ([EU AI Act][euai]). Exported chats keep the `engine` field. A formal metadata-label scheme for downloaded files is **Roadmap**.
 
 **Algorithm-recommendation rules** ([Provisions][algo]):
 - **Art. 8, no inducement to consume.**

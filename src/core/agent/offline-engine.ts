@@ -33,7 +33,7 @@ import { TOOL_SPECS, isToolName } from './specs'
 import { categoryLabel, findBill, findDream, firstName, isAfter, money, moneyCopy, nluContextOf, shortDate, summarizeArgs } from './support'
 import { addCard, addNotice, addSource, taint, trace, type Turn } from './turn'
 import { composeReply, hasLocalCopy, line, refusal, suggestionsIn, type ActionStage } from './voice'
-import { categoryName, dateName, joinList, topicOf } from './voice-i18n'
+import { categoryName, dateName, joinList, reasonIn, topicOf } from './voice-i18n'
 
 /**
  * The on-device "Bun Engine": dialogue acts → clarification answers → NLU intent → planner → policy-gated
@@ -166,6 +166,9 @@ function chips(turn: Turn, intent: Intent): string[] {
 
 // ───────────────────────────── chat, fallback, disambiguation ─────────────────────────────
 
+/** Help focuses that answer a question about Bun itself (nlu R-ABOUT-*). */
+const ABOUT_FOCUS = new Set(['safety', 'bank_link', 'identity', 'limits', 'tripwire_list', 'delete_data', 'my_data', 'consent', 'explain_tripwire', 'explain_mirror', 'explain_pots', 'explain_xray'])
+
 const ADD_DREAM_LABEL_RE = /(?:dream|wish(?:list)?|goal|梦想|心愿|impian)\s*(?:called|named|for|of|:|：|-)?\s*(.+)$/i
 
 function chatReply(host: AgentHost, turn: Turn, intent: Intent, focus: string | undefined, text: string, slots: Slots): Reply {
@@ -202,6 +205,19 @@ function chatReply(host: AgentHost, turn: Turn, intent: Intent, focus: string | 
     trace(turn, 'policy', 'Human handoff offered', { route: 'chat menu → Talk to a human' })
   }
   if (focus === 'export') trace(turn, 'policy', 'Self-export: pointed to Settings → Privacy → Export (stays on this device)', { rule: 'R-SELF-EXPORT' })
+  if (focus === 'limits') {
+    facts.perAction = c(state.mandate.perActionCap)
+    facts.daily = c(state.mandate.dailyCap)
+    facts.monthly = c(state.mandate.monthlyCap)
+    addSource(turn, { perActionCap: state.mandate.perActionCap, dailyCap: state.mandate.dailyCap, monthlyCap: state.mandate.monthlyCap })
+  }
+  if (focus === 'tripwire_list') {
+    const on = state.tripwires.filter((t) => t.enabled)
+    facts.count = String(on.length)
+    if (on.length) facts.list = joinList(on.slice(0, 4).map((t) => t.label), langOf(turn)) + (on.length > 4 ? ` (+${on.length - 4})` : '')
+  }
+  if (focus === 'bank_link') facts.source = state.profile?.personaId ? 'demo' : 'own'
+  if (focus && ABOUT_FOCUS.has(focus)) trace(turn, 'policy', `Question about Bun answered in plain words (${focus}): no tool, no action`, { rule: 'R-ABOUT' })
   return { text: compose(host, turn, intent, facts), intent, suggestions: chips(turn, intent) }
 }
 
@@ -478,7 +494,7 @@ export function actionReply(host: AgentHost, turn: Turn, intent: Intent, r: Gate
   const stage = stageOf(r)
   // an intent without hand-written copy in the user's language answers wholly in English (never half and half)
   const lang = hasLocalCopy(TOOL_INTENT[tool] ?? intent, langOf(turn)) ? langOf(turn) : 'en'
-  const facts = actionFacts(tool, r.call.args, state, { stage, data: r.outcome?.data, reason: r.reason, recurring: safeRecurring(host), lang })
+  const facts = actionFacts(tool, r.call.args, state, { stage, data: r.outcome?.data, reason: reasonIn(r.reason, r.decision?.ruleIds, lang), recurring: safeRecurring(host), lang })
   let text = tool === 'set_bill_reminder' && stage !== 'done' ? reminderText(host, r, stage) : composeReply(TOOL_INTENT[tool] ?? intent, facts, toneOf(state), lang)
   const p = r.pending
   if (r.reused && p) text = joinSentences([lang === 'zh' ? '这个已经在等你确认了——就在下面这张卡片上。' : lang === 'id' ? 'Yang ini sudah menunggu konfirmasimu — di kartu bawah.' : 'You already have this one waiting — approve it on the card below.', text], lang)
@@ -543,7 +559,8 @@ function recategorizeReply(host: AgentHost, turn: Turn, subject: string, target:
   if (txn.category === category) return { text: line('recatSame', lang, facts), intent: 'breakdown', suggestions: chips(turn, 'breakdown') }
   const r = runGated(host, turn, newCall('recategorize_transaction', { txnId: txn.id, category }, 'offline', turn))
   const key = r.status === 'done' ? 'recatDone' : r.status === 'pending' ? 'recatConfirm' : 'recatBlocked'
-  let text = line(key, lang, { ...facts, ...(r.reason ? { reason: r.reason.replace(/[.!\s]+$/, '') } : {}) })
+  const why = reasonIn(r.reason, r.decision?.ruleIds, lang)
+  let text = line(key, lang, { ...facts, ...(why ? { reason: why.replace(/[.!\s]+$/, '') } : {}) })
   if (r.status === 'done' && r.pending?.undoUntil) text = joinSentences([text, lang === 'zh' ? `${state.mandate.undoWindowSec}秒内可以撤销。` : lang === 'id' ? `Bisa dibatalkan dalam ${state.mandate.undoWindowSec} detik.` : `You can undo it for ${state.mandate.undoWindowSec} seconds.`], lang)
   return { text, intent: 'breakdown', suggestions: chips(turn, 'breakdown') }
 }
