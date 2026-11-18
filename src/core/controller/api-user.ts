@@ -66,7 +66,7 @@ export function exportableState(state: AppState): AppState {
 
 export function createUserApi(core: Core, onLlmGranted: () => void): UserApi {
   const { store } = core
-  const emptyImport = (error: string): ImportSummary => ({ added: 0, skipped: 0, errors: [error] })
+  const emptyImport = (error: string): ImportSummary => ({ added: 0, skipped: 0, matched: 0, errors: [error] })
 
   function importCsv(text: string): ImportSummary {
     if (core.lock.locked) return emptyImport(LOCKED_MSG)

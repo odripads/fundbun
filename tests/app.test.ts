@@ -1388,6 +1388,35 @@ describe('spending added by hand', () => {
     expect(app.verifyAudit().ok).toBe(true)
   })
 
+  it('several statement files in one month plus typed-in purchases: every purchase is counted once', () => {
+    const app = createFundBunApp({ storage: memoryStorage(), llmBaseUrl: null, now: () => new Date('2026-11-15T12:00:00+08:00') })
+    const card = 'Date,Description,Amount\n2026-11-03,Hema Fresh,-120.00\n2026-11-10,Taobao,-300.00'
+    const wallet = 'Date,Description,Amount\n2026-11-08,Didi,-35.00\n2026-11-14,LUCKIN COFFEE SZ 0231,-25.00'
+    expect(app.completeOnboarding(onboardingInput({ dataSource: { kind: 'csv', startingBalance: 2_000_000, text: card } }))).toEqual({ ok: true })
+    const spent = () => app.getSnapshot().derived.summary!.spent
+    expect(spent()).toBe(42_000)
+    // a coffee typed in on the day, before any statement shows it
+    const coffee = (id: string) => ({ id, merchant: 'coffee', amount: 2_500, currency: 'CNY' as const, date: '2026-11-15', category: 'coffee_tea' as const, description: 'coffee', source: 'manual' as const })
+    expect(app.addSpending([coffee('manual_c1')])).toEqual({ added: 1, duplicates: 0 })
+    expect(spent()).toBe(44_500)
+    // a second account's file for the same month: one new row, and the coffee under the shop's own wording
+    expect(app.importCsv(wallet)).toEqual({ added: 1, skipped: 1, matched: 1, errors: [] })
+    expect(spent()).toBe(48_000)
+    expect(app.getSnapshot().state.bank.transactions.filter((t) => t.amount === -2_500).map((t) => t.merchant)).toEqual(['coffee'])
+    // loading either file again, in any order, changes nothing
+    expect(app.importCsv(card)).toMatchObject({ added: 0, skipped: 2, matched: 0, errors: [] })
+    expect(app.importCsv(wallet)).toMatchObject({ added: 0, skipped: 2, matched: 1, errors: [] })
+    expect(app.importCsv(`${card}\n${wallet.split('\n').slice(1).join('\n')}`)).toMatchObject({ added: 0, errors: [] })
+    expect(spent()).toBe(48_000)
+    // a second coffee the same day is a second purchase, and stays one after another import
+    expect(app.addSpending([coffee('manual_c2')])).toEqual({ added: 1, duplicates: 0 })
+    expect(app.importCsv(wallet)).toMatchObject({ added: 0 })
+    expect(spent()).toBe(50_500)
+    const ids = app.getSnapshot().state.bank.transactions.map((t) => t.id)
+    expect(new Set(ids).size).toBe(ids.length)
+    expect(app.verifyAudit().ok).toBe(true)
+  })
+
   it('an old purchase is recorded without a stale alert', () => {
     const { app } = demoKit('mei')
     const alerts = app.getSnapshot().derived.unseenEvents.length

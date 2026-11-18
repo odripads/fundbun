@@ -250,7 +250,12 @@ export interface AppApi {
   checkLlm(): Promise<void>
 
   // ── data ──
-  importCsv(text: string): { added: number; skipped: number; errors: string[] }
+  /**
+   * Import a statement file. Safe to call with several files for the same month and with files that overlap: rows
+   * already on the ledger are skipped, and a row that matches a purchase the user typed in or scanned is counted once
+   * (`matched`, included in `skipped`).
+   */
+  importCsv(text: string): { added: number; skipped: number; matched: number; errors: string[] }
   /** add parsed spending (from email or receipt) after the user confirms — dedupes against existing */
   addSpending(candidates: SpendingCandidate[]): { added: number; duplicates: number }
   /** Bill X-ray via the agent (xray_bill tool) — returns the assistant message with the xray card */

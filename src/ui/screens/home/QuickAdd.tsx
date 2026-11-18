@@ -3,10 +3,12 @@ import { useId, useMemo, useRef, useState, type FormEvent } from 'react'
 import type { AppSnapshot } from '../../../core/app-api'
 import { CATEGORIES } from '../../../core/categories'
 import { categorize } from '../../../core/finance/categorize'
+import { dateLabel } from '../../../core/dates'
 import { CURRENCY_SYMBOL, MINOR_PER_MAJOR, fmt, parseAmount } from '../../../core/money'
+import { similarSpend } from '../../../core/receipt/dedupe'
 import type { CategoryId } from '../../../core/types'
 import { MAX_PRICE_MAJOR } from '../../components/dreams/logic'
-import { Button, Sheet, TextField } from '../../components/ds'
+import { Button, Callout, Sheet, TextField } from '../../components/ds'
 import { useToast } from '../../components/ds/Toast'
 import { PURCHASE_CATEGORIES } from '../../components/sandbox/logic'
 import { shallowEqual, useApp, useSnapshot } from '../../state'
@@ -17,6 +19,7 @@ const selectQuickAdd = (s: AppSnapshot) => ({
   currency: s.state.profile?.currency ?? ('CNY' as const),
   today: s.derived.today,
   rules: s.state.categoryRules,
+  transactions: s.state.bank.transactions,
 })
 
 export interface QuickAddProps {
@@ -31,7 +34,7 @@ export interface QuickAddProps {
 export function QuickAdd({ open, onClose }: QuickAddProps) {
   const app = useApp()
   const toast = useToast()
-  const { currency, today, rules } = useSnapshot(selectQuickAdd, shallowEqual)
+  const { currency, today, rules, transactions } = useSnapshot(selectQuickAdd, shallowEqual)
   const [amountText, setAmountText] = useState('')
   const [what, setWhat] = useState('')
   const [category, setCategory] = useState<CategoryId | ''>('')
@@ -41,6 +44,11 @@ export function QuickAdd({ open, onClose }: QuickAddProps) {
   const amountRef = useRef<HTMLInputElement | null>(null)
 
   const guess = useMemo(() => (what.trim() ? categorize(what, what, -1, rules).category : null), [what, rules])
+  // the same amount a day or two away is probably already here (from a statement, or typed earlier): say so, don't block
+  const repeat = useMemo(() => {
+    const amount = parseAmount(amountText, currency)
+    return amount && amount > 0 ? similarSpend(amount, today, transactions) : undefined
+  }, [amountText, currency, today, transactions])
 
   function close() {
     setError(null)
@@ -106,8 +114,14 @@ export function QuickAdd({ open, onClose }: QuickAddProps) {
             ))}
           </select>
         </div>
-        <p className={styles.note}>It counts toward today, your month and your tripwires.</p>
-        <Button type="submit" size="lg" fullWidth iconStart={<Plus />}>Add it</Button>
+        {repeat ? (
+          <Callout tone="info" title="You may already have this one">
+            {fmt(-repeat.amount, currency)} on {dateLabel(repeat.date)}: {repeat.merchant}. If it is the same purchase, close this. If it is another one, add it.
+          </Callout>
+        ) : (
+          <p className={styles.note}>It counts toward today, your month and your tripwires.</p>
+        )}
+        <Button type="submit" size="lg" fullWidth iconStart={<Plus />}>{repeat ? 'Add anyway' : 'Add it'}</Button>
       </form>
     </Sheet>
   )

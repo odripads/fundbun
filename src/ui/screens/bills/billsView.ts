@@ -672,13 +672,24 @@ export interface ImportOutcome {
 }
 
 /** Toast + status copy for app.importCsv's result. */
-export function importSummary(fileName: string, r: { added: number; skipped: number; errors: string[] }): ImportOutcome {
+export function importSummary(fileName: string, r: { added: number; skipped: number; matched?: number; errors: string[] }): ImportOutcome {
   const errors = r.errors.slice(0, 3)
   if (r.added === 0 && r.errors.length > 0) return { fileName, title: 'Nothing imported', message: r.errors[0], tone: 'danger', errors: errors.slice(1) }
+  // say when a statement row was recognised as something the user had already typed in: it is counted once, on purpose
+  const matched = r.matched ?? 0
   if (r.added === 0) {
-    return { fileName, title: 'No new transactions', message: r.skipped > 0 ? `${plural(r.skipped, 'row')} skipped — already here or not a purchase.` : 'Bun couldn’t find any rows to read.', tone: 'warn', errors }
+    const message =
+      r.skipped === 0 ? 'Bun couldn’t find any rows to read.'
+      : matched === r.skipped ? `${plural(matched, 'row')} matched what you’d already typed in. Nothing is counted twice.`
+      : `${plural(r.skipped, 'row')} skipped — already here or not a purchase.`
+    return { fileName, title: 'No new transactions', message, tone: 'warn', errors }
   }
-  const notes = [r.skipped > 0 ? `${plural(r.skipped, 'row')} skipped` : null, r.errors.length > 0 ? `${plural(r.errors.length, 'row')} couldn’t be read` : null].filter(Boolean)
+  const other = r.skipped - matched
+  const notes = [
+    matched > 0 ? `${plural(matched, 'row')} matched what you’d already typed in` : null,
+    other > 0 ? `${plural(other, 'row')} skipped` : null,
+    r.errors.length > 0 ? `${plural(r.errors.length, 'row')} couldn’t be read` : null,
+  ].filter(Boolean)
   return {
     fileName,
     title: `Added ${plural(r.added, 'transaction')}`,

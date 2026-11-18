@@ -22,3 +22,24 @@ export function looksDuplicate(candidate: SpendingCandidate, existing: readonly 
     return Math.abs(diffDays(candidate.date, t.date)) <= DUPLICATE_WINDOW_DAYS
   })
 }
+
+/**
+ * The purchase already on the ledger that a typed-in amount most likely repeats: the same (outflow) amount within
+ * `windowDays` of `date`, whatever the shop is called (a statement names it differently from the user). The nearest
+ * day wins. The screen warns with it; the user still decides, because two coffees at one price do happen.
+ */
+export function similarSpend(amount: number, date: string, existing: readonly Transaction[], windowDays = 2): Transaction | undefined {
+  const out = Math.abs(amount)
+  if (!Number.isFinite(out) || out <= 0 || !date) return undefined
+  let best: Transaction | undefined
+  let bestGap = Infinity
+  for (const t of existing) {
+    if (t.amount !== -out || !t.date) continue
+    const gap = Math.abs(diffDays(date, t.date))
+    if (gap <= windowDays && gap < bestGap) {
+      best = t
+      bestGap = gap
+    }
+  }
+  return best
+}
