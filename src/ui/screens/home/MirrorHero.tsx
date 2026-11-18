@@ -162,6 +162,7 @@ function GoalRing({ now, after }: { now: number; after: number }) {
  * items inside an arched vanity mirror, with Bun reacting beside it. All copy and numbers come from
  * derived.mirror (computed on-device); every action goes through the policy engine via useProposeAction.
  */
+/** The demo personas run on a simulated bank and a frozen calendar; a user's own data has neither. */
 const selectSandboxDate = (s: AppSnapshot): string | null => (s.derived.clock === 'sandbox' ? dateLabel(s.derived.today) : null)
 
 export function MirrorHero({ onCheck, onSandbox }: MirrorHeroProps) {
@@ -288,7 +289,7 @@ export function MirrorHero({ onCheck, onSandbox }: MirrorHeroProps) {
     return (
       <p className={styles.hint}>
         {a.kind === 'prompt' ? <Sparkles aria-hidden="true" /> : <ShieldCheck aria-hidden="true" />}
-        {a.kind === 'prompt' ? 'Bun lines up fixes — money never moves without your OK.' : ctaHint(a.action)}
+        {a.kind === 'prompt' ? 'Bun lines up fixes — money never moves without your OK.' : ctaHint(a.action, sandboxDate !== null)}
       </p>
     )
   }
@@ -298,8 +299,8 @@ export function MirrorHero({ onCheck, onSandbox }: MirrorHeroProps) {
       <Ambient />
 
       {/* a demo persona's calendar is frozen: say the date, so "October" on a November stage is not a mystery */}
-      <Chip size="sm" icon={<FlaskConical />} onClick={onSandbox} aria-label="Open the sandbox (demo controls)" className={styles.sandbox}>
-        {sandboxDate ? `Sandbox · ${sandboxDate}` : 'Sandbox'}
+      <Chip size="sm" icon={<FlaskConical />} onClick={onSandbox} aria-label={sandboxDate ? 'Bank demo: open the demo controls' : 'Open the sandbox (demo controls)'} className={styles.sandbox}>
+        {sandboxDate ? `Bank demo · ${sandboxDate}` : 'Sandbox'}
       </Chip>
 
       {/* the first view: everything up to the primary action, sized to the screen with the band under the tab bar

@@ -1,3 +1,4 @@
+import { hasBank } from '../finance/expected'
 import { ym } from '../dates'
 import { describeTripwire, proposeBudget, summarizeMonth } from '../finance'
 import { callAmount } from '../security/policy'
@@ -93,6 +94,23 @@ function transferToGoal(call: ToolCall, state: AppState): ActionPreview {
   const pot = potOf(state, dream)
   const potBal = pot?.balance ?? 0
   const bal = checking?.balance ?? 0
+  if (!hasBank(state.bank)) {
+    // no bank connected: the pot is an envelope. Bun keeps count; the user moves the money themselves if they keep it elsewhere.
+    return {
+      title: `Set aside ${f(amount)} for ${dream.name}`,
+      summary: `Bun counts it in your ${dream.name} envelope. No bank is connected, so nothing moves by itself.`,
+      amount,
+      from: accountLabel(checking),
+      to: `${dream.name} envelope`,
+      reversible: true,
+      risk: 'low',
+      effects: [
+        `${dream.name}: ${f(potBal)} → ${f(potBal + amount)} set aside (${pctLabel(pct(potBal + amount, dream.price))} of ${f(dream.price)})`,
+        'If you keep savings in another account, move it there in your bank app',
+        undoLine(state),
+      ],
+    }
+  }
   return {
     title: `Move ${f(amount)} to ${dream.name}`,
     summary: `From ${accountLabel(checking)} into your ${dream.name} pot, as soon as you approve.`,

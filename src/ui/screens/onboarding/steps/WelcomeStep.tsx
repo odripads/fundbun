@@ -1,4 +1,4 @@
-import { ArrowRight, ShieldCheck, TrendingDown, TrendingUp } from 'lucide-react'
+import { ArrowRight, CircleCheck, ShieldCheck, TriangleAlert } from 'lucide-react'
 import type { RefObject } from 'react'
 import { BunMascot, DreamImage, Logo } from '../../../components/brand'
 import { Badge, Button, Spinner } from '../../../components/ds'
@@ -88,7 +88,7 @@ export function WelcomeStep({ headingRef, resumable, onboarded, demoLoading, onS
         <ul className={styles.demos}>
           {DEMOS.map((d) => {
             const loading = demoLoading === d.id
-            const Trend = d.status === 'over' ? TrendingUp : TrendingDown
+            const Trend = d.status === 'over' ? TriangleAlert : CircleCheck
             return (
               <li key={d.id}>
                 <button

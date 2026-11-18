@@ -190,6 +190,13 @@ describe('computeMirror — under', () => {
     expect(m.cta).toEqual({ tool: 'transfer_to_goal', args: { goalId: 'dream_macbook', amount: half }, label: `Stash ¥${half / 100} in MacBook Air` })
   })
 
+  it('with no bank connected the same action is an envelope: "Set aside", not "Stash"', () => {
+    const own = arifLike()
+    delete own.bank.personaId
+    expect(computeMirror(own).cta?.label).toMatch(/^Set aside ¥3\d0 for MacBook Air$/)
+    expect(computeMirror(arifLike()).cta?.label).toMatch(/^Stash ¥3\d0 in MacBook Air$/)
+  })
+
   it('cheeky and numbers variants', () => {
     const cheeky = computeMirror(arifLike('cheeky'))
     expect(cheeky.headline).toMatch(/^On pace for ¥6\d\d left over — your MacBook Air is blushing\.$/)

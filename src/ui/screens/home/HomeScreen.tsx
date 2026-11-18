@@ -26,9 +26,13 @@ const PULL_OPEN_PX = 140
 /** Set when the analyses look back at an older month (an imported statement with nothing in the current month). */
 const selectLookBack = (s: AppSnapshot): string | null => (s.derived.viewDate !== s.derived.today ? s.derived.viewDate.slice(0, 7) : null)
 
+/** A demo persona: the bank is simulated, so the app shows its "bank connected" side. */
+const selectBankDemo = (s: AppSnapshot): boolean => s.derived.clock === 'sandbox'
+
 export function HomeScreen() {
   const [sandbox, setSandbox] = useState(false)
   const lookBack = useSnapshot(selectLookBack)
+  const bankDemo = useSnapshot(selectBankDemo)
   const [adding, setAdding] = useState(false)
   const [check, setCheck] = useState<CheckRequest | null>(null)
   const [pull, setPull] = useState(0)
@@ -94,8 +98,12 @@ export function HomeScreen() {
       <Sheet
         open={sandbox}
         onClose={() => setSandbox(false)}
-        title="Sandbox"
-        description="Demo controls: simulated purchases and days in the sandbox bank. No real money moves."
+        title={bankDemo ? 'Bank demo' : 'Sandbox'}
+        description={
+          bankDemo
+            ? 'This persona’s bank is simulated, so you can see what Bun does once a bank is connected: pay bills and move money, behind your PIN. Use the controls to add purchases and move the calendar. No real money moves.'
+            : 'Demo controls: simulated purchases and days in the sandbox bank. No real money moves.'
+        }
         media={<span className={styles.sandboxIcon} aria-hidden="true"><FlaskConical /></span>}
         footer={<Button fullWidth onClick={() => setSandbox(false)}>Done</Button>}
       >

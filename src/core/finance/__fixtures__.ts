@@ -115,6 +115,8 @@ export interface CtxInput {
   tripwires?: Tripwire[]
   disputes?: Dispute[]
   cancelledMerchants?: string[]
+  /** a demo persona's simulated bank ("bank connected"); omitted = a user's own data, no bank */
+  personaId?: string
 }
 
 export function makeCtx(i: CtxInput): FinanceContext {
@@ -130,6 +132,7 @@ export function makeCtx(i: CtxInput): FinanceContext {
       cancelledMerchants: i.cancelledMerchants ?? [],
       today: i.today,
       seed: 1,
+      ...(i.personaId ? { personaId: i.personaId } : {}),
     },
     dreams: i.dreams ?? [],
     budget: i.budget ?? null,
@@ -190,6 +193,7 @@ export function meiLike(tone: Tone = 'cheeky'): FinanceContext {
     ],
     dreams: MEI_DREAMS,
     profile: { name: 'Jing', monthlyIncome: yuan(18_500), targetSpend: yuan(9_500), tone },
+    personaId: 'mei',
   })
 }
 
@@ -222,5 +226,6 @@ export function arifLike(tone: Tone = 'gentle'): FinanceContext {
     accounts: [checking(2_500), pot('dream_macbook', 3_680)],
     dreams: ARIF_DREAMS,
     profile: { name: 'Arif', monthlyIncome: yuan(4_800), targetSpend: yuan(3_600), payday: 5, tone },
+    personaId: 'arif',
   })
 }

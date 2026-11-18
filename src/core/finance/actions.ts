@@ -1,3 +1,4 @@
+import { hasBank } from './expected'
 import { CATEGORIES } from '../categories'
 import { MINOR_PER_MAJOR } from '../money'
 import type { CategoryId, Currency, FinanceContext, Minor, MonthSummary, SuggestedAction } from '../types'
@@ -35,7 +36,9 @@ export function stashAction(ctx: FinanceContext, s: MonthSummary, surplus: Minor
   const capped = Math.min(raw, Math.max(0, goal.price - progress.saved))
   const amount = capped >= majorUnits(10, currency) ? roundDownTo10(capped, currency) : Math.floor(capped)
   if (amount < majorUnits(1, currency)) return undefined
-  return { tool: 'transfer_to_goal', args: { goalId: goal.id, amount }, label: `Stash ${moneyFmt(currency)(amount)} in ${goal.name}` }
+  // with a bank connected the money moves into the goal's pot; without one the pot is an envelope the user sets it aside in
+  const label = hasBank(ctx.bank) ? `Stash ${moneyFmt(currency)(amount)} in ${goal.name}` : `Set aside ${moneyFmt(currency)(amount)} for ${goal.name}`
+  return { tool: 'transfer_to_goal', args: { goalId: goal.id, amount }, label }
 }
 
 /** The category's limit in the active budget plan, if it has one. */

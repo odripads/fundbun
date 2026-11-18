@@ -243,10 +243,11 @@ export function ctaIcon(action: SuggestedAction): CtaIcon {
 }
 
 /** One reassuring line under a CTA: what the permission tier means for this tap. */
-export function ctaHint(action: SuggestedAction): string {
+export function ctaHint(action: SuggestedAction, bank = true): string {
   const tier = toolTier(action.tool)
   if (tier <= 1) return 'A rule, not a payment — switch it off anytime.'
-  if (tier === 2) return 'Moves your own money. You confirm first.'
+  // no bank connected: a pot is an envelope Bun keeps count of
+  if (tier === 2) return bank ? 'Moves your own money. You confirm first.' : 'An envelope: Bun keeps count, you move the money.'
   return 'Bun asks for your tap and PIN first.'
 }
 
