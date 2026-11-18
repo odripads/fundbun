@@ -121,6 +121,8 @@ describe('OnboardingScreen', () => {
         dreams: [{ key: 'a', name: 'Birkin', price: 9_800_000, image: 'preset:bag', kind: 'goal' }],
         tone: 'cheeky',
         data: { kind: 'persona', personaId: 'mei' },
+        // the full walk-through, every step
+        quick: false,
       }),
     )
     const app = createTestApp({ storage: memoryStorage() })
@@ -156,6 +158,49 @@ describe('OnboardingScreen', () => {
     expect(app.isOnboarded()).toBe(true)
     expect(app.getSnapshot().state.profile).toMatchObject({ name: 'Odri', tone: 'cheeky', targetSpend: 950_000 })
     expect(sessionStorage.getItem(DRAFT_KEY)).toBeNull()
+    expect(window.location.hash).toBe('#/home')
+  })
+
+  it('the short setup (the default): after a dream, only a PIN is left, then the summary and home', async () => {
+    sessionStorage.setItem(
+      DRAFT_KEY,
+      JSON.stringify({
+        v: 1,
+        consent: { financialData: true },
+        name: 'Odri',
+        income: '15,000',
+        target: '6,000',
+        payday: 10,
+        dreams: [{ key: 'a', name: 'Laptop', price: 800_000, image: 'preset:laptop', kind: 'goal' }],
+      }),
+    )
+    const app = createTestApp({ storage: memoryStorage() })
+    const { container } = await renderOnboarding(app, '#/onboarding?step=done')
+    await flush()
+    // no tripwire, permission or data screens on the way: the PIN is the only thing missing
+    expect(window.location.hash).toBe('#/onboarding?step=permissions')
+    expect(h1(container)).toBe('One last thing: a PIN')
+    expect(container.textContent).toContain('Step 4 of 4')
+    expect(container.textContent).not.toContain('Money limits')
+    const pin = async () => {
+      for (const d of '2580') await click(byText(container, d, 'button'))
+      await click(container.querySelector('[aria-label="Confirm PIN"]'))
+    }
+    await pin()
+    await pin()
+    await click(byText(container, 'Review my setup', 'button'))
+    await flush()
+    expect(window.location.hash).toBe('#/onboarding?step=done')
+    // the defaults are on the summary, each a tap away from editing
+    expect(container.textContent).toContain('Starting fresh')
+    await click(byText(container, 'Show me my mirror', 'button'))
+    await flush(80)
+    expect(app.isOnboarded()).toBe(true)
+    const s = app.getSnapshot().state
+    expect(s.profile).toMatchObject({ name: 'Odri', tone: 'gentle', targetSpend: 600_000 })
+    expect(s.mandate.autonomy).toBe('suggest')
+    expect(s.tripwires.filter((t) => t.enabled).length).toBe(4)
+    expect(s.bank.personaId).toBeUndefined()
     expect(window.location.hash).toBe('#/home')
   })
 })
