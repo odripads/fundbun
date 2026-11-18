@@ -69,29 +69,49 @@ https://odripads.github.io/fundbun/?demo=jing · demo video https://youtu.be/Se5
 ## 5. Commands
 ```
 npm install            # never `npm ci` (it deletes node_modules and its iCloud-ignore flag)
-npm run dev            # web (vite, port 5180) + API together
-npm test               # vitest, ~3,086 tests — must stay green
+npm run dev            # web (vite) + API together; the terminal prints the address to open
+npm test               # vitest, ~3,220 tests, about 1 minute — must stay green
 npm run typecheck
 npm run evidence       # scripted scenarios → evidence/
-npm start              # production server (needed if the demo should call a real AI model)
+npm start              # production server on port 8787 (needed if the demo should call a real AI model)
+npm run build && npm start   # ALWAYS build first: `npm start` serves whatever is in dist/
+npx tsx scripts/live-attack-test.ts --save   # 36 attacks against the real model → evidence/live/
 ```
 
 ## 6. ⚠ Check before every commit
-The git index went missing once (fixed 9 Nov 2026 with `git reset`). If `git status` ever shows hundreds
-of staged deletions, **do not commit** — that commit would delete everything. Run `git reset` (changes no
-files), check `git status` looks normal, then commit. Never force-push.
+The git index has gone missing twice (9 and 18 Nov 2026): iCloud renames `.git/index` to `index 2`. If
+`git status` ever shows hundreds of staged deletions, **do not commit** — that commit would delete everything.
+Run `git reset` (changes no files), check `git status` looks normal, then commit. Never force-push.
+A pre-commit hook (`.git/hooks/pre-commit`, added 18 Nov) now refuses any commit that deletes more than 25 files
+and prints these same steps. A full backup of the history is at `~/fundbun-backup-2026-11-18.bundle`.
+
+**iCloud also evicts files when the disk is nearly full.** On 18 Nov, 70% of `.git` and a few source files had
+become cloud-only, and reading them hung for minutes. Before flying: in Finder, right-click the `fundbun` folder →
+**Keep Downloaded**, and keep at least 15 GB of disk free. If a command hangs, that is the cause.
 
 ## 7. Open work (in rough priority order)
 1. ~~Wire DeepSeek into the app~~ (done — `deepseek-flash`, `thinking: {type:'disabled'}`, `.env.example` updated,
    server tests green). Still needed: your `OPENAI_COMPAT_API_KEY` in `.env` (next item).
-2. **Live-test the AI path** (BLOCKED on the key): TECHNICAL.md:635 says the LLM path was never live-tested.
-   Add `OPENAI_COMPAT_API_KEY` to `.env`, then run the 24 attacks against real DeepSeek before claiming "24/24"
-   for the AI mode.
+2. ~~Live-test the AI path~~ (done 18 Nov with real `deepseek-flash`, report in `evidence/live/`). What it showed,
+   and exactly what may be said: the 24 scripted attacks were stopped by the rule layer **before the model was
+   asked**; 12 more, worded to slip past the rules, reached the model and were all refused; ¥0 moved, no
+   permission changed, nothing leaked. Say "with a real model switched on", never "the model blocked 24/24".
 3. ~~Security gap T1~~ (done — a tainted turn now forces a tap on T1 organising changes too; test added,
    SECURITY_SELF_ASSESSMENT.md + TECHNICAL.md updated).
 4. ~~Rename demo persona Mei → Jing~~ (done — app, deep links `?demo=jing` with `?demo=mei` alias, docs).
-5. Be honest about the "on-device AI": it is text matching + rules (27 intents), not a neural model.
-6. Do a full dry run with no Claude, from start to stage demo, before flying.
+5. ~~Be honest about the "on-device AI"~~ (done 18 Nov: the app says "On-device rules engine"; ask Bun "which AI
+   model are you?" and it says so itself). Keep saying it that way on stage.
+6. Do a full dry run with no Claude, from start to stage demo, before flying. Follow `docs/STAGE_CHECKLIST.md`.
+7. The public links do not work for judges in China: `vercel.app` is blocked there and `github.io` is unreliable.
+   Demo from the laptop. A copy under kalcerinstitute.com is the option to test if a phone link is wanted.
+
+**What changed on 18 Nov 2026 (so you are not surprised):** Bun answers questions about itself ("is this safe?",
+"is this my real bank?", "what are your limits?", "what is a tripwire?", "delete my data") in English, Chinese
+and Indonesian (`nlu.ts` rules `R-ABOUT-*`, copy in `voice.ts` / `voice-i18n.ts`); Chinese requests are understood
+better and block reasons are translated (`REASONS_I18N`); a failed AI call falls back to the on-device engine in
+10 s with a notice and a cool-down (`llm-engine.ts`, `controller/host.ts`); an older statement is mirrored from its
+latest month (`viewDateOf` in `controller/derive.ts`); the approval sheet shows the sandbox demo PIN for demo
+personas; a paused Bun shows an "Unfreeze in Settings" button.
 
 ## 8. Rules for you
 - Run `npm test` after every change; don't leave the app broken. Small commits with clear messages.

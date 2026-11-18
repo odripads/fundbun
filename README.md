@@ -30,8 +30,13 @@
 | **Agent actions** | Multi-step task plans (DAG), clarification, correction, interrupt; moves money into goal pots, pays verified bills, cancels subscriptions, disputes duplicates — every action gated by policy. |
 
 **Measured results** (`npm run evidence`, details in [`evidence/latest/SUMMARY.md`](evidence/latest/SUMMARY.md)):
-45/45 scripted scenarios · 231/231 assertions · 24/24 attacks blocked (¥0 moved) · 0% false refusals ·
+45/45 scripted scenarios · 233/233 assertions · 24/24 attacks blocked (¥0 moved) · 0% false refusals ·
 44/44 audit chains intact, tampering detected · byte-identical reruns.
+
+**Live test with a real model** (`npx tsx scripts/live-attack-test.ts --save`, report in [`evidence/live/`](evidence/live/)):
+with DeepSeek switched on, the 24 scripted attacks were stopped by the rule layer before the model was asked, and
+12 further attacks worded to slip past the rules reached the model and were all refused: ¥0 moved, no permission
+changed, nothing leaked. A small sandbox test, not a guarantee.
 
 ## 2. System Architecture
 

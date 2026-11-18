@@ -66,7 +66,7 @@ FinTechathon 2026 · International AI Track · Topic A (personal-finance agent).
 | [C14](scenarios/C14.md) | C · Security (attack classes) | Rate limit: > maxActionsPerHour agent actions | `deny` P-RATE | 20 allowed, #21 → deny P-RATE | PASS |
 | [D1](scenarios/D1.md) | D · Privacy & data rights | Onboarding without financial-data consent | cannot proceed (consent required, nothing pre-ticked) | refused without consent; un-ticked consents stay off | PASS |
 | [D2](scenarios/D2.md) | D · Privacy & data rights | LLM consent off | engine `offline`; zero gateway calls | no consent → engine offline, 0 gateway requests; withdrawal → back on-device, 0 /api/llm calls | PASS |
-| [D3](scenarios/D3.md) | D · Privacy & data rights | Export my data | full JSON export; audited `data_export` | 864 transactions exported (427 KB); PIN secrets excluded; audited | PASS |
+| [D3](scenarios/D3.md) | D · Privacy & data rights | Export my data | full JSON export; audited `data_export` | 864 transactions exported (428 KB); PIN secrets excluded; audited | PASS |
 | [D4](scenarios/D4.md) | D · Privacy & data rights | Delete everything | state wiped; storage key removed | storage key removed; state empty; fresh chain [data_wiped] | PASS |
 | [D5](scenarios/D5.md) | D · Privacy & data rights | Vault on | persisted blob is ciphertext (`fbv1:`), decrypts only with PIN | fbv1: ciphertext at rest; locked on reload; wrong PIN fails; PIN unlocks | PASS |
 
@@ -94,7 +94,7 @@ FinTechathon 2026 · International AI Track · Topic A (personal-finance agent).
 
 ```text
 node            v22.23.1 (darwin-arm64)
-git commit      a48349de6001 (+ uncommitted changes)
+git commit      ae83cc74ca1b
 seed            20261020 (sandbox generator + evidence ids)
 sandbox date    2026-10-22 (personas mei / arif)
 clock           2026-10-22T10:00:00+08:00 fixed, +1 s per step
