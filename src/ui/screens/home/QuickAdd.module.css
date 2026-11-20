@@ -4,6 +4,11 @@
   padding-bottom: var(--s-2);
 }
 
+.dayField {
+  display: grid;
+  gap: var(--s-3);
+}
+
 .selectField {
   display: grid;
   gap: var(--s-2);

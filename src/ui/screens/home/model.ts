@@ -4,7 +4,7 @@
  */
 import { toolTier } from '../../../core/agent/specs'
 import { CATEGORIES } from '../../../core/categories'
-import { diffDays, monthLabel, parseDate } from '../../../core/dates'
+import { addDays, diffDays, monthLabel, parseDate } from '../../../core/dates'
 import { categorize } from '../../../core/finance/categorize'
 import { delayPhrase, delayShort, durationText, pctText, plural } from '../../../core/finance/copy'
 import { fmt, fmtCopy } from '../../../core/money'
@@ -596,6 +596,8 @@ export interface ManualSpend {
   /** the user's pick; '' lets the on-device categoriser guess from `what` */
   category: CategoryId | ''
   today: ISODate
+  /** the day it was spent (yesterday's coffee logged today); omitted → today */
+  date?: ISODate
   currency: Currency
   /** the user's own merchant → category rules */
   rules?: Record<string, CategoryId>
@@ -603,7 +605,7 @@ export interface ManualSpend {
   seq: string
 }
 
-/** A typed-in purchase as a spending candidate: dated today, in the category the user picked or Bun guessed. */
+/** A typed-in purchase as a spending candidate: on the day the user picked (never after today), in the category the user picked or Bun guessed. */
 export function manualCandidate(m: ManualSpend): SpendingCandidate {
   const what = m.what.trim().slice(0, 60)
   const category = m.category || (what ? categorize(what, what, -1, m.rules ?? {}).category : 'other')
@@ -612,7 +614,7 @@ export function manualCandidate(m: ManualSpend): SpendingCandidate {
     merchant: what || CATEGORIES[category].label,
     amount: Math.abs(m.amount),
     currency: m.currency,
-    date: m.today,
+    date: m.date && m.date <= m.today ? m.date : m.today,
     category,
     description: what,
     source: 'manual',
@@ -739,5 +741,30 @@ export function spendReaction(i: SpendReactionInput): SpendReaction {
     ...(kind !== 'carrot' ? { thanks: 'Thanks for logging it. Honest numbers are how you get back.' } : {}),
     plan: kind === 'stick' || i.after.status === 'pace_over',
   }
+}
+
+// ───────────────────────────── when it was spent ─────────────────────────────
+
+export type SpendDay = 'today' | 'yesterday' | 'earlier'
+
+/** How far back a purchase can be logged by hand. */
+export const BACKDATE_MAX_DAYS = 365
+
+/** The date for the day chosen in Add spending, or an error for an earlier date that is out of range. */
+export function spendDate(day: SpendDay, picked: string, today: ISODate): { date: ISODate } | { error: string } {
+  if (day === 'today') return { date: today }
+  if (day === 'yesterday') return { date: addDays(today, -1) }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(picked)) return { error: 'Pick the day you spent it' }
+  if (picked > today) return { error: 'That day hasn’t happened yet' }
+  if (picked < addDays(today, -BACKDATE_MAX_DAYS)) return { error: 'Pick a day within the last year' }
+  return { date: picked }
+}
+
+/** "today", "yesterday", "Mon 19 Oct": how the note under the form names the day. */
+export function spendDayLabel(date: ISODate, today: ISODate): string {
+  if (date === today) return 'today'
+  if (date === addDays(today, -1)) return 'yesterday'
+  const d = parseDate(date)
+  return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' })
 }
 

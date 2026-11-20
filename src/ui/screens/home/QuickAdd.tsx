@@ -5,18 +5,18 @@ import { CATEGORIES } from '../../../core/categories'
 import { checkAffordability } from '../../../core/finance/affordability'
 import { categorize } from '../../../core/finance/categorize'
 import { MIRROR_PLAN_PROMPT } from '../../../core/finance/mirror'
-import { dateLabel } from '../../../core/dates'
+import { addDays, dateLabel, monthLabel, ym } from '../../../core/dates'
 import { CURRENCY_SYMBOL, MINOR_PER_MAJOR, fmt, parseAmount } from '../../../core/money'
 import { similarSpend } from '../../../core/receipt/dedupe'
 import type { BunMood, CategoryId } from '../../../core/types'
 import { BunMascot, DreamImage } from '../../components/brand'
 import { MAX_PRICE_MAJOR } from '../../components/dreams/logic'
-import { Button, Callout, Sheet, TextField } from '../../components/ds'
+import { Button, Callout, Segmented, Sheet, TextField } from '../../components/ds'
 import { useToast } from '../../components/ds/Toast'
 import { PURCHASE_CATEGORIES } from '../../components/sandbox/logic'
 import { navigate } from '../../router'
 import { shallowEqual, useApp, useSnapshot } from '../../state'
-import { MOOD_WORDS, isAngry, manualCandidate, shout, spendReaction, type SpendReaction } from './model'
+import { MOOD_WORDS, BACKDATE_MAX_DAYS, isAngry, manualCandidate, shout, spendDate, spendDayLabel, spendReaction, type SpendDay, type SpendReaction } from './model'
 import styles from './QuickAdd.module.css'
 
 const selectQuickAdd = (s: AppSnapshot) => ({
@@ -49,6 +49,10 @@ export function QuickAdd({ open, onClose }: QuickAddProps) {
   const [amountText, setAmountText] = useState('')
   const [what, setWhat] = useState('')
   const [category, setCategory] = useState<CategoryId | ''>('')
+  // the day it was spent: yesterday's coffee can be logged today
+  const [day, setDay] = useState<SpendDay>('today')
+  const [picked, setPicked] = useState('')
+  const [dateError, setDateError] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const catId = useId()
   const seq = useRef(0)
@@ -67,8 +71,11 @@ export function QuickAdd({ open, onClose }: QuickAddProps) {
   // the same amount a day or two away is probably already here (from a statement, or typed earlier): say so, don't block
   const repeat = useMemo(() => {
     const amount = parseAmount(amountText, currency)
-    return amount && amount > 0 ? similarSpend(amount, today, transactions) : undefined
-  }, [amountText, currency, today, transactions])
+    const when = spendDate(day, picked, today)
+    return amount && amount > 0 && 'date' in when ? similarSpend(amount, when.date, transactions) : undefined
+  }, [amountText, currency, today, transactions, day, picked])
+  const chosen = spendDate(day, picked, today)
+  const chosenDate = 'date' in chosen ? chosen.date : today
 
   function close() {
     setError(null)
@@ -94,7 +101,12 @@ export function QuickAdd({ open, onClose }: QuickAddProps) {
       setError(`Keep it under ${fmt(ceiling, currency)}`)
       return
     }
-    const candidate = manualCandidate({ amount, what, category, today, currency, rules, seq: `${Date.now().toString(36)}_${seq.current++}` })
+    const when = spendDate(day, picked, today)
+    if ('error' in when) {
+      setDateError(when.error)
+      return
+    }
+    const candidate = manualCandidate({ amount, what, category, today, date: when.date, currency, rules, seq: `${Date.now().toString(36)}_${seq.current++}` })
     const before = app.getSnapshot()
     // "Should I buy it?" for this purchase, worked out before it lands: what it does to today, the month and the dream
     const check = before.derived.ctx ? checkAffordability(before.derived.ctx, candidate.amount, candidate.merchant, candidate.category) : null
@@ -102,9 +114,14 @@ export function QuickAdd({ open, onClose }: QuickAddProps) {
     setAmountText('')
     setWhat('')
     setCategory('')
+    setDay('today')
+    setPicked('')
     const after = app.getSnapshot()
-    const label = `${candidate.merchant} · ${CATEGORIES[candidate.category].label}`
-    if (added > 0 && check && before.derived.mirror && after.derived.mirror && after.derived.summary) {
+    const dayText = spendDayLabel(candidate.date, today)
+    const label = `${candidate.merchant} · ${CATEGORIES[candidate.category].label}${candidate.date !== today ? ` · ${dayText}` : ''}`
+    // Bun reacts to this month's spending; a purchase from an earlier month is filed quietly where it belongs
+    const thisMonth = ym(candidate.date) === ym(today)
+    if (added > 0 && thisMonth && check && before.derived.mirror && after.derived.mirror && after.derived.summary) {
       const known = new Set(before.derived.unseenEvents.map((e) => e.id))
       const r = spendReaction({
         amount: candidate.amount,
@@ -123,7 +140,7 @@ export function QuickAdd({ open, onClose }: QuickAddProps) {
     toast.show({
       tone: added > 0 ? 'success' : 'neutral',
       title: added > 0 ? `Added ${fmt(candidate.amount, currency)}` : 'Nothing added',
-      message: added > 0 ? `${label}. You can change the category in Insights.` : 'That one could not be added.',
+      message: added > 0 ? `${label}. ${thisMonth ? '' : `Filed in ${monthLabel(ym(candidate.date))}. `}You can change the category in Insights.` : 'That one could not be added.',
     })
     close()
   }
@@ -179,6 +196,36 @@ export function QuickAdd({ open, onClose }: QuickAddProps) {
           }}
           error={error ?? undefined}
         />
+        <div className={styles.dayField}>
+          <Segmented<SpendDay>
+            label="When did you spend it?"
+            value={day}
+            onChange={(v) => {
+              setDay(v)
+              setDateError(null)
+              if (v === 'earlier' && !picked) setPicked(addDays(today, -2))
+            }}
+            options={[
+              { value: 'today', label: 'Today' },
+              { value: 'yesterday', label: 'Yesterday' },
+              { value: 'earlier', label: 'Earlier' },
+            ]}
+          />
+          {day === 'earlier' ? (
+            <TextField
+              label="Which day?"
+              type="date"
+              value={picked}
+              max={today}
+              min={addDays(today, -BACKDATE_MAX_DAYS)}
+              onChange={(e) => {
+                setPicked(e.currentTarget.value)
+                setDateError(null)
+              }}
+              error={dateError ?? undefined}
+            />
+          ) : null}
+        </div>
         <TextField
           label="What was it? (optional)"
           autoComplete="off"
@@ -201,7 +248,11 @@ export function QuickAdd({ open, onClose }: QuickAddProps) {
             {fmt(-repeat.amount, currency)} on {dateLabel(repeat.date)}: {repeat.merchant}. If it is the same purchase, close this. If it is another one, add it.
           </Callout>
         ) : (
-          <p className={styles.note}>It counts toward today, your month and your tripwires.</p>
+          <p className={styles.note}>
+            {ym(chosenDate) === ym(today)
+              ? `It counts toward ${spendDayLabel(chosenDate, today)}, your month and your tripwires.`
+              : `It is filed in ${monthLabel(ym(chosenDate))}, so this month’s numbers don’t change.`}
+          </p>
         )}
         <Button type="submit" size="lg" fullWidth iconStart={<Plus />}>{repeat ? 'Add anyway' : 'Add it'}</Button>
       </form>

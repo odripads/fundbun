@@ -4,6 +4,8 @@ import type { AppSnapshot } from '../../../core/app-api'
 import type { Bill, DreamItem, GoalProgress, Insight, MirrorState, MonthSummary, TripwireEvent } from '../../../core/types'
 import {
   STATUS_META,
+  spendDate,
+  spendDayLabel,
   isAngry,
   shout,
   temperLine,
@@ -639,6 +641,30 @@ describe('shout — an angry Bun ends every sentence with "!!!"', () => {
     expect(isAngry('angry')).toBe(true)
     expect(isAngry('furious')).toBe(true)
     for (const m of ['happy', 'calm', 'worried', 'burnt', 'sleepy'] as const) expect(isAngry(m)).toBe(false)
+  })
+})
+
+describe('spendDate — logging a purchase from another day', () => {
+  it('today, yesterday, or a picked day within the last year', () => {
+    expect(spendDate('today', '', '2026-10-22')).toEqual({ date: '2026-10-22' })
+    expect(spendDate('yesterday', '', '2026-11-01')).toEqual({ date: '2026-10-31' })
+    expect(spendDate('earlier', '2026-10-03', '2026-10-22')).toEqual({ date: '2026-10-03' })
+    expect(spendDate('earlier', '', '2026-10-22')).toEqual({ error: 'Pick the day you spent it' })
+    expect(spendDate('earlier', '2026-10-23', '2026-10-22')).toEqual({ error: 'That day hasn’t happened yet' })
+    expect(spendDate('earlier', '2025-01-01', '2026-10-22')).toEqual({ error: 'Pick a day within the last year' })
+  })
+
+  it('names the day in the note', () => {
+    expect(spendDayLabel('2026-10-22', '2026-10-22')).toBe('today')
+    expect(spendDayLabel('2026-10-21', '2026-10-22')).toBe('yesterday')
+    expect(spendDayLabel('2026-10-19', '2026-10-22')).toBe('Mon 19 Oct')
+  })
+
+  it('the purchase lands on the chosen day, never after today', () => {
+    const base = { amount: 2_500, what: 'coffee', category: '' as const, today: '2026-10-22', currency: 'CNY' as const, seq: 'x' }
+    expect(manualCandidate({ ...base, date: '2026-10-21' }).date).toBe('2026-10-21')
+    expect(manualCandidate({ ...base, date: '2026-10-25' }).date).toBe('2026-10-22')
+    expect(manualCandidate(base).date).toBe('2026-10-22')
   })
 })
 
