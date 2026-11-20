@@ -460,6 +460,10 @@ export interface BunTemper {
   reason: string
   /** over or heading over: what calms Bun down */
   wayBack?: string
+  /** the day limit is the user's own daily amount (finance/dailyplan) */
+  planned?: boolean
+  /** over or heading over this month with no daily amount yet: offer to set one */
+  askPlan?: boolean
 }
 
 export interface MirrorState {
@@ -880,6 +884,15 @@ export interface FinanceContext {
   tripwires: Tripwire[]
   /** days the user checked in: each counts as logged, even with no spending (finance/temper) */
   checkedDays?: ISODate[]
+  /** the daily amount the user agreed to live on this month (finance/dailyplan) */
+  dailyPlan?: DailyPlan
+}
+
+/** A daily amount the user can realistically live on for the rest of a month that ran over (finance/dailyplan). */
+export interface DailyPlan {
+  month: YearMonth
+  amount: Minor
+  setOn: ISODate
 }
 
 // ───────────────────────────── persisted app state ─────────────────────────────
@@ -920,6 +933,8 @@ export interface AppState {
   settings: AppSettings
   /** the daily check-in (absent in states saved before it existed) */
   checkIns?: CheckIns
+  /** the daily amount for this month, when the user set one */
+  dailyPlan?: DailyPlan
 }
 
 /** The daily check-in habit (finance/checkin). */

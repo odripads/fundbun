@@ -638,6 +638,8 @@ export interface TemperLine {
   kind: 'carrot' | 'stick' | 'cooling'
   label: string
   text: string
+  /** offer the daily-amount sheet: set one (over, none yet) or change the one in use */
+  plan?: 'set' | 'change'
 }
 
 /**
@@ -648,8 +650,10 @@ export function temperLine(m: Pick<MirrorState, 'mood' | 'temper' | 'status'>): 
   const t = m.temper
   if (!t) return null
   const streak = `${plural(t.goodDays, 'good day')} in a row.`
-  if (t.cooling) return { kind: 'cooling', label: 'Bun is cooling down', text: `${streak} ${t.wayBack ?? ''}`.trim() }
-  if (m.status === 'over' && t.wayBack) return { kind: 'stick', label: MOOD_WORDS[m.mood], text: t.wayBack }
+  const plan: TemperLine['plan'] = t.askPlan ? 'set' : t.planned ? 'change' : undefined
+  if (t.cooling) return { kind: 'cooling', label: 'Bun is cooling down', text: `${streak} ${t.wayBack ?? ''}`.trim(), ...(plan ? { plan } : {}) }
+  if (m.status === 'over' && t.wayBack) return { kind: 'stick', label: MOOD_WORDS[m.mood], text: t.wayBack, ...(plan ? { plan } : {}) }
+  if (m.status === 'pace_over' && plan) return { kind: 'stick', label: MOOD_WORDS[m.mood], text: t.wayBack ?? 'Pick a daily amount you can live with.', plan }
   if (t.heat <= 1 && t.goodDays >= 2) return { kind: 'carrot', label: MOOD_WORDS[m.mood], text: `${streak} Each one stayed within your day limit.` }
   return null
 }

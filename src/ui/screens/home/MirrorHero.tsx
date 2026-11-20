@@ -40,6 +40,8 @@ export interface MirrorHeroProps {
   /** open the "Should I buy it?" sheet for an amount (the treat button uses it) */
   onCheck: (req: CheckRequest) => void
   onSandbox: () => void
+  /** open the daily-amount sheet */
+  onPlan?: () => void
 }
 
 const selectPending = (s: AppSnapshot) => s.state.pending
@@ -165,7 +167,7 @@ function GoalRing({ now, after }: { now: number; after: number }) {
 /** The demo personas run on a simulated bank and a frozen calendar; a user's own data has neither. */
 const selectSandboxDate = (s: AppSnapshot): string | null => (s.derived.clock === 'sandbox' ? dateLabel(s.derived.today) : null)
 
-export function MirrorHero({ onCheck, onSandbox }: MirrorHeroProps) {
+export function MirrorHero({ onCheck, onSandbox, onPlan }: MirrorHeroProps) {
   const app = useApp()
   const { mirror, currency, dreams } = useSnapshot(selectHero, shallowEqual)
   const propose = useProposeAction()
@@ -362,6 +364,14 @@ export function MirrorHero({ onCheck, onSandbox }: MirrorHeroProps) {
               {temper.kind === 'carrot' ? <Flame aria-hidden="true" /> : temper.kind === 'cooling' ? <ThermometerSnowflake aria-hidden="true" /> : <Thermometer aria-hidden="true" />}
               <span>
                 <strong>{temper.label}{temper.kind === 'stick' && broken ? '!!!' : '.'}</strong> {temper.text}
+                {temper.plan && onPlan ? (
+                  <>
+                    {' '}
+                    <button type="button" className={styles.temperAction} onClick={onPlan}>
+                      {temper.plan === 'set' ? 'Set a daily amount you can live with' : 'Change my daily amount'}
+                    </button>
+                  </>
+                ) : null}
               </span>
             </p>
           ) : null}

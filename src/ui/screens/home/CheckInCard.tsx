@@ -11,6 +11,9 @@ import styles from './CheckInCard.module.css'
 
 const selectCheckIn = (s: AppSnapshot) => ({
   view: s.derived.checkIn,
+  // over budget, "safe to spend" is zero: the user's own daily amount says more
+  plan: s.state.dailyPlan && s.state.dailyPlan.month === s.derived.today.slice(0, 7) ? s.state.dailyPlan.amount : null,
+  over: s.derived.mirror?.status === 'over' || s.derived.mirror?.status === 'pace_over',
   // today's number is only meaningful while the mirror looks at the current month
   safe: s.derived.viewDate === s.derived.today ? (s.derived.summary?.safeToSpendToday ?? null) : null,
   currency: s.state.profile?.currency ?? ('CNY' as const),
@@ -19,6 +22,8 @@ const selectCheckIn = (s: AppSnapshot) => ({
 export interface CheckInCardProps {
   /** "Add spending first": open the quick-add sheet (logging a purchase checks in by itself) */
   onAddSpending: () => void
+  /** open the daily-amount sheet */
+  onPlan?: () => void
 }
 
 /**
@@ -26,11 +31,11 @@ export interface CheckInCardProps {
  * keeps spending in mind, so it earns a stamp, and a golden bun on every seventh day in a row. Checking in says
  * "nothing else to log today", which makes the day count for Bun's temper too (core/finance/checkin).
  */
-export function CheckInCard({ onAddSpending }: CheckInCardProps) {
+export function CheckInCard({ onAddSpending, onPlan }: CheckInCardProps) {
   const app = useApp()
   const toast = useToast()
   const headingId = useId()
-  const { view, safe, currency } = useSnapshot(selectCheckIn, shallowEqual)
+  const { view, safe, currency, plan, over } = useSnapshot(selectCheckIn, shallowEqual)
   const toGolden = CHECKIN_CARD_DAYS - (((view.done ? view.streak : view.next) - 1) % CHECKIN_CARD_DAYS) - 1
 
   function checkIn() {
@@ -39,7 +44,11 @@ export function CheckInCard({ onAddSpending }: CheckInCardProps) {
     if (r.earned) toast.show({ tone: 'success', title: 'Golden bun!', message: `${plural(r.streak, 'day')} in a row. That is a full card.` })
   }
 
-  const number = safe === null ? null : safe > 0 ? `${fmtCopy(safe, currency)} is safe to spend today.` : 'Nothing is safe to spend today.'
+  const number =
+    plan !== null ? `Your daily amount: ${fmtCopy(plan, currency)}.`
+    : safe === null ? null
+    : safe > 0 ? `${fmtCopy(safe, currency)} is safe to spend today.`
+    : null
   return (
     <section className={styles.card} data-done={view.done || undefined} aria-labelledby={headingId}>
       <div className={styles.head}>
@@ -61,6 +70,12 @@ export function CheckInCard({ onAddSpending }: CheckInCardProps) {
           </li>
         ))}
       </ol>
+
+      {over && plan === null && onPlan ? (
+        <button type="button" className={styles.planLink} onClick={onPlan}>
+          Over budget? Set a daily amount you can live with
+        </button>
+      ) : null}
 
       {view.done ? (
         <p className={styles.note} role="status">

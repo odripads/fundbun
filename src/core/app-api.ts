@@ -276,6 +276,11 @@ export interface AppApi {
    * seventh day in a row). Logging spending checks in by itself.
    */
   checkIn(): { ok: boolean; added: boolean; streak: number; earned: boolean }
+  /**
+   * The daily amount the user can live on for the rest of this month (finance/dailyplan); Bun then judges each day
+   * by it. null removes it. It ends with the month.
+   */
+  setDailyPlan(amount: Minor | null): Result
   /** Bill X-ray via the agent (xray_bill tool) — returns the assistant message with the xray card */
   xrayBill(text: string): Promise<ChatMessage>
   transactions(filter?: { month?: YearMonth; category?: CategoryId; query?: string }): Transaction[]

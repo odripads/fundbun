@@ -10,6 +10,7 @@ import { navigate } from '../../router'
 import { useSnapshot } from '../../state'
 import { BillsStrip } from './BillsStrip'
 import { CheckInCard } from './CheckInCard'
+import { DailyPlanSheet } from './DailyPlanSheet'
 import { CouldveStrip } from './CouldveStrip'
 import { InsightsPeek } from './InsightsPeek'
 import { MirrorHero, type CheckRequest } from './MirrorHero'
@@ -37,6 +38,7 @@ export function HomeScreen() {
   const bankDemo = useSnapshot(selectBankDemo)
   const [adding, setAdding] = useState(false)
   const [leaving, setLeaving] = useState(false)
+  const [planning, setPlanning] = useState(false)
   const [check, setCheck] = useState<CheckRequest | null>(null)
   const [pull, setPull] = useState(0)
   const touchY = useRef<number | null>(null)
@@ -79,7 +81,7 @@ export function HomeScreen() {
           </Callout>
         </div>
       ) : null}
-      <MirrorHero onCheck={setCheck} onSandbox={() => setSandbox(true)} />
+      <MirrorHero onCheck={setCheck} onSandbox={() => setSandbox(true)} onPlan={() => setPlanning(true)} />
       <div className={styles.scanRow}>
         <Button variant="soft" size="lg" iconStart={<Plus />} onClick={() => setAdding(true)}>
           Add spending
@@ -90,7 +92,7 @@ export function HomeScreen() {
       </div>
       <QuickAdd open={adding} onClose={() => setAdding(false)} />
       <div className={styles.sections}>
-        <CheckInCard onAddSpending={() => setAdding(true)} />
+        <CheckInCard onAddSpending={() => setAdding(true)} onPlan={() => setPlanning(true)} />
         <TripwireStack />
         <MonthCard />
         <QuickCheck request={check} onRequestHandled={clearCheck} />
@@ -132,6 +134,7 @@ export function HomeScreen() {
         <SandboxPanel />
       </Sheet>
       <LogOutDialog open={leaving} onClose={() => setLeaving(false)} />
+      <DailyPlanSheet open={planning} onClose={() => setPlanning(false)} />
     </div>
   )
 }

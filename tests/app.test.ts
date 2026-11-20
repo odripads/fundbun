@@ -1523,3 +1523,26 @@ describe('spending added by hand', () => {
     expect(app.getSnapshot().derived.unseenEvents.length).toBe(alerts)
   })
 })
+
+describe('the daily amount (over budget, a realistic day)', () => {
+  it('sets an amount for this month, Bun judges days by it, and it survives a reload', async () => {
+    const storage = memoryStorage()
+    const open = () => createFundBunApp({ storage, llmBaseUrl: null, now: () => new Date('2026-11-20T09:00:00+08:00') })
+    const app = open()
+    app.completeOnboarding(onboardingInput({ dataSource: { kind: 'csv', startingBalance: 2_000_000, text: 'Date,Description,Amount\n2026-11-03,Hema Fresh,-9900.00' } }))
+    expect(app.getSnapshot().derived.mirror?.temper).toMatchObject({ askPlan: true })
+    expect(app.setDailyPlan(0).ok).toBe(false)
+    expect(app.setDailyPlan(8_000)).toEqual({ ok: true })
+    const t = app.getSnapshot().derived.mirror!.temper!
+    expect(t).toMatchObject({ planned: true, dayLimit: 8_000 })
+    expect(t.askPlan).toBeUndefined()
+    expect(app.getSnapshot().state.audit.at(-1)).toMatchObject({ type: 'user_action', data: { amount: 8_000, month: '2026-11' } })
+    expect(app.verifyAudit().ok).toBe(true)
+    await app.flush()
+    // after a reload the amount is still there, and it can be removed
+    const again = open()
+    expect(again.getSnapshot().state.dailyPlan).toEqual({ month: '2026-11', amount: 8_000, setOn: '2026-11-20' })
+    expect(again.setDailyPlan(null)).toEqual({ ok: true })
+    expect(again.getSnapshot().state.dailyPlan).toBeUndefined()
+  })
+})

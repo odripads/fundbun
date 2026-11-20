@@ -3,6 +3,7 @@ import type { BunMood, BunTemper, FinanceContext, ISODate, Minor, MirrorStatus, 
 import { MINOR_PER_MAJOR } from '../money'
 import { copyFmt, pctText, plural } from './copy'
 import { FIXED_CATEGORIES, inMonth, isSpending, spendValue, upTo } from './ledger'
+import { planFor } from './dailyplan'
 import { unpaidBillsDue } from './summary'
 
 /**
@@ -77,6 +78,9 @@ function isDayToDay(t: Transaction): boolean {
  * rounded to whole currency units.
  */
 export function dayLimitOf(ctx: FinanceContext, s: MonthSummary): Minor {
+  // the daily amount the user agreed to for this month comes first: it is the most recent promise
+  const plan = planFor(ctx, s.month)
+  if (plan) return plan.amount
   const own = ctx.tripwires.find((t) => t.enabled && t.kind === 'daily_over' && t.threshold > 0)
   if (own) return own.threshold
   let fixed = 0
@@ -144,7 +148,7 @@ export function bunTemper(ctx: FinanceContext, s: MonthSummary, status: MirrorSt
   const face = faceFor(status, heat, tone)
 
   const limit = f(dayLimit)
-  const streak = `${plural(goodDays, 'day')} in a row within your ${limit} day limit`
+  const streak = `${plural(goodDays, 'day')} in a row within your ${limit} ${planFor(ctx, s.month) ? 'daily amount' : 'day limit'}`
   const reasons: string[] = []
   if (status === 'no_data') reasons.push('There is no spending to judge yet.')
   else if (status === 'over') reasons.push(`You are ${f(s.spent - s.target)} over your ${f(s.target)} target${overBy >= FURIOUS_OVER ? `, ${pctText(overBy)} past it` : ''}.`)
@@ -166,5 +170,10 @@ export function bunTemper(ctx: FinanceContext, s: MonthSummary, status: MirrorSt
     wayBack = `Keep it within ${limit} a day. Every day you do counts in your favour.`
   }
 
-  return { mood: face, heat, overBy, dayLimit, spentToday, goodDays, blowout, cooling: cooled > 0, reason: reasons.join(' '), ...(wayBack ? { wayBack } : {}) }
+  const planned = !!planFor(ctx, s.month)
+  const askPlan = s.isCurrent && !planned && (status === 'over' || status === 'pace_over')
+  return {
+    mood: face, heat, overBy, dayLimit, spentToday, goodDays, blowout, cooling: cooled > 0, reason: reasons.join(' '),
+    ...(wayBack ? { wayBack } : {}), ...(planned ? { planned } : {}), ...(askPlan ? { askPlan } : {}),
+  }
 }

@@ -1,8 +1,9 @@
-import type { AppApi } from '../app-api'
+import { ym } from '../dates'
+import type { AppApi, Result } from '../app-api'
 import { importCsv as parseCsvImport } from '../sandbox/csv'
 import { auditToJSONL } from '../security/audit'
 import { clipForDisplay } from '../security/redact'
-import type { AppState, Mandate, SpendingCandidate, Transaction } from '../types'
+import type { AppState, Mandate, Minor, SpendingCandidate, Transaction } from '../types'
 import { appendAudit, verifyAuditAnchored } from './audit'
 import { LOCKED_MSG, NOT_SET_UP_MSG, expirePending, syncClock, userTx, userTxValue, type Core } from './core'
 import { recordCheckIn } from '../finance/checkin'
@@ -120,6 +121,25 @@ export function createUserApi(core: Core, onLlmGranted: () => void): UserApi {
         draft.checkIns = recordCheckIn(draft.checkIns, draft.bank.today).checkIns
       }
       return { added: added.length, duplicates }
+    })
+  }
+
+  /** The daily amount for the rest of this month (finance/dailyplan), or null to remove it. */
+  function setDailyPlan(amount: Minor | null): Result {
+    if (core.lock.locked || !store.get().profile) return { ok: false, error: 'Unlock the app first.' }
+    if (amount !== null && (!Number.isSafeInteger(amount) || amount <= 0)) return { ok: false, error: 'A daily amount is a positive amount.' }
+    syncClock(core)
+    return store.mutate((draft) => {
+      const ts = core.now()
+      if (amount === null) {
+        if (!draft.dailyPlan) return { ok: true }
+        delete draft.dailyPlan
+        appendAudit(draft, ts, 'user', 'user_action', 'Daily amount removed', {})
+        return { ok: true }
+      }
+      draft.dailyPlan = { month: ym(draft.bank.today), amount, setOn: draft.bank.today }
+      appendAudit(draft, ts, 'user', 'user_action', 'Daily amount set', { amount, month: draft.dailyPlan.month })
+      return { ok: true }
     })
   }
 
@@ -264,6 +284,7 @@ export function createUserApi(core: Core, onLlmGranted: () => void): UserApi {
     markBillPaid,
     unmarkBillPaid,
     checkIn,
+    setDailyPlan,
     transactions: (filter) => filterTransactions(store.get().bank.transactions, filter),
 
     // ── sandbox / demo controls ──

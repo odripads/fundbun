@@ -1,0 +1,48 @@
+.body {
+  display: grid;
+  gap: var(--s-4);
+  padding-bottom: var(--s-2);
+}
+
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.impact {
+  display: grid;
+  gap: var(--s-2);
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-md);
+  background: var(--over-soft);
+}
+
+.impact[data-good] {
+  background: var(--under-soft);
+}
+
+.lead {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--fs-md);
+  font-weight: 620;
+  line-height: 1.4;
+}
+
+.line {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-2);
+  margin: 0;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+
+.line svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+}

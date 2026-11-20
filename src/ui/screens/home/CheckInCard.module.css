@@ -131,6 +131,20 @@
   color: var(--under-text);
 }
 
+.planLink {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--over-text);
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
 .actions {
   display: flex;
   gap: var(--s-2);
