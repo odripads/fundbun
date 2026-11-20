@@ -273,6 +273,8 @@ export interface DreamItem {
   createdAt: ISODate
   achievedAt?: ISODate
   note?: string
+  /** goals: the day the user wants it by (optional; the last day of the month they picked) */
+  targetDate?: ISODate
 }
 
 export interface GoalProgress {
@@ -286,6 +288,13 @@ export interface GoalProgress {
   monthlyRate: Minor
   etaDate?: ISODate
   etaMonths?: number
+  /** the user's own deadline for the goal */
+  targetDate?: ISODate
+  /** what it takes to get there by targetDate, from today: per month and per day (0 once funded) */
+  neededMonthly?: Minor
+  neededDaily?: Minor
+  /** at the current pace the goal lands on or before targetDate */
+  onSchedule?: boolean
 }
 
 export interface DreamEquivalent {

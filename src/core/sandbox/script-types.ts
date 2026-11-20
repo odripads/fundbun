@@ -154,6 +154,8 @@ export interface DreamSeed {
   image: string
   kind: DreamKind
   note?: string
+  /** goals: by when the persona wants it */
+  targetDate?: string
 }
 
 export interface TripwireSeed {

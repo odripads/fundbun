@@ -4,7 +4,7 @@ import { hoursOfWork } from '../../../core/finance'
 import type { Currency, Profile } from '../../../core/types'
 import { DreamImage } from '../../components/brand'
 import { Badge, Button, IconButton, Money, ProgressRing } from '../../components/ds'
-import { etaFact, fmtWhole, isFunded, monthYear, remainingOf, type DreamRow } from './model'
+import { etaFact, fmtWhole, isFunded, monthYear, remainingOf, targetFact, type DreamRow } from './model'
 import styles from './DreamCard.module.css'
 
 export interface DreamCardProps {
@@ -25,6 +25,7 @@ export function GoalCard({ row, currency, index = 0, onAdd, onAchieve, onEdit }:
   const pct = p?.pct ?? 0
   const left = remainingOf(p)
   const eta = etaFact(p)
+  const target = targetFact(p, currency)
   return (
     <article className={styles.card} data-funded={funded || undefined} style={{ '--i': index } as CSSProperties} aria-labelledby={`${item.id}-name`}>
       <div className={styles.top}>
@@ -68,6 +69,15 @@ export function GoalCard({ row, currency, index = 0, onAdd, onAchieve, onEdit }:
           </dd>
         </div>
       </dl>
+
+      {target ? (
+        <p className={styles.target} data-on={target.onSchedule || undefined}>
+          <CalendarClock aria-hidden="true" />
+          <span>
+            <strong>{target.value}</strong> · {target.sub}
+          </span>
+        </p>
+      ) : null}
 
       <div className={styles.actions}>
         {funded ? (

@@ -232,8 +232,8 @@ export const ARIF: PersonaScript = {
     tolerance: { past: y(70), current: y(25) },
   },
   dreams: [
-    { id: 'dream_macbook', name: 'MacBook Air', price: y(7_999), image: 'preset:laptop', kind: 'goal', note: 'For the thesis — and everything after.' },
-    { id: 'dream_flight', name: 'Flight home to Medan', price: y(2_600), image: 'preset:plane', kind: 'goal', note: 'Home for the holidays.' },
+    { id: 'dream_macbook', name: 'MacBook Air', price: y(7_999), image: 'preset:laptop', kind: 'goal', note: 'For the thesis — and everything after.', targetDate: '2027-06-30' },
+    { id: 'dream_flight', name: 'Flight home to Medan', price: y(2_600), image: 'preset:plane', kind: 'goal', note: 'Home for the holidays.', targetDate: '2027-01-31' },
     { id: 'dream_concert', name: 'Concert ticket', price: y(480), image: 'preset:ticket', kind: 'treat' },
     { id: 'dream_sneakers', name: 'New sneakers', price: y(399), image: 'preset:sneakers', kind: 'treat' },
   ],

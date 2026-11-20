@@ -39,6 +39,7 @@ export function dreamInputError(input: Partial<DreamInput>, partial = false): st
   if (has('price') && !isPosInt(input.price)) return 'A dream item needs a positive whole price'
   if (has('kind') && !DREAM_KINDS.includes(input.kind as DreamItem['kind'])) return 'A dream item is either a goal or a treat'
   if (has('image') && typeof input.image !== 'string') return 'Dream image must be a preset or a photo'
+  if (input.targetDate !== undefined && input.targetDate !== '' && !/^\d{4}-\d{2}-\d{2}$/.test(input.targetDate)) return 'A target date looks like 2027-12-31'
   return null
 }
 
@@ -53,6 +54,7 @@ export function makeDream(input: DreamInput, bank: SandboxBank, taken: Iterable<
     createdAt: today,
   }
   if (input.note) item.note = input.note
+  if (input.targetDate && item.kind === 'goal') item.targetDate = input.targetDate
   if (item.kind === 'goal') item.potAccountId = bank.ensurePot(item.id, item.name).id
   return item
 }
@@ -82,6 +84,11 @@ export function updateDreamIn(draft: AppState, bank: SandboxBank, id: string, pa
   if (patch.image !== undefined) item.image = patch.image
   if (patch.note !== undefined) item.note = patch.note
   if (patch.kind !== undefined) item.kind = patch.kind
+  if (patch.targetDate !== undefined) {
+    if (patch.targetDate && item.kind === 'goal') item.targetDate = patch.targetDate
+    else delete item.targetDate
+  }
+  if (item.kind !== 'goal') delete item.targetDate
   if (item.kind === 'goal' && !item.potAccountId) item.potAccountId = bank.ensurePot(item.id, item.name).id
   appendAudit(draft, ts, 'user', 'user_action', `Dream updated: ${item.name}`, { dreamId: id, fields: Object.keys(patch) })
   return OK

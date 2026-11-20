@@ -18,6 +18,7 @@ const selectGoals = (s: AppSnapshot) => ({
   accounts: s.state.bank.accounts,
   profile: s.state.profile,
   savedThisMonth: s.derived.summary?.savedToGoals ?? 0,
+  today: s.derived.today,
 })
 
 type Editing = { mode: 'add' } | { mode: 'edit'; item: DreamItem }
@@ -27,7 +28,7 @@ export function GoalsScreen() {
   const app = useApp()
   const run = useSafeAction()
   const toast = useToast()
-  const { dreams, goals, accounts, profile, savedThisMonth } = useSnapshot(selectGoals, shallowEqual)
+  const { dreams, goals, accounts, profile, savedThisMonth, today } = useSnapshot(selectGoals, shallowEqual)
   const currency = profile?.currency ?? 'CNY'
   const tone = profile?.tone ?? 'gentle'
   const groups = groupDreams(dreams, goals)
@@ -96,7 +97,7 @@ export function GoalsScreen() {
           mood="happy"
           action={<Button iconStart={<Plus />} onClick={() => openEditor({ mode: 'add' })}>Add your first dream</Button>}
         />
-        <EditorSheet open={editOpen} editing={editing} currency={currency} onClose={() => setEditOpen(false)} onSave={save} />
+        <EditorSheet open={editOpen} editing={editing} currency={currency} today={today} onClose={() => setEditOpen(false)} onSave={save} />
       </div>
     )
   }
@@ -201,6 +202,7 @@ export function GoalsScreen() {
         open={editOpen}
         editing={editing}
         currency={currency}
+        today={today}
         onClose={() => setEditOpen(false)}
         onSave={save}
         extra={
@@ -261,12 +263,13 @@ interface EditorSheetProps {
   open: boolean
   editing: Editing | null
   currency: Currency
+  today: string
   onClose: () => void
   onSave: (input: DreamInput) => void
   extra?: ReactNode
 }
 
-function EditorSheet({ open, editing, currency, onClose, onSave, extra }: EditorSheetProps) {
+function EditorSheet({ open, editing, currency, today, onClose, onSave, extra }: EditorSheetProps) {
   const item = editing?.mode === 'edit' ? editing.item : null
   return (
     <Sheet
@@ -274,14 +277,15 @@ function EditorSheet({ open, editing, currency, onClose, onSave, extra }: Editor
       onClose={onClose}
       size="full"
       title={item ? `Edit ${item.name}` : 'Add a dream'}
-      description={item ? 'Change the name, price or picture. Photos stay on this device.' : 'Something to save toward, or a small treat. Photos stay on this device.'}
+      description={item ? 'Change the name, price, date or picture. Photos stay on this device.' : 'Something to save toward, or a small treat. Photos stay on this device.'}
     >
       {editing ? (
         <div className={styles.editor}>
           <DreamEditor
             key={item?.id ?? 'new'}
             currency={currency}
-            initial={item ? { name: item.name, price: item.price, image: item.image, kind: item.kind, note: item.note } : undefined}
+            today={today}
+            initial={item ? { name: item.name, price: item.price, image: item.image, kind: item.kind, note: item.note, targetDate: item.targetDate } : undefined}
             submitLabel={item ? 'Save changes' : 'Add to my dreams'}
             onSubmit={onSave}
             onCancel={onClose}

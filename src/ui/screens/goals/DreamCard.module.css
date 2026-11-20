@@ -326,3 +326,32 @@
     animation: none;
   }
 }
+
+/* the goal's own deadline and what it takes */
+.target {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin: var(--s-3) 0 0;
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-md);
+  background: var(--warn-soft);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+.target svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--warn-text);
+}
+
+.target[data-on] {
+  background: var(--under-soft);
+}
+
+.target[data-on] svg {
+  color: var(--under-text);
+}
+

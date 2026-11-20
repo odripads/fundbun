@@ -1,5 +1,5 @@
-import { addDays, monthsBack, shiftMonth, ym } from '../dates'
-import type { Account, DreamEquivalent, DreamItem, FinanceContext, GoalProgress, Minor, Profile, Transaction, YearMonth } from '../types'
+import { addDays, diffDays, monthsBack, shiftMonth, ym } from '../dates'
+import type { Account, DreamEquivalent, DreamItem, FinanceContext, GoalProgress, ISODate, Minor, Profile, Transaction, YearMonth } from '../types'
 import { inMonth, isReversed } from './ledger'
 import { pctText, withArticle } from './copy'
 import { clamp, round1 } from './stats'
@@ -63,10 +63,23 @@ export function goalProgress(item: DreamItem, ctx: FinanceContext): GoalProgress
     pct: item.price > 0 ? clamp(round1((saved / item.price) * 100), 0, 100) : 100,
     monthlyRate: rate,
   }
-  if (left === 0) return { ...progress, etaMonths: 0, etaDate: ctx.bank.today }
-  if (rate <= 0) return progress
+  const withTarget = item.targetDate ? { ...progress, ...targetPlan(item.targetDate, left, ctx.bank.today) } : progress
+  if (left === 0) return { ...withTarget, etaMonths: 0, etaDate: ctx.bank.today, ...(item.targetDate ? { onSchedule: true } : {}) }
+  if (rate <= 0) return { ...withTarget, ...(item.targetDate ? { onSchedule: false } : {}) }
   const months = left / rate
-  return { ...progress, etaMonths: round1(months), etaDate: addDays(ctx.bank.today, Math.ceil(months * DAYS_PER_MONTH)) }
+  const etaDate = addDays(ctx.bank.today, Math.ceil(months * DAYS_PER_MONTH))
+  return { ...withTarget, etaMonths: round1(months), etaDate, ...(item.targetDate ? { onSchedule: etaDate <= item.targetDate } : {}) }
+}
+
+/**
+ * What a goal with a deadline needs from today: what is left, spread over the days to the target date (a date
+ * already past counts as one day: all of it, now). Rounded up to the next minor unit.
+ */
+export function targetPlan(targetDate: ISODate, left: Minor, today: ISODate): { targetDate: ISODate; neededMonthly: Minor; neededDaily: Minor } {
+  if (left <= 0) return { targetDate, neededMonthly: 0, neededDaily: 0 }
+  const days = Math.max(1, diffDays(today, targetDate))
+  const perDay = left / days
+  return { targetDate, neededDaily: Math.ceil(perDay), neededMonthly: Math.ceil(Math.min(left, perDay * DAYS_PER_MONTH)) }
 }
 
 /** Every dream item's progress: open goals first, then treats, achieved items last. */

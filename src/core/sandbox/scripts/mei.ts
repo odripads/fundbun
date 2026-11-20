@@ -484,7 +484,7 @@ export const MEI: PersonaScript = {
     tolerance: { past: y(120), current: y(100) },
   },
   dreams: [
-    { id: 'dream_birkin', name: 'Birkin 25', price: y(98_000), image: 'preset:bag', kind: 'goal', note: 'The long game.' },
+    { id: 'dream_birkin', name: 'Birkin 25', price: y(98_000), image: 'preset:bag', kind: 'goal', note: 'The long game.', targetDate: '2028-12-31' },
     { id: 'dream_chengdu', name: 'Weekend in Chengdu', price: y(2_400), image: 'preset:plane', kind: 'goal', note: 'Hotpot, pandas, teahouses.' },
     { id: 'dream_airpods', name: 'AirPods Pro', price: y(1_899), image: 'preset:earbuds', kind: 'treat' },
     { id: 'dream_shoes', name: 'New running shoes', price: y(899), image: 'preset:sneakers', kind: 'treat' },

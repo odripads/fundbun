@@ -98,7 +98,7 @@ export function DreamsStep({ draft, update, errors, setBusy }: StepProps) {
           <h2 id="ob-dream-editor" className={cx(s.h2, d.editorTitle)}>
             {list.length ? 'Add another dream' : 'Add your first dream'}
           </h2>
-          <DreamEditor key={editorKey} currency={draft.currency} submitLabel="Add to my list" onSubmit={add} onCancel={list.length ? () => setAdding(false) : undefined} />
+          <DreamEditor key={editorKey} currency={draft.currency} today={new Date().toISOString().slice(0, 10)} submitLabel="Add to my list" onSubmit={add} onCancel={list.length ? () => setAdding(false) : undefined} />
           {errors.dreams ? (
             <p className={s.error} role="alert">
               <CircleAlert aria-hidden="true" />

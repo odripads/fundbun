@@ -135,3 +135,18 @@ describe('photoFileProblem', () => {
     expect(photoFileProblem({ type: 'image/png', size: 30 * 1024 * 1024 })).toMatch(/too large/)
   })
 })
+
+describe('validateDreamForm — a goal’s month', () => {
+  const base = { name: 'MacBook Air', price: '7999', kind: 'goal' as const, image: 'preset:laptop', today: '2026-10-22' }
+  it('turns a month into its last day, and leaves it out when empty', () => {
+    expect(validateDreamForm({ ...base, by: '2027-02' }, 'CNY')).toMatchObject({ ok: true, input: { targetDate: '2027-02-28' } })
+    expect(validateDreamForm({ ...base, by: '' }, 'CNY')).toMatchObject({ ok: true, input: { targetDate: '' } })
+    expect(validateDreamForm(base, 'CNY')).toMatchObject({ ok: true })
+    if (validateDreamForm(base, 'CNY').ok) expect((validateDreamForm(base, 'CNY') as { input: object }).input).not.toHaveProperty('targetDate')
+  })
+  it('refuses a month already over; a treat never has one', () => {
+    expect(validateDreamForm({ ...base, by: '2026-09' }, 'CNY')).toMatchObject({ ok: false, errors: { by: 'Pick this month or later' } })
+    expect(validateDreamForm({ ...base, by: 'soon' }, 'CNY')).toMatchObject({ ok: false, errors: { by: 'Pick a month, like 2027-12' } })
+    expect(validateDreamForm({ ...base, kind: 'treat', by: '2027-02' }, 'CNY')).toMatchObject({ ok: true, input: { targetDate: '' } })
+  })
+})

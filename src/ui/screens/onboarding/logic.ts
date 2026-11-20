@@ -599,7 +599,7 @@ export function buildOnboardingInput(d: OnboardingDraft, pin: string | null, csv
       payday: d.payday,
       tone: d.tone,
       consent: { ...d.consent },
-      dreams: d.dreams.map(({ name, price, image, kind }) => ({ name, price, image, kind })),
+      dreams: d.dreams.map(({ name, price, image, kind, targetDate }) => ({ name, price, image, kind, ...(targetDate ? { targetDate } : {}) })),
       tripwires: tripwireInputs(d),
       autonomy: d.autonomy,
       caps: { perActionCap: caps.perAction, dailyCap: caps.daily, monthlyCap: caps.monthly },

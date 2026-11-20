@@ -120,6 +120,8 @@ export interface DreamInput {
   image: string
   kind: DreamItem['kind']
   note?: string
+  /** goals: by when (ISO date); '' clears it when editing */
+  targetDate?: string
 }
 
 export interface TripwireInput {

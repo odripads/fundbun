@@ -109,6 +109,7 @@ function sanitizeDream(v: unknown, i: number): DreamDraft | null {
     price,
     image,
     kind: v.kind === 'treat' ? 'treat' : 'goal',
+    ...(typeof v.targetDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v.targetDate) && v.kind !== 'treat' ? { targetDate: v.targetDate } : {}),
   }
 }
 

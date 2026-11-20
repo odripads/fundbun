@@ -1,7 +1,8 @@
 import { Camera, Gift, ShieldCheck, Target } from 'lucide-react'
 import { useId, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import type { DreamInput } from '../../../core/app-api'
-import { CURRENCY_SYMBOL } from '../../../core/money'
+import { targetPlan } from '../../../core/finance/dreams'
+import { CURRENCY_SYMBOL, fmt } from '../../../core/money'
 import type { Currency, DreamKind } from '../../../core/types'
 import { DreamImage, isPhotoDataUrl } from '../brand'
 import { Badge, Button, Chip, cx, Money, TextField } from '../ds'
@@ -10,6 +11,7 @@ import {
   guessPreset,
   KIND_COPY,
   MAX_NAME,
+  monthEnd,
   parsePrice,
   PRESET_LABELS,
   PRESETS,
@@ -24,6 +26,8 @@ import styles from './DreamEditor.module.css'
 
 export interface DreamEditorProps {
   currency: Currency
+  /** today (the app's date): the earliest month a goal can be due */
+  today?: string
   initial?: Partial<DreamInput>
   submitLabel?: string
   onSubmit: (input: DreamInput) => void
@@ -39,13 +43,15 @@ const KIND_ICON: Record<DreamKind, typeof Target> = { goal: Target, treat: Gift 
  * on-device photo (resized to ≤ 512 px, never uploaded). Until the user picks a picture, one is guessed from the
  * name ("Weekend in Chengdu" → the plane). A live preview card shows the item as it will appear.
  */
-export function DreamEditor({ currency, initial, submitLabel = 'Save', onSubmit, onCancel, suggestions }: DreamEditorProps) {
+export function DreamEditor({ currency, today, initial, submitLabel = 'Save', onSubmit, onCancel, suggestions }: DreamEditorProps) {
   const id = useId()
   const nameRef = useRef<HTMLInputElement>(null)
   const priceRef = useRef<HTMLInputElement>(null)
   const [name, setName] = useState(initial?.name ?? '')
   const [price, setPrice] = useState(priceText(initial?.price, currency))
   const [kind, setKind] = useState<DreamKind>(initial?.kind ?? 'goal')
+  // goals: by when (a month), optional
+  const [by, setBy] = useState(initial?.targetDate ? initial.targetDate.slice(0, 7) : '')
   // '' = not chosen yet → the picture follows the name
   const [chosen, setChosen] = useState(initial?.image ?? '')
   const [attempted, setAttempted] = useState(false)
@@ -54,8 +60,14 @@ export function DreamEditor({ currency, initial, submitLabel = 'Save', onSubmit,
   const image = chosen || presetImage(guessPreset(name) ?? 'gift')
   const isPhoto = isPhotoDataUrl(image)
   const showSuggestions = suggestions ?? !initial?.name
-  const errors: DreamFormErrors = attempted ? errorsOf(validateDreamForm({ name, price, kind, image }, currency)) : {}
+  const errors: DreamFormErrors = attempted ? errorsOf(validateDreamForm({ name, price, kind, image, by: by || (initial?.targetDate ? '' : undefined), today }, currency)) : {}
   const parsed = parsePrice(price, currency)
+  // with a price and a month: what it takes, said before saving
+  const byHint = (() => {
+    if (kind !== 'goal' || !parsed.ok || !/^\d{4}-\d{2}$/.test(by)) return null
+    const plan = targetPlan(monthEnd(by), parsed.minor, today ?? new Date().toISOString().slice(0, 10))
+    return `About ${fmt(plan.neededMonthly, currency, { decimals: false })} a month, or ${fmt(plan.neededDaily, currency, { decimals: false })} a day, from now.`
+  })()
 
   function applySuggestion(s: DreamSuggestion) {
     setName(s.name)
@@ -81,7 +93,7 @@ export function DreamEditor({ currency, initial, submitLabel = 'Save', onSubmit,
   function submit(e: FormEvent) {
     e.preventDefault()
     setAttempted(true)
-    const result = validateDreamForm({ name, price, kind, image }, currency)
+    const result = validateDreamForm({ name, price, kind, image, by: by || (initial?.targetDate ? '' : undefined), today }, currency)
     if (!result.ok) {
       ;(result.errors.name ? nameRef : priceRef).current?.focus()
       return
@@ -165,6 +177,19 @@ export function DreamEditor({ currency, initial, submitLabel = 'Save', onSubmit,
           })}
         </div>
       </fieldset>
+
+      {kind === 'goal' ? (
+        <TextField
+          label="By when? (optional)"
+          type="month"
+          placeholder="2027-12"
+          min={today ? today.slice(0, 7) : undefined}
+          value={by}
+          error={errors.by}
+          hint={byHint ?? 'A month you want it by. Bun works out what it takes.'}
+          onChange={(e) => setBy(e.currentTarget.value)}
+        />
+      ) : null}
 
       <fieldset className={styles.group} aria-describedby={`${id}-photo-note`}>
         <legend className={styles.legend}>

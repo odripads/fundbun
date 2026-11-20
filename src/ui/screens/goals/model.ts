@@ -151,3 +151,15 @@ export function countsLine(groups: DreamGroups): string {
   if (groups.achieved.length) parts.push(`${groups.achieved.length} achieved`)
   return parts.join(' · ')
 }
+
+/**
+ * The goal's own deadline, when it has one: "By Dec 2027", what it takes ("¥1,200/mo · ¥40/day") and whether the
+ * current pace gets there.
+ */
+export function targetFact(p: GoalProgress | undefined, currency: Currency): (Fact & { onSchedule: boolean }) | null {
+  if (!p?.targetDate) return null
+  if (isFunded(p)) return { value: `By ${monthYear(p.targetDate)}`, sub: 'Funded in time', onSchedule: true }
+  const need = `${fmtWhole(p.neededMonthly ?? 0, currency)}/mo · ${fmtWhole(p.neededDaily ?? 0, currency)}/day`
+  return { value: `By ${monthYear(p.targetDate)}`, sub: p.onSchedule ? `On schedule · ${need}` : `Needs ${need}`, onSchedule: !!p.onSchedule }
+}
+

@@ -102,6 +102,7 @@ function buildDreams(script: PersonaScript): DreamItem[] {
     const item: DreamItem = { id: seed.id, name: seed.name, price: seed.price, image: seed.image, kind: seed.kind, createdAt }
     if (seed.kind === 'goal') item.potAccountId = potId(seed.id)
     if (seed.note) item.note = seed.note
+    if (seed.targetDate && seed.kind === 'goal') item.targetDate = seed.targetDate
     return item
   })
 }

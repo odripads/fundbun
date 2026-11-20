@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { checking, makeCtx, makeDream, makeProfile, MEI_DREAMS, pot, potContributions, yuan } from './__fixtures__'
-import { allGoalProgress, dreamEquivalents, goalDelayDays, goalEquivalent, goalProgress, hoursOfWork, primaryGoal } from './dreams'
+import { checking, makeCtx, makeDream, makeProfile, MEI_DREAMS, meiLike, pot, potContributions, yuan } from './__fixtures__'
+import { allGoalProgress, dreamEquivalents, goalDelayDays, goalEquivalent, goalProgress, hoursOfWork, primaryGoal, targetPlan } from './dreams'
 
 const birkin = MEI_DREAMS[0]
 
@@ -139,5 +139,31 @@ describe('hoursOfWork', () => {
 describe('fixtures sanity', () => {
   it('dream prices are integer minor units', () => {
     for (const d of [...MEI_DREAMS, makeDream('x', 'X', 0.1, 'treat')]) expect(Number.isInteger(d.price)).toBe(true)
+  })
+})
+
+describe('goals with a target date', () => {
+  it('targetPlan spreads what is left over the days to the date', () => {
+    // ¥3,000 left, 100 days to go: ¥30 a day, about ¥912 a month
+    expect(targetPlan('2027-01-30', 300_000, '2026-10-22')).toEqual({ targetDate: '2027-01-30', neededDaily: 3_000, neededMonthly: 91_200 })
+    // funded: nothing needed
+    expect(targetPlan('2027-01-30', 0, '2026-10-22')).toMatchObject({ neededDaily: 0, neededMonthly: 0 })
+    // a date already past: all of it, now
+    expect(targetPlan('2026-10-01', 50_000, '2026-10-22')).toMatchObject({ neededDaily: 50_000, neededMonthly: 50_000 })
+  })
+
+  it('goalProgress says what it takes and whether the current pace gets there', () => {
+    const ctx = meiLike()
+    const birkin = ctx.dreams.find((d) => d.id === 'dream_birkin')!
+    // ¥74,600 left at ¥2,200 a month is about 34 months (Aug 2029): by end-2029 is on schedule, by end-2027 is not
+    const late = goalProgress({ ...birkin, targetDate: '2029-12-31' }, ctx)
+    expect(late).toMatchObject({ targetDate: '2029-12-31', onSchedule: true })
+    expect(late.neededMonthly).toBeLessThan(yuan(2_200))
+    const soon = goalProgress({ ...birkin, targetDate: '2027-12-31' }, ctx)
+    expect(soon.onSchedule).toBe(false)
+    expect(soon.neededMonthly).toBeGreaterThan(yuan(2_200))
+    expect(soon.neededDaily).toBe(Math.ceil((birkin.price - soon.saved) / 435))
+    // no date: nothing extra
+    expect(goalProgress(birkin, ctx)).not.toHaveProperty('targetDate')
   })
 })

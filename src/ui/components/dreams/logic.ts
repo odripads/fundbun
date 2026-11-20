@@ -109,11 +109,16 @@ export interface DreamFormValues {
   price: string
   kind: DreamKind
   image: string
+  /** goals: 'YYYY-MM' from the month picker, '' = no deadline */
+  by?: string
+  /** today, to refuse a month already over */
+  today?: string
 }
 
 export interface DreamFormErrors {
   name?: string
   price?: string
+  by?: string
 }
 
 export const MAX_NAME = 80
@@ -128,8 +133,19 @@ export function validateDreamForm(v: DreamFormValues, currency: Currency): Dream
   else if (name.length > MAX_NAME) errors.name = `Keep the name under ${MAX_NAME} characters`
   const price = parsePrice(v.price, currency)
   if (!price.ok) errors.price = price.error
-  if (errors.name || errors.price || !price.ok) return { ok: false, errors }
-  return { ok: true, input: { name, price: price.minor, kind: v.kind, image: v.image || presetImage('gift') } }
+  const by = v.kind === 'goal' ? (v.by ?? '').trim() : ''
+  if (by && !/^\d{4}-(0[1-9]|1[0-2])$/.test(by)) errors.by = 'Pick a month, like 2027-12'
+  else if (by && v.today && by < v.today.slice(0, 7)) errors.by = 'Pick this month or later'
+  if (errors.name || errors.price || errors.by || !price.ok) return { ok: false, errors }
+  const targetDate = by ? monthEnd(by) : ''
+  return { ok: true, input: { name, price: price.minor, kind: v.kind, image: v.image || presetImage('gift'), ...(v.by !== undefined ? { targetDate } : {}) } }
+}
+
+/** '2027-12' → '2027-12-31': a goal "by December" means by the end of it. */
+export function monthEnd(month: string): string {
+  const [y, m] = month.split('-').map(Number)
+  const last = new Date(Date.UTC(y, m, 0)).getUTCDate()
+  return `${month}-${String(last).padStart(2, '0')}`
 }
 
 /** Scale (w, h) down to fit inside a max × max box, keeping the aspect ratio. Never upscales. */
