@@ -80,7 +80,7 @@ https://odripads.github.io/fundbun/?demo=jing · demo video https://youtu.be/Se5
 ```
 npm install            # never `npm ci` (it deletes node_modules and its iCloud-ignore flag)
 npm run dev            # web (vite) + API together; the terminal prints the address to open
-npm test               # vitest, ~3,310 tests, about 1 minute — must stay green
+npm test               # vitest, ~3,350 tests, about 1 minute — must stay green
 npm run typecheck
 npm run evidence       # scripted scenarios → evidence/
 npm start              # production server on port 8787 (needed if the demo should call a real AI model)
@@ -143,6 +143,25 @@ trip a wire (`addSpending` now applies tripwires for this month's purchases).
   seventh day. A check-in counts as a logged day for the temper; logging a purchase checks in by itself.
 - Setup is four steps by default (`QUICK_FLOW` in `onboarding/logic.ts`); "Set up every detail instead" gives the
   full seven.
+
+**What changed on 20 Nov 2026 (Odri's revision list):**
+- The working copy is `~/fundbun-work`, outside iCloud (the Desktop copy kept getting offloaded). Commit, build and
+  deploy from there.
+- Log out (`components/account/LogOut.tsx`): Settings starts with who is using the app; demos "Leave", own data
+  "Log out and delete" (there is no online account).
+- Add spending asks the day (Today / Yesterday / Earlier). Goals take an optional target month (`targetDate`,
+  `targetPlan` in `finance/dreams.ts`), shown with what it takes per month and per day.
+- Over budget: a daily amount the user can live with (`finance/dailyplan.ts`, `DailyPlanSheet.tsx`), with what it
+  costs the goal; it becomes the temper's day limit for that month.
+- Daily tracking mode (`profile.mode = 'tracking'`): no target, no verdicts, target-based tripwires rest.
+- Subscriptions can be added by hand (`finance/subscriptions.ts`); with no bank they become bills to expect.
+- One screen reads any file (`screens/receipt/readFile.ts`): photo, PDF, .xlsx, .docx, CSV, text. Statements become
+  rows to import (`core/receipt/statement.ts`); one receipt or bill becomes a draft ("I paid this" / "A bill to
+  pay" → `app.addBill`). OCR ships with the app (`scripts/ocr-assets.mjs` → `public/ocr`, generated at every dev
+  and build); the CSP allows `'wasm-unsafe-eval'` and same-origin workers only.
+- Storage meter and a save-failed banner (`components/account/StorageMeter.tsx`, `app.storageStatus()`).
+- Move to another device: `app.exportBackup(password)` / `app.restoreBackup(text, password)`, encrypted like the
+  vault. One-way, no sync: real accounts need a server (open decision).
 
 ## 8. Rules for you
 - Run `npm test` after every change; don't leave the app broken. Small commits with clear messages.

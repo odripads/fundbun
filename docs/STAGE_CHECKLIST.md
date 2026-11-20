@@ -18,7 +18,7 @@ you should see; if you see something else, stop and fix that before going on.
 1. Open Terminal and go to the project:
 
    ```bash
-   cd ~/Desktop/STARTUP/fundbun
+   cd ~/fundbun-work
    ```
 
 2. Clear any Claude settings from the shell, so the app can't pick the wrong AI provider:
@@ -27,7 +27,7 @@ you should see; if you see something else, stop and fix that before going on.
    unset ANTHROPIC_API_KEY ANTHROPIC_BASE_URL
    ```
 
-3. Check the code is healthy. Expect about 3,310 tests passed, in about a minute:
+3. Check the code is healthy. Expect about 3,350 tests passed, in about a minute:
 
    ```bash
    npm run typecheck && npm test
@@ -84,7 +84,12 @@ you should see; if you see something else, stop and fix that before going on.
   back. As Arif, a small purchase gets the opposite: "Logged. You're on track." Let a judge name the purchase.
 - **Your own data (no bank):** setup is four short steps. After importing a statement, Bills lists the bills to
   expect from your repeating charges, each with **Mark as paid**. Nothing there says "Pay": no bank is connected.
-- **Receipts:** use the sample receipts. Reading a camera photo is not available in this build.
+- **Receipts and files:** Home → **Receipt or file**. Photos are read on the laptop (the first one takes up to half
+  a minute while the reader loads; turn on photo reading once). A PDF or Excel statement shows its rows, then
+  imports them. The sample receipts still work as a quick fallback.
+- **Over budget (Jing):** tap "Set a daily amount you can live with" under the headline. Pick an amount and the
+  sheet shows where October ends and how far the Birkin moves past the date Jing set.
+- **Leaving a demo:** Settings → top card → **Leave demo**, or the Bank demo chip → **Leave the demo**.
 - **Your own statement:** importing an older month (for example September) shows that month, with a note
   "Showing September 2026".
 - Questions judges like to type, which Bun now answers itself: "is this safe?", "is this connected to my real
