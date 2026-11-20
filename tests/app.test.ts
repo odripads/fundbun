@@ -1585,3 +1585,46 @@ describe('daily tracking mode (no target)', () => {
     expect(app.setProfile({ mode: 'bogus' as never }).ok).toBe(false)
   })
 })
+
+describe('subscriptions added by hand', () => {
+  const own = () => {
+    const app = createFundBunApp({ storage: memoryStorage(), llmBaseUrl: null, now: () => new Date('2026-11-20T09:00:00+08:00') })
+    app.completeOnboarding(onboardingInput({ dataSource: { kind: 'csv', startingBalance: 2_000_000, text: 'Date,Description,Amount\n2026-11-03,Hema Fresh,-120.00' } }))
+    return app
+  }
+
+  it('is listed with the others, and with no bank it is a bill to expect on its date', () => {
+    const app = own()
+    expect(app.addSubscription({ name: '  ', amount: 3_000, cadence: 'monthly', nextDate: '2026-11-25' }).ok).toBe(false)
+    const r = app.addSubscription({ name: 'Netflix', amount: 6_800, cadence: 'monthly', nextDate: '2026-11-25' })
+    expect(r.ok).toBe(true)
+    const series = app.getSnapshot().derived.recurring.find((s) => s.manual)
+    expect(series).toMatchObject({ merchant: 'Netflix', lastAmount: 6_800, annualCost: 81_600, status: 'active', isSubscription: true })
+    expect(app.getSnapshot().state.bank.bills.map((b) => `${b.name} ${b.dueDate} ${b.status}`)).toContain('Netflix 2026-11-25 upcoming')
+  })
+
+  it('"Mark as paid" moves it on to next month; a statement row for it does the same', () => {
+    const app = own()
+    app.addSubscription({ name: 'Netflix', amount: 6_800, cadence: 'monthly', nextDate: '2026-11-25' })
+    const bill = app.getSnapshot().state.bank.bills.find((b) => b.name === 'Netflix')!
+    expect(app.markBillPaid(bill.id)).toEqual({ ok: true })
+    expect(app.getSnapshot().state.subscriptions?.[0].nextDate).toBe('2026-12-25')
+    expect(app.getSnapshot().state.bank.bills.filter((b) => b.name === 'Netflix').map((b) => `${b.dueDate} ${b.status}`)).toEqual(['2026-11-25 paid', '2026-12-25 upcoming'])
+    // undo puts it back
+    expect(app.unmarkBillPaid(bill.id)).toEqual({ ok: true })
+    expect(app.getSnapshot().state.subscriptions?.[0].nextDate).toBe('2026-11-25')
+    expect(app.getSnapshot().state.bank.bills.filter((b) => b.name === 'Netflix').map((b) => `${b.dueDate} ${b.status}`)).toEqual(['2026-11-25 upcoming'])
+    // the charge shows up on a statement: paid by itself
+    app.importCsv('Date,Description,Amount\n2026-11-24,NETFLIX.COM,-68.00')
+    expect(app.getSnapshot().state.subscriptions?.[0].nextDate).toBe('2026-12-25')
+    expect(app.getSnapshot().state.bank.bills.find((b) => b.id === bill.id)?.status).toBe('paid')
+  })
+
+  it('removing it takes its open bill too', () => {
+    const app = own()
+    const { id } = app.addSubscription({ name: 'Gym', amount: 19_900, cadence: 'monthly', nextDate: '2026-12-01' })
+    expect(app.removeSubscription(id!)).toEqual({ ok: true })
+    expect(app.getSnapshot().state.bank.bills.some((b) => b.name === 'Gym')).toBe(false)
+    expect(app.getSnapshot().derived.recurring.some((s) => s.manual)).toBe(false)
+  })
+})

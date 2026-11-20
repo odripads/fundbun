@@ -1,4 +1,5 @@
 import { checkInView } from '../finance/checkin'
+import { withManual } from '../finance/subscriptions'
 import { agentRecords } from '../agent/actions'
 import type { CapUsage, DerivedState, LlmStatus } from '../app-api'
 import { compareDate, endOfMonth } from '../dates'
@@ -102,7 +103,7 @@ function lazyFinance(state: AppState): FinanceDerived {
     get history() { return once<MonthHistoryPoint[]>('monthHistory', [], (c) => monthHistory(c, HISTORY_MONTHS)) },
     get recurring() {
       return once<RecurringSeries[]>('detectRecurring', [], (c) =>
-        detectRecurring(c.bank.transactions, c.bank.today, c.bank.cancelledMerchants))
+        withManual(detectRecurring(c.bank.transactions, c.bank.today, c.bank.cancelledMerchants), c.subscriptions))
     },
     get findings() { return once<BillFinding[]>('analyzeBills', [], (c) => analyzeBills(c, derived.recurring)) },
     get insights() { return once<Insight[]>('generateInsights', [], (c) => generateInsights(c)) },

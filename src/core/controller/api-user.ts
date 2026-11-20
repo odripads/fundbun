@@ -8,6 +8,7 @@ import { appendAudit, verifyAuditAnchored } from './audit'
 import { LOCKED_MSG, NOT_SET_UP_MSG, expirePending, syncClock, userTx, userTxValue, type Core } from './core'
 import { recordCheckIn } from '../finance/checkin'
 import { MARKED_PAID_PREFIX, hasBank, syncExpectedBills } from '../finance/expected'
+import { nextDue, subIdOfBill, subscriptionInputError, type ManualSubscriptionInput } from '../finance/subscriptions'
 import { applyTripwires } from './tripwires'
 import {
   advanceDaysIn,
@@ -116,11 +117,40 @@ export function createUserApi(core: Core, onLlmGranted: () => void): UserApi {
         appendAudit(draft, core.now(), 'user', 'data_import', `Added ${added.length} spending${added.length === 1 ? '' : 's'}`, {
           added: added.length, duplicates, source: candidates[0]?.source ?? 'unknown',
         })
-        syncExpectedBills(draft.bank)
+        syncExpectedBills(draft.bank, draft.subscriptions)
         // logging a purchase is showing up: it checks in for the day
         draft.checkIns = recordCheckIn(draft.checkIns, draft.bank.today).checkIns
       }
       return { added: added.length, duplicates }
+    })
+  }
+
+  /** A subscription the user adds by hand (finance/subscriptions): listed with the detected ones, and a bill to expect. */
+  function addSubscription(input: ManualSubscriptionInput): Result & { id?: string } {
+    if (core.lock.locked || !store.get().profile) return { ok: false, error: 'Unlock the app first.' }
+    const err = subscriptionInputError(input)
+    if (err) return { ok: false, error: err }
+    syncClock(core)
+    return store.mutate((draft) => {
+      const list = draft.subscriptions ?? []
+      const id = `sub_${Date.now().toString(36)}${list.length}`
+      list.push({ id, name: input.name.trim(), amount: input.amount, cadence: input.cadence, nextDate: input.nextDate, addedOn: draft.bank.today })
+      draft.subscriptions = list
+      appendAudit(draft, core.now(), 'user', 'user_action', `Subscription added: ${input.name.trim()}`, { amount: input.amount, cadence: input.cadence })
+      syncExpectedBills(draft.bank, draft.subscriptions)
+      return { ok: true, id }
+    })
+  }
+
+  function removeSubscription(id: string): Result {
+    if (core.lock.locked || !store.get().profile) return { ok: false, error: 'Unlock the app first.' }
+    return store.mutate((draft) => {
+      const sub = draft.subscriptions?.find((s) => s.id === id)
+      if (!sub) return { ok: false, error: 'That subscription is not on your list.' }
+      draft.subscriptions = (draft.subscriptions ?? []).filter((s) => s.id !== id)
+      appendAudit(draft, core.now(), 'user', 'user_action', `Subscription removed: ${sub.name}`, {})
+      syncExpectedBills(draft.bank, draft.subscriptions)
+      return { ok: true }
     })
   }
 
@@ -186,9 +216,13 @@ export function createUserApi(core: Core, onLlmGranted: () => void): UserApi {
       const { added } = mergeTransactions(draft, [txn])
       bill.status = 'paid'
       bill.paidTxnId = added[0]?.id ?? txn.id
+      // a hand-added subscription moves on to its next date
+      const subId = subIdOfBill(bill)
+      const sub = subId ? draft.subscriptions?.find((s) => s.id === subId) : undefined
+      if (sub && sub.nextDate === bill.dueDate) sub.nextDate = nextDue(sub.nextDate, sub.cadence)
       applyTripwires(draft, added.filter((t) => t.date.slice(0, 7) === draft.bank.today.slice(0, 7)), ts)
       appendAudit(draft, ts, 'user', 'user_action', `Marked ${bill.name} as paid`, { billId: bill.id, amount: bill.amountDue, source: bill.source })
-      syncExpectedBills(draft.bank)
+      syncExpectedBills(draft.bank, draft.subscriptions)
       return { ok: true }
     })
   }
@@ -203,8 +237,15 @@ export function createUserApi(core: Core, onLlmGranted: () => void): UserApi {
       draft.bank.transactions = draft.bank.transactions.filter((t) => t.id !== txnId)
       bill.status = bill.dueDate < draft.bank.today ? 'overdue' : 'upcoming'
       delete bill.paidTxnId
+      const subId = subIdOfBill(bill)
+      const sub = subId ? draft.subscriptions?.find((s) => s.id === subId) : undefined
+      if (sub && sub.nextDate === nextDue(bill.dueDate, sub.cadence)) {
+        sub.nextDate = bill.dueDate
+        // the bill for the date after it was only there because of the payment: it goes
+        draft.bank.bills = draft.bank.bills.filter((b) => !(subIdOfBill(b) === sub.id && b.status !== 'paid' && b.dueDate > bill.dueDate))
+      }
       appendAudit(draft, core.now(), 'user', 'user_action', `Reopened ${bill.name}`, { billId: bill.id })
-      syncExpectedBills(draft.bank)
+      syncExpectedBills(draft.bank, draft.subscriptions)
       return { ok: true }
     })
   }
@@ -285,6 +326,8 @@ export function createUserApi(core: Core, onLlmGranted: () => void): UserApi {
     unmarkBillPaid,
     checkIn,
     setDailyPlan,
+    addSubscription,
+    removeSubscription,
     transactions: (filter) => filterTransactions(store.get().bank.transactions, filter),
 
     // ── sandbox / demo controls ──

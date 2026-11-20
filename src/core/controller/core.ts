@@ -92,7 +92,7 @@ export function syncClock(core: Core): boolean {
       for (const b of draft.bank.bills) if (b.status === 'upcoming' && b.dueDate < real) b.status = 'overdue'
     }
     // a new day: what is due soon has moved
-    syncExpectedBills(draft.bank)
+    syncExpectedBills(draft.bank, draft.subscriptions)
     appendAudit(draft, ts, 'system', 'session_start', `Calendar moved to today (${real})`, {
       clock: 'real', from, to: real, days, txns: txns.length, events: events.length,
     })

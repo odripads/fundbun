@@ -1,4 +1,5 @@
 import type { CheckInView } from './finance/checkin'
+import type { ManualSubscriptionInput } from './finance/subscriptions'
 import type {
   AppSettings,
   AppState,
@@ -284,6 +285,12 @@ export interface AppApi {
    * by it. null removes it. It ends with the month.
    */
   setDailyPlan(amount: Minor | null): Result
+  /**
+   * Add a subscription by hand (a plan paid by card, a gym paid in cash): listed with the detected ones, counted in
+   * the yearly total, and with no bank connected a bill to expect on its next date.
+   */
+  addSubscription(input: ManualSubscriptionInput): Result & { id?: string }
+  removeSubscription(id: string): Result
   /** Bill X-ray via the agent (xray_bill tool) — returns the assistant message with the xray card */
   xrayBill(text: string): Promise<ChatMessage>
   transactions(filter?: { month?: YearMonth; category?: CategoryId; query?: string }): Transaction[]

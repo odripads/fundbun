@@ -178,7 +178,7 @@ describe('BillsScreen — a brand-new user with no bank history', () => {
     expect(container.textContent).toContain('No bills yet')
     expect(container.textContent).toContain('Nothing due for two weeks')
     expect(container.textContent).toContain('All calm on the bills front')
-    expect(container.textContent).toContain('No subscriptions spotted')
+    expect(container.textContent).toContain('No subscriptions yet')
     // no sandbox bills to try, but pasting still works
     expect(container.querySelector('#bills-xray textarea')).not.toBeNull()
   })

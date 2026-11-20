@@ -1,6 +1,7 @@
 import { addDays, dayOfMonth, daysInMonth, shiftMonth, ym } from '../dates'
-import type { BankState, Bill, ISODate, RecurringSeries, Transaction, YearMonth } from '../types'
+import type { BankState, Bill, ISODate, ManualSubscription, RecurringSeries, Transaction, YearMonth } from '../types'
 import { detectRecurring } from './recurring'
+import { manualBill, manualBillId, nextDue, paidBy, subIdOfBill } from './subscriptions'
 
 /**
  * FundBun works in two steps.
@@ -103,8 +104,9 @@ export function expectedBills(recurring: RecurringSeries[], txns: Transaction[],
  * date). A bill whose charge has since shown up on a statement is marked paid; one that went stale is dropped;
  * bills the user marked as paid, and bills from anywhere else, are left alone. Does nothing when a bank is connected.
  */
-export function syncExpectedBills(bank: BankState): void {
+export function syncExpectedBills(bank: BankState, subs: ManualSubscription[] = []): void {
   if (hasBank(bank)) return
+  syncManualSubs(bank, subs)
   const recurring = detectRecurring(bank.transactions, bank.today, bank.cancelledMerchants)
   const byId = new Map(bank.transactions.map((t) => [t.id, t]))
   const views = new Map<string, SeriesView>()
@@ -122,7 +124,7 @@ export function syncExpectedBills(bank: BankState): void {
   const keepPaidFrom = addDays(bank.today, -PAID_KEEP_DAYS)
   const kept: Bill[] = []
   for (const b of bank.bills) {
-    if (b.source !== 'expected') {
+    if (b.source !== 'expected' || subIdOfBill(b)) {
       kept.push(b)
       continue
     }
@@ -140,3 +142,41 @@ export function syncExpectedBills(bank: BankState): void {
   }
   bank.bills = [...kept, ...fresh.values()].sort((a, b) => (a.dueDate < b.dueDate ? -1 : a.dueDate > b.dueDate ? 1 : 0))
 }
+
+/**
+ * Hand-added subscriptions as bills to expect: one per subscription on its next date, once it is within the
+ * horizon. A charge for it on the ledger (same amount, within three days) pays it and moves the subscription on to
+ * its next date; so does "Mark as paid". A removed subscription's open bill goes with it.
+ */
+function syncManualSubs(bank: BankState, subs: ManualSubscription[]): void {
+  const live = new Set(subs.map((s) => s.id))
+  bank.bills = bank.bills.filter((b) => {
+    const id = subIdOfBill(b)
+    return !id || live.has(id) || b.status === 'paid'
+  })
+  const horizon = addDays(bank.today, EXPECTED_HORIZON_DAYS)
+  for (const sub of subs) {
+    // a statement row already pays it: close that bill and move on (a few rounds catch up a long absence)
+    for (let i = 0; i < 24; i++) {
+      const txn = paidBy(sub, bank.transactions)
+      if (!txn) break
+      const id = manualBillId(sub, sub.nextDate)
+      const open = bank.bills.find((b) => b.id === id)
+      if (open) {
+        open.status = 'paid'
+        open.paidTxnId = txn.id
+      }
+      sub.nextDate = nextDue(sub.nextDate, sub.cadence)
+    }
+    if (sub.nextDate > horizon) continue
+    const id = manualBillId(sub, sub.nextDate)
+    const existing = bank.bills.find((b) => b.id === id)
+    if (!existing) bank.bills.push(manualBill(sub, bank.today))
+    else if (existing.status !== 'paid') {
+      existing.name = sub.name
+      existing.amountDue = sub.amount
+      existing.status = sub.nextDate < bank.today ? 'overdue' : 'upcoming'
+    }
+  }
+}
+

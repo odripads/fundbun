@@ -29,6 +29,8 @@ function selectBills(s: AppSnapshot) {
     findings: s.derived.findings,
     recurring: s.derived.recurring,
     awaiting: s.derived.awaiting,
+    // the demo personas' bank is simulated; a user's own data has none
+    bankConnected: !!s.state.bank.personaId,
   }
 }
 
@@ -84,7 +86,7 @@ export function BillsScreen() {
         runner={runner}
         onJump={jump}
       />
-      <SubscriptionsSection currency={currency} tone={tone} recurring={data.recurring} awaiting={data.awaiting} runner={runner} />
+      <SubscriptionsSection currency={currency} tone={tone} recurring={data.recurring} awaiting={data.awaiting} runner={runner} today={data.today} noBank={!data.bankConnected} />
       <XraySection
         currency={currency}
         profileName={data.profile.name}

@@ -209,6 +209,19 @@ export interface RecurringSeries {
   annualCost: Minor
   priceChange?: { from: Minor; to: Minor; pct: number; date: ISODate }
   status: 'active' | 'cancel_requested' | 'cancelled'
+  /** added by the user, not detected (finance/subscriptions) */
+  manual?: boolean
+}
+
+/** A subscription the user added by hand (finance/subscriptions). */
+export interface ManualSubscription {
+  id: string
+  name: string
+  amount: Minor
+  cadence: Cadence
+  /** the next payment date */
+  nextDate: ISODate
+  addedOn: ISODate
 }
 
 export type FindingKind =
@@ -897,6 +910,8 @@ export interface FinanceContext {
   checkedDays?: ISODate[]
   /** the daily amount the user agreed to live on this month (finance/dailyplan) */
   dailyPlan?: DailyPlan
+  /** subscriptions the user added by hand (finance/subscriptions) */
+  subscriptions?: ManualSubscription[]
 }
 
 /** A daily amount the user can realistically live on for the rest of a month that ran over (finance/dailyplan). */
@@ -946,6 +961,8 @@ export interface AppState {
   checkIns?: CheckIns
   /** the daily amount for this month, when the user set one */
   dailyPlan?: DailyPlan
+  /** subscriptions the user added by hand */
+  subscriptions?: ManualSubscription[]
 }
 
 /** The daily check-in habit (finance/checkin). */

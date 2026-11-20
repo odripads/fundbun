@@ -1,7 +1,7 @@
 import { CATEGORIES } from '../categories'
 import { CURRENCY_SYMBOL } from '../money'
 import { defaultMandate } from '../security/policy'
-import type { Account, AppSettings, AppState, BankState, BudgetPlan, CategoryBudget, CheckIns, Consent, Currency, DailyPlan, FinanceContext, ISODate, Mandate, Minor, Profile, Tone, TripwireKind, YearMonth } from '../types'
+import type { Account, AppSettings, AppState, BankState, BudgetPlan, CategoryBudget, CheckIns, Consent, Currency, DailyPlan, FinanceContext, ISODate, Mandate, ManualSubscription, Minor, Profile, Tone, TripwireKind, YearMonth } from '../types'
 import { CHECKING_ID, DEFAULT_SEED } from './constants'
 import { isRecord, safely } from './util'
 
@@ -64,6 +64,7 @@ export function ctxOf(state: AppState): FinanceContext | null {
     profile, bank, dreams, budget, tripwires,
     ...(state.checkIns?.days.length ? { checkedDays: state.checkIns.days } : {}),
     ...(state.dailyPlan ? { dailyPlan: state.dailyPlan } : {}),
+    ...(state.subscriptions?.length ? { subscriptions: state.subscriptions } : {}),
   }
 }
 
@@ -169,7 +170,14 @@ export function parseState(raw: unknown): AppState | null {
     settings: { ...base.settings, ...rec<Partial<AppSettings>>(raw.settings) },
     ...parseCheckIns(raw.checkIns),
     ...parseDailyPlan(raw.dailyPlan),
+    ...parseSubscriptions(raw.subscriptions),
   }
+}
+
+/** Hand-added subscriptions of a save: complete records only. */
+function parseSubscriptions(raw: unknown): { subscriptions?: ManualSubscription[] } {
+  const subs = records<ManualSubscription>(raw, (s) => isStr(s.id) && isStr(s.name) && isNum(s.amount) && s.amount > 0 && isStr(s.cadence) && isStr(s.nextDate))
+  return subs.length ? { subscriptions: subs } : {}
 }
 
 function parseDailyPlan(raw: unknown): { dailyPlan?: DailyPlan } {

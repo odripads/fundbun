@@ -210,7 +210,7 @@ export interface ImportSummary {
  */
 export function importParsedIn(draft: AppState, parsed: CsvImportResult, ts: ISODateTime): ImportSummary {
   const { added, duplicates, matched } = mergeTransactions(draft, parsed.transactions)
-  syncExpectedBills(draft.bank)
+  syncExpectedBills(draft.bank, draft.subscriptions)
   const month = ym(draft.bank.today)
   applyTripwires(draft, added.filter((t) => ym(t.date) === month), ts)
   appendAudit(draft, ts, 'user', 'data_import', `Imported ${added.length} transaction(s) from CSV`, {

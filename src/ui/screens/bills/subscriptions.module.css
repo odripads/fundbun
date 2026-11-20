@@ -211,3 +211,19 @@
 .row[data-status='cancelled'] .rowIcon {
   opacity: 0.6;
 }
+
+.addButton {
+  justify-self: start;
+}
+
+.addForm {
+  display: grid;
+  gap: var(--s-4);
+  padding-bottom: var(--s-2);
+}
+
+.manualBadge {
+  margin-left: var(--s-2);
+  vertical-align: middle;
+}
+
