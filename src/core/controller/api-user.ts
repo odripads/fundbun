@@ -1,5 +1,5 @@
 import { ym } from '../dates'
-import type { AppApi, Result } from '../app-api'
+import type { AppApi, Result, StorageStatus } from '../app-api'
 import { importCsv as parseCsvImport } from '../sandbox/csv'
 import { auditToJSONL } from '../security/audit'
 import { clipForDisplay } from '../security/redact'
@@ -316,6 +316,10 @@ export function createUserApi(core: Core, onLlmGranted: () => void): UserApi {
       const head = core.lock.locked ? null : safely('auditHead', () => core.persistence.auditHead(), null)
       return safely('verifyAudit', () => verifyAuditAnchored(log, head), { ok: false, count: log.length, reason: 'Audit verification is unavailable' })
     },
+    storageStatus() {
+      return storageStatusOf(core.persistence.status(), store.get())
+    },
+
     exportData() {
       safely('audit data_export', () => store.mutate((draft) => {
         appendAudit(draft, core.now(), 'user', 'data_export', 'Exported all local data', {
@@ -364,3 +368,18 @@ export function createUserApi(core: Core, onLlmGranted: () => void): UserApi {
     },
   }
 }
+
+/** Browser storage gives one site about 5 million characters (localStorage). */
+export const STORAGE_LIMIT_CHARS = 5 * 1024 * 1024
+
+/** How full this device's storage is, and how long it lasts at the pace since the user started. */
+export function storageStatusOf(p: { chars: number; error?: string }, state: AppState): StorageStatus {
+  const used = p.chars
+  const share = Math.min(1, used / STORAGE_LIMIT_CHARS)
+  const started = state.profile?.onboardedAt ? Date.parse(state.profile.onboardedAt) : NaN
+  const months = Number.isFinite(started) ? (Date.parse(state.bank.today) - started) / (30.4 * 86_400_000) : 0
+  // a demo's history arrives all at once, and the first weeks say little: no estimate then
+  const monthsLeft = months >= 1 && !state.profile?.personaId ? Math.max(0, Math.floor(((STORAGE_LIMIT_CHARS * 0.9 - used) / used) * months)) : undefined
+  return { used, limit: STORAGE_LIMIT_CHARS, share, ...(monthsLeft !== undefined ? { monthsLeft } : {}), ...(p.error ? { error: p.error } : {}) }
+}
+

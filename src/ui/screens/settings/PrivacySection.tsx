@@ -11,6 +11,7 @@ import { navigate } from '../../router'
 import { shallowEqual, useApp, useSnapshot } from '../../state'
 import { byteSize, downloadText, exportFileName } from './download'
 import { DELETE_PHRASE, consentVersionLabel, deleteConfirmed, engineCopy } from './logic'
+import { StorageMeter } from '../../components/account/StorageMeter'
 import styles from './Settings.module.css'
 
 function selectPrivacy(s: AppSnapshot) {
@@ -107,6 +108,10 @@ export function PrivacySection() {
           </span>
           <Button size="sm" variant="ghost" iconStart={<RefreshCw />} loading={checking} onClick={check}>Check</Button>
         </div>
+      </Card>
+
+      <Card padding="none">
+        <StorageMeter />
       </Card>
 
       <List card>

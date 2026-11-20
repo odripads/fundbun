@@ -1628,3 +1628,32 @@ describe('subscriptions added by hand', () => {
     expect(app.getSnapshot().derived.recurring.some((s) => s.manual)).toBe(false)
   })
 })
+
+describe('storage on this device', () => {
+  it('reports what is used, and how long it lasts once there is a month of history', () => {
+    const storage = memoryStorage()
+    let clock = '2026-10-01T09:00:00+08:00'
+    const app = createFundBunApp({ storage, llmBaseUrl: null, now: () => new Date(clock) })
+    app.completeOnboarding(onboardingInput({ dataSource: { kind: 'csv', startingBalance: 2_000_000, text: 'Date,Description,Amount\n2026-10-01,Hema Fresh,-120.00' } }))
+    const first = app.storageStatus()
+    expect(first.used).toBeGreaterThan(1_000)
+    expect(first.limit).toBe(5 * 1024 * 1024)
+    expect(first.monthsLeft).toBeUndefined()
+    expect(first.error).toBeUndefined()
+    clock = '2026-11-20T09:00:00+08:00'
+    const later = createFundBunApp({ storage, llmBaseUrl: null, now: () => new Date(clock) })
+    later.checkIn()
+    expect(later.storageStatus().monthsLeft).toBeGreaterThan(120)
+  })
+
+  it('a full device is reported, never silent', () => {
+    const inner = memoryStorage()
+    let full = false
+    const storage = { getItem: (k: string) => inner.getItem(k), removeItem: (k: string) => inner.removeItem(k), setItem: (k: string, v: string) => { if (full) throw new Error('QuotaExceededError'); inner.setItem(k, v) } }
+    const app = createFundBunApp({ storage, llmBaseUrl: null, now: () => new Date('2026-11-20T09:00:00+08:00') })
+    app.completeOnboarding(onboardingInput())
+    full = true
+    app.checkIn()
+    expect(app.storageStatus().error).toMatch(/QuotaExceededError/)
+  })
+})

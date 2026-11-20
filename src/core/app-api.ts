@@ -243,6 +243,11 @@ export interface AppApi {
   verifyAudit(): { ok: boolean; count: number; brokenAt?: number; reason?: string }
   /** full JSON export of local data (PIPL right of access/portability) */
   exportData(): string
+  /**
+   * How much of this device's storage FundBun uses (browser storage: about 5 MB per site), how long that lasts at
+   * the user's pace, and the error when the last save failed (a full device).
+   */
+  storageStatus(): StorageStatus
   exportAuditJSONL(): string
 
   // ── vault (at-rest encryption of local data with the PIN) ──
@@ -312,3 +317,17 @@ export interface AppApi {
   simulatePurchase(p: SandboxPurchase): { txn: Transaction; events: TripwireEvent[] }
   advanceDays(n: number): { txns: Transaction[]; events: TripwireEvent[] }
 }
+
+export interface StorageStatus {
+  /** characters saved (browser storage counts characters) */
+  used: number
+  /** the browser's usual limit for one site */
+  limit: number
+  /** used / limit */
+  share: number
+  /** about how many more months fit at the pace so far; undefined in the first weeks */
+  monthsLeft?: number
+  /** the last save failed: the newest changes exist only until the page is closed */
+  error?: string
+}
+

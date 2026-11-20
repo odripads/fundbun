@@ -54,6 +54,8 @@ export interface Persistence {
   auditHead(): AuditHead | null
   /** forget the anchor — only when a NEW audit chain intentionally starts (demo load, unreadable data) */
   resetAuditHead(): void
+  /** size of the last save in characters, and the error when the last save failed (a full device, for example) */
+  status(): { chars: number; error?: string }
   /** the persisted vault unlock throttle (zeros when none or unreadable) */
   unlockThrottle(): UnlockThrottle
   /** persist it; null clears it (after a successful unlock, a wipe or turning the vault off) */
@@ -117,6 +119,7 @@ export function createPersistence(storage: StorageLike, key: string): Persistenc
   let queued: AppState | null = null
   let running: Promise<void> | null = null
   let lastError: string | undefined
+  let lastChars = 0
 
   function read(): string | null {
     try {
@@ -128,6 +131,7 @@ export function createPersistence(storage: StorageLike, key: string): Persistenc
   }
 
   function write(value: string): boolean {
+    lastChars = value.length
     try {
       storage.setItem(key, value)
       lastError = undefined
@@ -256,6 +260,7 @@ export function createPersistence(storage: StorageLike, key: string): Persistenc
     resetAuditHead,
     unlockThrottle,
     setUnlockThrottle,
+    status: () => ({ chars: lastChars || (read()?.length ?? 0), ...(lastError ? { error: lastError } : {}) }),
   }
 }
 

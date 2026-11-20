@@ -6,6 +6,7 @@ import { ToastViewport } from '../ds/Toast'
 import { GlassBoxSlot } from './GlassBoxSlot'
 import { TopBarSlotContext } from './ScreenTopBar'
 import { SteamBackdrop } from './SteamBackdrop'
+import { SaveFailedBanner } from '../account/StorageMeter'
 import styles from './AppFrame.module.css'
 
 export interface AppFrameProps {
@@ -78,6 +79,7 @@ export function AppFrame({ chrome, topBar, tabBar, glassBox, glassBoxBusy, pageK
               </a>
               <div className={styles.topSlot} ref={setTopSlot}>{topBar}</div>
               <main id="main" ref={mainRef} tabIndex={-1} className={styles.main}>
+                {chrome === 'app' ? <SaveFailedBanner /> : null}
                 {children}
               </main>
             </div>
