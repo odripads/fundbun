@@ -1,10 +1,11 @@
 /**
- * Settings: the user's control room. Kill switch first, then profile, Bun's permissions, tripwires, security,
+ * Settings: the user's control room. Who is using the app (with Log out) first, then the kill switch, then profile, Bun's permissions, tripwires, security,
  * privacy & data, display, sandbox controls and about.
  */
 import { BadgeInfo, Bot, ChevronRight, ExternalLink, FlaskConical, GitBranch, Info, Landmark, ScrollText, Sparkles, Users } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { AppSnapshot } from '../../../core/app-api'
+import { AccountCard } from '../../components/account/LogOut'
 import { Logo } from '../../components/brand'
 import { Badge, Card, SectionHeader, Sheet, Toggle } from '../../components/ds'
 import { SandboxPanel } from '../../components/sandbox'
@@ -62,6 +63,7 @@ export function SettingsScreen() {
 
   return (
     <div className={styles.page}>
+      <AccountCard />
       <KillSwitch />
       <nav className={styles.jumps} aria-label="Settings sections">
         {JUMPS.map((j) => (

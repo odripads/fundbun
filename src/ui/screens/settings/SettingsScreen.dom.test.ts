@@ -113,3 +113,57 @@ describe('Settings dates and PIN prompts (F55, F68)', () => {
     expect(container.querySelector('#set-sandbox')!.textContent).toContain('Demo PIN 2580')
   })
 })
+
+describe('Settings › Log out (back to the start screen)', () => {
+  const dialog = () => document.querySelector('[role="dialog"], [role="alertdialog"]') as HTMLElement | null
+
+  it('a demo: "Leave demo" says nothing of yours is lost, then returns to the welcome screen', async () => {
+    const app = demo('mei')
+    const { container } = await renderSettings(app)
+    const account = container.querySelector('[aria-label="Account"]')!
+    expect(account.textContent).toContain('Jing’s demo')
+    expect(account.textContent).toContain('Bank demo')
+    await click(byText(account, 'Leave demo', 'button'))
+    await flush()
+    expect(dialog()!.textContent).toContain('nothing of yours is lost')
+    // "Stay" changes nothing
+    await click(byText(dialog()!, 'Stay', 'button'))
+    await flush(40)
+    expect(app.isOnboarded()).toBe(true)
+    await click(byText(account, 'Leave demo', 'button'))
+    await flush()
+    await click(byText(dialog()!, 'Leave the demo', 'button'))
+    await flush(40)
+    expect(app.isOnboarded()).toBe(false)
+    expect(window.location.hash).toBe('#/onboarding')
+  })
+
+  it('own data: the dialog says it deletes the data on this device and offers a copy first', async () => {
+    const app = createTestApp({ storage: memoryStorage() })
+    app.completeOnboarding({
+      name: 'Odri', currency: 'CNY', monthlyIncome: 1_500_000, targetSpend: 600_000, payday: 10, tone: 'gentle',
+      consent: { financialData: true, llmProcessing: false, notifications: false },
+      dreams: [{ name: 'Laptop', price: 800_000, image: 'preset:laptop', kind: 'goal' }],
+      autonomy: 'suggest', pin: '135790', dataSource: { kind: 'empty', startingBalance: 0 },
+    })
+    const { container } = await renderSettings(app)
+    const account = container.querySelector('[aria-label="Account"]')!
+    expect(account.textContent).toContain('Odri')
+    expect(account.textContent).toContain('on this device only')
+    await click(byText(account, 'Log out', 'button'))
+    await flush()
+    const d = dialog()!
+    expect(d.getAttribute('role')).toBe('alertdialog')
+    expect(d.textContent).toContain('no online account')
+    expect(byText(d, 'Save a copy first', 'button')).not.toBeNull()
+    await click(byText(d, 'Stay logged in', 'button'))
+    await flush(40)
+    expect(app.isOnboarded()).toBe(true)
+    await click(byText(account, 'Log out', 'button'))
+    await flush()
+    await click(byText(dialog()!, 'Log out and delete', 'button'))
+    await flush(40)
+    expect(app.isOnboarded()).toBe(false)
+    expect(window.location.hash).toBe('#/onboarding')
+  })
+})

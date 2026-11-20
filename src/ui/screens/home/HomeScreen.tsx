@@ -1,5 +1,6 @@
 import { Camera, ChevronDown, FlaskConical, Plus } from 'lucide-react'
 import { useCallback, useRef, useState, type TouchEvent } from 'react'
+import { LogOutDialog } from '../../components/account/LogOut'
 import { SandboxPanel } from '../../components/sandbox'
 import type { AppSnapshot } from '../../../core/app-api'
 import { monthLabel } from '../../../core/dates'
@@ -35,6 +36,7 @@ export function HomeScreen() {
   const lookBack = useSnapshot(selectLookBack)
   const bankDemo = useSnapshot(selectBankDemo)
   const [adding, setAdding] = useState(false)
+  const [leaving, setLeaving] = useState(false)
   const [check, setCheck] = useState<CheckRequest | null>(null)
   const [pull, setPull] = useState(0)
   const touchY = useRef<number | null>(null)
@@ -107,11 +109,29 @@ export function HomeScreen() {
             : 'Demo controls: simulated purchases and days in the sandbox bank. No real money moves.'
         }
         media={<span className={styles.sandboxIcon} aria-hidden="true"><FlaskConical /></span>}
-        footer={<Button fullWidth onClick={() => setSandbox(false)}>Done</Button>}
+        footer={
+          bankDemo ? (
+            <>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setSandbox(false)
+                  setLeaving(true)
+                }}
+              >
+                Leave the demo
+              </Button>
+              <Button onClick={() => setSandbox(false)}>Done</Button>
+            </>
+          ) : (
+            <Button fullWidth onClick={() => setSandbox(false)}>Done</Button>
+          )
+        }
       >
         {/* stays open after a purchase: the new transaction and the tripwires it fired show inline */}
         <SandboxPanel />
       </Sheet>
+      <LogOutDialog open={leaving} onClose={() => setLeaving(false)} />
     </div>
   )
 }
