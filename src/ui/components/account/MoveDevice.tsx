@@ -18,6 +18,7 @@ export function MoveDeviceSheet({ open, onClose }: { open: boolean; onClose: () 
   const toast = useToast()
   const [pw, setPw] = useState('')
   const [again, setAgain] = useState('')
+  const [pin, setPin] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -26,7 +27,8 @@ export function MoveDeviceSheet({ open, onClose }: { open: boolean; onClose: () 
     if (pw.length < MIN) return setError(`Use at least ${MIN} characters`)
     if (pw !== again) return setError('The two passwords don’t match')
     setBusy(true)
-    const r = await app.exportBackup(pw)
+    const r = await app.exportBackup(pw, pin)
+    setPin('')
     setBusy(false)
     if (!r.ok) return setError(r.error)
     const ok = downloadText(exportFileName('copy', 'fundbun'), r.text, 'application/octet-stream')
@@ -50,7 +52,8 @@ export function MoveDeviceSheet({ open, onClose }: { open: boolean; onClose: () 
           <li>There, open FundBun and tap <strong>Restore from a copy</strong>.</li>
         </ol>
         <TextField label="Password for this copy" type="password" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.currentTarget.value)} hint={`At least ${MIN} characters. Without it the copy can’t be opened, by anyone.`} />
-        <TextField label="Type it again" type="password" autoComplete="new-password" value={again} error={error ?? undefined} onChange={(e) => setAgain(e.currentTarget.value)} />
+        <TextField label="Type it again" type="password" autoComplete="new-password" value={again} onChange={(e) => setAgain(e.currentTarget.value)} />
+        <TextField label="Your PIN" type="password" inputMode="numeric" autoComplete="off" maxLength={6} value={pin} error={error ?? undefined} hint="A copy holds everything, so it needs your PIN. The copy itself carries no PIN." onChange={(e) => setPin(e.currentTarget.value.replace(/\D/g, ''))} />
         <Button type="submit" size="lg" fullWidth iconStart={<Download />} loading={busy}>Save encrypted copy</Button>
       </form>
     </Sheet>
@@ -64,6 +67,7 @@ export function RestoreSheet({ open, onClose }: { open: boolean; onClose: () => 
   const input = useRef<HTMLInputElement>(null)
   const [file, setFile] = useState<{ name: string; text: string } | null>(null)
   const [pw, setPw] = useState('')
+  const [pin, setPin] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -71,10 +75,10 @@ export function RestoreSheet({ open, onClose }: { open: boolean; onClose: () => 
     e.preventDefault()
     if (!file) return setError('Choose the copy first')
     setBusy(true)
-    const r = await app.restoreBackup(file.text, pw)
+    const r = await app.restoreBackup(file.text, pw, pin)
     setBusy(false)
     if (!r.ok) return setError(r.error ?? 'That didn’t work.')
-    toast.show({ tone: 'success', title: 'Welcome back', message: 'Everything from your other device is here.' })
+    toast.show({ tone: 'success', title: 'Welcome back', message: 'Everything from your other device is here. Bun’s permissions start careful again: raise them in Settings with your new PIN.' })
     setFile(null)
     setPw('')
     onClose()
@@ -103,7 +107,8 @@ export function RestoreSheet({ open, onClose }: { open: boolean; onClose: () => 
         <Button type="button" variant="secondary" iconStart={<FileUp />} onClick={() => input.current?.click()}>
           {file ? file.name : 'Choose the copy'}
         </Button>
-        <TextField label="Its password" type="password" autoComplete="current-password" value={pw} error={error ?? undefined} onChange={(e) => setPw(e.currentTarget.value)} />
+        <TextField label="Its password" type="password" autoComplete="current-password" value={pw} onChange={(e) => setPw(e.currentTarget.value)} />
+        <TextField label="A new PIN for this device" type="password" inputMode="numeric" autoComplete="off" maxLength={6} value={pin} error={error ?? undefined} hint="4–6 digits. It guards payments and Bun’s limits here." onChange={(e) => setPin(e.currentTarget.value.replace(/\D/g, ''))} />
         <Button type="submit" size="lg" fullWidth iconStart={<KeyRound />} loading={busy}>Restore</Button>
       </form>
     </Sheet>

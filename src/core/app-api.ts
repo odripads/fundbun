@@ -200,8 +200,9 @@ export interface AppApi {
    * Move to another device (FundBun has no server): an encrypted copy of everything, opened with a password of the
    * user's choosing. restoreBackup replaces what is on this device with it.
    */
-  exportBackup(password: string): Promise<{ ok: true; text: string } | { ok: false; error: string }>
-  restoreBackup(text: string, password: string): Promise<Result>
+  exportBackup(password: string, pin: string): Promise<{ ok: true; text: string } | { ok: false; error: string }>
+  /** only with nobody set up on this device; the user picks a new PIN, and permissions start at the defaults */
+  restoreBackup(text: string, password: string, newPin: string): Promise<Result>
 
   // ── agent ──
   /** run one agent turn (offline engine or LLM). Resolves with the assistant message. */

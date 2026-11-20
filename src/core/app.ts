@@ -1,4 +1,8 @@
 import { decryptJSON, encryptJSON, isVaultBlob } from './security/vault'
+import { verifyAudit } from './security/audit'
+import { createPin } from './security/pin'
+import { stepUp, pinFormatOk } from './controller/safety'
+import { exportableState } from './controller/api-user'
 import type { AppApi, Result } from './app-api'
 import type { AgentEngineFactory } from './agent/host'
 import { LlmClient } from './agent/llm'
@@ -21,7 +25,7 @@ import {
   type LoadResult,
   type StorageLike,
 } from './controller/persistence'
-import { emptyState, parseState } from './controller/state'
+import { emptyState, parseState, safeDefaultMandate } from './controller/state'
 import { createStore } from './controller/store'
 import { OK, errorMessage, fail, localISODate, safely } from './controller/util'
 import type { AppState, ISODateTime } from './types'
@@ -160,18 +164,24 @@ export function createFundBunApp(opts: CreateAppOptions = {}): FundBunApp {
   }
 
   /**
-   * A copy for another device: the whole state (PIN included, so it still works there), encrypted with a password
-   * the user picks (PBKDF2 → AES-GCM, as the vault). FundBun has no server, so this file is how data moves.
+   * A copy for another device: the user's data encrypted with a password they pick (PBKDF2 → AES-GCM, as the vault).
+   * FundBun has no server, so this file is how data moves. Making one needs the current PIN (it is everything at
+   * once), and the copy carries no PIN hash and no lockout state: the new device sets its own PIN.
    */
-  async function exportBackup(password: string): Promise<{ ok: true; text: string } | { ok: false; error: string }> {
+  async function exportBackup(password: string, pin: string): Promise<{ ok: true; text: string } | { ok: false; error: string }> {
     if (lock.locked || !store.get().profile) return { ok: false, error: LOCKED_MSG }
     if (typeof password !== 'string' || password.length < BACKUP_MIN_PASSWORD) return { ok: false, error: `Use a password of at least ${BACKUP_MIN_PASSWORD} characters` }
-    safely('audit backup', () => store.mutate((draft) => {
-      appendAudit(draft, now(), 'user', 'data_export', 'Saved an encrypted copy for another device', { transactions: draft.bank.transactions.length })
-    }), undefined)
-    const s = store.get()
-    // the vault password is never in the copy; the new device can turn its own vault on
-    const state: AppState = { ...s, settings: { ...s.settings, vault: false } }
+    const allowed = store.mutate((draft) => {
+      const v = stepUp(draft, pin, 'Save a copy for another device', now())
+      if (v.ok) appendAudit(draft, now(), 'user', 'data_export', 'Saved an encrypted copy for another device', { transactions: draft.bank.transactions.length })
+      return v
+    })
+    if (!allowed.ok) return { ok: false, error: allowed.error ?? 'Wrong PIN' }
+    const s = exportableState(store.get())
+    // no vault password, no PIN, no lockout counters: the copy is data, not access
+    const mandate = { ...s.mandate, failedPinAttempts: 0 }
+    delete mandate.pinLockedUntil
+    const state: AppState = { ...s, mandate, settings: { ...s.settings, vault: false } }
     try {
       const text = await encryptJSON({ kind: BACKUP_KIND, v: 1, exportedAt: now(), state }, password)
       return { ok: true, text }
@@ -180,9 +190,16 @@ export function createFundBunApp(opts: CreateAppOptions = {}): FundBunApp {
     }
   }
 
-  /** Restore a copy made by exportBackup on this device: it replaces whatever is here. */
-  async function restoreBackup(text: string, password: string): Promise<Result> {
+  /**
+   * Restore a copy made by exportBackup. Only on a device with nobody set up (the start screen, or after Log out),
+   * so it can never replace someone's data or roll back their PIN lockout. The user sets a new PIN, and Bun's
+   * permissions start at the careful defaults again (raised later in Settings, with that PIN). The restored audit
+   * chain is verified and the result recorded.
+   */
+  async function restoreBackup(text: string, password: string, newPin: string): Promise<Result> {
     if (lock.locked) return fail(LOCKED_MSG)
+    if (store.get().profile) return fail('Someone is set up on this device. Log out first, then restore.')
+    if (!pinFormatOk(newPin)) return fail('Pick a new PIN: 4–6 digits, not 1234 or 1111')
     if (typeof text !== 'string' || !isVaultBlob(text.trim())) return fail('That isn’t a FundBun copy. Pick the file you saved with “Move to another device”.')
     let raw: unknown
     try {
@@ -193,11 +210,17 @@ export function createFundBunApp(opts: CreateAppOptions = {}): FundBunApp {
     const payload = raw as { kind?: unknown; state?: unknown }
     const state = payload && payload.kind === BACKUP_KIND ? parseState(payload.state) : null
     if (!state || !state.profile) return fail('This copy couldn’t be read.')
+    const audit = safely('verifyAudit', () => verifyAudit(state.audit), { ok: false } as ReturnType<typeof verifyAudit>)
+    // permissions are not carried over: careful defaults and the new PIN
+    state.mandate = { ...safeDefaultMandate(), autonomy: 'suggest', ...createPin(newPin), failedPinAttempts: 0 }
+    state.pending = []
+    state.settings = { ...state.settings, vault: false }
     persistence.setVaultPin(null)
-    // the copy brings its own audit chain; this device anchors it from here
     persistence.resetAuditHead()
     engines.reset()
-    appendAudit(state, now(), 'user', 'data_import', 'Restored from a copy made on another device', { transactions: state.bank.transactions.length })
+    appendAudit(state, now(), 'user', 'data_import', 'Restored from a copy made on another device', {
+      transactions: state.bank.transactions.length, auditIntact: audit.ok, auditEntries: state.audit.length,
+    })
     store.replace(state)
     syncClock(core)
     recheckLlm()

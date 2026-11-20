@@ -1659,30 +1659,38 @@ describe('storage on this device', () => {
 })
 
 describe('moving to another device (an encrypted copy, no server)', () => {
-  it('a copy made on one device restores everything on another, PIN included; a wrong password opens nothing', async () => {
+  it('a copy made on one device restores everything on another with a new PIN; a wrong password opens nothing', async () => {
     const a = createFundBunApp({ storage: memoryStorage(), llmBaseUrl: null, now: () => new Date('2026-11-20T09:00:00+08:00') })
     a.completeOnboarding(onboardingInput({ dataSource: { kind: 'csv', startingBalance: 2_000_000, text: 'Date,Description,Amount\n2026-11-03,Hema Fresh,-120.00\n2026-11-05,Didi,-35.00' } }))
     a.addSubscription({ name: 'Netflix', amount: 6_800, cadence: 'monthly', nextDate: '2026-11-25' })
-    expect((await a.exportBackup('short')).ok).toBe(false)
-    const copy = await a.exportBackup('correct horse battery')
+    expect((await a.exportBackup('short', '4826')).ok).toBe(false)
+    // a copy holds everything: it needs the PIN
+    expect(await a.exportBackup('correct horse battery', '0000')).toMatchObject({ ok: false })
+    const copy = await a.exportBackup('correct horse battery', '4826')
     expect(copy.ok).toBe(true)
     if (!copy.ok) return
     // the file is encrypted: no name, no merchant in the clear
     expect(copy.text).not.toMatch(/Hema|Lin Test|Netflix/)
 
     const b = createFundBunApp({ storage: memoryStorage(), llmBaseUrl: null, now: () => new Date('2026-11-21T09:00:00+08:00') })
-    expect(await b.restoreBackup(copy.text, 'wrong password!')).toMatchObject({ ok: false })
-    expect(await b.restoreBackup('{"not":"a copy"}', 'correct horse battery')).toMatchObject({ ok: false })
+    expect(await b.restoreBackup(copy.text, 'wrong password!', '7391')).toMatchObject({ ok: false })
+    expect(await b.restoreBackup('{"not":"a copy"}', 'correct horse battery', '7391')).toMatchObject({ ok: false })
+    expect(await b.restoreBackup(copy.text, 'correct horse battery', '1234')).toMatchObject({ ok: false })
     expect(b.isOnboarded()).toBe(false)
-    expect(await b.restoreBackup(copy.text, 'correct horse battery')).toEqual({ ok: true })
+    expect(await b.restoreBackup(copy.text, 'correct horse battery', '7391')).toEqual({ ok: true })
     const s = b.getSnapshot().state
     expect(s.profile?.name).toBe('Lin Test')
     expect(s.bank.transactions.map((t) => t.merchant)).toEqual(a.getSnapshot().state.bank.transactions.map((t) => t.merchant))
     expect(s.subscriptions?.[0].name).toBe('Netflix')
-    // the clock moved to the new device's date, and the PIN still works there
+    // the clock moved to the new device's date; the copy carried no PIN: the new one is set, permissions are the defaults
     expect(s.bank.today).toBe('2026-11-21')
-    expect(s.mandate.pinHash).toBe(a.getSnapshot().state.mandate.pinHash)
-    expect(s.audit.slice(-2).map((e) => e.type)).toContain('data_import')
+    expect(copy.text).not.toContain(a.getSnapshot().state.mandate.pinHash!)
+    expect(s.mandate.pinHash).toBeTruthy()
+    expect(s.mandate.pinHash).not.toBe(a.getSnapshot().state.mandate.pinHash)
+    expect(s.mandate.autonomy).toBe('suggest')
+    expect(s.audit.find((e) => e.type === 'data_import')?.data).toMatchObject({ auditIntact: true })
     expect(b.verifyAudit().ok).toBe(true)
+    // a device with someone set up can't be overwritten by a copy
+    expect(await b.restoreBackup(copy.text, 'correct horse battery', '7391')).toMatchObject({ ok: false, error: expect.stringMatching(/Log out first/) })
   })
 })
