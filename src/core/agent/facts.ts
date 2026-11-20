@@ -95,7 +95,9 @@ function overviewFacts(d: D, state: AppState, o: Required<FactOptions>): Facts {
   const exact = money(state)
   const L = labels(o.lang)
   const facts: Facts = {}
-  put(facts, 'status', text(d.status))
+  // daily tracking mode has no target: the answer is the count, not a verdict
+  const tracking = state.profile?.mode === 'tracking' && text(d.status) !== 'no_data'
+  put(facts, 'status', tracking ? 'tracking' : text(d.status))
   put(facts, 'month', L.month(d.month, d.monthLabel))
   put(facts, 'spent', f(num(d.spent) ?? 0))
   put(facts, 'target', f(num(d.target) ?? 0))

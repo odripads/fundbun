@@ -101,13 +101,16 @@ function parseProfile(raw: unknown): Profile | null {
     grantedAt: isStr(c.grantedAt) ? c.grantedAt : '',
     version: isStr(c.version) ? c.version : '',
   }
+  const { mode: _mode, ...rest } = raw as Record<string, unknown>
+  void _mode
   return {
-    ...(raw as unknown as Profile),
+    ...(rest as unknown as Profile),
     name: isStr(raw.name) ? raw.name : '',
     tone: TONES.includes(raw.tone as Tone) ? (raw.tone as Tone) : 'gentle',
     payday: isNum(raw.payday) && raw.payday >= 1 && raw.payday <= 28 ? raw.payday : 1,
     workHoursPerMonth: isNum(raw.workHoursPerMonth) && raw.workHoursPerMonth > 0 ? raw.workHoursPerMonth : DEFAULT_WORK_HOURS,
     consent,
+    ...(raw.mode === 'tracking' ? { mode: 'tracking' as const } : {}),
   }
 }
 

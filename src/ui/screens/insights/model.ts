@@ -90,6 +90,8 @@ export function moodFor(status: MirrorStatus, tone: Tone, overBy = 0): BunMood {
 
 /** Bun's face for a month on the ledger: the same ladder the Dream Mirror uses (blowouts and cooling included). */
 export function monthMood(ctx: FinanceContext, s: MonthSummary): BunMood {
+  // daily tracking: no verdict, so no anger
+  if (ctx.profile.mode === 'tracking') return s.spent > 0 ? 'calm' : 'sleepy'
   return bunTemper(ctx, s, mirrorStatus(s)).mood
 }
 

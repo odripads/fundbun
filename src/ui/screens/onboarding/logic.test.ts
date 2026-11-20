@@ -353,6 +353,16 @@ describe('buildOnboardingInput → the real controller', () => {
     expect(app.getSnapshot().derived.mirror?.status).toBe('no_data')
   })
 
+  it('daily tracking needs no target; the income stands in, and the profile is in tracking mode', () => {
+    const d = complete({ spendMode: 'tracking', target: '' })
+    expect(validateMoney(d)).toEqual({})
+    const built = buildOnboardingInput(d, '135790', null)
+    expect(built.ok).toBe(true)
+    if (built.ok) expect(built.input).toMatchObject({ mode: 'tracking', targetSpend: built.input.monthlyIncome })
+    // with a target it is the usual setup
+    expect(validateMoney(complete({ spendMode: 'target', target: '' })).target).toBeTruthy()
+  })
+
   it('refuses without a PIN even when everything else is filled', () => {
     expect(buildOnboardingInput(complete(), null, null).ok).toBe(false)
   })

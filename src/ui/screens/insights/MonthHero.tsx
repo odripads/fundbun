@@ -16,6 +16,8 @@ export interface MonthHeroProps {
   currency: Currency
   /** Bun's face for this month (insights/model.monthMood); falls back to the verdict alone */
   mood?: BunMood
+  /** daily tracking mode: no target, so no meter and no target verdicts */
+  tracking?: boolean
 }
 
 const ARROW = { up: <ArrowUpRight />, down: <ArrowDownRight />, flat: <ArrowRight /> }
@@ -40,7 +42,7 @@ function StatTile({ stat, currency, delay }: { stat: StatView; currency: Currenc
  * The month at a glance: the spend in big Fraunces numerals, a meter on one honest scale (target tick,
  * over-target hatch, the pace ghost for the current month), Bun's mood, and three headline stats.
  */
-export function MonthHero({ s, comparison, tone, currency, mood }: MonthHeroProps) {
+export function MonthHero({ s, comparison, tone, currency, mood, tracking = false }: MonthHeroProps) {
   const headingId = useId()
   const reduced = useReducedMotion()
   const shown = useCountUp(s.spent, !reduced)
@@ -74,7 +76,7 @@ export function MonthHero({ s, comparison, tone, currency, mood }: MonthHeroProp
             <span className="sr-only">{fmt(s.spent, currency)} spent</span>
           </p>
           <p className={styles.of}>
-            spent of your <strong>{fmt(s.target, currency)}</strong> target
+            {tracking ? 'spent' : <>spent of your <strong>{fmt(s.target, currency)}</strong> target</>}
           </p>
         </div>
         <div className={styles.bun}>
@@ -83,6 +85,7 @@ export function MonthHero({ s, comparison, tone, currency, mood }: MonthHeroProp
         </div>
       </div>
 
+      {tracking ? null : (
       <div className={styles.meter} role="img" aria-label={meterLabel}>
         <div className={styles.track} key={s.month}>
           <span className={styles.fill} style={{ width: `${m.withinPct}%` }} />
@@ -108,11 +111,12 @@ export function MonthHero({ s, comparison, tone, currency, mood }: MonthHeroProp
           ) : null}
         </div>
       </div>
+      )}
 
-      <p className={styles.headline}>{headlineCopy(s, tone, currency)}</p>
+      {tracking ? null : <p className={styles.headline}>{headlineCopy(s, tone, currency)}</p>}
 
       <dl className={styles.stats}>
-        <StatTile stat={vsTarget} currency={currency} delay={0} />
+        {tracking ? null : <StatTile stat={vsTarget} currency={currency} delay={0} />}
         {vsPrev ? <StatTile stat={vsPrev} currency={currency} delay={60} /> : null}
         <StatTile stat={daily} currency={currency} delay={120} />
       </dl>

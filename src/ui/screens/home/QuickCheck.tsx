@@ -53,7 +53,7 @@ export function QuickCheck({ request, onRequestHandled }: QuickCheckProps) {
   }, [request, onRequestHandled])
 
   const result = useMemo(() => (ctx && req ? checkAffordability(ctx, req.amount, req.label) : null), [ctx, req])
-  const meta = result ? verdictMeta(result.verdict, tone) : null
+  const meta = result ? verdictMeta(result.verdict, tone, !!result.tracking) : null
 
   function submit(e: FormEvent) {
     e.preventDefault()
@@ -146,7 +146,7 @@ interface VerdictProps {
 }
 
 function Verdict({ result, label, currency, tone }: VerdictProps) {
-  const meta = verdictMeta(result.verdict, tone)
+  const meta = verdictMeta(result.verdict, tone, !!result.tracking)
   const named = label !== 'this' ? label : null
 
   return (

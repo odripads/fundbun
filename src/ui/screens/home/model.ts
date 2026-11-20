@@ -521,7 +521,9 @@ export interface VerdictMeta {
   mood: BunMood
 }
 
-export function verdictMeta(verdict: AffordabilityResult['verdict'], tone: Tone): VerdictMeta {
+export function verdictMeta(verdict: AffordabilityResult['verdict'], tone: Tone, tracking = false): VerdictMeta {
+  // daily tracking mode has no target to judge against: Bun only says what it is worth
+  if (tracking && verdict !== 'skip') return { badge: 'Your call', tone: 'accent', mood: 'calm', title: 'Here’s what it’s worth' }
   if (verdict === 'go') {
     return { badge: 'Fits', tone: 'under', mood: 'happy', title: tone === 'cheeky' ? 'Bun can live with that' : tone === 'numbers' ? 'Fits the budget' : 'It fits your month' }
   }

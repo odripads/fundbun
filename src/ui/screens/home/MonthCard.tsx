@@ -1,6 +1,7 @@
 import { CalendarDays, PiggyBank, TrendingUp } from 'lucide-react'
 import { useId, type CSSProperties } from 'react'
 import type { AppSnapshot } from '../../../core/app-api'
+import type { Currency, MonthSummary } from '../../../core/types'
 import { Badge, Card, Money } from '../../components/ds'
 import { shallowEqual, useSnapshot } from '../../state'
 import { fmtWhole, monthName, monthTrack, monthTrackSummary, paceLine, safeToSpendNote } from './model'
@@ -10,6 +11,10 @@ const selectMonth = (s: AppSnapshot) => ({
   summary: s.derived.summary,
   currency: s.state.profile?.currency ?? 'CNY',
   tone: s.state.profile?.tone ?? 'gentle',
+  tracking: s.state.profile?.mode === 'tracking',
+  // the user's own daily amount for this month (finance/dailyplan), shown instead of "safe to spend"
+  plan: s.state.dailyPlan && s.state.dailyPlan.month === s.derived.today.slice(0, 7) ? s.state.dailyPlan.amount : null,
+  spentToday: s.state.bank.transactions.filter((t) => t.date === s.derived.today && t.amount < 0 && t.category !== 'transfer' && t.category !== 'savings').reduce((sum, t) => sum - t.amount, 0),
 })
 
 function align(pct: number): 'start' | 'center' | 'end' {
@@ -18,9 +23,10 @@ function align(pct: number): 'start' | 'center' | 'end' {
 
 /** Spent vs target with today's even pace and the projected month end, then safe-to-spend today. */
 export function MonthCard() {
-  const { summary: s, currency, tone } = useSnapshot(selectMonth, shallowEqual)
+  const { summary: s, currency, tone, tracking, plan, spentToday } = useSnapshot(selectMonth, shallowEqual)
   const headingId = useId()
   if (!s) return null
+  if (tracking) return <TrackingMonth s={s} currency={currency} spentToday={spentToday} headingId={headingId} />
   const t = monthTrack(s)
   const over = s.spent > s.target
   const overWidth = Math.max(0, t.spentPct - t.withinPct)
@@ -63,9 +69,9 @@ export function MonthCard() {
       </p>
 
       <div className={styles.safe}>
-        <p className={styles.label}>Safe to spend today</p>
-        <Money amount={s.safeToSpendToday} currency={currency} size="hero" decimals={false} className={styles.safeMoney} />
-        <p className={styles.note}>{safeToSpendNote(s, tone, currency)}</p>
+        <p className={styles.label}>{plan !== null ? 'Your daily amount' : 'Safe to spend today'}</p>
+        <Money amount={plan ?? s.safeToSpendToday} currency={currency} size="hero" decimals={false} className={styles.safeMoney} />
+        <p className={styles.note}>{plan !== null ? `You set it for the rest of ${monthName(s.month)}. Bun judges each day by it.` : safeToSpendNote(s, tone, currency)}</p>
       </div>
 
       <div className={styles.saved}>
@@ -79,3 +85,37 @@ export function MonthCard() {
     </Card>
   )
 }
+
+/** Daily tracking mode: the count, with no target, pace line or safe-to-spend. */
+function TrackingMonth({ s, currency, spentToday, headingId }: { s: MonthSummary; currency: Currency; spentToday: number; headingId: string }) {
+  const perDay = Math.round(s.spent / Math.max(1, s.dayOfMonth))
+  const prev = s.byCategory.reduce((sum, c) => sum + (c.prevMonthToDate ?? 0), 0)
+  return (
+    <Card as="section" padding="lg" className={styles.card} aria-labelledby={headingId}>
+      <div className={styles.head}>
+        <h2 id={headingId} className={styles.title}>{monthName(s.month)} so far</h2>
+        <Badge size="sm" icon={<CalendarDays />}>Daily tracking</Badge>
+      </div>
+      <p className={styles.amounts}>
+        <Money amount={s.spent} currency={currency} size="xl" decimals={false} />
+        <span className={styles.of}>spent</span>
+      </p>
+      <div className={styles.safe}>
+        <p className={styles.label}>Spent today</p>
+        <Money amount={spentToday} currency={currency} size="hero" decimals={false} className={styles.safeMoney} />
+        <p className={styles.note}>
+          About {fmtWhole(perDay, currency)} a day this month{prev > 0 ? `. Same days last month: ${fmtWhole(prev, currency)}.` : '.'}
+        </p>
+      </div>
+      <div className={styles.saved}>
+        <p className={styles.label}>
+          <PiggyBank aria-hidden="true" className={styles.savedIcon} />
+          Saved to goals
+        </p>
+        <Money amount={s.savedToGoals} currency={currency} size="lg" decimals={false} tone={s.savedToGoals > 0 ? 'under' : 'neutral'} signed={s.savedToGoals > 0} />
+        <p className={styles.note}>{s.savedToGoals > 0 ? 'this month — nice.' : 'this month, so far'}</p>
+      </div>
+    </Card>
+  )
+}
+

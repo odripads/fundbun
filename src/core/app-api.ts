@@ -23,6 +23,7 @@ import type {
   PendingAction,
   Profile,
   RecurringSeries,
+  SpendMode,
   SpendingCandidate,
   SuggestedAction,
   Tone,
@@ -148,6 +149,8 @@ export interface OnboardingInput {
   /** step-up PIN, 4–6 digits */
   pin: string
   dataSource: DataSource
+  /** 'tracking': no target, just daily tracking (targetSpend is still required, and kept for later) */
+  mode?: SpendMode
   /** AUTO mode: read transaction emails/e-statements (read-only). Requires the AUTO consent screen. */
   emailAuto?: boolean
 }
@@ -249,7 +252,7 @@ export interface AppApi {
   disableVault(pin: string): Promise<Result>
 
   // ── profile & settings ──
-  setProfile(patch: Partial<Pick<Profile, 'name' | 'monthlyIncome' | 'targetSpend' | 'payday' | 'workHoursPerMonth' | 'tone'>>): Result
+  setProfile(patch: Partial<Pick<Profile, 'name' | 'monthlyIncome' | 'targetSpend' | 'payday' | 'workHoursPerMonth' | 'tone' | 'mode'>>): Result
   setConsent(patch: Partial<Pick<Consent, 'llmProcessing' | 'notifications'>>): void
   setSettings(patch: Partial<AppSettings>): void
   checkLlm(): Promise<void>

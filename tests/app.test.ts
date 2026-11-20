@@ -1546,3 +1546,42 @@ describe('the daily amount (over budget, a realistic day)', () => {
     expect(again.getSnapshot().state.dailyPlan).toBeUndefined()
   })
 })
+
+describe('daily tracking mode (no target)', () => {
+  const tracker = () => {
+    const app = createFundBunApp({ storage: memoryStorage(), llmBaseUrl: null, now: () => new Date('2026-11-20T09:00:00+08:00') })
+    // a target that is easy to pass, to prove nothing is measured against it
+    app.completeOnboarding(onboardingInput({ mode: 'tracking', targetSpend: 10_000, dataSource: { kind: 'csv', startingBalance: 2_000_000, text: 'Date,Description,Amount\n2026-11-03,Hema Fresh,-300.00\n2026-11-12,Didi,-40.00' } }))
+    return app
+  }
+
+  it('the mirror counts without a verdict, and Bun is never angry', () => {
+    const m = tracker().getSnapshot().derived.mirror!
+    expect(m).toMatchObject({ tracking: true, status: 'on_track', delta: 0 })
+    expect(m.headline).toBe('¥340 spent in November so far.')
+    expect(m.subline).toMatch(/^About ¥17 a day\. Most of it on groceries \(¥300\)\./)
+    expect(['calm', 'happy']).toContain(m.mood)
+    expect(m.cta).toBeUndefined()
+  })
+
+  it('target-based tripwires rest; a big single purchase still trips its wire', () => {
+    const app = tracker()
+    const before = app.getSnapshot().state.tripwireEvents.length
+    app.addSpending([{ id: 'manual_big', merchant: 'Shoes', amount: 160_000, currency: 'CNY', date: '2026-11-20', category: 'shopping', description: 'Shoes', source: 'manual' }])
+    const fresh = app.getSnapshot().state.tripwireEvents.slice(before)
+    const kinds = fresh.map((e) => app.getSnapshot().state.tripwires.find((t) => t.id === e.tripwireId)?.kind)
+    expect(kinds).not.toContain('month_pct')
+    expect(kinds).not.toContain('pace_over')
+  })
+
+  it('Ask Bun answers with the count, and the mode can be switched in Settings', async () => {
+    const app = tracker()
+    const reply = await app.sendMessage('How am I doing this month?')
+    expect(reply.text).toMatch(/¥340/)
+    expect(reply.text).not.toMatch(/target/)
+    expect(app.setProfile({ mode: 'target' })).toEqual({ ok: true })
+    expect(app.getSnapshot().derived.mirror?.tracking).toBeUndefined()
+    expect(app.getSnapshot().derived.mirror?.status).toBe('over')
+    expect(app.setProfile({ mode: 'bogus' as never }).ok).toBe(false)
+  })
+})

@@ -16,6 +16,7 @@ function profilePatchError(p: ProfilePatch): string | null {
   if (p.payday !== undefined && !isIntIn(p.payday, 1, 28)) return 'Payday must be a day between 1 and 28'
   if (p.workHoursPerMonth !== undefined && !isIntIn(p.workHoursPerMonth, 1, 744)) return 'Work hours per month must be 1–744'
   if (p.tone !== undefined && !TONES.includes(p.tone)) return `Unknown tone "${String(p.tone)}"`
+  if (p.mode !== undefined && p.mode !== 'target' && p.mode !== 'tracking') return `Unknown mode "${String(p.mode)}"`
   return null
 }
 

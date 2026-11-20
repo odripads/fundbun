@@ -337,7 +337,14 @@ export interface Profile {
   consent: Consent
   onboardedAt: ISODateTime
   personaId?: string
+  /**
+   * 'target' (the default): a monthly spending target, verdicts, the carrot and the stick. 'tracking': no target,
+   * Bun just keeps count day by day (no over/under, no target-based tripwires). targetSpend is kept but unused.
+   */
+  mode?: SpendMode
 }
+
+export type SpendMode = 'target' | 'tracking'
 
 // ───────────────────────────── budgeting ─────────────────────────────
 
@@ -494,6 +501,8 @@ export interface MirrorState {
   mood: BunMood
   /** the ladder behind `mood` (absent on cards saved by older versions) */
   temper?: BunTemper
+  /** daily tracking mode: no target, no verdict, just the count (profile.mode 'tracking') */
+  tracking?: boolean
   /** call-to-action the hero offers (over/pace_over: a rule such as a cap or tripwire; under: "Stash ¥X") */
   cta?: SuggestedAction
   /**
@@ -576,6 +585,8 @@ export interface AffordabilityResult {
   delayText?: string
   equivalents: DreamEquivalent[]
   reasons: string[]
+  /** daily tracking mode: no target, so no verdict on the month (the verdict is 'think' = your call) */
+  tracking?: boolean
 }
 
 // ───────────────────────────── security / permissions ─────────────────────────────

@@ -1,5 +1,7 @@
+import { CATEGORIES } from '../categories'
 import { monthLabel, monthsBack, ym } from '../dates'
 import type {
+  BunMood,
   DreamEquivalent,
   DreamItem,
   FinanceContext,
@@ -311,7 +313,65 @@ export const MIRROR_PLAN_PROMPT = { label: 'Make a plan with Bun', prompt: 'Help
  * A first month with no earlier spending gets a welcome (status 'on_track' instead of a projection-only
  * 'under', or a welcoming 'no_data'), and an untouched goal is never described as "0% there".
  */
+/**
+ * Daily tracking mode (profile.mode 'tracking'): no target, so no verdict. The hero says what was spent, per day and
+ * where most of it went, beside the same days last month, with the main goal's progress. Bun stays calm, and is
+ * happy on a day the user checked in or logged.
+ */
+function trackingMirror(ctx: FinanceContext, month?: YearMonth): MirrorState {
+  const s = summarizeMonth(ctx, month)
+  const tone = ctx.profile.tone
+  const f = copyFmt(ctx.profile.currency)
+  const status: MirrorStatus = s.spent > 0 ? 'on_track' : 'no_data'
+  const main = primaryGoal(openItems(ctx.dreams))
+  const goalItem = main?.kind === 'goal' ? main : undefined
+  const goal = goalItem ? goalProgress(goalItem, ctx) : undefined
+  const name = monthName(s)
+  const days = Math.max(1, s.dayOfMonth)
+  const perDay = Math.round(s.spent / days)
+  const top = [...s.byCategory].sort((a, b) => b.spent - a.spent)[0]
+  const prev = s.byCategory.reduce((sum, c) => sum + (s.isCurrent ? (c.prevMonthToDate ?? 0) : (c.prevMonth ?? 0)), 0)
+  const today = ctx.bank.today
+  const shown = !!ctx.checkedDays?.includes(today) || ctx.bank.transactions.some((t) => t.date === today && isSpending(t))
+  const headline =
+    status === 'no_data' ? `Nothing logged for ${name} yet.`
+    : byTone(tone, {
+      gentle: `${f(s.spent)} spent in ${name}${s.isCurrent ? ' so far' : ''}.`,
+      cheeky: `${f(s.spent)} out the door in ${name}${s.isCurrent ? ' so far' : ''}.`,
+      numbers: `${name}: ${f(s.spent)} spent.`,
+    })
+  const parts = status === 'no_data'
+    ? ['Add what you spend as you go, and Bun keeps the count.']
+    : [
+      `About ${f(perDay)} a day.`,
+      top && top.spent > 0 ? `Most of it on ${CATEGORIES[top.category].label.toLowerCase()} (${f(top.spent)}).` : '',
+      prev > 0 ? `${s.isCurrent ? 'Same days last month' : 'The month before'}: ${f(prev)}.` : '',
+    ]
+  const mood: BunMood = status === 'no_data' ? 'sleepy' : shown ? 'happy' : 'calm'
+  const temper: MirrorState['temper'] = {
+    mood, heat: shown ? 0 : 1, overBy: 0, dayLimit: 0, spentToday: 0, goodDays: 0, blowout: false, cooling: false,
+    reason: shown ? 'You logged today. That is the whole job in tracking mode.' : 'Daily tracking: Bun keeps count and does not judge the month.',
+  }
+  return {
+    status,
+    month: s.month,
+    spent: s.spent,
+    target: s.target,
+    projected: s.projected,
+    delta: 0,
+    headline,
+    subline: parts.filter(Boolean).join(' '),
+    ...(goalItem ? { item: goalItem } : {}),
+    ...(goal ? { goal } : {}),
+    tone,
+    mood,
+    temper,
+    tracking: true,
+  }
+}
+
 export function computeMirror(ctx: FinanceContext, month?: YearMonth): MirrorState {
+  if (ctx.profile.mode === 'tracking') return trackingMirror(ctx, month)
   const s = summarizeMonth(ctx, month)
   const tone = ctx.profile.tone
   const f = copyFmt(ctx.profile.currency)

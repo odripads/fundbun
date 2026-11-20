@@ -14,6 +14,7 @@ const selectCheckIn = (s: AppSnapshot) => ({
   // over budget, "safe to spend" is zero: the user's own daily amount says more
   plan: s.state.dailyPlan && s.state.dailyPlan.month === s.derived.today.slice(0, 7) ? s.state.dailyPlan.amount : null,
   over: s.derived.mirror?.status === 'over' || s.derived.mirror?.status === 'pace_over',
+  tracking: s.state.profile?.mode === 'tracking',
   // today's number is only meaningful while the mirror looks at the current month
   safe: s.derived.viewDate === s.derived.today ? (s.derived.summary?.safeToSpendToday ?? null) : null,
   currency: s.state.profile?.currency ?? ('CNY' as const),
@@ -35,7 +36,7 @@ export function CheckInCard({ onAddSpending, onPlan }: CheckInCardProps) {
   const app = useApp()
   const toast = useToast()
   const headingId = useId()
-  const { view, safe, currency, plan, over } = useSnapshot(selectCheckIn, shallowEqual)
+  const { view, safe, currency, plan, over, tracking } = useSnapshot(selectCheckIn, shallowEqual)
   const toGolden = CHECKIN_CARD_DAYS - (((view.done ? view.streak : view.next) - 1) % CHECKIN_CARD_DAYS) - 1
 
   function checkIn() {
@@ -45,7 +46,8 @@ export function CheckInCard({ onAddSpending, onPlan }: CheckInCardProps) {
   }
 
   const number =
-    plan !== null ? `Your daily amount: ${fmtCopy(plan, currency)}.`
+    tracking ? null
+    : plan !== null ? `Your daily amount: ${fmtCopy(plan, currency)}.`
     : safe === null ? null
     : safe > 0 ? `${fmtCopy(safe, currency)} is safe to spend today.`
     : null

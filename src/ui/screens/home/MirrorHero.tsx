@@ -193,7 +193,8 @@ export function MirrorHero({ onCheck, onSandbox, onPlan }: MirrorHeroProps) {
     )
   }
 
-  const meta = STATUS_META[mirror.status]
+  // daily tracking has no verdict: the badge just says so
+  const meta = mirror.tracking ? { label: 'Tracking', tone: 'accent' as const } : STATUS_META[mirror.status]
   const StatusIcon = STATUS_ICON[mirror.status]
   const hero = heroDream(mirror, dreams)
   // Bun is angry: the mirror breaks, the dream goes dark and the words are shouted (see "the broken mirror" in the stylesheet)

@@ -115,6 +115,7 @@ function buildProfile(input: OnboardingInput, now: ISODateTime): Profile {
       version: CONSENT_VERSION,
     },
     onboardedAt: now,
+    ...(input.mode === 'tracking' ? { mode: 'tracking' as const } : {}),
   }
   if (input.dataSource.kind === 'persona') profile.personaId = input.dataSource.personaId
   return profile

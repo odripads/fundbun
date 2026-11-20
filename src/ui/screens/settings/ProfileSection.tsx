@@ -9,6 +9,7 @@ import { CURRENCY_SYMBOL } from '../../../core/money'
 import type { Profile } from '../../../core/types'
 import { BunMascot, DreamImage } from '../../components/brand'
 import { Button, Card, Checkbox, SectionHeader, Segmented, TextField, useToast } from '../../components/ds'
+import type { SpendMode } from '../../../core/types'
 import { useApp, useSafeAction, useSnapshot } from '../../state'
 import { TONE_OPTIONS, checkProfileDraft, mirrorPreview, parseMoneyInput, profileDraft, restorePatch, toneLine, type ProfileDraft } from './logic'
 import styles from './Settings.module.css'
@@ -83,6 +84,34 @@ function ProfileForm({ profile }: { profile: Profile }) {
     <section id="set-profile" aria-labelledby="set-profile-h" className={styles.section}>
       <SectionHeader id="set-profile-h" eyebrow="You" title="Profile" />
       <Card className={styles.card}>
+        <div className={styles.modeRow}>
+          <Segmented<SpendMode>
+            label="How you use Bun"
+            value={profile.mode ?? 'target'}
+            onChange={(mode) => {
+              const before = profile.mode ?? 'target'
+              void run(() => app.setProfile({ mode }), { errorTitle: 'Couldn’t switch' }).then((r) => {
+                if (!r?.ok) return
+                toast.show({
+                  id: 'mode-saved',
+                  tone: 'success',
+                  title: mode === 'tracking' ? 'Daily tracking on' : 'Monthly target on',
+                  message: mode === 'tracking' ? 'No target and no verdicts: Bun just keeps count.' : 'Bun measures your month against your target again.',
+                  actions: [{ label: 'Undo', onClick: () => void app.setProfile({ mode: before }) }],
+                })
+              })
+            }}
+            options={[
+              { value: 'target', label: 'Monthly target' },
+              { value: 'tracking', label: 'Daily tracking' },
+            ]}
+          />
+          <p className={styles.modeNote}>
+            {(profile.mode ?? 'target') === 'tracking'
+              ? 'Bun keeps count day by day. Your target below is kept for when you switch back.'
+              : 'Bun measures your month against your target: the Dream Mirror, the carrot and the stick.'}
+          </p>
+        </div>
         <form className={styles.profileForm} onSubmit={save} noValidate>
           <TextField label="Name" value={draft.name} onChange={set('name')} error={err('name')} autoComplete="given-name" className={styles.span2} />
           <TextField label="Monthly income" prefix={symbol} inputMode="decimal" value={draft.income} onChange={set('income')} error={err('income')} hint="After tax" />

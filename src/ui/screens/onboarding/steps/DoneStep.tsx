@@ -59,7 +59,10 @@ export function DoneStep({ draft, pinSet, problems, error, onEdit }: DoneStepPro
       step: 'money',
       icon: Wallet,
       label: 'Your month',
-      value: income.ok && target.ok ? `${f(income.minor)} in · ${f(target.minor)} to spend · paid on the ${ordinal(draft.payday)}` : 'Needs your numbers',
+      value:
+        draft.spendMode === 'tracking'
+          ? income.ok ? `${f(income.minor)} in · daily tracking, no target · paid on the ${ordinal(draft.payday)}` : 'Needs your numbers'
+          : income.ok && target.ok ? `${f(income.minor)} in · ${f(target.minor)} to spend · paid on the ${ordinal(draft.payday)}` : 'Needs your numbers',
     },
     {
       step: 'dreams',

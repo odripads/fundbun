@@ -155,8 +155,9 @@ export function validateMoney(d: OnboardingDraft): Errors {
   else if (name.length > 40) e.name = 'Keep it under 40 characters'
   const income = parseIncome(d)
   if (!income.ok) e.income = income.error
+  // daily tracking needs no target
   const target = parseTarget(d)
-  if (!target.ok) e.target = target.error
+  if (!target.ok && d.spendMode !== 'tracking') e.target = target.error
   if (!Number.isInteger(d.payday) || d.payday < 1 || d.payday > 28) e.payday = 'Pick a day from 1 to 28'
   return e
 }
@@ -585,7 +586,9 @@ export function buildOnboardingInput(d: OnboardingDraft, pin: string | null, csv
   const ctx: FlowContext = { pinSet: pin !== null && pinProblem(pin) === null, csv }
   const problems: Problem[] = FLOW.flatMap((step) => Object.values(stepErrors(step, d, ctx)).map((message) => ({ step, message })))
   const income = parseIncome(d)
-  const target = parseTarget(d)
+  // daily tracking has no target: the income stands in (kept, unused, for a later switch to a target)
+  const typed = parseTarget(d)
+  const target = d.spendMode === 'tracking' && !typed.ok && income.ok ? { ok: true as const, minor: income.minor } : typed
   const { values: caps } = parseCaps(d)
   const source = dataSource(d)
   if (problems.length || !income.ok || !target.ok || !source || pin === null) return { ok: false, problems }
@@ -598,6 +601,7 @@ export function buildOnboardingInput(d: OnboardingDraft, pin: string | null, csv
       targetSpend: target.minor,
       payday: d.payday,
       tone: d.tone,
+      ...(d.spendMode === 'tracking' ? { mode: 'tracking' as const } : {}),
       consent: { ...d.consent },
       dreams: d.dreams.map(({ name, price, image, kind, targetDate }) => ({ name, price, image, kind, ...(targetDate ? { targetDate } : {}) })),
       tripwires: tripwireInputs(d),

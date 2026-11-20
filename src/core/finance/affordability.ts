@@ -86,6 +86,22 @@ export function checkAffordability(ctx: FinanceContext, amount: Minor, label = '
     if (equivalents[0]) reasons.push(`It equals ${equivalents[0].label}.`)
   }
 
+  // daily tracking mode has no target: no verdict on the month, only what the purchase is worth in work and dreams
+  if (ctx.profile.mode === 'tracking') {
+    const trackReasons = [
+      ...(cantPay ? [`Your checking balance (${f(checking!.balance)}) doesn't cover ${fx(price)}.`] : []),
+      ...(hours > 0 ? [`It's about ${hours} hours of work.`] : []),
+      ...(equivalents[0] ? [`It equals ${equivalents[0].label}.`] : []),
+      ...(progress && delay > 0 ? [`Saved instead, it would bring your ${progress.name} ${delayPhrase(delay)} closer.`] : []),
+    ]
+    return {
+      amount: price, label, verdict: cantPay ? 'skip' : 'think', safeToSpendToday: s.safeToSpendToday, remainingAfter, overTargetBy: 0, projectedAfter, basis,
+      hoursOfWork: hours,
+      ...(progress ? { goalName: progress.name, goalDelayDays: delay, ...(delay > 0 ? { delayText: delayShort(delay) } : {}) } : {}),
+      equivalents, reasons: trackReasons.length ? trackReasons : ['Nothing to weigh it against yet.'], tracking: true,
+    }
+  }
+
   return {
     amount: price,
     label,

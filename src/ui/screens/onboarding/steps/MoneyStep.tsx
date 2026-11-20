@@ -2,7 +2,7 @@ import { ChevronDown, CircleAlert, PiggyBank, Scale } from 'lucide-react'
 import type { CSSProperties, ReactNode } from 'react'
 import { CURRENCY_SYMBOL } from '../../../../core/money'
 import type { Currency, Minor } from '../../../../core/types'
-import { Money, TextField } from '../../../components/ds'
+import { Money, Segmented, TextField } from '../../../components/ds'
 import { groupAmount, incomeHint, ordinal, parseIncome, parseTarget, type IncomeHint } from '../logic'
 import type { StepProps } from '../OnboardingScreen'
 import m from './MoneyStep.module.css'
@@ -86,8 +86,21 @@ export function MoneyStep({ draft, update, errors }: StepProps) {
   const set = <K extends 'name' | 'income' | 'target'>(key: K) => (value: string) => update((d) => ({ ...d, [key]: value }))
   return (
     <>
-      <p className={s.lede}>Two numbers drive everything: what lands in your account each month, and what you’re happy to spend of it.</p>
+      <p className={s.lede}>
+        {draft.spendMode === 'tracking'
+          ? 'Just tracking: Bun keeps count of what you spend, day by day, with no target and no verdicts.'
+          : 'Two numbers drive everything: what lands in your account each month, and what you’re happy to spend of it.'}
+      </p>
       <div className={s.stack}>
+        <Segmented<'target' | 'tracking'>
+          label="How do you want to use Bun?"
+          value={draft.spendMode}
+          onChange={(v) => update((d) => ({ ...d, spendMode: v }))}
+          options={[
+            { value: 'target', label: 'With a monthly target' },
+            { value: 'tracking', label: 'Just daily tracking' },
+          ]}
+        />
         <TextField
           id="ob-name"
           label="What should Bun call you?"
@@ -113,7 +126,7 @@ export function MoneyStep({ draft, update, errors }: StepProps) {
         <TextField
           id="ob-income"
           label="Monthly take-home pay"
-          hint="After tax — what actually lands in your account."
+          hint={draft.spendMode === 'tracking' ? 'After tax. Bun uses it to say what a purchase is worth in hours of work.' : 'After tax — what actually lands in your account.'}
           prefix={symbol}
           inputMode="decimal"
           autoComplete="off"
@@ -123,6 +136,7 @@ export function MoneyStep({ draft, update, errors }: StepProps) {
           onChange={(e) => set('income')(e.currentTarget.value)}
           onBlur={() => update((d) => ({ ...d, income: groupAmount(d.income, d.currency) }))}
         />
+        {draft.spendMode === 'tracking' ? null : (
         <div className={m.targetGroup}>
           <TextField
             id="ob-target"
@@ -139,6 +153,7 @@ export function MoneyStep({ draft, update, errors }: StepProps) {
           />
           {hint && target.ok ? <SplitPreview hint={hint} target={target.minor} currency={draft.currency} /> : null}
         </div>
+        )}
         <SelectField
           id="ob-payday"
           label="Payday"

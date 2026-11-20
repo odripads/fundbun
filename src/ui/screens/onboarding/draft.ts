@@ -6,7 +6,7 @@
  */
 import type { DreamInput } from '../../../core/app-api'
 import { CURRENCY_SYMBOL } from '../../../core/money'
-import type { Autonomy, Currency, Tone } from '../../../core/types'
+import type { Autonomy, Currency, SpendMode, Tone } from '../../../core/types'
 
 export const STEPS = ['welcome', 'consent', 'money', 'dreams', 'tripwires', 'permissions', 'mode', 'data', 'done'] as const
 export type StepId = (typeof STEPS)[number]
@@ -60,6 +60,8 @@ export interface OnboardingDraft {
    * summary or later in Settings. false = walk through every step.
    */
   quick: boolean
+  /** 'target' (a monthly target) or 'tracking' (just daily tracking, no target) */
+  spendMode: SpendMode
 }
 
 export const TRIPWIRE_KEYS: readonly TripwireKey[] = ['month80', 'month100', 'single', 'pace']
@@ -88,6 +90,7 @@ export function emptyDraft(): OnboardingDraft {
     mode: 'manual',
     emailConsent: false,
     quick: true,
+    spendMode: 'target',
   }
 }
 
@@ -154,6 +157,7 @@ export function sanitizeDraft(raw: unknown): OnboardingDraft {
     emailConsent: bool(raw.emailConsent),
     // the short setup is the default, also for a draft saved before it existed (its choices are all kept)
     quick: raw.quick !== false,
+    spendMode: raw.spendMode === 'tracking' ? 'tracking' : 'target',
   }
 }
 

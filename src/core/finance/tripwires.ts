@@ -13,6 +13,7 @@ import type {
   Transaction,
   Tripwire,
   TripwireEvent,
+  TripwireKind,
   YearMonth,
 } from '../types'
 import { byTone, copyFmt, type Fmt, moneyFmt, plural } from './copy'
@@ -253,6 +254,9 @@ function mergeTxns(existing: Transaction[], extra: Transaction[]): Transaction[]
  * none are given). Each event records the sandbox day it fired on (`firedOn`, ctx.bank.today — the clock every
  * screen shows) and, for month-level kinds, the `month` it is about.
  */
+/** Tripwires measured against the monthly target: they rest in daily tracking mode. */
+export const TARGET_KINDS: readonly TripwireKind[] = ['month_pct', 'pace_over', 'category_pct']
+
 export function evaluateTripwires(
   ctx: FinanceContext,
   opts: { newTxns?: Transaction[]; now: ISODateTime; firedIds?: Iterable<string> },
@@ -277,7 +281,9 @@ export function evaluateTripwires(
     !(t.kind === 'daily_over' && t.lastFiredKey !== undefined && x.key < t.lastFiredKey)
   // a month-level tripwire that already fired this month can't fire again: skip it (and the month summary) entirely
   const quiet = (t: Tripwire) => MONTH_LEVEL_KINDS.includes(t.kind) && t.lastFiredKey === month
-  const firings = new Map(ctx.tripwires.map((t) => [t.id, t.enabled && !quiet(t) ? EVALUATORS[t.kind](t, input).filter((x) => isFresh(t, x)) : []]))
+  // daily tracking mode has no target: the wires measured against it (80% of target, pace, category budgets) rest
+  const resting = (t: Tripwire) => ctx.profile.mode === 'tracking' && TARGET_KINDS.includes(t.kind)
+  const firings = new Map(ctx.tripwires.map((t) => [t.id, t.enabled && !quiet(t) && !resting(t) ? EVALUATORS[t.kind](t, input).filter((x) => isFresh(t, x)) : []]))
   const loudest = loudestMonthPct(ctx.tripwires, firings)
   const events: TripwireEvent[] = []
   const tripwires = ctx.tripwires.map((t) => {

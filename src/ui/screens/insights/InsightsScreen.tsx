@@ -159,7 +159,7 @@ function InsightsView({ ctx, current, history, currentInsights }: ViewProps) {
         options={choices.map((c) => ({ value: c.value, label: c.current ? <>{c.short}<span className="sr-only"> (this month)</span></> : c.short }))}
       />
 
-      <MonthHero s={s} comparison={comparison} tone={ctx.profile.tone} currency={currency} mood={mood} />
+      <MonthHero s={s} comparison={comparison} tone={ctx.profile.tone} currency={currency} mood={mood} tracking={ctx.profile.mode === 'tracking'} />
 
       <Tabs
         label="Insights views"
