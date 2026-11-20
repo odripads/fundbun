@@ -1,3 +1,4 @@
+import { decryptJSON, encryptJSON, isVaultBlob } from './security/vault'
 import type { AppApi, Result } from './app-api'
 import type { AgentEngineFactory } from './agent/host'
 import { LlmClient } from './agent/llm'
@@ -20,10 +21,15 @@ import {
   type LoadResult,
   type StorageLike,
 } from './controller/persistence'
-import { emptyState } from './controller/state'
+import { emptyState, parseState } from './controller/state'
 import { createStore } from './controller/store'
 import { OK, errorMessage, fail, localISODate, safely } from './controller/util'
 import type { AppState, ISODateTime } from './types'
+
+
+/** What a copy for another device is (inside the encryption) and how long its password must be. */
+const BACKUP_KIND = 'fundbun-backup'
+export const BACKUP_MIN_PASSWORD = 8
 
 export { memoryStorage, type StorageLike }
 export { CONSENT_VERSION, DEMO_PIN, DEMO_TODAY, STORAGE_KEY, TEST_NOW } from './controller/constants'
@@ -153,6 +159,51 @@ export function createFundBunApp(opts: CreateAppOptions = {}): FundBunApp {
     recheckLlm()
   }
 
+  /**
+   * A copy for another device: the whole state (PIN included, so it still works there), encrypted with a password
+   * the user picks (PBKDF2 → AES-GCM, as the vault). FundBun has no server, so this file is how data moves.
+   */
+  async function exportBackup(password: string): Promise<{ ok: true; text: string } | { ok: false; error: string }> {
+    if (lock.locked || !store.get().profile) return { ok: false, error: LOCKED_MSG }
+    if (typeof password !== 'string' || password.length < BACKUP_MIN_PASSWORD) return { ok: false, error: `Use a password of at least ${BACKUP_MIN_PASSWORD} characters` }
+    safely('audit backup', () => store.mutate((draft) => {
+      appendAudit(draft, now(), 'user', 'data_export', 'Saved an encrypted copy for another device', { transactions: draft.bank.transactions.length })
+    }), undefined)
+    const s = store.get()
+    // the vault password is never in the copy; the new device can turn its own vault on
+    const state: AppState = { ...s, settings: { ...s.settings, vault: false } }
+    try {
+      const text = await encryptJSON({ kind: BACKUP_KIND, v: 1, exportedAt: now(), state }, password)
+      return { ok: true, text }
+    } catch (e) {
+      return { ok: false, error: errorMessage(e) }
+    }
+  }
+
+  /** Restore a copy made by exportBackup on this device: it replaces whatever is here. */
+  async function restoreBackup(text: string, password: string): Promise<Result> {
+    if (lock.locked) return fail(LOCKED_MSG)
+    if (typeof text !== 'string' || !isVaultBlob(text.trim())) return fail('That isn’t a FundBun copy. Pick the file you saved with “Move to another device”.')
+    let raw: unknown
+    try {
+      raw = await decryptJSON(text.trim(), password)
+    } catch {
+      return fail('That password doesn’t open this copy.')
+    }
+    const payload = raw as { kind?: unknown; state?: unknown }
+    const state = payload && payload.kind === BACKUP_KIND ? parseState(payload.state) : null
+    if (!state || !state.profile) return fail('This copy couldn’t be read.')
+    persistence.setVaultPin(null)
+    // the copy brings its own audit chain; this device anchors it from here
+    persistence.resetAuditHead()
+    engines.reset()
+    appendAudit(state, now(), 'user', 'data_import', 'Restored from a copy made on another device', { transactions: state.bank.transactions.length })
+    store.replace(state)
+    syncClock(core)
+    recheckLlm()
+    return OK
+  }
+
   /** PIPL right to deletion: wipe storage + memory; a fresh audit chain records the wipe (not persisted). */
   function resetAll(): void {
     persistence.wipe()
@@ -170,6 +221,8 @@ export function createFundBunApp(opts: CreateAppOptions = {}): FundBunApp {
     completeOnboarding,
     loadDemo,
     resetAll,
+    exportBackup,
+    restoreBackup,
     ...agentApi,
     ...userApi,
     ...vaultApi,

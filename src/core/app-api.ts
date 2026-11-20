@@ -196,6 +196,12 @@ export interface AppApi {
   loadDemo(personaId?: string): void
   /** wipe all local data (PIPL right to deletion) */
   resetAll(): void
+  /**
+   * Move to another device (FundBun has no server): an encrypted copy of everything, opened with a password of the
+   * user's choosing. restoreBackup replaces what is on this device with it.
+   */
+  exportBackup(password: string): Promise<{ ok: true; text: string } | { ok: false; error: string }>
+  restoreBackup(text: string, password: string): Promise<Result>
 
   // ── agent ──
   /** run one agent turn (offline engine or LLM). Resolves with the assistant message. */

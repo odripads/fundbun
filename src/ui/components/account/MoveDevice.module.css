@@ -1,0 +1,15 @@
+.form {
+  display: grid;
+  gap: var(--s-4);
+  padding-bottom: var(--s-2);
+}
+
+.steps {
+  display: grid;
+  gap: var(--s-1);
+  margin: 0;
+  padding-left: var(--s-5);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}

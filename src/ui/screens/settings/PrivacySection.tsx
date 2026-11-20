@@ -2,7 +2,7 @@
  * Privacy & data: consent for LLM processing (separate from the financial-data consent), which engine answers,
  * exports (PIPL access/portability) and "Delete everything" (PIPL deletion) behind a typed confirmation.
  */
-import { Cloud, Cpu, Download, FileJson, RefreshCw, ShieldCheck, Trash2 } from 'lucide-react'
+import { Cloud, Cpu, Download, FileJson, RefreshCw, ShieldCheck, Smartphone, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import type { AppSnapshot } from '../../../core/app-api'
 import { BunMascot } from '../../components/brand'
@@ -11,6 +11,7 @@ import { navigate } from '../../router'
 import { shallowEqual, useApp, useSnapshot } from '../../state'
 import { byteSize, downloadText, exportFileName } from './download'
 import { DELETE_PHRASE, consentVersionLabel, deleteConfirmed, engineCopy } from './logic'
+import { MoveDeviceSheet } from '../../components/account/MoveDevice'
 import { StorageMeter } from '../../components/account/StorageMeter'
 import styles from './Settings.module.css'
 
@@ -35,6 +36,7 @@ export function PrivacySection() {
   const p = useSnapshot(selectPrivacy, shallowEqual)
   const [checking, setChecking] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [moving, setMoving] = useState(false)
 
   async function check() {
     setChecking(true)
@@ -116,6 +118,12 @@ export function PrivacySection() {
 
       <List card>
           <ListItem
+            leading={<Smartphone />}
+            title="Move to another device"
+            subtitle="An encrypted copy, opened there with a password"
+            onClick={() => setMoving(true)}
+          />
+          <ListItem
             leading={<FileJson />}
             title="Export my data"
             subtitle={`JSON · ${p.txnCount} transactions, goals, settings`}
@@ -141,6 +149,7 @@ export function PrivacySection() {
         <Button variant="danger" iconStart={<Trash2 />} onClick={() => setDeleting(true)} className={styles.dangerButton}>Delete</Button>
       </div>
 
+      <MoveDeviceSheet open={moving} onClose={() => setMoving(false)} />
       <DeleteDialog open={deleting} onClose={() => setDeleting(false)} onConfirm={() => {
         setDeleting(false)
         app.resetAll()

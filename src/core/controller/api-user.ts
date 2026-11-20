@@ -36,7 +36,7 @@ import { errorMessage, safely } from './util'
 
 type UserApi = Omit<
   AppApi,
-  | 'getSnapshot' | 'subscribe' | 'isOnboarded' | 'completeOnboarding' | 'loadDemo' | 'resetAll'
+  | 'getSnapshot' | 'subscribe' | 'isOnboarded' | 'completeOnboarding' | 'loadDemo' | 'resetAll' | 'exportBackup' | 'restoreBackup'
   | 'sendMessage' | 'xrayBill' | 'approveAction' | 'rejectAction' | 'undoAction' | 'runSuggestedAction' | 'clearChat'
   | 'checkLlm' | 'isLocked' | 'unlock' | 'enableVault' | 'disableVault' | 'syncClock'
 >

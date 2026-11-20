@@ -4,6 +4,8 @@ import { BunMascot, DreamImage, Logo } from '../../../components/brand'
 import { Badge, Button, Spinner } from '../../../components/ds'
 import type { PersonaId } from '../draft'
 import { DreamOrbit, type OrbitItem } from './DreamOrbit'
+import { useState } from 'react'
+import { RestoreSheet } from '../../../components/account/MoveDevice'
 import styles from './Welcome.module.css'
 
 export interface WelcomeStepProps {
@@ -46,6 +48,7 @@ const ORBIT: readonly OrbitItem[] = [
 ]
 
 export function WelcomeStep({ headingRef, resumable, onboarded, demoLoading, onStart, onRestart, onDemo, onHome }: WelcomeStepProps) {
+  const [restoring, setRestoring] = useState(false)
   return (
     <div className={styles.welcome}>
       <div className={styles.top}>
@@ -74,6 +77,13 @@ export function WelcomeStep({ headingRef, resumable, onboarded, demoLoading, onS
             {resumable ? 'Pick up where I left off' : 'Set up my own'}
           </Button>
         )}
+        {!onboarded ? (
+          // FundBun has no account yet: data moves between devices as an encrypted copy
+          <Button variant="ghost" onClick={() => setRestoring(true)}>
+            Restore from a copy
+          </Button>
+        ) : null}
+        <RestoreSheet open={restoring} onClose={() => setRestoring(false)} />
         {resumable && !onboarded ? (
           <Button variant="ghost" onClick={onRestart}>
             Start fresh instead
