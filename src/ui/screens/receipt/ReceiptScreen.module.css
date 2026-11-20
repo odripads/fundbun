@@ -148,3 +148,28 @@
   justify-content: flex-end;
   gap: var(--s-2);
 }
+
+.pickers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+/* the first rows of a statement file, before importing */
+.preview {
+  overflow-x: auto;
+  margin: 0;
+  padding: var(--s-3);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+  white-space: pre;
+}
+
+.inlineIcon {
+  width: 16px;
+  height: 16px;
+  vertical-align: -3px;
+}

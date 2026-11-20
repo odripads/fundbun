@@ -179,7 +179,8 @@ function dueFindings(ctx: FinanceContext, f: Fmt): BillFinding[] {
     if (!isUnpaid(b)) continue
     const days = diffDays(today, b.dueDate)
     // predicted from the user's own repeating charges: there is no bank to pay it through, so no Pay button
-    const expected = b.source === 'expected'
+    // predicted from repeating charges, or added by the user with no bank: nobody to pay it through
+    const expected = b.source === 'expected' || !b.payeeId
     const evidence = { amountDue: b.amountDue, dueDate: b.dueDate, daysLeft: days }
     if (b.status === 'overdue' || days < 0) {
       out.push({

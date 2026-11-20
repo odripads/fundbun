@@ -92,3 +92,10 @@
   color: var(--text-2);
   font-size: var(--fs-xs);
 }
+
+.link {
+  color: var(--text);
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

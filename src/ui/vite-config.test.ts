@@ -83,9 +83,10 @@ describe('dev proxy when the LLM gateway is not running (F23)', () => {
 describe('Content-Security-Policy meta (static build only)', () => {
   it('is the agreed policy', () => {
     expect(BUILD_CSP).toBe(
-      "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'",
+      "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'",
     )
-    expect(BUILD_CSP).not.toMatch(/unsafe-eval|script-src[^;]*unsafe-inline/)
+    // the receipt and PDF readers may compile WebAssembly; plain eval and inline scripts stay forbidden
+    expect(BUILD_CSP).not.toMatch(/(?<!wasm-)unsafe-eval|script-src[^;]*unsafe-inline/)
   })
 
   it('applies to the build only, right after <meta charset> and before every script', () => {

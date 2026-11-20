@@ -28,3 +28,4 @@ docs/export/out/
 
 # Vercel CLI project link (vercel link)
 .vercel
+public/ocr/

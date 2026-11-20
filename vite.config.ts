@@ -28,6 +28,9 @@ export function baseFor(mode: string): string {
  */
 export const BUILD_CSP = [
   "default-src 'self'",
+  // the receipt and PDF readers compile WebAssembly (in same-origin workers); no eval, no outside scripts
+  "script-src 'self' 'wasm-unsafe-eval'",
+  "worker-src 'self'",
   "img-src 'self' data: blob:",
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self' data:",

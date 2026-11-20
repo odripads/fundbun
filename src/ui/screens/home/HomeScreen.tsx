@@ -87,7 +87,7 @@ export function HomeScreen() {
           Add spending
         </Button>
         <Button variant="soft" size="lg" iconStart={<Camera />} onClick={() => navigate('receipt')}>
-          Scan a receipt
+          Receipt or file
         </Button>
       </div>
       <QuickAdd open={adding} onClose={() => setAdding(false)} />

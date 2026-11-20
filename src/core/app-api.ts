@@ -290,6 +290,11 @@ export interface AppApi {
    * the yearly total, and with no bank connected a bill to expect on its next date.
    */
   addSubscription(input: ManualSubscriptionInput): Result & { id?: string }
+  /**
+   * No bank connected: a bill the user wants to remember to pay (from a PDF, a photo or typed in). It shows in
+   * Bills with "Mark as paid", like the bills Bun predicts. With a bank connected bills come from the bank.
+   */
+  addBill(input: { name: string; amount: Minor; dueDate: ISODate }): Result & { id?: string }
   removeSubscription(id: string): Result
   /** Bill X-ray via the agent (xray_bill tool) — returns the assistant message with the xray card */
   xrayBill(text: string): Promise<ChatMessage>

@@ -142,6 +142,26 @@ export function createUserApi(core: Core, onLlmGranted: () => void): UserApi {
     })
   }
 
+  function addBill(input: { name: string; amount: Minor; dueDate: string }): Result & { id?: string } {
+    if (core.lock.locked || !store.get().profile) return { ok: false, error: 'Unlock the app first.' }
+    const name = typeof input.name === 'string' ? input.name.trim().slice(0, 60) : ''
+    if (!name) return { ok: false, error: 'Who is the bill from?' }
+    if (!Number.isSafeInteger(input.amount) || input.amount <= 0) return { ok: false, error: 'The amount is a positive amount.' }
+    if (typeof input.dueDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(input.dueDate)) return { ok: false, error: 'Pick the due date.' }
+    syncClock(core)
+    return store.mutate((draft) => {
+      if (hasBank(draft.bank)) return { ok: false, error: 'With a bank connected, bills come from the bank.' }
+      const id = `bill_user_${Date.now().toString(36)}${draft.bank.bills.length}`
+      draft.bank.bills.push({
+        id, payeeId: '', name, category: 'utilities', amountDue: input.amount, dueDate: input.dueDate, period: input.dueDate.slice(0, 7),
+        status: input.dueDate < draft.bank.today ? 'overdue' : 'upcoming', source: 'import',
+      })
+      draft.bank.bills.sort((a, b) => (a.dueDate < b.dueDate ? -1 : a.dueDate > b.dueDate ? 1 : 0))
+      appendAudit(draft, core.now(), 'user', 'user_action', `Bill added: ${name}`, { amount: input.amount, dueDate: input.dueDate })
+      return { ok: true, id }
+    })
+  }
+
   function removeSubscription(id: string): Result {
     if (core.lock.locked || !store.get().profile) return { ok: false, error: 'Unlock the app first.' }
     return store.mutate((draft) => {
@@ -328,6 +348,7 @@ export function createUserApi(core: Core, onLlmGranted: () => void): UserApi {
     setDailyPlan,
     addSubscription,
     removeSubscription,
+    addBill,
     transactions: (filter) => filterTransactions(store.get().bank.transactions, filter),
 
     // ── sandbox / demo controls ──

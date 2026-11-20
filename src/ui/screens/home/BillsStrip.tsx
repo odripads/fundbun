@@ -71,7 +71,7 @@ export function BillsStrip() {
                 </span>
                 {scheduled ? (
                   <Badge size="sm" variant="info" className={styles.scheduled}>Scheduled</Badge>
-                ) : b.source === 'expected' ? (
+                ) : b.source === 'expected' || !b.payeeId ? (
                   // no bank connected: the user pays in their bank app, then says so
                   <Button
                     size="sm"

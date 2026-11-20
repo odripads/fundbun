@@ -5,10 +5,10 @@
  *
  * Languages: Simplified Chinese (chi_sim), English (eng) and Indonesian (ind).
  *
- * Honest note on offline/bundling: tesseract.js loads its WASM core, worker script and `*.traineddata.gz`
- * language files at runtime. By default it fetches them from its CDN; a fully offline build must ship those
- * assets and pass `corePath` / `workerPath` / `langPath` pointing at them. That bundling is NOT done here —
- * the wrapper accepts the paths so it can be, and the rest of the feature is exercised against plain text.
+ * Offline: tesseract.js loads its WASM core, worker script and `*.traineddata.gz` language files at runtime.
+ * The app ships them itself (scripts/ocr-assets.mjs copies them into public/ocr at every build) and the UI passes
+ * `ocrAssets(base)` so nothing is fetched from a CDN: CDNs are blocked in mainland China and the CSP allows only
+ * the app's own origin. The worker is loaded by URL (not as a blob), so the CSP needs no blob: for workers.
  */
 export type ReceiptOcrLang = 'chi_sim' | 'eng' | 'ind'
 
@@ -24,6 +24,12 @@ export interface OcrOptions {
   workerPath?: string
   /** progress callback, 0..1 */
   onProgress?: (progress: number) => void
+}
+
+/** The app's own copies of the reader (public/ocr), under the site's base path ('/' or '/fundbun/'). */
+export function ocrAssets(base: string): Required<Pick<OcrOptions, 'workerPath' | 'corePath' | 'langPath'>> {
+  const root = `${base.replace(/\/?$/, '/')}ocr/`
+  return { workerPath: `${root}worker.min.js`, corePath: `${root}core/`, langPath: `${root}lang` }
 }
 
 export interface ReceiptOcrResult {
@@ -50,7 +56,7 @@ export async function recognizeReceipt(image: Blob | File | string, opts: OcrOpt
   const worker = await tesseract.createWorker(RECEIPT_OCR_LANGS.join('+'), 1, {
     ...(opts.langPath ? { langPath: opts.langPath } : {}),
     ...(opts.corePath ? { corePath: opts.corePath } : {}),
-    ...(opts.workerPath ? { workerPath: opts.workerPath } : {}),
+    ...(opts.workerPath ? { workerPath: opts.workerPath, workerBlobURL: false } : {}),
     logger: (m: { progress: number }) => opts.onProgress?.(m.progress ?? 0),
   })
   try {

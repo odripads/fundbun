@@ -5,6 +5,7 @@ import { readCsvFile } from '../../lib/csvFile'
 import { errorText, useApp } from '../../state'
 import { importSummary, MAX_CSV_BYTES, type ImportOutcome } from './billsView'
 import { SECTION_IDS } from './jump'
+import { href } from '../../router'
 import styles from './csv.module.css'
 
 /** Bring in a bank / WeChat Pay / Alipay CSV so Bun can spot more bills and subscriptions. Parsed on-device. */
@@ -48,7 +49,11 @@ export function CsvImportCard() {
           <h2 id={titleId} className={styles.title}>
             Import a statement
           </h2>
-          <p className={styles.body}>A CSV from your bank, WeChat Pay or Alipay. Bun looks for new bills and subscriptions — the file never leaves this device.</p>
+          <p className={styles.body}>
+            A CSV from your bank, WeChat Pay or Alipay. Bun looks for new bills and subscriptions — the file never leaves this device. A PDF, Excel
+            file, Word file or a photo?{' '}
+            <a href={href('receipt')} className={styles.link}>Add from a receipt or file</a>.
+          </p>
         </div>
       </div>
       <input ref={input} type="file" accept=".csv,text/csv" className="sr-only" tabIndex={-1} aria-hidden="true" onChange={(e) => void onFile(e)} />

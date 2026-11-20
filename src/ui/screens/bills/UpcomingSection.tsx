@@ -97,8 +97,8 @@ export function UpcomingSection({ currency, today, bills, payees, findings, remi
         </div>
       ) : (
         <>
-          {shown.some((b) => isOpen(b) && b.status !== 'scheduled' && b.source !== 'expected') ? <PinHint tool="pay_bill">Paying or scheduling needs your PIN — Bun never pays on its own</PinHint> : null}
-          {shown.some((b) => isOpen(b) && b.source === 'expected') ? (
+          {shown.some((b) => isOpen(b) && b.status !== 'scheduled' && b.source !== 'expected' && !!b.payeeId) ? <PinHint tool="pay_bill">Paying or scheduling needs your PIN — Bun never pays on its own</PinHint> : null}
+          {shown.some((b) => isOpen(b) && (b.source === 'expected' || !b.payeeId)) ? (
             <p className={styles.noBank}>
               <Info aria-hidden="true" />
               <span>
@@ -235,7 +235,7 @@ function BillRow({ bill, today, currency, payee, spike, reminder, awaiting, runn
   const app = useApp()
   const toast = useToast()
   // predicted from the user's own repeating charges: no bank to pay through, so the user pays and then says so
-  const expected = bill.source === 'expected'
+  const expected = bill.source === 'expected' || !bill.payeeId
   const markedHere = bill.paidTxnId === `manual_bill_${bill.id}`
 
   function markPaid() {
@@ -271,7 +271,9 @@ function BillRow({ bill, today, currency, payee, spike, reminder, awaiting, runn
           <p className={styles.billName}>{bill.name}</p>
           {expected ? (
             <p className={styles.billPayee}>
-              <span className={styles.payeeName}>{markedHere ? 'You marked it as paid' : status === 'paid' ? 'Seen on your statement' : 'Expected, from your statements'}</span>
+              <span className={styles.payeeName}>
+                {markedHere ? 'You marked it as paid' : status === 'paid' ? 'Seen on your statement' : bill.source === 'expected' ? 'Expected, from your statements' : 'Added by you'}
+              </span>
             </p>
           ) : (
             <p className={styles.billPayee}>
