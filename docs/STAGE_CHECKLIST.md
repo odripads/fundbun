@@ -12,6 +12,8 @@ you should see; if you see something else, stop and fix that before going on.
 3. **Carry the demo video as a file on the laptop.** YouTube does not open in mainland China.
 4. The public links (`fundbun.vercel.app`, `odripads.github.io/fundbun`) do not open reliably in China. Plan to
    demo from the laptop screen.
+5. **If you rebuilt `FundBun.app` (`npm run desktop:build`):** open `FundBun.app` once before going on stage and click
+   **Always Allow** on the macOS Keychain prompt (re-signing changes the app's signature).
 
 ## Morning of the demo
 
@@ -21,13 +23,14 @@ you should see; if you see something else, stop and fix that before going on.
    cd ~/fundbun-work
    ```
 
-2. Clear any Claude settings from the shell, so the app can't pick the wrong AI provider:
+2. Clear any Claude settings from the shell, so the app can't pick the wrong AI provider (and if launching from
+   inside another agent's terminal, clear `CLAUDE*` variables too):
 
    ```bash
-   unset ANTHROPIC_API_KEY ANTHROPIC_BASE_URL
+   unset ANTHROPIC_API_KEY ANTHROPIC_BASE_URL CLAUDECODE
    ```
 
-3. Check the code is healthy. Expect about 3,350 tests passed, in about a minute:
+3. Check the code is healthy. Expect about 3,500+ tests passed, in about a minute:
 
    ```bash
    npm run typecheck && npm test
@@ -95,6 +98,19 @@ you should see; if you see something else, stop and fix that before going on.
 - Questions judges like to type, which Bun now answers itself: "is this safe?", "is this connected to my real
   bank?", "which AI model are you?", "what are your limits?", "what is a tripwire?", "delete my data". They work in
   Chinese too.
+
+### Bring your own AI (desktop app demo moment)
+
+- Open the FundBun desktop app (`FundBun.app` or `npm run desktop`) as **Jing**.
+- In **Ask Bun**, tap the model chip under the message box and pick **Claude Code** (or **DeepSeek**).
+- Ask **"Where did my money go this month?"**: the steps show FundBun's tools running through the policy rules, and the
+  numbers match the dashboard.
+- Ask it to **"run `touch hello.txt` in your folder"** (read-only `ls` in the empty workspace can auto-allow in Claude Code's
+  default mode, whereas creating a file triggers the prompt): FundBun asks first ("Claude Code wants to use one of its
+  own tools"); press **No** to show it stays denied cleanly.
+- Switch the model chip back to **Built-in engine** to show FundBun still works with no AI model and no network at all.
+- Line for the stage: *"FundBun sells no tokens. Bring the AI you already pay for; FundBun's rules decide what it may do."*
+- If the venue network blocks the agent, **DeepSeek** with your own key or the **Built-in engine** still works.
 
 ## What you may say about the tests
 

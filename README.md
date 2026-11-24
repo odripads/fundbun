@@ -42,17 +42,22 @@ changed, nothing leaked. A small sandbox test, not a guarantee.
 
 ![FundBun architecture](docs/assets/diagrams/architecture.png)
 
-- **`src/core/`**: framework-free TypeScript shared by the browser app, the Node evidence runner and the tests:
+- **`src/core/`**: framework-free TypeScript shared by the browser app, the desktop app, the Node evidence runner and the tests:
   `finance/` (categoriser, summaries, recurring + bill analysis, X-ray, anomalies, budgets, Dream Mirror, tripwires,
-  insights, affordability), `sandbox/` (deterministic sandbox bank + personas + WeChat Pay / Alipay CSV import),
+  insights, affordability, daily plan, check-in, temper), `sandbox/` (deterministic sandbox bank + personas + WeChat Pay / Alipay CSV import),
   `security/` (policy engine, PIN, binding hashes, audit hash chain, redaction, injection scanner, grounding check,
   vault), `agent/` (offline "Bun Engine": TF-IDF intent model + dialogue manager + planner + templated voice; LLM
-  tool-use loop), `controller/` + `app.ts` (the `AppApi` controller).
-- **`src/ui/`**: React 19 mobile-first app; on desktop the phone-sized app sits next to the **Glass Box** (live agent
-  trace, policy decisions, audit tail, sandbox controls).
-- **`server/`**: optional LLM gateway (Node http): holds API keys, re-redacts PII, validates requests, rate-limits,
-  never logs bodies; providers: Anthropic (default `claude-sonnet-5-5`), any OpenAI-compatible endpoint (e.g.
-  DeepSeek / Qwen for in-region deployment), and a deterministic mock.
+  tool-use loop; `agent-engine.ts` for ACP agents; 20 T0-T3 tools plus 5 T4 prohibited tools), `ai/` (bring-your-own-AI client),
+  `controller/` + `app.ts` (the `AppApi` controller).
+- **`src/ui/`**: React 19 app; on wide screens (desktop app or desktop browser) it renders a full-window desktop layout
+  (sidebar, dashboard, Ask Bun panel, and the **Glass Box** trace/policy/audit panel); on phones it keeps the phone layout.
+  Includes the **Your AI** connection sheet (`src/ui/components/ai/`), model chip, live streaming replies, and safe Markdown.
+- **`desktop/`**: Electron shell (`desktop/main.ts`, `scripts/desktop-build.mjs`) that runs the local server in-process on
+  `127.0.0.1:47600`, encrypts saved API keys using the OS keychain (`safeStorage`), and opens a sandboxed window with no Node access.
+- **`server/`**: local server (`server/local.ts`) and optional LLM gateway (`server/app.ts`). Holds API keys on this computer
+  (`server/ai/`), runs local ACP agents (`server/agents/` + `mcp-bridge.mjs`), re-redacts PII, validates requests, rate-limits,
+  never logs bodies; providers: Anthropic, any OpenAI-compatible endpoint (e.g. DeepSeek, Qwen, Kimi, GLM, Ollama, LM Studio),
+  and a deterministic mock.
 - **The model proposes; the policy engine decides.** See [`docs/TECHNICAL.md`](docs/TECHNICAL.md) for the agent design
   and algorithms, and [`docs/SECURITY_SELF_ASSESSMENT.md`](docs/SECURITY_SELF_ASSESSMENT.md) for the security model.
 
@@ -61,9 +66,11 @@ changed, nothing leaked. A small sandbox test, not a guarantee.
 - **Operating system:** macOS, Linux or Windows (developed on macOS 26, CI on Ubuntu)
 - **Runtime:** Node.js ≥ 20 (22 recommended), npm ≥ 10; any modern browser (Chrome, Safari, Edge, Firefox)
 - **Main dependencies:** React 19, Vite 8, TypeScript 5.9, Vitest 5, zod 4, lucide-react, @fontsource (self-hosted
-  fonts, no Google Fonts CDN), @anthropic-ai/sdk (gateway only), Playwright (dev, demo recording)
+  fonts, no Google Fonts CDN), @anthropic-ai/sdk (gateway only), Tesseract.js / pdfjs-dist / read-excel-file / mammoth
+  (on-device receipt and statement reading), Electron + @electron/packager (desktop app), Playwright (dev, demo recording)
 - **Environment variables:** copy `.env.example` to `.env` (never commit it). Everything is optional: without an API key
-  FundBun runs its on-device engine only.
+  FundBun runs its on-device rules engine. In the desktop app and local server (`npm run local`), you add API keys and
+  agents inside the app (**Your AI**) instead of `.env`.
 
 | Variable | Purpose |
 |---|---|
@@ -89,11 +96,37 @@ npm run dev            # web on http://localhost:5173 + LLM gateway on :8787
 Open **http://localhost:5173/?demo=jing** (over-budget story) or **?demo=arif** (on-target story). The demo PIN is
 **2580**. `?reset=1` wipes local data and starts onboarding ("Set up my own").
 
+- Desktop app (Electron + local server): `npm run desktop` (builds and opens the window) or `npm run desktop:build`
+  (packages `desktop/release/FundBun-darwin-arm64/FundBun.app` and a `.dmg` on macOS, ad-hoc signed, not notarised)
+- Local server in a browser (supports **Your AI**): `npm run local` → http://127.0.0.1:47600
 - Production (one process serving the app + gateway): `npm run build && npm start` → http://localhost:8787
 - Docker: `docker build -t fundbun . && docker run -p 8787:8787 --env-file .env fundbun`
 - Static, fully offline build (on-device engine only): `npm run build:vercel` (Vercel, site root; see `vercel.json`) or
   `npm run build:pages` (GitHub Pages, under `/fundbun/`)
 - Mock LLM mode without a key: `FUNDBUN_ALLOW_MOCK=1 LLM_PROVIDER=mock npm run dev`
+
+### Plugging in your own AI (desktop app / `npm run local`)
+
+FundBun is free and sells no tokens. On the desktop app or local server, you can plug in the AI you already have (a Pro
+plan where FundBun supplies the model is planned, with no price set and not built yet):
+
+1. Open the FundBun desktop app (or `npm run local`), choose a demo (**Explore as Jing** or **Arif**) or set up your own data,
+   and open **Ask Bun**.
+2. Tap the model chip under the message box (it starts on **Built-in engine**) to open **Your AI**, then tap **Connect an AI**.
+3. Pick one of three options:
+   - **Agents you are signed in to:** Claude Code, Codex, Qwen Code, Gemini CLI, OpenCode, Kimi Code, or any custom ACP command.
+     No API key is needed: the agent uses its own CLI login on your computer. FundBun starts it in `~/.fundbun/workspace` and
+     switches it to ask-first mode. (Verified live with Claude Code; other listed agents connect over ACP.)
+   - **With your own API key:** DeepSeek, Qwen (China or international), Kimi, GLM, OpenAI, Claude, Gemini, OpenRouter, or any
+     OpenAI-compatible `/chat/completions` endpoint. Paste your key and pick a model from its list. Keys stay on your computer
+     in `~/.fundbun/connections.json` (mode `0600`), encrypted with the macOS Keychain in the desktop app.
+   - **A model on this computer:** Ollama or LM Studio over `127.0.0.1`. Nothing leaves your computer (requires a model that
+     supports tool calls).
+4. Switch back to **Built-in engine** at any time from the model chip. The built-in rules engine stays on-device with zero
+   network calls.
+
+Note when launching the desktop app or `npm run local` from inside another coding agent's terminal: unset `ANTHROPIC_API_KEY`,
+`ANTHROPIC_BASE_URL`, and `CLAUDE*` variables first so Claude Code uses its own login cleanly.
 
 **Things to try:** Home → "Should I buy it?" · Sandbox chip → simulate a purchase (tripwire fires) · Ask Bun →
 "Help me get back on track this month" (task plan) · "Move ¥300 to my Chengdu fund" · "Pay my electricity bill" (PIN) ·
@@ -103,8 +136,8 @@ Settings → Freeze Bun · Activity → verify the audit chain.
 ## 5. Testing
 
 ```bash
-npm test               # 2,700+ unit, integration, UI and scenario tests (Vitest)
-npx tsc --noEmit -p .  # typecheck
+npm test               # 3,500+ unit, integration, UI and scenario tests (Vitest)
+npx tsc -b --noEmit    # typecheck
 npm run evidence       # replays all scripted scenarios → evidence/latest (logs, transcripts, audit chains, metrics)
 ```
 
@@ -139,10 +172,15 @@ npm run evidence       # replays all scripted scenarios → evidence/latest (log
 
 ## 7. Security Notes
 
-- **Permission tiers:** T0 read · T1 organise (reversible, no money) · T2 move own money (checking ↔ goal pots, capped)
-  · T3 pay verified bills / cancel / dispute (always tap + PIN) · T4 never (send money to others, add payees, invest,
-  borrow, change its own limits). Four user-chosen autonomy levels (Observe, Suggest, Co-pilot, Autopilot) decide what
-  runs automatically; raising them needs the PIN, lowering never does.
+- **Permission tiers:** T0 read (9 tools) · T1 organise (6 tools, reversible, no money; `log_spending` always waits for a tap)
+  · T2 move own money (2 tools, checking ↔ goal pots, capped) · T3 pay verified bills / cancel / dispute (3 tools, always tap + PIN)
+  · T4 never (5 tools: send money to others, add payees, invest, borrow, change its own limits). Four user-chosen autonomy levels
+  (Observe, Suggest, Co-pilot, Autopilot) decide what runs automatically; raising them needs the PIN, lowering never does.
+- **Desktop & agent mode:** API keys are stored locally in `~/.fundbun/connections.json` (encrypted with the OS keychain in
+  the desktop app) and never sent to the web page. `/api/ai/*` and `/api/agent/*` routes exist only on the local server and
+  refuse non-local `Host` or cross-origin requests. Connected ACP agents run in `~/.fundbun/workspace` over a token-authenticated
+  MCP bridge (`mcp__fundbun__*`), must run in an ask-first mode (failing closed if they cannot), and always ask the user before
+  running shell or file tools. Every FundBun tool call passes through the same policy gate as any model.
 - **Confirmation for sensitive operations:** action cards are built from structured data by code (never LLM prose);
   each pending action carries a binding hash of exactly what will execute, re-verified at approval; T3 needs the PIN
   (PBKDF2-hashed, lockout after 3 failures). Caps per action / day / month, liquidity check before transfers, a 30-second

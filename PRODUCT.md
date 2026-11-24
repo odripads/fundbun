@@ -4,7 +4,7 @@
 
 ## Platform
 
-web
+desktop (macOS Electron app) and mobile-first web
 
 ## Users
 
@@ -29,6 +29,15 @@ charges, and keeps count of what the user sets aside. The user pays in their ban
 **With a bank connected**, the same screens can act: pay the bill, move the money, behind the PIN and the safety
 rules. Today the only connected bank is the simulated one behind the demo personas, labelled "Bank demo".
 
+On desktop, FundBun works as a personal-finance **harness**: a working finance app plus open chat where users plug in
+the AI they already have (agents they are signed in to such as Claude Code or Codex, their own API keys such as DeepSeek
+or Qwen, or a local model via Ollama/LM Studio) alongside the built-in on-device rules engine. FundBun sells no tokens.
+
+## Plans
+
+- **Free plan:** Bring your own AI (or use the built-in on-device rules engine). FundBun costs nothing and sells no tokens.
+- **Pro plan (planned, no price set, not built):** FundBun supplies the model so there is nothing to connect.
+
 ## Positioning
 
 The mechanism a read-only assistant cannot truthfully copy: **safe action plus user-set tripwires.**
@@ -43,11 +52,12 @@ WeBank), International Track, Topic A (personal-finance AI agent). Judging has t
 tasks in a sandbox (40%), security attacks (induced transfer, data extraction, privilege escalation,
 prompt injection; 30%), and innovation (30%). A surprise brief arrives on hackathon day 1.
 
-The app is a mobile-first web app; on desktop it renders a phone-sized app beside the **Glass Box**
-(a live agent trace, policy decisions, audit tail, and sandbox controls). Demo users are synthetic
-personas (Jing, with a "Mei" alias), reachable via `?demo=jing`; there is no real bank or user data.
-Our proposal for a bank setting (nothing is agreed with any bank) is FundBun as a safety layer inside the
-bank's own app, where the bank hosts and executes. Public brand is FundBun ("WeBun" is a working name only).
+The app is responsive across desktop and phone: on desktop (and in the Electron app) it renders a full-window layout
+with a sidebar, dashboard, Ask Bun panel, and the **Glass Box** (a live agent trace, policy decisions, audit tail, and
+sandbox controls); on phones it keeps the phone layout. Demo users are synthetic personas (Jing, with a "Mei" alias),
+reachable via `?demo=jing`; there is no real bank or user data. Our proposal for a bank setting (nothing is agreed with
+any bank) is FundBun as a safety layer inside the bank's own app, where the bank hosts and executes. Public brand is
+FundBun ("WeBun" is a working name only).
 
 ## Capabilities and Constraints
 
@@ -61,9 +71,10 @@ Capabilities:
 - **Five-tier permission engine** (T0 read → T4 prohibited) and a tamper-evident audit hash chain.
 
 Constraints:
-- **No real bank or user data.** Only CSV import and a deterministic synthetic sandbox bank.
-- **The offline "on-device AI" is text matching + rules (27 intents), not a neural model.** An optional LLM gateway (Anthropic / any OpenAI-compatible endpoint / mock) provides the AI mode; it was not yet live-tested against a real model.
-- Browser-only state; no backend persistence.
+- **No real bank or user data.** Only CSV/receipt/statement import and a deterministic synthetic sandbox bank.
+- **The offline "built-in engine" is text matching + rules (27 intents), not a neural model.** On desktop, users can plug in their own API key (DeepSeek, Qwen, Kimi, GLM, OpenAI, Claude, Gemini, OpenRouter, or custom), a local model (Ollama, LM Studio), or an ACP agent (Claude Code, Codex, Qwen Code, Gemini CLI, OpenCode, Kimi Code, or custom). Live testing has been run with DeepSeek (18 Nov) and the desktop app with DeepSeek and Claude Code (25 Nov); other listed providers and agents are wired to standard APIs/ACP and have not been live-tested end to end.
+- **Pro plan is planned, not built.** No pricing or hosted token billing exists.
+- Browser-only financial state (plus local `~/.fundbun/connections.json` on desktop, with macOS Keychain encryption); no cloud user accounts.
 - Claims FundBun does not make, because they are not true or not ours to make: "China's Plaid", "compliant" or "legal under PIPL", "first", "our agent moves money", any bank's sub-accounts or logins, or any named bank as a partner. Say "bank-side confirmation bound to amount and payee", not just "PIN".
 
 ## Brand Commitments
@@ -76,7 +87,7 @@ Constraints:
 ## Evidence on Hand
 
 - Docs: `docs/CONTRACT.md`, `docs/TECHNICAL.md`, `docs/SECURITY_SELF_ASSESSMENT.md`, `docs/SCENARIOS.md`, `docs/PITCH_SCRIPT.md`, `docs/PRIVACY_NOTICE.md`, `docs/DEMO_VIDEO_SCRIPT.md`.
-- Measured output: `evidence/` (45/45 scripted scenarios, 231/231 assertions, 24/24 attacks blocked with ¥0 moved, 44/44 audit chains intact).
+- Measured output: `evidence/` (45/45 scripted scenarios, 233/233 assertions, 24/24 attacks blocked with ¥0 moved, 44/44 audit chains intact).
 - Pitch deck builder: `deck/`. Logo/brand art: `docs/assets/brand/`, `public/`.
 - Demo video: https://youtu.be/Se5TD4KQ35A · Live: https://fundbun.vercel.app · Mirror: https://odripads.github.io/fundbun/?demo=jing
 - Absences future work must not fabricate: real customers, testimonials, benchmarks, press, and any real bank connection.
