@@ -29,7 +29,7 @@ describe('parseLlmRequest', () => {
     ['too many messages', { ...base, messages: Array.from({ length: 41 }, () => ({ role: 'user', content: 'x' })) }],
     ['no messages', { ...base, messages: [] }],
     ['too many tools', { ...base, tools: Array.from({ length: 41 }, (_, i) => tool(`t${i}`)) }],
-    ['maxTokens too high', { ...base, maxTokens: 2049 }],
+    ['maxTokens too high', { ...base, maxTokens: 4097 }],
     ['maxTokens not an integer', { ...base, maxTokens: 10.5 }],
     ['unknown top-level key', { ...base, temperature: 1 }],
     ['unknown block key', { ...base, messages: [{ role: 'user', content: [{ type: 'text', text: 'x', cache_control: {} }] }] }],

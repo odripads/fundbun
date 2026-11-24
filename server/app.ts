@@ -2,6 +2,10 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import type { LlmHealth, LlmResponse } from '../src/core/agent/llm'
 import { llmToolDefinitions } from '../src/core/agent/specs'
 import { redactDeep } from '../src/core/security/redact'
+import type { AgentRuntime } from './agents/runtime'
+import { handleAgent } from './agents/routes'
+import { handleAi } from './ai/routes'
+import { isLocalHost, type AiService } from './ai/service'
 import { emailSourcesMeta, fetchEmailMessages } from './email'
 import { ProviderError, type LlmProvider, type ProviderRequest } from './providers/types'
 import { createRateLimiter, type RateLimiter } from './ratelimit'
@@ -37,6 +41,13 @@ export interface GatewayOptions {
   redact?: Redactor
   /** tool names the LLM may be offered; defaults to the exposed specs (T4 tools are never offered) */
   allowedTools?: ReadonlySet<string>
+  /**
+   * Local server only (desktop app, `npm run local`): the user's own AI connections. When set, /api/ai/* is served,
+   * the active connection answers /api/llm, and every API call must come from this computer.
+   */
+  ai?: AiService
+  /** Local server only: agents on this computer (Claude Code, Codex, …) driven over ACP */
+  agents?: AgentRuntime
   /** production: serve dist/ for non-API paths */
   staticHandler?: StaticHandler | null
   /** one line per request: method, path, status, latency, provider — never bodies */
@@ -101,6 +112,19 @@ async function route(ctx: RouteContext, req: IncomingMessage, res: ServerRespons
     if (req.method !== 'POST') return methodNotAllowed(res, 'POST')
     return handleLlm(ctx, req, res)
   }
+  if (pathname.startsWith('/api/ai/') || pathname.startsWith('/api/agent/')) {
+    const { ai, agents } = ctx.opts
+    // the hosted gateway has neither: it never takes anyone's keys and never starts programs
+    if (!ai) return sendJson(res, 404, { error: 'not_found', message: 'Connections need the FundBun desktop app or the local server.' })
+    const isBridge = pathname === '/api/agent/mcp'
+    if (!isLocalRequest(req) || (!isBridge && !isSameOrigin(req, ctx.opts))) {
+      return sendJson(res, 403, { error: 'forbidden_origin', message: 'Only this computer may use this route.' })
+    }
+    const tools = { sendJson: (r: ServerResponse, status: number, body: unknown) => sendJson(r, status, body), readJson: readJsonBody }
+    if (pathname.startsWith('/api/ai/')) return handleAi(ai, req, res, pathname, tools)
+    if (!agents) return sendJson(res, 404, { error: 'not_found', message: 'Agents are not available here.' })
+    return handleAgent(agents, req, res, pathname, tools)
+  }
   if (pathname === '/api/email/sources') {
     if (req.method !== 'GET' && req.method !== 'HEAD') return methodNotAllowed(res, 'GET, HEAD')
     return sendJson(res, 200, emailSourcesMeta(), req.method === 'HEAD')
@@ -115,6 +139,13 @@ async function route(ctx: RouteContext, req: IncomingMessage, res: ServerRespons
 }
 
 export function healthOf(opts: GatewayOptions): LlmHealth {
+  if (opts.ai) {
+    const active = opts.ai.active()
+    if (active?.kind === 'agent') return { ok: true, provider: active.label, model: '', local: true, kind: 'agent', connectionId: active.id }
+    if (active?.model) return { ok: true, provider: active.label, model: active.model, local: true, kind: active.kind, connectionId: active.id, onDevice: active.local }
+    if (!opts.provider) return { ok: false, provider: 'none', local: true, reason: active ? 'Pick a model for your AI connection' : 'No AI connected yet' }
+    return { ok: true, provider: opts.provider.name, model: opts.provider.model, local: true }
+  }
   if (opts.provider) return { ok: true, provider: opts.provider.name, model: opts.provider.model }
   return {
     ok: false,
@@ -137,9 +168,15 @@ async function handleLlm(ctx: RouteContext, req: IncomingMessage, res: ServerRes
     res.setHeader('Retry-After', String(decision.retryAfterSec))
     return sendJson(res, 429, { error: 'rate_limited', message: 'Too many requests. Slow down a little.', retryAfterSec: decision.retryAfterSec })
   }
-  if (!opts.provider) {
+  if (opts.ai && !isLocalRequest(req)) {
     discard()
-    return sendJson(res, 503, { error: 'llm_unavailable', message: opts.unavailableReason ?? 'No LLM provider configured.' })
+    return sendJson(res, 403, { error: 'forbidden_origin', message: 'Only this computer may use this route.' })
+  }
+  const mine = opts.ai?.activeProvider() ?? null
+  const provider = mine?.provider ?? opts.provider
+  if (!provider) {
+    discard()
+    return sendJson(res, 503, { error: 'llm_unavailable', message: opts.ai ? 'No AI connected yet.' : opts.unavailableReason ?? 'No LLM provider configured.' })
   }
   if (!isJson(req)) {
     discard()
@@ -159,7 +196,39 @@ async function handleLlm(ctx: RouteContext, req: IncomingMessage, res: ServerRes
   // fail closed: never forward text that could not be checked for personal data
   if (!redacted) return sendJson(res, 503, { error: 'redaction_unavailable', message: 'Server-side redaction is unavailable.' })
   const request: ProviderRequest = { ...redacted.value, tools: parsed.value.tools, maxTokens: parsed.value.maxTokens }
-  await callProvider(opts.provider, request, redacted.counts, opts.providerTimeoutMs ?? 40_000, res)
+  const outcome = await callProvider(provider, request, redacted.counts, mine?.timeoutMs ?? opts.providerTimeoutMs ?? 40_000, res)
+  if (mine && outcome) {
+    if (outcome.ok) opts.ai?.markOk(mine.connection.id)
+    else opts.ai?.markError(mine.connection.id, outcome.message)
+  }
+}
+
+/** A request the local server will act on must be addressed to this computer (stops DNS-rebinding pages). */
+export function isLocalRequest(req: IncomingMessage): boolean {
+  const host = header(req, 'host') ?? ''
+  const name = host.startsWith('[') ? host.slice(0, host.indexOf(']') + 1) : host.split(':')[0]
+  return isLocalHost(name)
+}
+
+/** Reads a small JSON object body; answers 4xx itself and returns null when it is not one. */
+async function readJsonBody(req: IncomingMessage, res: ServerResponse): Promise<Record<string, unknown> | null> {
+  if (!isJson(req)) {
+    drain(req, LIMITS.bodyBytes * 4)
+    sendJson(res, 415, { error: 'unsupported_media_type', message: 'Send application/json.' })
+    return null
+  }
+  const body = await readBody(req, LIMITS.bodyBytes)
+  if (body.kind === 'too_large') {
+    sendJson(res, 413, { error: 'payload_too_large', message: `Request body exceeds ${LIMITS.bodyBytes} bytes.` }, false, true)
+    return null
+  }
+  if (body.kind === 'aborted') return null
+  const json = parseJsonSafe(body.data)
+  if (!json || typeof json !== 'object' || Array.isArray(json)) {
+    sendJson(res, 400, { error: 'invalid_json', message: 'Body is not a JSON object.' })
+    return null
+  }
+  return json as Record<string, unknown>
 }
 
 /** Read-only email ingestion (the stage demo serves the synthetic sandbox mailbox — no IMAP account needed). */
@@ -193,7 +262,13 @@ function redactSafely(redact: Redactor, req: Redactable): { value: Redactable; c
   }
 }
 
-async function callProvider(provider: LlmProvider, request: ProviderRequest, counts: Record<string, number>, timeoutMs: number, res: ServerResponse): Promise<void> {
+async function callProvider(
+  provider: LlmProvider,
+  request: ProviderRequest,
+  counts: Record<string, number>,
+  timeoutMs: number,
+  res: ServerResponse,
+): Promise<{ ok: true } | { ok: false; message: string } | null> {
   const clientGone = new AbortController()
   const onClose = () => {
     if (!res.writableFinished) clientGone.abort()
@@ -204,10 +279,12 @@ async function callProvider(provider: LlmProvider, request: ProviderRequest, cou
     const result = await provider.complete(request, AbortSignal.any([clientGone.signal, timeout]))
     const response: LlmResponse = { ...result, redactions: counts }
     sendJson(res, 200, response)
+    return { ok: true }
   } catch (err) {
-    if (clientGone.signal.aborted) return
+    if (clientGone.signal.aborted) return null
     const error = timeout.aborted ? new ProviderError('upstream_timeout') : err instanceof ProviderError ? err : new ProviderError('upstream_error')
     sendJson(res, 502, { error: 'provider_error', code: error.code, message: error.message })
+    return { ok: false, message: error.message }
   } finally {
     res.off('close', onClose)
   }

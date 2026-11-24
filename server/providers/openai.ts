@@ -8,7 +8,18 @@ export interface OpenAiCompatOptions {
   model: string
   timeoutMs?: number
   fetch?: typeof fetch
+  /**
+   * Provider-specific request fields merged into the body. Default: DeepSeek's switch that turns thinking off
+   * (the gateway's original provider). Pass {} for endpoints that reject unknown fields.
+   */
+  extraBody?: Record<string, unknown>
+  /** the output-limit field: newer OpenAI models take max_completion_tokens */
+  maxTokensParam?: 'max_tokens' | 'max_completion_tokens'
+  /** reported as LlmResponse.provider (default 'openai_compat') */
+  label?: string
 }
+
+export const DEFAULT_EXTRA_BODY: Readonly<Record<string, unknown>> = { thinking: { type: 'disabled' } }
 
 export interface OpenAiToolCall {
   id: string
@@ -62,13 +73,17 @@ function joinText(blocks: LlmContentBlock[]): string {
   return blocks.flatMap((b) => (b.type === 'text' && b.text ? [b.text] : [])).join('\n\n')
 }
 
-export function buildOpenAiBody(req: ProviderRequest, model: string): Record<string, unknown> {
+export function buildOpenAiBody(
+  req: ProviderRequest,
+  model: string,
+  wire: Pick<OpenAiCompatOptions, 'extraBody' | 'maxTokensParam'> = {},
+): Record<string, unknown> {
   return {
     model,
     messages: toOpenAiMessages(req.system, req.messages),
-    max_tokens: req.maxTokens,
+    [wire.maxTokensParam ?? 'max_tokens']: req.maxTokens,
     stream: false,
-    thinking: { type: 'disabled' },
+    ...(wire.extraBody ?? DEFAULT_EXTRA_BODY),
     ...(req.tools.length ? { tools: toOpenAiTools(req.tools), tool_choice: 'auto' } : {}),
   }
 }
@@ -85,6 +100,11 @@ function textOf(content: unknown): string {
   if (typeof content === 'string') return content
   if (!Array.isArray(content)) return ''
   return content.map((p) => (p && typeof p === 'object' && typeof (p as { text?: unknown }).text === 'string' ? (p as { text: string }).text : '')).join('')
+}
+
+/** Local reasoning models write their scratch work inline as <think>…</think>: it is not part of the answer. */
+export function stripThinking(text: string): string {
+  return text.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/^[\s\S]*?<\/think>/i, '').trim()
 }
 
 function parseArguments(raw: unknown): Record<string, unknown> {
@@ -108,20 +128,20 @@ function toToolUse(call: unknown, index: number): LlmContentBlock {
   return { type: 'tool_use', id, name, input: parseArguments(c.function?.arguments) }
 }
 
-export function fromOpenAiResponse(json: unknown, fallbackModel: string): ProviderResult {
+export function fromOpenAiResponse(json: unknown, fallbackModel: string, label = 'openai_compat'): ProviderResult {
   const body = json as { model?: unknown; choices?: unknown; usage?: { prompt_tokens?: unknown; completion_tokens?: unknown } }
   const choice = Array.isArray(body?.choices) ? (body.choices[0] as { message?: unknown; finish_reason?: unknown }) : undefined
   const message = choice?.message as { content?: unknown; tool_calls?: unknown } | undefined
   if (!message || typeof message !== 'object') throw new ProviderError('upstream_malformed')
   const calls = Array.isArray(message.tool_calls) ? message.tool_calls.map(toToolUse) : []
-  const text = textOf(message.content)
+  const text = stripThinking(textOf(message.content))
   const stopReason = mapFinishReason(choice?.finish_reason, calls.length > 0)
   const content: LlmContentBlock[] = stopReason === 'refusal' ? [] : [...(text ? [{ type: 'text' as const, text }] : []), ...calls]
   const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : 0)
   return {
     content,
     stopReason,
-    provider: 'openai_compat',
+    provider: label,
     model: typeof body.model === 'string' && body.model ? body.model : fallbackModel,
     usage: { inputTokens: num(body.usage?.prompt_tokens), outputTokens: num(body.usage?.completion_tokens) },
   }
@@ -131,8 +151,9 @@ export function createOpenAiCompatProvider(opts: OpenAiCompatOptions): LlmProvid
   const fetchImpl = opts.fetch ?? fetch
   const url = `${opts.baseUrl.replace(/\/+$/, '')}/chat/completions`
   const timeoutMs = opts.timeoutMs ?? 30_000
+  const label = opts.label ?? 'openai_compat'
   return {
-    name: 'openai_compat',
+    name: label,
     model: opts.model,
     async complete(req, signal) {
       const timeout = AbortSignal.timeout(timeoutMs)
@@ -141,7 +162,7 @@ export function createOpenAiCompatProvider(opts: OpenAiCompatOptions): LlmProvid
         const res = await fetchImpl(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...(opts.apiKey ? { Authorization: `Bearer ${opts.apiKey}` } : {}) },
-          body: JSON.stringify(buildOpenAiBody(req, opts.model)),
+          body: JSON.stringify(buildOpenAiBody(req, opts.model, opts)),
           signal: combined,
         })
         if (!res.ok) {
@@ -151,7 +172,7 @@ export function createOpenAiCompatProvider(opts: OpenAiCompatOptions): LlmProvid
         }
         const raw = await res.text()
         if (raw.length > MAX_RESPONSE_BYTES) throw new ProviderError('upstream_malformed')
-        return fromOpenAiResponse(parseJson(raw), opts.model)
+        return fromOpenAiResponse(parseJson(raw), opts.model, label)
       } catch (err) {
         if (err instanceof ProviderError) throw err
         if (signal?.aborted) throw new ProviderError('aborted')

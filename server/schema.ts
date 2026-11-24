@@ -7,7 +7,7 @@ export const LIMITS = {
   messages: 40,
   blocksPerMessage: 64,
   tools: 40,
-  maxTokens: 2048,
+  maxTokens: 4096,
   defaultMaxTokens: 1024,
 } as const
 

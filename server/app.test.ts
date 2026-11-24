@@ -178,7 +178,7 @@ describe('POST /api/llm — validation', () => {
     ['system over 20k chars', llmBody('hi', { system: 'x'.repeat(20_001) })],
     ['more than 40 messages', llmBody('hi', { messages: Array.from({ length: 41 }, () => ({ role: 'user' as const, content: 'x' })) })],
     ['more than 40 tools', llmBody('hi', { tools: Array.from({ length: 41 }, (_, i) => ({ name: `t${i}`, description: 'd', input_schema: { type: 'object' } })) })],
-    ['maxTokens over 2048', llmBody('hi', { maxTokens: 4096 })],
+    ['maxTokens over 4096', llmBody('hi', { maxTokens: 8192 })],
     ['a smuggled provider parameter', { ...llmBody('hi'), model: 'claude-opus-5-5' }],
     ['an assistant prefill', llmBody('hi', { messages: [{ role: 'user', content: 'a' }, { role: 'assistant', content: 'b' }] })],
   ])('rejects %s with 400 and issue paths', async (_label, body) => {

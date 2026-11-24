@@ -2,7 +2,7 @@
   "name": "fundbun",
   "version": "1.0.0",
   "private": true,
-  "description": "FundBun \u2014 an AI personal-finance agent that turns overspending into something you can see: the dream you could've had.",
+  "description": "FundBun — an AI personal-finance agent that turns overspending into something you can see: the dream you could've had.",
   "type": "module",
   "license": "MIT",
   "engines": {
@@ -46,6 +46,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@electron/packager": "20.3.0",
     "@tesseract.js-data/chi_sim": "1.0.0",
     "@tesseract.js-data/eng": "1.0.0",
     "@tesseract.js-data/ind": "1.0.0",
@@ -54,6 +55,8 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
     "concurrently": "^9.2.0",
+    "electron": "45.3.0",
+    "esbuild": "0.28.2",
     "jsdom": "^26.0.0",
     "playwright": "^1.63.0",
     "pptxgenjs": "^4.0.1",

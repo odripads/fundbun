@@ -41,6 +41,13 @@ export interface LlmHealth {
   provider?: string
   model?: string
   reason?: string
+  /** the FundBun server on this computer (desktop app): the user's own AI connections answer */
+  local?: boolean
+  /** kind of the active connection; 'agent' = an agent on this computer answers through /api/agent */
+  kind?: 'openai_compat' | 'anthropic' | 'agent'
+  connectionId?: string
+  /** the model itself runs on this computer: nothing is sent to a company */
+  onDevice?: boolean
 }
 
 const STOP_REASONS = new Set<LlmResponse['stopReason']>(['end_turn', 'tool_use', 'max_tokens', 'refusal', 'other'])
@@ -149,6 +156,11 @@ function toHealth(body: unknown): LlmHealth {
   if (provider) health.provider = provider
   if (model) health.model = model
   if (reason) health.reason = reason.slice(0, MAX_ERROR_MESSAGE)
+  if (body.local === true) health.local = true
+  if (body.onDevice === true) health.onDevice = true
+  if (body.kind === 'openai_compat' || body.kind === 'anthropic' || body.kind === 'agent') health.kind = body.kind
+  const connectionId = str(body.connectionId)
+  if (connectionId) health.connectionId = connectionId.slice(0, 64)
   return health
 }
 
