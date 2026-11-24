@@ -23,11 +23,20 @@ const selectBusy = (s: AppSnapshot) => s.derived.busy
 const selectEngine = (s: AppSnapshot) => s.derived.engine
 const selectCurrency = (s: AppSnapshot) => s.state.profile?.currency ?? 'CNY'
 
+export interface ChatScreenProps {
+  /**
+   * 'page' (the default): the chat is the screen, with its own top bar. 'panel': the chat sits in the desk shell's
+   * side panel, which has its own title and kill switch, so only a slim bar with the engine and the menu remains.
+   */
+  variant?: 'page' | 'panel'
+}
+
 /**
  * Ask Bun — the conversational agent. Messages are AI-labelled; every card is built from structured data;
  * every action goes through the policy engine; "How Bun got this" opens the glass box for each reply.
  */
-export function ChatScreen() {
+export function ChatScreen({ variant = 'page' }: ChatScreenProps = {}) {
+  const panel = variant === 'panel'
   const app = useApp()
   const messages = useSnapshot(selectChat, sameIds)
   const planShape = useSnapshot(selectPlanShape)
@@ -37,7 +46,8 @@ export function ChatScreen() {
   const [overlay, setOverlay] = useState<ChatOverlay>(null)
   const [composerH, setComposerH] = useState(96)
   // toasts (e.g. "Stashed — nice one" after an approval) sit above the composer, never over the field or Send
-  useToastClearance(composerH)
+  // (in the desk panel the composer is beside the toasts, not under them)
+  useToastClearance(panel ? 0 : composerH)
   const sending = useRef(false)
   // messages present when the screen opened don't replay their entrance animation
   const initialIds = useRef(new Set(messages.map((m) => m.id)))
@@ -64,20 +74,29 @@ export function ChatScreen() {
   const last = messages[messages.length - 1]
   const announce = last?.role === 'assistant' && !initialIds.current.has(last.id) ? `Bun: ${last.text}` : ''
 
+  const engineLine = engine === 'llm' ? 'AI via LLM · redacted context' : 'On-device rules engine · private'
+
   return (
     <>
-      <ScreenTopBar
-        title="Ask Bun"
-        subtitle={engine === 'llm' ? 'AI via LLM · redacted context' : 'On-device rules engine · private'}
-        onBack={() => navigate('home')}
-        actions={
-          <>
-            <AgentStatusPill />
-            <IconButton label="Chat options" icon={<Ellipsis />} onClick={() => setOverlay('menu')} />
-          </>
-        }
-      />
-      <div className={styles.screen}>
+      {panel ? (
+        <div className={styles.panelBar}>
+          <p className={styles.panelEngine}>{engineLine}</p>
+          <IconButton size="sm" label="Chat options" icon={<Ellipsis />} onClick={() => setOverlay('menu')} />
+        </div>
+      ) : (
+        <ScreenTopBar
+          title="Ask Bun"
+          subtitle={engineLine}
+          onBack={() => navigate('home')}
+          actions={
+            <>
+              <AgentStatusPill />
+              <IconButton label="Chat options" icon={<Ellipsis />} onClick={() => setOverlay('menu')} />
+            </>
+          }
+        />
+      )}
+      <div className={cx(styles.screen, panel && styles.inPanel)}>
         {conversation ? (
           <section aria-labelledby="chat-log-title">
             <h2 id="chat-log-title" className="sr-only">Conversation with Bun</h2>

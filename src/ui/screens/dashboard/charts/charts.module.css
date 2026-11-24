@@ -1,0 +1,277 @@
+/* The dashboard's hand-written SVG charts. Colour comes from the design tokens only, so light and dark both work:
+ * yuan gold for spending, chili (with a hatch, never colour alone) for what went past a line, soy inks for text. */
+
+.frame {
+  min-width: 0;
+}
+
+.plot {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  border-radius: var(--r-sm);
+  outline: none;
+}
+
+.plot:focus-visible {
+  box-shadow: var(--ring);
+}
+
+.svg {
+  display: block;
+  overflow: visible;
+  font-family: var(--font-ui);
+}
+
+/* ───────────── axes and grid: recessive hairlines ───────────── */
+
+.grid {
+  stroke: var(--chart-grid);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+.axis {
+  stroke: var(--border-strong);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+.tick,
+.x,
+.xSub {
+  fill: var(--text-3);
+  font-size: 11px;
+  font-weight: 560;
+  font-variant-numeric: tabular-nums;
+}
+
+.xSub {
+  font-size: 10px;
+}
+
+.xToday {
+  fill: var(--text);
+  font-size: 11px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+
+.todayMark {
+  fill: var(--text);
+}
+
+/* ───────────── marks ───────────── */
+
+.bar {
+  fill: var(--accent);
+}
+
+/* today (or the month in progress): the same hue, a step deeper, and it is named on the axis */
+.barToday {
+  fill: var(--accent-strong);
+}
+
+.barOver {
+  fill: var(--over);
+}
+
+/* the hatch drawn over a chili fill: a second cue for "past the line" */
+.hatchInk {
+  fill: color-mix(in srgb, var(--surface) 46%, transparent);
+}
+
+.pending {
+  fill: var(--chart-track);
+}
+
+.track {
+  fill: var(--chart-track);
+}
+
+.band {
+  fill: var(--chart-track);
+}
+
+/* a threshold, not a gridline: dashed, in ink, and always named */
+.limit {
+  stroke: var(--text-2);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+}
+
+.targetTick {
+  stroke: var(--text);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.capTick {
+  fill: var(--text-2);
+}
+
+/* text set over marks keeps a halo in the surface colour so it never fights a bar */
+.limitLabel,
+.value {
+  fill: var(--text-2);
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+
+.value {
+  fill: var(--text);
+}
+
+/* ───────────── category rows ───────────── */
+
+.rowLink {
+  cursor: pointer;
+  outline: none;
+}
+
+.rowHit {
+  fill: transparent;
+  transition: fill var(--dur-1) var(--ease-out);
+}
+
+.rowLink:hover .rowHit {
+  fill: var(--chart-track);
+}
+
+.rowLink:focus-visible .rowHit {
+  fill: var(--chart-track);
+  stroke: var(--focus);
+  stroke-width: 2;
+}
+
+.rowLabel {
+  fill: var(--text);
+  font-size: 13px;
+  font-weight: 620;
+}
+
+.rowFlag {
+  fill: var(--over-text);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.rowValue {
+  fill: var(--text-3);
+  font-size: 12px;
+  font-weight: 560;
+  font-variant-numeric: tabular-nums;
+}
+
+.rowAmount {
+  fill: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* ───────────── tooltip ───────────── */
+
+.tip {
+  position: absolute;
+  z-index: 5;
+  display: grid;
+  gap: 1px;
+  min-width: 96px;
+  max-width: 220px;
+  padding: 8px 12px;
+  border-radius: var(--r-md);
+  background: var(--text);
+  color: var(--bg);
+  box-shadow: var(--shadow-2);
+  font-size: var(--fs-xs);
+  line-height: 1.35;
+  text-align: center;
+  white-space: nowrap;
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+}
+
+.tipValue {
+  font-size: var(--fs-md);
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+
+.tipTitle {
+  font-weight: 620;
+  opacity: 0.86;
+}
+
+.tipNote {
+  opacity: 0.86;
+}
+
+/* ───────────── the key under a chart ───────────── */
+
+.key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px var(--s-4);
+  margin: var(--s-3) 0 0;
+  padding: 0;
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  font-weight: 560;
+  list-style: none;
+}
+
+.key li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.swatch {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--accent);
+}
+
+.swatchOver {
+  background:
+    repeating-linear-gradient(45deg, transparent 0 2.5px, color-mix(in srgb, var(--surface) 46%, transparent) 2.5px 4px),
+    var(--over);
+}
+
+.swatchLine {
+  flex: none;
+  width: 18px;
+  height: 0;
+  border-top: 2px dashed var(--text-2);
+}
+
+.swatchTick {
+  flex: none;
+  width: 14px;
+  height: 0;
+  border-top: 2px solid var(--text);
+  border-radius: 1px;
+}
+
+.swatchCap {
+  flex: none;
+  width: 2px;
+  height: 12px;
+  border-radius: 1px;
+  background: var(--text-2);
+}
+
+@media (forced-colors: active) {
+  .bar,
+  .barToday,
+  .barOver {
+    forced-color-adjust: none;
+  }
+}

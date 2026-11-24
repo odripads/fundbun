@@ -2,6 +2,35 @@
   padding-top: var(--s-2);
 }
 
+/* ───────────── panel layout (the desk shell's side panel) ─────────────
+ * No top bar of its own: a slim bar that stays at the top of the panel's scroller with the engine and the menu. */
+.panelBar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
+  min-height: 44px;
+  margin: 0 calc(-1 * var(--gutter, var(--s-4)));
+  padding: 0 var(--s-1) 0 var(--gutter, var(--s-4));
+  background: linear-gradient(var(--bg) 78%, color-mix(in srgb, var(--bg) 0%, transparent));
+}
+
+.panelEngine {
+  overflow: hidden;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inPanel {
+  padding-top: 0;
+}
+
 .log {
   display: grid;
   gap: var(--s-6);

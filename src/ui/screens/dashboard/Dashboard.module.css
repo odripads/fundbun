@@ -1,0 +1,702 @@
+/* The desk Dashboard: a grid of cards that follows the width of the work area (a container query, not the window:
+ * the side panel can be open or shut). Colours and spacing come from the design tokens only. */
+
+.dash {
+  container: dash / inline-size;
+  display: grid;
+  gap: var(--s-4);
+  min-width: 0;
+  /* the Home components bleed by --gutter and keep clear of the phone's bars; a card has neither */
+  --gutter: 0px;
+  --chrome-bottom: 0px;
+  --viewport-h: 0px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    'hero'
+    'month'
+    'checkin'
+    'trip'
+    'daily'
+    'cats'
+    'six'
+    'bills'
+    'goals'
+    'check'
+    'txns';
+  gap: var(--s-4);
+  min-width: 0;
+}
+
+/* two columns, each at least as wide as the phone the Home cards were drawn for */
+@container dash (min-width: 720px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+      'hero month'
+      'hero checkin'
+      'hero trip'
+      'daily daily'
+      'cats six'
+      'bills goals'
+      'check check'
+      'txns txns';
+  }
+}
+
+/* three columns: the side panel is shut, or the window is wide */
+@container dash (min-width: 1120px) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-areas:
+      'hero month daily'
+      'hero cats six'
+      'checkin bills goals'
+      'trip trip check'
+      'txns txns txns';
+  }
+}
+
+/* ───────────── cards ───────────── */
+
+.card,
+.plain {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  min-width: 0;
+  padding: var(--s-5);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border), var(--shadow-1);
+}
+
+.cardHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-3);
+  min-height: 32px;
+}
+
+.cardTitles {
+  min-width: 0;
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: var(--fs-lg);
+  font-weight: 640;
+  letter-spacing: -0.015em;
+}
+
+.cardSub {
+  margin-top: 2px;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 560;
+}
+
+.cardAction {
+  flex: none;
+  display: flex;
+  align-items: center;
+}
+
+.seeAll {
+  margin: -4px calc(-1 * var(--s-3)) -4px 0;
+}
+
+.seeAll svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* a component that brings its own card: it fills the cell */
+.cell {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.cell > * {
+  flex: 1;
+  min-width: 0;
+}
+
+.empty {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin: 0;
+  padding: var(--s-4);
+  border-radius: var(--r-md);
+  background: var(--bg-sunken);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+.empty[data-good] {
+  background: var(--under-soft);
+}
+
+.empty svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--under-text);
+}
+
+.footnote {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  line-height: 1.45;
+}
+
+.footnote svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+}
+
+/* ───────────── the Dream Mirror ─────────────
+ * The Home hero, unchanged, inside a card. It bleeds to its container by --gutter and reaches up behind the phone's
+ * top bar by --safe-top + 8px; the card's padding is exactly that bleed, so the tint fills the card edge to edge. */
+
+.hero {
+  --gutter: var(--s-5);
+  --topbar-h: 0px;
+  --safe-top: 12px;
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  padding: calc(var(--safe-top) + var(--s-2)) var(--gutter) 0;
+  border-radius: var(--r-lg);
+  background: var(--bg);
+  box-shadow: var(--shadow-1);
+}
+
+.hero > section {
+  min-height: calc(100% + var(--safe-top) + var(--s-2));
+}
+
+/* the hairline sits over the hero's own tint */
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px var(--border);
+  pointer-events: none;
+}
+
+/* ───────────── this month ───────────── */
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-4);
+  margin: 0;
+}
+
+.kpi {
+  min-width: 0;
+}
+
+.kpi dt {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.kpi[data-tone='over'] dt {
+  color: var(--over-text);
+}
+
+.kpi[data-tone='left'] dt {
+  color: var(--under-text);
+}
+
+.kpi dd {
+  display: grid;
+  gap: 2px;
+  margin: 2px 0 0;
+}
+
+.kpiNote {
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  line-height: 1.4;
+  text-wrap: pretty;
+}
+
+.monthBar {
+  margin-top: var(--s-1);
+}
+
+.monthLine {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2px var(--s-3);
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+
+.monthLine span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.monthLine svg,
+.monthSaved svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+}
+
+.monthSaved {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--border);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+.monthSaved svg {
+  color: var(--under-text);
+}
+
+.monthSaved strong {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ───────────── bills and goals: rows ───────────── */
+
+.rows {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--s-3);
+  padding: 10px 0;
+}
+
+.row + .row,
+.goal + .goal {
+  border-top: 1px solid var(--border);
+}
+
+.rowIcon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-sm);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.rowIcon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.rowText {
+  min-width: 0;
+}
+
+.rowName {
+  overflow: hidden;
+  font-size: var(--fs-sm);
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 6px;
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  font-weight: 560;
+}
+
+.rowDate {
+  color: var(--text-3);
+}
+
+.rowAmount {
+  font-weight: 650;
+}
+
+.rowAction {
+  display: flex;
+  justify-content: flex-end;
+  min-width: 64px;
+}
+
+.goal {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: var(--s-3);
+  padding: var(--s-3) 0;
+}
+
+.goal:first-child {
+  padding-top: 0;
+}
+
+.goal:last-child {
+  padding-bottom: 0;
+}
+
+.goalArt {
+  flex: none;
+}
+
+.goalBody {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.goalTop {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 0;
+}
+
+.goalName {
+  overflow: hidden;
+  font-size: var(--fs-sm);
+  font-weight: 650;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.goalName:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.goalPct {
+  flex: none;
+  margin-left: auto;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.goalMeta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2px var(--s-3);
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+}
+
+.goalMoney {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.goalFact {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-3);
+}
+
+.goalFact strong {
+  color: var(--text-2);
+  font-weight: 700;
+}
+
+.goalFact svg {
+  flex: none;
+  width: 13px;
+  height: 13px;
+}
+
+.goalFact[data-on] svg {
+  color: var(--under-text);
+}
+
+.goalFact[data-late] svg {
+  color: var(--warn-text);
+}
+
+/* ───────────── transactions ───────────── */
+
+.txnCard {
+  container: txn / inline-size;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2) var(--s-3);
+}
+
+.search,
+.select {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  height: 40px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+  transition: box-shadow var(--dur-2) var(--ease-out);
+}
+
+.search {
+  flex: 1 1 240px;
+  max-width: 380px;
+  padding: 0 6px 0 var(--s-3);
+}
+
+.search:hover,
+.select:hover {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 35%, transparent);
+}
+
+.search:focus-within,
+.select:focus-within {
+  box-shadow: inset 0 0 0 2px var(--focus);
+}
+
+.searchIcon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--text-3);
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: var(--fs-sm);
+  outline: none;
+}
+
+.searchInput::placeholder {
+  color: var(--text-3);
+}
+
+.searchInput::-webkit-search-cancel-button {
+  display: none;
+}
+
+.select {
+  flex: 0 1 220px;
+}
+
+.selectInput {
+  width: 100%;
+  height: 100%;
+  padding: 0 34px 0 var(--s-3);
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  font-size: var(--fs-sm);
+  font-weight: 560;
+  appearance: none;
+  outline: none;
+  cursor: pointer;
+}
+
+.selectChevron {
+  position: absolute;
+  right: 10px;
+  width: 16px;
+  height: 16px;
+  color: var(--text-3);
+  pointer-events: none;
+}
+
+.count {
+  margin-left: auto;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.tableWrap {
+  min-width: 0;
+  margin: 0 calc(-1 * var(--s-2));
+}
+
+.table {
+  width: 100%;
+  table-layout: fixed;
+  font-size: var(--fs-sm);
+}
+
+.table th {
+  padding: 8px var(--s-2);
+  border-bottom: 1px solid var(--border-strong);
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.table td {
+  padding: 9px var(--s-2);
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.table tbody tr:hover {
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+
+.table .colDate {
+  width: 132px;
+  white-space: nowrap;
+}
+
+.table .colCat {
+  width: 32%;
+}
+
+.table .colAmount {
+  width: 128px;
+  text-align: right;
+}
+
+.date {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.time {
+  margin-left: var(--s-2);
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.merchantName,
+.cat {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.merchantName {
+  font-weight: 620;
+}
+
+.cat {
+  color: var(--text-2);
+}
+
+.catLabel {
+  margin-left: 6px;
+}
+
+/* a narrow card: the category keeps its picture and drops its name (the filter still names it) */
+@container txn (max-width: 540px) {
+  .table .colCat {
+    width: 40px;
+  }
+
+  .table .colDate {
+    width: 78px;
+  }
+
+  .table .colAmount {
+    width: 104px;
+  }
+
+  .time {
+    display: none;
+  }
+
+  .catLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+}
+
+.noRows {
+  display: grid;
+  justify-items: start;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  border-radius: var(--r-md);
+  background: var(--bg-sunken);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+.more {
+  display: flex;
+  justify-content: center;
+  padding-top: var(--s-1);
+}
+
+.sandboxIcon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--r-md);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.sandboxIcon svg {
+  width: 24px;
+  height: 24px;
+}
