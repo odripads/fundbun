@@ -77,7 +77,7 @@ export async function handleAgent(agents: AgentRuntime, req: IncomingMessage, re
   }
   if (route === 'permission') {
     const requestId = str(body.requestId, 64)
-    const optionId = body.optionId === null ? null : str(body.optionId, 120)
+    const optionId = body.optionId === null ? null : (str(body.optionId, 120) ?? undefined)
     if (!requestId || optionId === undefined) return sendJson(res, 400, { error: 'invalid_request', message: 'Send { requestId, optionId }.' })
     return sendJson(res, 200, { ok: agents.permission(requestId, optionId) })
   }

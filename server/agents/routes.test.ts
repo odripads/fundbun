@@ -127,6 +127,12 @@ describe('/api/agent/* routes', () => {
       body: JSON.stringify({ requestId: 'perm_1', optionId: 123 }),
     })
     expect(permBad.status).toBe(400)
+    const permMissing = await fetch(`${base}/api/agent/permission`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ requestId: 'perm_1' }),
+    })
+    expect(permMissing.status).toBe(400)
 
     await fetch(`${base}/api/agent/cancel`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionKey: 'chat_1' }) })
     expect(agents.cancel).toHaveBeenCalledWith('chat_1')
