@@ -110,3 +110,14 @@ export type AgentEvent =
   | { type: 'error'; code: string; message: string }
 
 export const AI_UNAVAILABLE: AiState = { local: false, presets: [], agents: [], connections: [], activeId: null, keyStorage: '' }
+
+/** What Bun is doing right now, shown while an answer is still coming (never stored). */
+export interface LiveReply {
+  /** who is answering, e.g. "Claude Code" */
+  via: string
+  text: string
+  /** `mine` = a FundBun tool (it went through the policy gate); otherwise one of the agent's own tools */
+  steps: { id: string; title: string; status: 'running' | 'done' | 'failed'; mine: boolean }[]
+  /** the agent is waiting for the user's yes or no before it uses one of its own tools */
+  permission?: { requestId: string; title: string; detail?: string; options: { id: string; name: string; kind: string }[] }
+}

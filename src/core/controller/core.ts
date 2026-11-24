@@ -1,6 +1,7 @@
 import { syncExpectedBills } from '../finance/expected'
 import type { AgentHost } from '../agent/host'
 import type { LlmClient } from '../agent/llm'
+import type { AiClient } from '../ai/client'
 import type { Result } from '../app-api'
 import type { SandboxBank } from '../sandbox/bank'
 import { diffDays } from '../dates'
@@ -34,6 +35,11 @@ export interface Core {
   engines: EngineHolder
   host: AgentHost
   llmClient: LlmClient | null
+  aiClient?: AiClient | null
+  /** start a fresh agent conversation (New chat) */
+  newAgentSession?(): void
+  /** abort the reply in flight (Stop) */
+  stopReply?(): void
   clock(): Date
   now(): ISODateTime
   lock: LockState

@@ -6,7 +6,8 @@ import { newCall, runGated, type GateResult } from './actions'
 import { TOOL_INTENT, readFacts } from './facts'
 import type { AgentHost } from './host'
 import type { LlmClient, LlmContentBlock, LlmMessage, LlmResponse } from './llm'
-import { respondOffline, toneOf, type Reply } from './offline-engine'
+import { understand } from './nlu'
+import { nluContext, respondOffline, toneOf, type Reply } from './offline-engine'
 import { PROMPT_VERSION, buildSystemPrompt } from './prompts'
 import { TOOL_SPECS, isToolName, llmToolDefinitions } from './specs'
 import { currencyOf, errorText } from './support'
@@ -26,11 +27,25 @@ const MAX_MESSAGE_CHARS = 2000
 
 export interface LlmReply extends Reply {
   grounding?: GroundingReport
+  /** the user's own AI that wrote this (shown beside the reply) */
+  via?: string
+  /** Markdown: a long or formatted answer */
+  rich?: boolean
 }
 
-interface ReadResult {
+export interface ReadResult {
   tool: ToolName
   data: unknown
+}
+
+/** Time allowed for one model call: short on the hosted gateway, generous for the user's own (possibly local) model. */
+export const OWN_MODEL_TIMEOUT_MS = 100_000
+export const ON_DEVICE_TIMEOUT_MS = 200_000
+
+function timeoutFor(host: AgentHost): number {
+  const info = host.llmInfo?.()
+  if (!info?.local) return LLM_TIMEOUT_MS
+  return info.onDevice ? ON_DEVICE_TIMEOUT_MS : OWN_MODEL_TIMEOUT_MS
 }
 
 export async function respondLlm(host: AgentHost, turn: Turn, text: string, client: LlmClient): Promise<LlmReply> {
@@ -39,7 +54,8 @@ export async function respondLlm(host: AgentHost, turn: Turn, text: string, clie
   try {
     const finalText = await toolLoop(host, turn, client, reads)
     host.llmOk?.()
-    return finish(host, turn, text, finalText, reads)
+    const info = host.llmInfo?.()
+    return finish(host, turn, text, finalText, reads, info?.local ? { via: info.label } : {})
   } catch (e) {
     return fallback(host, turn, text, e, reads)
   }
@@ -47,7 +63,7 @@ export async function respondLlm(host: AgentHost, turn: Turn, text: string, clie
 
 // ───────────────────────────── request building ─────────────────────────────
 
-function namesOf(state: AppState): string[] {
+export function namesOf(state: AppState): string[] {
   const name = state.profile?.name?.trim() ?? ''
   return [name, ...name.split(/\s+/)].filter((n) => n.length >= 2)
 }
@@ -78,8 +94,9 @@ export function buildHistory(chat: ChatMessage[]): LlmMessage[] {
   return out
 }
 
-function systemPrompt(state: AppState): string {
+function systemPrompt(state: AppState, open: boolean): string {
   return buildSystemPrompt({
+    open,
     name: state.profile?.name ?? '',
     currency: currencyOf(state),
     today: state.bank.today,
@@ -93,7 +110,9 @@ function systemPrompt(state: AppState): string {
 async function toolLoop(host: AgentHost, turn: Turn, client: LlmClient, reads: ReadResult[]): Promise<string> {
   const state = host.state()
   const names = namesOf(state)
-  const redacted = redactDeep({ system: systemPrompt(state), messages: buildHistory(state.chat) }, names)
+  const own = host.llmInfo?.()?.local === true
+  const timeoutMs = timeoutFor(host)
+  const redacted = redactDeep({ system: systemPrompt(state, own), messages: buildHistory(state.chat) }, names)
   const system = redacted.value.system
   const messages: LlmMessage[] = redacted.value.messages
   if (!messages.length) throw new Error('Nothing to send')
@@ -104,7 +123,7 @@ async function toolLoop(host: AgentHost, turn: Turn, client: LlmClient, reads: R
       round, turnId: turn.id, messages: messages.length, tools: tools.length, promptVersion: PROMPT_VERSION, redactions: round === 1 ? redacted.counts : {},
     })
     trace(turn, 'llm', `LLM request · round ${round}`, { round, messages: messages.length, tools: tools.length })
-    const res = await client.complete({ system, messages, tools, maxTokens: 1024 }, LLM_TIMEOUT_MS)
+    const res = await client.complete({ system, messages, tools, maxTokens: own ? 3000 : 1024 }, timeoutMs)
     const uses = res.content.filter((b): b is Extract<LlmContentBlock, { type: 'tool_use' }> => b.type === 'tool_use')
     const said = res.content.filter((b): b is Extract<LlmContentBlock, { type: 'text' }> => b.type === 'text').map((b) => b.text).join('\n').trim()
     recordResponse(host, turn, round, res, uses.length)
@@ -129,7 +148,7 @@ function recordResponse(host: AgentHost, turn: Turn, round: number, res: LlmResp
   if (res.redactions && Object.keys(res.redactions).length) trace(turn, 'redaction', 'Gateway redacted personal data before the provider', { counts: res.redactions })
 }
 
-function toolResult(host: AgentHost, turn: Turn, use: Extract<LlmContentBlock, { type: 'tool_use' }>, rationale: string, reads: ReadResult[]): LlmContentBlock {
+export function toolResult(host: AgentHost, turn: Turn, use: Extract<LlmContentBlock, { type: 'tool_use' }>, rationale: string, reads: ReadResult[]): LlmContentBlock {
   const args = use.input && typeof use.input === 'object' && !Array.isArray(use.input) ? use.input : {}
   // model prose is never stored on the call: action cards are built from structured data only
   const r = runGated(host, turn, newCall(use.name, args, 'llm', turn))
@@ -190,16 +209,30 @@ export function wrapUserText(value: unknown, texts: string[]): unknown {
 
 const TAG_RE = /<\/?\s*untrusted\b[^>]*>/gi
 
-function finish(host: AgentHost, turn: Turn, userText: string, raw: string, reads: ReadResult[]): LlmReply {
+/**
+ * A turn that touched none of the user's numbers and proposed nothing, on a message the rules engine does not
+ * read as a money request: an essay, an explanation, code. Only possible with the user's own AI.
+ */
+function isGeneral(host: AgentHost, turn: Turn, userText: string, reads: ReadResult[]): boolean {
+  if (reads.length || turn.proposals.length) return false
+  const intent = understand(userText, nluContext(host)).intent
+  return intent === 'unknown' || intent === 'greeting' || intent === 'thanks' || intent === 'help'
+}
+
+export function finish(host: AgentHost, turn: Turn, userText: string, raw: string, reads: ReadResult[], own: { via?: string } = {}): LlmReply {
   const state = host.state()
-  let text = raw.replace(TAG_RE, '').replace(UNTRUSTED_REMINDER, '').replace(/[ \t]+/g, ' ').trim()
+  const general = Boolean(own.via) && isGeneral(host, turn, userText, reads)
+  const rich = Boolean(own.via) && /```|^\s*(?:[-*]|\d+\.)\s|\n\n|\*\*|^#{1,4}\s/m.test(raw)
+  let text = raw.replace(TAG_RE, '').replace(UNTRUSTED_REMINDER, '')
+  // a formatted answer keeps its line breaks and indentation (code); a chat line is tidied to single spaces
+  text = (rich ? text.replace(/[ \t]+$/gm, '') : text.replace(/[ \t]+/g, ' ')).trim()
   if (!text) text = offlineSummary(host, turn, reads)
-  const report = checkGrounding(text, [turn.sources, userText], currencyOf(state))
+  const report = checkGrounding(text, [turn.sources, userText], currencyOf(state), { moneyOnly: general })
   trace(turn, 'grounding', report.ok ? `Grounded: ${report.checked} numbers checked` : `Ungrounded numbers: ${report.ungrounded.join(', ')}`, report)
   if (!report.ok) text = repairGrounding(host, turn, text, report, reads)
   text = guardClaims(host, turn, text)
   const intent = reads[0] ? TOOL_INTENT[reads[0].tool] ?? 'unknown' : 'unknown'
-  return { text, intent, suggestions: suggestionsFor(intent), grounding: report }
+  return { text, intent, suggestions: general ? [] : suggestionsFor(intent), grounding: report, ...(own.via ? { via: own.via } : {}), ...(rich ? { rich: true } : {}) }
 }
 
 function repairGrounding(host: AgentHost, turn: Turn, text: string, report: GroundingReport, reads: ReadResult[]): string {
@@ -231,7 +264,7 @@ function offlineSummary(host: AgentHost, turn: Turn, reads: ReadResult[]): strin
   return 'Here’s what I found — see the cards below.'
 }
 
-function fallback(host: AgentHost, turn: Turn, text: string, e: unknown, reads: ReadResult[]): LlmReply {
+export function fallback(host: AgentHost, turn: Turn, text: string, e: unknown, reads: ReadResult[]): LlmReply {
   const code = (e as { code?: string; status?: number })?.code ?? (e as { status?: number })?.status
   trace(turn, 'error', 'LLM unavailable — answered with the on-device engine', { error: errorText(e).slice(0, 200), code })
   host.audit('agent', 'llm_response', 'LLM call failed — fell back to the on-device engine', { error: errorText(e).slice(0, 200), code: code ?? null, turnId: turn.id })

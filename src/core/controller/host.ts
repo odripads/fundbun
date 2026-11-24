@@ -1,5 +1,6 @@
 import type { AgentHost } from '../agent/host'
 import type { LlmClient } from '../agent/llm'
+import type { AiClient } from '../ai/client'
 import type { FinanceContext } from '../types'
 import { appendAudit } from './audit'
 import { engineFor, financeFor } from './derive'
@@ -11,6 +12,19 @@ export interface HostDeps {
   now(): string
   /** the gateway client (null when llmBaseUrl is null) */
   llmClient: LlmClient | null
+  /** the local server's client for the user's own AI connections (null with llmClient) */
+  aiClient?: AiClient | null
+  /** this conversation's name for an agent, and the Stop signal of the reply in flight */
+  session?: AgentSession
+}
+
+/** One agent conversation: the key names it to the agent; a new key (New chat, reload) starts the agent afresh. */
+export interface AgentSession {
+  key(): string
+  /** true until the first turn with this key was sent */
+  fresh(): boolean
+  used(): void
+  signal(): AbortSignal
 }
 
 /**
@@ -24,7 +38,7 @@ export interface HostDeps {
 export const LLM_COOLDOWN_MS = 60_000
 export const LLM_COOLDOWN_MAX_MS = 10 * 60_000
 
-export function createHost({ store, now, llmClient }: HostDeps): AgentHost {
+export function createHost({ store, now, llmClient, aiClient, session }: HostDeps): AgentHost {
   let failuresInARow = 0
   let retryTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -46,6 +60,8 @@ export function createHost({ store, now, llmClient }: HostDeps): AgentHost {
       failuresInARow = 0
     },
     llmFailed() {
+      // the user's own AI: no cool-down. They chose it; the next message simply tries it again.
+      if (store.runtime().llm.local) return
       failuresInARow++
       const wait = Math.min(LLM_COOLDOWN_MAX_MS, LLM_COOLDOWN_MS * 2 ** (failuresInARow - 1))
       const prev = store.runtime().llm
@@ -70,7 +86,24 @@ export function createHost({ store, now, llmClient }: HostDeps): AgentHost {
     },
     llm() {
       if (!llmClient) return null
-      return engineFor(store.get(), store.runtime().llm) === 'llm' ? llmClient : null
+      const status = store.runtime().llm
+      if (status.kind === 'agent') return null
+      return engineFor(store.get(), status) === 'llm' ? llmClient : null
+    },
+    agent() {
+      const status = store.runtime().llm
+      if (!aiClient || !session || status.kind !== 'agent' || !status.connectionId) return null
+      if (engineFor(store.get(), status) !== 'llm') return null
+      const link = { client: aiClient, connectionId: status.connectionId, label: status.provider ?? 'Your agent', sessionKey: session.key(), fresh: session.fresh(), signal: session.signal() }
+      session.used()
+      return link
+    },
+    llmInfo() {
+      const status = store.runtime().llm
+      return status.local ? { local: true, label: status.provider ?? 'Your AI', onDevice: status.onDevice === true } : null
+    },
+    live(reply) {
+      store.setRuntime({ live: reply })
     },
     afterTransactions: (txns) => store.mutate((draft) => applyTripwires(draft, txns, now())),
   }

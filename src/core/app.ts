@@ -6,6 +6,9 @@ import { exportableState } from './controller/api-user'
 import type { AppApi, Result } from './app-api'
 import type { AgentEngineFactory } from './agent/host'
 import { LlmClient } from './agent/llm'
+import { AiClient } from './ai/client'
+import type { AgentSession } from './controller/host'
+import { uid } from './ids'
 import { createAgentEngine } from './agent/runtime'
 import { createAgentApi, initialLlmStatus } from './controller/api-agent'
 import { createUserApi } from './controller/api-user'
@@ -60,6 +63,8 @@ export interface CreateAppOptions {
 export interface FundBunApp extends AppApi {
   /** resolves when queued (encrypted) saves have been written */
   flush(): Promise<void>
+  /** the user's own AI connections on this computer (null when the app runs without any server) */
+  readonly ai: AiClient | null
 }
 
 interface Boot {
@@ -101,13 +106,37 @@ export function createFundBunApp(opts: CreateAppOptions = {}): FundBunApp {
   const persistence = createPersistence(opts.storage ?? defaultStorage(), opts.storageKey ?? STORAGE_KEY)
   const llmBaseUrl = opts.llmBaseUrl === undefined ? '/api' : opts.llmBaseUrl
   const llmClient = llmBaseUrl === null ? null : new LlmClient(llmBaseUrl)
+  const aiClient = llmBaseUrl === null ? null : new AiClient(llmBaseUrl)
+  // one agent conversation at a time: New chat (and a reload) start a fresh one; Stop aborts the reply in flight
+  let sessionKey = uid('chat')
+  let sessionFresh = true
+  let stopper = new AbortController()
+  const session: AgentSession = {
+    key: () => sessionKey,
+    fresh: () => sessionFresh,
+    used: () => void (sessionFresh = false),
+    signal: () => {
+      if (stopper.signal.aborted) stopper = new AbortController()
+      return stopper.signal
+    },
+  }
+  const newAgentSession = () => {
+    // only a session an agent was actually started for needs closing
+    if (!sessionFresh) void aiClient?.close(sessionKey)
+    sessionKey = uid('chat')
+    sessionFresh = true
+  }
+  const stopReply = () => {
+    stopper.abort()
+    void aiClient?.cancel(sessionKey)
+  }
   const lock: LockState = { locked: false, blob: null, failures: 0, lockedUntil: 0 }
 
   const loaded = persistence.load()
   const boot = bootFrom(loaded, lock, now(), today(), persistence.auditHead())
   // nothing (or nothing readable) to protect: whatever chain starts now gets a fresh anchor
   if (loaded.kind === 'empty' || loaded.kind === 'corrupt') persistence.resetAuditHead()
-  const store = createStore(boot.state, { llm: initialLlmStatus(llmClient !== null), busy: 0 }, {
+  const store = createStore(boot.state, { llm: initialLlmStatus(llmClient !== null), busy: 0, live: null }, {
     onCommit: (state, persist) => {
       if (persist && !lock.locked) persistence.save(state)
     },
@@ -117,9 +146,9 @@ export function createFundBunApp(opts: CreateAppOptions = {}): FundBunApp {
   })
   if (boot.persist) persistence.save(boot.state)
 
-  const host = createHost({ store, now, llmClient })
+  const host = createHost({ store, now, llmClient, aiClient, session })
   const engines = createEngineHolder(opts.engineFactory ?? createAgentEngine, host)
-  const core: Core = { store, persistence, engines, host, llmClient, clock, now, lock }
+  const core: Core = { store, persistence, engines, host, llmClient, aiClient, clock, now, lock, newAgentSession, stopReply }
   const agentApi = createAgentApi(core)
   /** re-probe the gateway whenever LLM use may have become possible (new profile, consent, unlock) */
   const recheckLlm = () => {
@@ -251,6 +280,7 @@ export function createFundBunApp(opts: CreateAppOptions = {}): FundBunApp {
     ...vaultApi,
     syncClock: () => syncClock(core),
     flush: async () => void (await persistence.flush()),
+    ai: aiClient,
   }
 }
 

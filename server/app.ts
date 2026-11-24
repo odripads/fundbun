@@ -143,8 +143,7 @@ export function healthOf(opts: GatewayOptions): LlmHealth {
     const active = opts.ai.active()
     if (active?.kind === 'agent') return { ok: true, provider: active.label, model: '', local: true, kind: 'agent', connectionId: active.id }
     if (active?.model) return { ok: true, provider: active.label, model: active.model, local: true, kind: active.kind, connectionId: active.id, onDevice: active.local }
-    if (!opts.provider) return { ok: false, provider: 'none', local: true, reason: active ? 'Pick a model for your AI connection' : 'No AI connected yet' }
-    return { ok: true, provider: opts.provider.name, model: opts.provider.model, local: true }
+    return { ok: false, provider: 'none', local: true, reason: active ? 'Pick a model for your AI connection' : 'No AI connected yet' }
   }
   if (opts.provider) return { ok: true, provider: opts.provider.name, model: opts.provider.model }
   return {
@@ -173,7 +172,8 @@ async function handleLlm(ctx: RouteContext, req: IncomingMessage, res: ServerRes
     return sendJson(res, 403, { error: 'forbidden_origin', message: 'Only this computer may use this route.' })
   }
   const mine = opts.ai?.activeProvider() ?? null
-  const provider = mine?.provider ?? opts.provider
+  // on the local server only the user's own connection answers; the hosted gateway uses its configured provider
+  const provider = opts.ai ? mine?.provider ?? null : opts.provider
   if (!provider) {
     discard()
     return sendJson(res, 503, { error: 'llm_unavailable', message: opts.ai ? 'No AI connected yet.' : opts.unavailableReason ?? 'No LLM provider configured.' })

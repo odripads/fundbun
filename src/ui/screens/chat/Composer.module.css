@@ -121,3 +121,17 @@
   height: 12px;
   color: var(--under-text);
 }
+
+.foot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px var(--s-2);
+  min-width: 0;
+}
+
+.foot .hint {
+  margin: 0;
+  flex: 1 1 180px;
+  min-width: 0;
+}

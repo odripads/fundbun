@@ -38,6 +38,7 @@ type UserApi = Omit<
   AppApi,
   | 'getSnapshot' | 'subscribe' | 'isOnboarded' | 'completeOnboarding' | 'loadDemo' | 'resetAll' | 'exportBackup' | 'restoreBackup'
   | 'sendMessage' | 'xrayBill' | 'approveAction' | 'rejectAction' | 'undoAction' | 'runSuggestedAction' | 'clearChat'
+  | 'answerPermission' | 'stopReply'
   | 'checkLlm' | 'isLocked' | 'unlock' | 'enableVault' | 'disableVault' | 'syncClock'
 >
 

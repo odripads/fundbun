@@ -42,12 +42,21 @@ import type {
  * (compatible with React's useSyncExternalStore).
  */
 
+import type { LiveReply } from './ai/types'
+
 export interface LlmStatus {
   checked: boolean
   available: boolean
   provider?: string
   model?: string
   reason?: string
+  /** FundBun's server on this computer answers (desktop app): the user's own AI connection */
+  local?: boolean
+  /** 'agent' = an agent on this computer (Claude Code, Codex, …) answers */
+  kind?: 'openai_compat' | 'anthropic' | 'agent'
+  connectionId?: string
+  /** the model runs on this computer */
+  onDevice?: boolean
 }
 
 export interface DerivedState {
@@ -84,6 +93,8 @@ export interface DerivedState {
   llm: LlmStatus
   /** the agent is working on a reply */
   busy: boolean
+  /** the reply as it is being written, with the steps taken so far (an agent or a slow model); null otherwise */
+  live: LiveReply | null
   /** the engine that will answer the next message */
   engine: 'offline' | 'llm'
   /**
@@ -215,6 +226,10 @@ export interface AppApi {
   /** a UI button (e.g. "Cancel iQIYI" on a finding) — goes through the SAME policy gate as the agent */
   runSuggestedAction(action: SuggestedAction): Promise<PendingAction>
   clearChat(): void
+  /** answer an agent's "may I use this tool?" (LiveReply.permission); null = no */
+  answerPermission(requestId: string, optionId: string | null): void
+  /** stop the reply that is being written */
+  stopReply(): void
   /**
    * "Talk to a human": records the handoff request (audited as user_action, data.type 'handoff', with a short
    * masked summary — never PINs or full account numbers) and, with `opts.freeze`, pauses the agent too.

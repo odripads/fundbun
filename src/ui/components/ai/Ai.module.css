@@ -1,0 +1,394 @@
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  min-height: 44px;
+  padding: 0 var(--s-2) 0 0;
+  border: 0;
+  background: none;
+  color: var(--text-2);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.back svg {
+  width: 18px;
+  height: 18px;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  color: var(--text-2);
+}
+
+.options,
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s-2);
+}
+
+.option {
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.option.selected {
+  border-color: var(--accent-strong);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.optionMain,
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  width: 100%;
+  min-height: 60px;
+  padding: var(--s-3) var(--s-4);
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.row {
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  min-height: 56px;
+}
+
+.row:hover,
+.optionMain:hover {
+  background: var(--surface-2);
+}
+
+.optionIcon,
+.rowIcon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: var(--bg-sunken);
+  color: var(--text-2);
+}
+
+.optionIcon svg,
+.rowIcon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.optionText,
+.rowText {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.optionName,
+.rowName {
+  font-weight: 650;
+  color: var(--text);
+}
+
+.optionSub,
+.rowSub {
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+  overflow-wrap: anywhere;
+}
+
+.optionWarn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--fs-sm);
+  color: var(--warn-text);
+}
+
+.optionWarn svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+.optionMark {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  color: var(--accent-text);
+}
+
+.detail {
+  display: grid;
+  gap: var(--s-3);
+  padding: 0 var(--s-4) var(--s-4);
+}
+
+.modelRow {
+  display: grid;
+  gap: var(--s-1);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.select {
+  min-height: 44px;
+  padding: 0 var(--s-3);
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+.rowActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.test {
+  margin: 0;
+  font-size: var(--fs-sm);
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-sm);
+}
+
+.ok {
+  background: var(--under-soft);
+  color: var(--under-text);
+}
+
+.warn {
+  background: var(--warn-soft);
+  color: var(--warn-text);
+}
+
+.bad {
+  background: var(--over-soft);
+  color: var(--over-text);
+}
+
+.small,
+.note,
+.groupNote {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+
+.mono {
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.92em;
+  overflow-wrap: anywhere;
+}
+
+.plans {
+  display: grid;
+  gap: var(--s-1);
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-md);
+  background: var(--bg-sunken);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+
+.plans p {
+  margin: 0;
+}
+
+.picker {
+  display: grid;
+  gap: var(--s-6);
+}
+
+.groupTitle {
+  margin: 0 0 2px;
+  font-size: var(--fs-md);
+  font-weight: 700;
+}
+
+.groupNote {
+  margin-bottom: var(--s-3);
+}
+
+.form {
+  display: grid;
+  gap: var(--s-4);
+}
+
+.facts {
+  margin: 0;
+  display: grid;
+  gap: var(--s-2);
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-md);
+  background: var(--bg-sunken);
+  font-size: var(--fs-sm);
+}
+
+.facts div {
+  display: grid;
+  gap: 2px;
+}
+
+.facts dt {
+  font-weight: 650;
+  color: var(--text-2);
+}
+
+.facts dd {
+  margin: 0;
+}
+
+/* ───────────── the chip under the message box ───────────── */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  min-height: 28px;
+  padding: 2px 10px 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--text-2);
+  font: inherit;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chip:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.chip svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+.chipText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ───────────── the reply while it is being written ───────────── */
+
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.step svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+.stepTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stepMine {
+  color: var(--text);
+}
+
+.stepFailed {
+  color: var(--warn-text);
+}
+
+.ask {
+  display: grid;
+  gap: var(--s-2);
+  padding: var(--s-3);
+  border: 1.5px solid var(--warn);
+  border-radius: var(--r-md);
+  background: var(--warn-soft);
+}
+
+.askTitle {
+  margin: 0;
+  font-weight: 650;
+  color: var(--text);
+}
+
+.askDetail {
+  margin: 0;
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: var(--fs-sm);
+  overflow-wrap: anywhere;
+  color: var(--text);
+}
+
+.askActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.live {
+  display: grid;
+  gap: var(--s-2);
+  min-width: 0;
+}
+
+.via {
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+
+.spin {
+  animation: ai-spin 0.9s linear infinite;
+}
+
+@keyframes ai-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spin {
+    animation: none;
+  }
+}
+
+.stack {
+  display: grid;
+  gap: var(--s-4);
+}

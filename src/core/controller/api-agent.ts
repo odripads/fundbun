@@ -8,7 +8,7 @@ import { OK, attempt, errorMessage, fail, safely } from './util'
 
 type AgentApi = Pick<
   AppApi,
-  'sendMessage' | 'xrayBill' | 'approveAction' | 'rejectAction' | 'undoAction' | 'runSuggestedAction' | 'clearChat' | 'checkLlm'
+  'sendMessage' | 'xrayBill' | 'approveAction' | 'rejectAction' | 'undoAction' | 'runSuggestedAction' | 'clearChat' | 'checkLlm' | 'answerPermission' | 'stopReply'
 >
 
 export function initialLlmStatus(hasClient: boolean): LlmStatus {
@@ -72,6 +72,10 @@ export function createAgentApi(core: Core): AgentApi {
       const status: LlmStatus = { checked: true, available: h.ok === true }
       if (h.provider) status.provider = h.provider
       if (h.model) status.model = h.model
+      if (h.local) status.local = true
+      if (h.kind) status.kind = h.kind
+      if (h.connectionId) status.connectionId = h.connectionId
+      if (h.onDevice) status.onDevice = true
       if (!h.ok) status.reason = h.reason ?? 'LLM gateway unavailable'
       set(status)
     } catch (e) {
@@ -120,6 +124,16 @@ export function createAgentApi(core: Core): AgentApi {
         draft.chat = []
         draft.dialogue = {}
       }), undefined)
+      // a new conversation is a new agent session: the agent forgets the old one too
+      core.newAgentSession?.()
+    },
+    answerPermission(requestId, optionId) {
+      const live = store.runtime().live
+      if (live?.permission?.requestId === requestId) store.setRuntime({ live: { ...live, permission: undefined } })
+      void core.aiClient?.permission(requestId, optionId)
+    },
+    stopReply() {
+      core.stopReply?.()
     },
     checkLlm,
   }

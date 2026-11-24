@@ -13,6 +13,7 @@ import {
 import { detectDialogueAct } from './dialogue'
 import { TOOL_INTENT, actionFacts, readFacts } from './facts'
 import type { AgentEngine, AgentEngineFactory, AgentHost } from './host'
+import { respondAgent } from './agent-engine'
 import { respondLlm } from './llm-engine'
 import { replyLang } from './lang'
 import { isRefusalIntent, understand } from './nlu'
@@ -57,9 +58,12 @@ async function respond(host: AgentHost, text: string, source: 'chat' | 'xray'): 
     if (!/[\p{L}\p{N}]/u.test(pin.request.replace(/\[PIN\]/g, ''))) return finishTurn(host, turn, pinOnlyReply(host, turn), input)
   }
   const request = pin.request
-  const client = source === 'chat' ? host.llm() : null
-  let reply: Reply & { grounding?: GroundingReport }
-  if (client && !pin.masked && !needsDeterministicPath(host, request)) reply = await respondLlm(host, turn, request, client)
+  const useModel = source === 'chat' && !pin.masked && !needsDeterministicPath(host, request)
+  const agent = useModel ? host.agent?.() ?? null : null
+  const client = useModel && !agent ? host.llm() : null
+  let reply: Reply & { grounding?: GroundingReport; via?: string; rich?: boolean }
+  if (agent) reply = await respondAgent(host, turn, request, agent)
+  else if (client) reply = await respondLlm(host, turn, request, client)
   else reply = respondOffline(host, turn, request)
   if (pin.masked) reply = { ...reply, text: joinSentences([line('pinWarning', turn.lang), reply.text], turn.lang ?? 'en') }
   return finishTurn(host, turn, reply, input)
@@ -123,7 +127,7 @@ function needsDeterministicPath(host: AgentHost, text: string): boolean {
   return nlu.intent === 'xray' && Boolean(nlu.slots.text)
 }
 
-function finishTurn(host: AgentHost, turn: Turn, reply: Reply & { grounding?: GroundingReport }, userText: string): ChatMessage {
+function finishTurn(host: AgentHost, turn: Turn, reply: Reply & { grounding?: GroundingReport; via?: string; rich?: boolean }, userText: string): ChatMessage {
   const state = host.state()
   let grounding = reply.grounding
   if (!grounding) {
@@ -136,6 +140,9 @@ function finishTurn(host: AgentHost, turn: Turn, reply: Reply & { grounding?: Gr
     trace: turn.trace,
     grounding,
     suggestions: reply.suggestions ?? [],
+    // only a reply the model actually wrote carries its name (a fallback is the on-device engine's)
+    ...(turn.engine === 'llm' && reply.via ? { via: reply.via } : {}),
+    ...(turn.engine === 'llm' && reply.rich ? { rich: true } : {}),
   })
   host.mutate((draft) => {
     draft.chat.push(msg)
@@ -161,6 +168,8 @@ function message(host: AgentHost, text: string, engine: 'offline' | 'llm', extra
     trace: extra.trace ?? [],
     grounding: extra.grounding ?? { ok: true, checked: 0, ungrounded: [] },
     suggestions: extra.suggestions ?? [],
+    ...(extra.via ? { via: extra.via } : {}),
+    ...(extra.rich ? { rich: true } : {}),
   }
 }
 

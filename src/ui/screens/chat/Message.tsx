@@ -1,7 +1,10 @@
 import { CornerDownRight, ShieldCheck } from 'lucide-react'
 import { memo, type CSSProperties } from 'react'
 import type { ChatMessage, Currency } from '../../../core/types'
+import type { AppSnapshot } from '../../../core/app-api'
 import { ChatCardView } from '../../components/agent'
+import { LiveReplyView, Markdown } from '../../components/ai'
+import { useSnapshot } from '../../state'
 import { clockTime } from '../../components/agent/logic'
 import { BunMascot } from '../../components/brand'
 import { AiBadge, Chip, cx } from '../../components/ds'
@@ -32,9 +35,10 @@ export const AssistantMessage = memo(function AssistantMessage({ message: m, lay
         </span>
         <span className={styles.name}>Bun</span>
         <AiBadge engine={m.engine ?? 'offline'} />
+        {m.via ? <span className={styles.via}>{m.via}</span> : null}
         <time className={styles.time} dateTime={m.ts}>{clockTime(m.ts)}</time>
       </div>
-      {m.text ? <p className={styles.bubble}>{m.text}</p> : null}
+      {m.text ? m.rich ? <div className={cx(styles.bubble, styles.rich)}><Markdown text={m.text} /></div> : <p className={styles.bubble}>{m.text}</p> : null}
       {showGroundingFlag(m) ? (
         <p className={styles.grounding}>
           <ShieldCheck aria-hidden="true" />
@@ -76,8 +80,30 @@ export const UserMessage = memo(function UserMessage({ message: m, fresh }: { me
   )
 }, (a, b) => a.message.id === b.message.id && a.fresh === b.fresh)
 
-/** Bun is working on a reply (the LLM path can take a moment). */
+const selectLive = (s: AppSnapshot) => s.derived.live
+
+/**
+ * Bun is working on a reply. With the user's own AI the answer shows as it is written, with the steps taken
+ * and a Stop button; otherwise three dots (the built-in engine answers at once, a hosted model in a few seconds).
+ */
 export function TypingIndicator() {
+  const live = useSnapshot(selectLive)
+  if (live) {
+    return (
+      <li className={cx(styles.msg, styles.bot, styles.fresh)}>
+        <div className={styles.head}>
+          <span className={styles.avatar} aria-hidden="true">
+            <BunMascot mood="calm" size={30} animated />
+          </span>
+          <span className={styles.name}>Bun</span>
+          <span className={styles.via}>{live.via}</span>
+        </div>
+        <div className={cx(styles.bubble, styles.rich)}>
+          <LiveReplyView live={live} />
+        </div>
+      </li>
+    )
+  }
   return (
     <li className={cx(styles.msg, styles.bot, styles.fresh)} aria-hidden="true">
       <div className={styles.head}>

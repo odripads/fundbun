@@ -892,6 +892,10 @@ export interface ChatMessage {
   /** glass-box trace of how this reply was produced */
   trace?: TraceStep[]
   engine?: 'offline' | 'llm'
+  /** which AI wrote it, when the user connected their own (e.g. "Claude Code", "DeepSeek") */
+  via?: string
+  /** written by a connected AI as Markdown (long answers, code) */
+  rich?: boolean
   grounding?: GroundingReport
   /** quick-reply chips offered after this message */
   suggestions?: string[]

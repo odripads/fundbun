@@ -19,8 +19,6 @@ export const IDLE_MS = 15 * 60_000
 const START_TIMEOUT_MS = 120_000
 const TOOL_TIMEOUT_MS = 120_000
 const MAX_SESSIONS = 4
-/** kinds of the agent's own tools that are never approved without asking the user */
-const RISKY_KINDS = new Set(['execute', 'edit', 'delete', 'move'])
 
 export type Emit = (event: AgentEvent) => void
 
@@ -76,7 +74,7 @@ interface Session {
   tools: Map<string, (r: { content: string; isError: boolean }) => void>
   perms: Map<string, (optionId: string | null) => void>
   /** the agent's own tool calls seen this session: updates carry only the id, so the title is remembered */
-  seen: Map<string, { title: string; kind: string; fundbun: boolean }>
+  seen: Map<string, { title: string; kind: string; name: string; fundbun: boolean }>
 }
 
 const text = (v: unknown, max = 400): string => (typeof v === 'string' ? v.slice(0, max) : '')
@@ -90,14 +88,35 @@ function blockText(content: unknown): string {
   return ''
 }
 
-/** Is this the agent asking to use one of FundBun's own tools (which our gate handles)? */
-export function fundbunToolOf(toolCall: JsonObject, names: ReadonlySet<string>): string | null {
-  if (RISKY_KINDS.has(text(toolCall.kind))) return null
-  for (const field of [toolCall.name, toolCall.title]) {
-    const m = /(?:^|[_.:/\s])fundbun(?:__|[.:/\s]+)([a-z_]{3,40})\b/i.exec(text(field))
-    if (m && names.has(m[1].toLowerCase())) return m[1].toLowerCase()
-  }
-  return null
+/**
+ * Is this tool call one of FundBun's own tools, which the policy gate in the app handles?
+ * Only the adapter-assigned tool id counts (`name`, e.g. "mcp__fundbun__get_overview"), matched whole, and only
+ * for calls the agent does not class as running, editing, deleting or moving. A title is free text the model can
+ * influence, so it is never used: anything not recognised here is put to the user as a question.
+ */
+export function fundbunToolOf(name: unknown, kind: unknown, names: ReadonlySet<string>): string | null {
+  const k = text(kind, 20)
+  if (k && k !== 'other') return null
+  const m = /^mcp__fundbun__([a-z_]{3,40})$/.exec(text(name, 80))
+  return m && names.has(m[1]) ? m[1] : null
+}
+
+const UNSAFE_MODE = /bypass|yolo|auto|full|accept|danger|skip/i
+const SAFE_MODE_IDS = ['default', 'manual', 'ask', 'supervised', 'read-only', 'readonly', 'suggest']
+
+/**
+ * The agent's own "ask before acting" mode, when it offers one. People often leave their coding agent in a
+ * no-questions mode; inside a finance app it must ask. Returns null when no clearly safe mode is listed.
+ */
+export function safeModeOf(modes: unknown): { id: string; current: string; needed: boolean } | null {
+  const m = obj(modes)
+  const current = text(m.currentModeId, 80)
+  const available = (Array.isArray(m.availableModes) ? m.availableModes : []).map((x) => obj(x)).map((x) => ({ id: text(x.id, 80), about: `${text(x.name, 80)} ${text(x.description, 200)}` })).filter((x) => x.id)
+  const safe =
+    SAFE_MODE_IDS.map((id) => available.find((x) => x.id.toLowerCase() === id)).find(Boolean) ??
+    available.find((x) => !UNSAFE_MODE.test(x.id) && /always ask|ask before|ask for approval|manual/i.test(x.about))
+  if (!safe || UNSAFE_MODE.test(safe.id)) return null
+  return { id: safe.id, current, needed: safe.id !== current }
 }
 
 function friendlyStartError(e: unknown, stderr: string, label: string): { code: string; message: string } {
@@ -147,11 +166,10 @@ export function createAgentRuntime(opts: AgentRuntimeOptions): AgentRuntime {
         const callId = text(u.toolCallId, 120)
         if (!callId) return
         const known = s.seen.get(callId)
-        const entry = {
-          title: text(u.title, 200) || known?.title || 'Tool',
-          kind: text(u.kind, 20) || known?.kind || 'other',
-          fundbun: known?.fundbun || Boolean(fundbunToolOf(u, toolNames)),
-        }
+        // the id and kind the adapter gave when the call was first announced are the ones that count
+        const name = known?.name || text(u.name, 80)
+        const kindOf = known?.kind || text(u.kind, 20) || 'other'
+        const entry = { title: text(u.title, 200) || known?.title || 'Tool', kind: kindOf, name, fundbun: known?.fundbun ?? Boolean(fundbunToolOf(name, kindOf, toolNames)) }
         if (s.seen.size > 500) s.seen.clear()
         s.seen.set(callId, entry)
         // FundBun's own tools are reported by the app when it runs them: only the agent's other tools are listed here
@@ -164,9 +182,12 @@ export function createAgentRuntime(opts: AgentRuntimeOptions): AgentRuntime {
       if (method !== 'session/request_permission') throw new AcpError('Method not found', -32601)
       const options = (Array.isArray(params.options) ? params.options : []).map((o) => obj(o)).map((o) => ({ id: text(o.optionId, 120), name: text(o.name, 80), kind: text(o.kind, 20) })).filter((o) => o.id)
       const toolCall = obj(params.toolCall)
-      const allowOnce = options.find((o) => o.kind === 'allow_once') ?? options.find((o) => o.kind === 'allow_always')
-      // FundBun's tools need no second prompt here: the policy gate in the app decides, and asks for the PIN when it must
-      if (fundbunToolOf(toolCall, toolNames) && allowOnce) return { outcome: { outcome: 'selected', optionId: allowOnce.id } }
+      const allowOnce = options.find((o) => o.kind === 'allow_once')
+      const announced = s.seen.get(text(toolCall.toolCallId, 120))
+      // FundBun's tools need no second prompt here: the policy gate in the app decides, and asks for the PIN when it
+      // must. Recognised only by the id the adapter announced the call with; allowed for this one call, never "always".
+      const mine = announced ? announced.fundbun : Boolean(fundbunToolOf(toolCall.name, toolCall.kind, toolNames))
+      if (mine && allowOnce) return { outcome: { outcome: 'selected', optionId: allowOnce.id } }
       if (!s.emit || !options.length) return { outcome: { outcome: 'cancelled' } }
       const requestId = id('perm')
       const chosen = await new Promise<string | null>((resolve) => {
@@ -221,6 +242,16 @@ export function createAgentRuntime(opts: AgentRuntimeOptions): AgentRuntime {
       }, START_TIMEOUT_MS)
       const sessionId = text(created.sessionId, 200)
       if (!sessionId) throw new AcpError('The agent did not open a session.')
+      // inside a finance app the agent asks before it runs commands or changes files, whatever its usual setting
+      const mode = safeModeOf(created.modes)
+      let asksFirst = mode !== null && !mode.needed
+      if (mode?.needed) {
+        asksFirst = await conn.request('session/set_mode', { sessionId, modeId: mode.id }, 20_000).then(() => true, () => false)
+      }
+      const current = text(obj(created.modes).currentModeId, 80)
+      if (!asksFirst && current && UNSAFE_MODE.test(current)) {
+        emit({ type: 'status', text: `${label} is set to act without asking ("${current}") and FundBun could not change that. It only works inside its own folder here.` })
+      }
       const s: Session = { key: input.sessionKey, connectionId: input.connectionId, conn, sessionId, token, fresh: true, busy: false, emit: null, tools: new Map(), perms: new Map(), seen: new Map() }
       sessions.set(s.key, s)
       byToken.set(token, s)

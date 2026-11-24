@@ -8,7 +8,6 @@ import { createFileStore, defaultHome, PLAIN_CODEC, type SecretCodec } from './a
 import { createGatewayServer } from './app'
 import { resolveConfig, type Env } from './config'
 import { loadEnvFile } from './env'
-import { createProvider } from './index'
 import { createStaticHandler } from './static'
 
 /**
@@ -56,11 +55,13 @@ export async function startLocal(opts: LocalOptions = {}): Promise<LocalServer> 
     ...(opts.nodeEnv ? { nodeEnv: opts.nodeEnv } : {}),
   })
   const server = createGatewayServer({
-    // a key in .env still works as a fallback when nothing is connected (development)
-    provider: createProvider(config.provider, config.providerTimeoutMs),
+    // only what the user connected ever answers here: "Built-in engine" must mean that nothing leaves
+    provider: null,
     unavailableReason: 'No AI connected yet',
     rateLimitRpm: 240,
     providerTimeoutMs: config.providerTimeoutMs,
+    // development: the Vite dev server sits in front, on another port
+    allowedOrigins: config.allowedOrigins,
     ai,
     agents,
     staticHandler: opts.distDir ? createStaticHandler({ root: opts.distDir }) : null,
@@ -104,7 +105,14 @@ if (isEntryPoint()) {
   const dev = process.argv.includes('--api-only')
   const port = Number(process.env.FUNDBUN_LOCAL_PORT) || (dev ? 8787 : LOCAL_PORT)
   startLocal({ port, distDir: dev ? null : fileURLToPath(new URL('../dist', import.meta.url)) })
-    .then((local) => {
+    .then(async (local) => {
+      // development: turn the key in .env into a normal connection once, so it shows in "Your AI" like any other
+      if (process.argv.includes('--seed-env') && !local.ai.state().connections.length && process.env.OPENAI_COMPAT_API_KEY && process.env.OPENAI_COMPAT_BASE_URL) {
+        const baseUrl = process.env.OPENAI_COMPAT_BASE_URL.replace(/\/+$/, '')
+        const preset = local.ai.state().presets.find((p) => p.baseUrl === baseUrl)
+        await local.ai.add({ presetId: preset?.id ?? 'custom', apiKey: process.env.OPENAI_COMPAT_API_KEY, baseUrl, model: process.env.OPENAI_COMPAT_MODEL })
+        local.ai.setActive(null)
+      }
       console.log(`[fundbun] running on ${local.url}${dev ? ' (API only: open the Vite dev server)' : ''} · connections in ${defaultHome()}`)
       const stop = () => void local.close().then(() => process.exit(0))
       process.once('SIGINT', stop)

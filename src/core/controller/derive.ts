@@ -27,6 +27,7 @@ import type {
   RecurringSeries, ISODate, YearMonth,
 } from '../types'
 import { agentMoneyUsed, utcOffsetMinutesAt } from '../security/policy'
+import type { LiveReply } from '../ai/types'
 import { ctxOf } from './state'
 import { safely } from './util'
 
@@ -34,6 +35,8 @@ export interface RuntimeFlags {
   llm: LlmStatus
   /** number of agent turns in flight */
   busy: number
+  /** the reply being written right now (never persisted) */
+  live?: LiveReply | null
 }
 
 /** Finance analyses of one committed state. Each field is computed on first access and memoised. */
@@ -167,6 +170,7 @@ export function createDerived(state: AppState, rt: RuntimeFlags, now: () => stri
     awaiting: state.pending.filter((p) => p.status === 'pending'),
     llm: rt.llm,
     busy: rt.busy > 0,
+    live: rt.live ?? null,
     engine: engineFor(state, rt.llm),
   })
 }

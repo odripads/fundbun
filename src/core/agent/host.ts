@@ -16,7 +16,22 @@ import type {
   TripwireEvent,
 } from '../types'
 import type { SandboxBank } from '../sandbox/bank'
+import type { AiClient } from '../ai/client'
+import type { LiveReply } from '../ai/types'
 import type { LlmClient } from './llm'
+
+export interface AgentLink {
+  client: AiClient
+  connectionId: string
+  /** shown as the author of the reply */
+  label: string
+  /** names this conversation to the agent; a new key is a fresh agent session */
+  sessionKey: string
+  /** true the first time this session key is used: the agent has not seen the earlier messages */
+  fresh: boolean
+  /** aborts when the user presses Stop */
+  signal: AbortSignal
+}
 
 /**
  * What the controller (src/core/app.ts) exposes to the agent runtime and the tool executors.
@@ -48,6 +63,15 @@ export interface AgentHost {
   llmFailed?(error: unknown): void
   /** Tell the host an LLM turn completed, so the cool-down back-off starts from the beginning next time. */
   llmOk?(): void
+  /**
+   * The agent on this computer that answers (the user connected Claude Code, Codex, …), or null.
+   * Its turn is streamed through the FundBun server; FundBun tools it asks for run through the same gate.
+   */
+  agent?(): AgentLink | null
+  /** about the connected model, for prompts and time limits; null on the hosted gateway */
+  llmInfo?(): { local: boolean; label: string; onDevice: boolean } | null
+  /** publish (or clear) the reply as it is being written */
+  live?(reply: LiveReply | null): void
   /** call after transactions were added: evaluates tripwires, stores events, audits; returns new events */
   afterTransactions(txns: Transaction[]): TripwireEvent[]
 }

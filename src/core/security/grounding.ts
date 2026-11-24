@@ -82,12 +82,18 @@ export function extractNumbers(text: string): NumberToken[] {
  * A displayed number matches a source value when the source rounds OR truncates to it at the displayed
  * precision ("3.4k" covers 3,350–3,499.99; "38%" covers 37.5–38.99).
  */
-export function checkGrounding(reply: string, sources: unknown[], currency: Currency): GroundingReport {
+export function checkGrounding(reply: string, sources: unknown[], currency: Currency, opts: { moneyOnly?: boolean } = {}): GroundingReport {
   const pool = buildPool(sources, MINOR_PER_MAJOR[currency] ?? 100)
-  const tokens = extractNumbers(reply).filter(isCheckable)
+  // moneyOnly: a general answer (an essay, code) from the user's own AI: only amounts written as money are checked
+  const tokens = extractNumbers(opts.moneyOnly ? withoutCode(reply) : reply).filter(isCheckable).filter((t) => !opts.moneyOnly || t.currency)
   const ungrounded: string[] = []
   for (const t of tokens) if (!isGrounded(t, pool) && !ungrounded.includes(t.raw)) ungrounded.push(t.raw)
   return { ok: ungrounded.length === 0, checked: tokens.length, ungrounded }
+}
+
+/** Code blocks and inline code are not statements about anyone's money. */
+function withoutCode(text: string): string {
+  return text.replace(/```[\s\S]*?(?:```|$)/g, ' ').replace(/`[^`\n]*`/g, ' ')
 }
 
 function isCheckable(t: NumberToken): boolean {

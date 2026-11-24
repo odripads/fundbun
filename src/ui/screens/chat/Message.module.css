@@ -224,3 +224,20 @@
 :global(html[data-motion='reduce']) .fresh .chips {
   animation-delay: 0s;
 }
+
+/* the name of the user's own AI beside the badge */
+.via {
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* a formatted answer (Markdown): block content inside the bubble, wide enough for code */
+.rich {
+  display: block;
+  max-width: 100%;
+  min-width: 0;
+}

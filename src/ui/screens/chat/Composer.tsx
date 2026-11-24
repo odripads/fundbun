@@ -1,5 +1,6 @@
 import { ArrowUp, ShieldCheck } from 'lucide-react'
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
+import { ModelChip } from '../../components/ai'
 import { Spinner, cx } from '../../components/ds'
 import styles from './Composer.module.css'
 
@@ -72,7 +73,7 @@ export function Composer({ onSend, busy, engine, onHeight }: ComposerProps) {
           maxLength={MAX_LEN}
           onChange={(e) => setText(e.currentTarget.value)}
           onKeyDown={onKeyDown}
-          placeholder="Ask about your money…"
+          placeholder={engine === 'llm' ? 'Ask Bun anything…' : 'Ask about your money…'}
           enterKeyHint="send"
           autoComplete="off"
           aria-describedby={hintId}
@@ -82,10 +83,13 @@ export function Composer({ onSend, busy, engine, onHeight }: ComposerProps) {
           {busy ? <Spinner size={18} /> : <ArrowUp aria-hidden="true" />}
         </button>
       </div>
-      <p id={hintId} className={styles.hint}>
-        <ShieldCheck aria-hidden="true" />
-        {engine === 'llm' ? 'AI via LLM, redacted context' : 'On-device rules engine'} · money only moves with your OK
-      </p>
+      <div className={styles.foot}>
+        <ModelChip />
+        <p id={hintId} className={styles.hint}>
+          <ShieldCheck aria-hidden="true" />
+          {engine === 'llm' ? 'Redacted before it is sent' : 'Answered on this device'} · money only moves with your OK
+        </p>
+      </div>
     </form>
   )
 }
