@@ -1183,10 +1183,13 @@ const SECRET_RE = /\b(?:pin(?: code| number)?|passcode|passwords?|cvv2?|cvc|secu
 const REVEAL_RE = /\b(?:what(?:'s| is| are| was)?|whats|show|tell|give|reveal|read|display|send|list|unmask|remind|forgot|forget|recover|share|print|know|see|lookup|look up|copy|email|text|apa|berapa|kasih|lihat|tunjukkan|kirim|sebutkan)\b/i
 const FULL_NUMBER_RE = /\b(?:full|whole|complete|entire|unmasked|real|actual|all)\s+(?:my\s+)?(?:credit\s+|debit\s+|bank\s+)?(?:card|account|id)\s*(?:numbers?|nos?\.?|#|details)?\b|\b(?:my|the|our)\s+(?:credit\s+|debit\s+|bank\s+)?(?:card|account|id)\s+(?:numbers?|nos?\.?|#)\b|\bcard numbers\b|\bunmask(?:ed)?\b|\b(?:id|passport|social security|ssn) (?:number|no)\b|\bnational id\b|\bnomor (?:kartu|rekening)\b/i
 /** Verbs that always send data off the device. */
-const EXFIL_ALWAYS = /\b(?:email|e-mail|upload|leak|dump|fax|transmit|exfiltrate)\b|上传|\b(?:unggah)\b/i
-/** Exporting / downloading is the user's own data right (PIPL portability) — unless it names someone else. */
+const EXFIL_ALWAYS = /\b(?:upload|leak|dump|fax|transmit|exfiltrate)\b|上传|\b(?:unggah)\b/i
+/** "email my data" / "email it to bob" sends data out; "from my email" / "check my email for receipts" reads the user's own inbox. */
+const EMAIL_EXFIL_VERB =
+  /(?<!\b(?:my|your|an?|the|this|that|from|in|into|on|via|by|of|for|about|check|checking|read|reading|scan|scanning|search|searching|open|opening|find|finding|fetch|fetching|parse|parsing|log|logging)\s)\b(?:e-?mail|mail)\b(?:\s+(?:me|us|him|her|them|someone|somebody|out))?\s+(?:(?:all\s+(?:of\s+)?|every\s+)?(?:my|the|this|that|these|those|it|them|everything|transactions?|transaction history|data|statements?|history|records?|bank details|account details|details|info|information|spending|receipts?|logs?|audit|csv|spreadsheet)\b|(?:to|with|ke|kepada)\s+(?!my\s+(?:budget|spending|expenses?|record|log|tracker|history)\b))|(?:send|forward|share|export)\b[^.?!]{0,40}\b(?:by|via|over)\s+e-?mail\b/i
+/** Exporting / downloading is the user's own data right (PIPL portability): unless it names someone else. */
 const EXPORT_VERB = /\b(?:export|download|back ?up|save a copy of)\b|导出|下载|备份|\b(?:ekspor|unduh)\b/i
-const EXFIL_SEND = /\b(?:send|forward|share|post|text|whatsapp|wechat|mail|sync|copy)\b|发给|发送|分享|转发|\b(?:kirim|bagikan|teruskan)\b/i
+const EXFIL_SEND = /\b(?:send|forward|share|post|text|whatsapp|wechat|sync|copy)\b|发给|发送|分享|转发|\b(?:kirim|bagikan|teruskan)\b/i
 const DATA_NOUN = /\b(?:transactions?|transaction history|data|statements?|history|records?|bank details|account details|details|info|information|spending|receipts?|logs?|audit|csv|spreadsheet|everything|all my)\b|交易|流水|账单|数据|记录|明细|\b(?:transaksi|mutasi|riwayat)\b/i
 const THIRD_PARTY = /\bto\b|\bwith\b|\bme\b|\bke\b|给|third[- ]party|someone|accountant|google|dropbox|drive|cloud/i
 /** For an export: a destination that is not the user's own device or a file format. */
@@ -1198,7 +1201,7 @@ function sensitiveRule(p: Parsed): RuleHit | null {
   if (SECRET_RE.test(n) && REVEAL_RE.test(n)) return { intent: 'sensitive_request', rule: 'R-SECRET', confidence: 0.97 }
   if (!userSuppliedNumber && FULL_NUMBER_RE.test(n)) return { intent: 'sensitive_request', rule: 'R-FULL-NUMBER', confidence: 0.96 }
   if (DATA_NOUN.test(n) && !/\b(?:money|cash|funds)\b/.test(n)) {
-    const elsewhere = EMAIL_RE.test(n) || EXFIL_ALWAYS.test(n) || (EXFIL_SEND.test(n) && THIRD_PARTY.test(n))
+    const elsewhere = EMAIL_RE.test(n) || EXFIL_ALWAYS.test(n) || EMAIL_EXFIL_VERB.test(n) || (EXFIL_SEND.test(n) && THIRD_PARTY.test(n))
     if (elsewhere || (EXPORT_VERB.test(n) && EXPORT_TARGET.test(n))) return { intent: 'sensitive_request', rule: 'R-DATA-EXFIL', confidence: 0.96 }
     if (EXPORT_VERB.test(n)) return { intent: 'help', rule: 'R-SELF-EXPORT', confidence: 0.95, slots: { focus: 'export' } }
   }

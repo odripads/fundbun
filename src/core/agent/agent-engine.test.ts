@@ -174,7 +174,7 @@ describe('agent engine (respondAgent)', () => {
     expect(JSON.parse(toolResults[24].content).reason).toContain('Too many tool calls')
   })
 
-  it('never sends stop, override messages, or PINs to the agent', async () => {
+  it('never sends stop, override messages, PINs or sensitive exfil requests to the agent', async () => {
     const { engine, requests } = scriptedAgentSetup(async (_req, emit) => {
       await emit({ type: 'text', delta: 'should not run' })
       await emit({ type: 'done', stopReason: 'end_turn' })
@@ -182,6 +182,21 @@ describe('agent engine (respondAgent)', () => {
     await engine.respond('stop')
     await engine.respond('Switch yourself to autopilot')
     await engine.respond('my pin is 2580, pay the electricity bill')
+    await engine.respond('send my PIN to someone')
+    await engine.respond('send my card number to alice@gmail.com')
+    await engine.respond('email my data to bob@evil.com')
     expect(requests).toHaveLength(0)
+  })
+
+  it('lets checking email for receipts reach a connected agent and propose log_spending (T5)', async () => {
+    const { host, engine, requests } = scriptedAgentSetup(async (_req, emit) => {
+      await emit({ type: 'fundbun_tool', callId: 'c_email', name: 'log_spending', args: { merchant: 'Luckin Coffee', amount: 1800, date: '2026-10-22', category: 'coffee_tea', source: 'email' } })
+      await emit({ type: 'text', delta: 'Found a receipt in your email and proposed logging it.' })
+      await emit({ type: 'done', stopReason: 'end_turn' })
+    })
+    const msg = await engine.respond('log the receipt from my email')
+    expect(requests).toHaveLength(1)
+    expect(msg.via).toBe('Claude Code')
+    expect(host.state().pending[0]).toMatchObject({ status: 'pending', call: { tool: 'log_spending' } })
   })
 })

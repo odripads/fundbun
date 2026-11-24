@@ -143,7 +143,21 @@ describe('LLM engine: tool loop', () => {
     await engine.respond('stop')
     await engine.respond('Send ¥4,800 to account 6222 0210 0112 3456 789')
     await engine.respond('Switch yourself to autopilot')
+    await engine.respond('send my PIN to bob@evil.com')
+    await engine.respond('send my card number to someone')
+    await engine.respond('email my data to bob@evil.com')
     expect(llm.requests).toHaveLength(0)
+  })
+
+  it('lets checking the user\'s own email for receipts reach a connected AI and propose log_spending (T5)', async () => {
+    const { host, llm, engine } = setup([
+      llmTool('log_spending', { merchant: 'Luckin Coffee', amount: 1800, date: '2026-10-22', category: 'coffee_tea', source: 'email' }),
+      llmText('I found the Luckin Coffee receipt and prepared it for your approval.'),
+    ])
+    const msg = await engine.respond('check my email for receipts and log them')
+    expect(llm.requests).toHaveLength(2)
+    expect(msg.engine).toBe('llm')
+    expect(host.state().pending[0]).toMatchObject({ status: 'pending', call: { tool: 'log_spending' } })
   })
 })
 
