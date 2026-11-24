@@ -8,6 +8,8 @@ node_modules
 /.claude
 
 # large or not part of the app build
+/desktop
+/public/ocr
 /docs
 /deck
 /evidence
