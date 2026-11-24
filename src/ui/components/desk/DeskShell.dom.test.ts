@@ -21,8 +21,9 @@ async function renderAt(hash: string, app: FundBunApp) {
   return r
 }
 
-/** A window `width` px wide, as far as matchMedia can tell (jsdom has no layout). */
+/** A window `width` px wide, as far as matchMedia and innerWidth can tell (jsdom has no layout). */
 function mockViewport(width: number) {
+  Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: width })
   window.matchMedia = ((query: string) => {
     const min = /min-width:\s*(\d+)px/.exec(query)
     return { matches: min ? width >= Number(min[1]) : false, media: query, addEventListener: () => {}, removeEventListener: () => {}, addListener: () => {}, removeListener: () => {} }
@@ -50,19 +51,20 @@ afterEach(async () => {
   window.history.replaceState(null, '', '#')
 })
 
-describe('desk shell — a wide window', () => {
+describe('desk shell: a wide window', () => {
   it('Jing: sidebar navigation, the dashboard as the page, and Bun on the side', async () => {
     const { container } = await renderAt('#/home', demo('mei'))
     // landmarks: one primary nav, one main, the side panel
     const nav = container.querySelector('nav[aria-label="Primary"]')!
     expect(nav).not.toBeNull()
-    expect([...nav.querySelectorAll('a')].map((a) => `${a.textContent}→${a.getAttribute('href')}`)).toEqual([
+    expect([...nav.querySelectorAll('a')].map((a) => `${a.querySelector('span')?.textContent}→${a.getAttribute('href')}`)).toEqual([
       'Dashboard→#/home',
       'Insights→#/insights',
       'Bills→#/bills',
       'Goals→#/goals',
       'Activity→#/activity',
     ])
+    expect(nav.querySelector('a[href="#/activity"]')?.getAttribute('aria-label')).toBe('Activity, 2 new')
     expect(nav.querySelector('[aria-current="page"]')!.textContent).toBe('Dashboard')
     expect(container.querySelectorAll('main')).toHaveLength(1)
     expect(container.querySelector('h1')!.textContent).toBe('Dashboard')
@@ -266,9 +268,30 @@ describe('desk shell — a wide window', () => {
   })
 })
 
-describe('desk shell — a narrow window', () => {
-  it('keeps the phone layout below 1100px', async () => {
+describe('desk shell: drawer and narrow widths', () => {
+  it('uses desk layout with a closed drawer between 900 and 1279px, opened by Ask Bun', async () => {
     mockViewport(1024)
+    const { container } = await renderAt('#/home', demo('mei'))
+    expect(container.querySelector('h1')!.textContent).toBe('Dashboard')
+    expect(container.querySelector('[data-card="hero"]')).not.toBeNull()
+    // drawer starts closed
+    expect(container.querySelector('aside')).toBeNull()
+    const openBtn = byLabel(container, 'Open the side panel: Ask Bun')!
+    expect(openBtn).not.toBeNull()
+    await click(openBtn)
+    await flush()
+    const drawer = container.querySelector('aside')!
+    expect(drawer).not.toBeNull()
+    expect(drawer.getAttribute('data-mode')).toBe('drawer')
+    // Escape closes the drawer
+    await act(async () => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    })
+    expect(container.querySelector('aside')).toBeNull()
+  })
+
+  it('keeps the old phone layout below 900px', async () => {
+    mockViewport(899)
     const { container } = await renderAt('#/home', demo('mei'))
     expect(container.querySelector('[data-card]')).toBeNull()
     expect(container.querySelector('h1')!.textContent).toBe('Home')

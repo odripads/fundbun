@@ -3,8 +3,8 @@
  * do not leave room for bars that are not there. */
 
 .shell {
-  --side-w: 228px;
-  --panel-w: 372px;
+  --side-w: 224px;
+  --panel-w: 368px;
   --desk-bar: 60px;
   --gutter: var(--s-4);
   --topbar-h: 0px;
@@ -24,14 +24,93 @@
   color: var(--text);
 }
 
-.shell[data-panel='open'] {
+.shell[data-panel='open'][data-panel-mode='docked'] {
   grid-template-columns: var(--side-w) minmax(0, 1fr) var(--panel-w);
+}
+
+@media (max-width: 1119.98px) {
+  .shell {
+    --side-w: 68px;
+  }
+
+  .sidebar {
+    align-items: center;
+    padding: var(--s-3) var(--s-2);
+  }
+
+  .brand {
+    align-self: center;
+    justify-content: center;
+    width: 44px;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .brand span > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+
+  .nav,
+  .sideBottom,
+  .sideActions {
+    width: 100%;
+    padding: 0;
+  }
+
+  .navLink {
+    position: relative;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .navLabel,
+  .sideActionLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+
+  .navBadge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    font-size: 10px;
+  }
+
+  .sideActionBtn {
+    padding: 0;
+    min-width: 44px;
+    justify-content: center;
+  }
+
+  .sideFooter {
+    display: none;
+  }
+
+  .topbar {
+    padding: 0 var(--s-4);
+  }
+
+  .main {
+    padding: var(--s-4) var(--s-5) var(--s-10);
+  }
 }
 
 @media (min-width: 1360px) {
   .shell {
-    --side-w: 244px;
-    --panel-w: 404px;
+    --side-w: 240px;
+    --panel-w: 396px;
   }
 }
 
@@ -357,14 +436,23 @@
   margin: 0 auto;
 }
 
-/* the phone-shaped screens keep their own measure: a centred column with the gutter they bleed into */
+/* readable centred column for Bills, Goals, Insights, Settings and Activity (never phone-shaped) */
 .column {
-  max-width: calc(640px + 2 * var(--gutter));
+  max-width: calc(780px + 2 * var(--gutter));
   margin: 0 auto;
   padding: 0 var(--gutter);
 }
 
-/* ───────────── side panel ───────────── */
+/* ───────────── side panel & drawer ───────────── */
+
+.drawerBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 39;
+  background: color-mix(in srgb, var(--c-soy-900, #24180f) 32%, transparent);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
 
 .panel {
   position: relative;
@@ -375,6 +463,16 @@
   min-height: 0;
   background: var(--bg);
   box-shadow: inset 1px 0 0 var(--border);
+}
+
+.panelDrawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  width: min(400px, calc(100vw - 68px));
+  box-shadow: inset 1px 0 0 var(--border), -12px 0 36px color-mix(in srgb, var(--c-soy-900, #24180f) 18%, transparent);
 }
 
 .panelHead {

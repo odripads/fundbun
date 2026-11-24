@@ -6,9 +6,13 @@
 import { useSyncExternalStore } from 'react'
 import { useMediaQuery } from '../../hooks/useMediaQuery'
 
-/** The window must be at least this wide for the desk layout (sidebar + work area + side panel). */
-export const DESK_MIN_WIDTH = 1100
+/** The window must be at least this wide for the desk layout (sidebar + work area + drawer/panel). */
+export const DESK_MIN_WIDTH = 900
 export const DESK_QUERY = `(min-width: ${DESK_MIN_WIDTH}px)`
+
+/** From this width the right panel sits beside the work area; narrower desk windows open it as a drawer. */
+export const PANEL_DOCK_WIDTH = 1280
+export const PANEL_DOCK_QUERY = `(min-width: ${PANEL_DOCK_WIDTH}px)`
 
 export type ViewPreference = 'desk' | 'phone'
 
@@ -61,6 +65,11 @@ export function useViewPreference(): ViewPreference {
 /** Is the window wide enough for the desk layout? False where matchMedia is missing (jsdom, SSR). */
 export function useDeskViewport(): boolean {
   return useMediaQuery(DESK_QUERY, false)
+}
+
+/** Is the window wide enough to dock the side panel beside the content (rather than as a drawer)? */
+export function usePanelDocked(): boolean {
+  return useMediaQuery(PANEL_DOCK_QUERY, false)
 }
 
 /**

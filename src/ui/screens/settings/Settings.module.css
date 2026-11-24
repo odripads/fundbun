@@ -200,6 +200,11 @@
   scrollbar-width: none;
 }
 
+:global([data-desk]) .jumps {
+  flex-wrap: wrap;
+  overflow-x: visible;
+}
+
 .jumps::-webkit-scrollbar {
   display: none;
 }

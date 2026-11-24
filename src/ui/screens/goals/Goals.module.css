@@ -160,9 +160,13 @@
 }
 
 .list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--s-3);
+}
+
+:global([data-desk]) .list {
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
 }
 
 .shelf {

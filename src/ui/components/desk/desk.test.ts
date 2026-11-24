@@ -4,6 +4,8 @@ import { DESK_NAV, DESK_ROOTS, chatTabName, defaultPanelOpen, deskParent, deskTi
 import {
   DESK_MIN_WIDTH,
   DESK_QUERY,
+  PANEL_DOCK_QUERY,
+  PANEL_DOCK_WIDTH,
   PANEL_OPEN_KEY,
   VIEW_STORAGE_KEY,
   isDeskModeNow,
@@ -36,12 +38,14 @@ afterEach(() => {
 })
 
 describe('desk mode', () => {
-  it('needs a window at least 1100px wide', () => {
-    expect(DESK_MIN_WIDTH).toBe(1100)
-    expect(DESK_QUERY).toBe('(min-width: 1100px)')
-    mockViewport(1099)
+  it('needs a window at least 900px wide and docks the panel from 1280px', () => {
+    expect(DESK_MIN_WIDTH).toBe(900)
+    expect(DESK_QUERY).toBe('(min-width: 900px)')
+    expect(PANEL_DOCK_WIDTH).toBe(1280)
+    expect(PANEL_DOCK_QUERY).toBe('(min-width: 1280px)')
+    mockViewport(899)
     expect(isDeskModeNow()).toBe(false)
-    mockViewport(1100)
+    mockViewport(900)
     expect(isDeskModeNow()).toBe(true)
   })
 
@@ -111,10 +115,11 @@ describe('side panel preferences', () => {
     expect(readPanelTab()).toBe('glass')
   })
 
-  it('starts open only where the dashboard keeps two columns beside it', () => {
+  it('starts open from 1280px and closed in drawer widths (900 to 1279px)', () => {
     expect(defaultPanelOpen(1440)).toBe(true)
-    expect(defaultPanelOpen(1360)).toBe(true)
-    expect(defaultPanelOpen(1280)).toBe(false)
+    expect(defaultPanelOpen(1280)).toBe(true)
+    expect(defaultPanelOpen(1279)).toBe(false)
+    expect(defaultPanelOpen(1024)).toBe(false)
     expect(defaultPanelOpen(undefined)).toBe(true)
   })
 })

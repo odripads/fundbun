@@ -36,10 +36,10 @@ export function longDate(d: ISODate): string {
 }
 
 /**
- * With no saved choice, the side panel starts open when the window leaves the dashboard two columns beside it; on
- * a narrower window it starts shut (the top bar's "Ask Bun" button opens it).
+ * With no saved choice, the side panel starts open from 1280px (where it sits beside the content); between 900px
+ * and 1279px it is a drawer and starts closed (opened by the top bar's "Ask Bun" button).
  */
-export const PANEL_DEFAULT_OPEN_WIDTH = 1360
+export const PANEL_DEFAULT_OPEN_WIDTH = 1280
 
 export function defaultPanelOpen(windowWidth: number | undefined): boolean {
   return windowWidth === undefined || !Number.isFinite(windowWidth) || windowWidth >= PANEL_DEFAULT_OPEN_WIDTH

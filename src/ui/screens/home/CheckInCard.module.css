@@ -48,7 +48,7 @@
 .slots {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 6px;
+  gap: 4px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -109,9 +109,9 @@
   overflow: hidden;
   max-width: 100%;
   color: var(--text-3);
-  font-size: 0.625rem;
+  font-size: 0.58rem;
   font-weight: 650;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -147,12 +147,14 @@
 
 .actions {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--s-2);
 }
 
 .grow {
-  flex: 1;
+  flex: 1 1 136px;
   min-width: 0;
+  padding-inline: var(--s-3);
 }
 
 @keyframes slot-pulse {

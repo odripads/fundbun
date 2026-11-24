@@ -31,8 +31,8 @@
   min-width: 0;
 }
 
-/* two columns, each at least as wide as the phone the Home cards were drawn for */
-@container dash (min-width: 720px) {
+/* two columns: fits from 900px (with drawer closed) and from 1280px (with panel docked) */
+@container dash (min-width: 620px) {
   .grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-template-areas:
@@ -48,7 +48,7 @@
 }
 
 /* three columns: the side panel is shut, or the window is wide */
-@container dash (min-width: 1120px) {
+@container dash (min-width: 1060px) {
   .grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     grid-template-areas:

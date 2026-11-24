@@ -16,8 +16,8 @@ import { TopBarSlotContext } from '../layout/ScreenTopBar'
 import { ShellActions } from '../layout/ShellActions'
 import { SteamBackdrop } from '../layout/SteamBackdrop'
 import { DeskActionsContext, type DeskActions } from './deskActions'
-import { DESK_NAV, chatTabName, defaultPanelOpen, longDate } from './deskModel'
-import { readPanelOpen, readPanelTab, setViewPreference, writePanelOpen, writePanelTab, type DeskPanelTab } from './useDeskMode'
+import { DESK_NAV, chatTabName, longDate } from './deskModel'
+import { readPanelOpen, readPanelTab, setViewPreference, usePanelDocked, writePanelOpen, writePanelTab, type DeskPanelTab } from './useDeskMode'
 import styles from './DeskShell.module.css'
 
 export interface DeskShellProps {
@@ -66,20 +66,22 @@ const selectShell = (s: AppSnapshot) => ({
   engine: s.derived.engine,
 })
 
-function initialPanelOpen(): boolean {
-  return readPanelOpen() ?? defaultPanelOpen(typeof window === 'undefined' ? undefined : window.innerWidth)
+function initialDockedOpen(): boolean {
+  return readPanelOpen() ?? true
 }
 
 /**
- * The desktop app: a sidebar to move around, the work area in the middle, and Bun on the side (the chat and the
- * glass box in one collapsible panel). Screens render in the work area exactly as on the phone; sheets, dialogs
- * and toasts open over the whole window through the same contexts the phone frame provides.
+ * The desktop app: a sidebar to move around, the work area in the middle, and Bun on the side (docked from 1280px,
+ * a drawer from 900 to 1279px). Screens render in the work area; sheets, dialogs and toasts open over the whole
+ * window through the same contexts the phone frame provides.
  */
 export function DeskShell({ route, title, parent, pageKey, column = false, awaiting = 0, busy = false, chatRequest = 0, chat, glassBox, sidebarFooter, children }: DeskShellProps) {
   const { today, sandbox, unseen, engine } = useSnapshot(selectShell, shallowEqual)
+  const docked = usePanelDocked()
   const [overlayRoot, setOverlayRoot] = useState<HTMLDivElement | null>(null)
   const [topSlot, setTopSlot] = useState<HTMLDivElement | null>(null)
-  const [panelOpen, setPanelOpen] = useState(initialPanelOpen)
+  const [dockedOpen, setDockedOpen] = useState(initialDockedOpen)
+  const [drawerOpen, setDrawerOpen] = useState(false)
   const [tab, setTab] = useState<DeskPanelTab>(readPanelTab)
   const [adding, setAdding] = useState(false)
   const mainRef = useRef<HTMLElement>(null)
@@ -88,6 +90,7 @@ export function DeskShell({ route, title, parent, pageKey, column = false, await
   const lastKey = useRef(pageKey)
   const lastChat = useRef(0)
   const base = useId()
+  const panelOpen = docked ? dockedOpen : drawerOpen
 
   // a new page starts at its top, with focus on it (as in the phone frame)
   useEffect(() => {
@@ -97,17 +100,35 @@ export function DeskShell({ route, title, parent, pageKey, column = false, await
     mainRef.current?.focus({ preventScroll: true })
   }, [pageKey])
 
+  // close the drawer on Escape when in 900..1279px drawer mode
+  useEffect(() => {
+    if (docked || !drawerOpen) return
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (e.key === 'Escape') setDrawerOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [docked, drawerOpen])
+
   const openPanel = useCallback((next: DeskPanelTab) => {
     setTab(next)
     writePanelTab(next)
-    setPanelOpen(true)
-    writePanelOpen(true)
-  }, [])
+    if (docked) {
+      setDockedOpen(true)
+      writePanelOpen(true)
+    } else {
+      setDrawerOpen(true)
+    }
+  }, [docked])
 
   const closePanel = useCallback(() => {
-    setPanelOpen(false)
-    writePanelOpen(false)
-  }, [])
+    if (docked) {
+      setDockedOpen(false)
+      writePanelOpen(false)
+    } else {
+      setDrawerOpen(false)
+    }
+  }, [docked])
 
   /** The message box arrives with the chat's own chunk, so look for it for a moment before giving up. */
   const focusComposer = useCallback(() => {
@@ -149,7 +170,7 @@ export function DeskShell({ route, title, parent, pageKey, column = false, await
   const settingsCurrent = route === 'settings'
 
   return (
-    <div className={styles.shell} data-panel={panelOpen ? 'open' : 'closed'} data-desk="">
+    <div className={styles.shell} data-panel={panelOpen ? 'open' : 'closed'} data-panel-mode={docked ? 'docked' : 'drawer'} data-desk="">
       <SteamBackdrop variant="page" />
       <OverlayRootContext.Provider value={overlayRoot}>
         <TopBarSlotContext.Provider value={topSlot}>
@@ -178,7 +199,7 @@ export function DeskShell({ route, title, parent, pageKey, column = false, await
                     const count = item.route === 'activity' ? badgeText(unseen) : null
                     return (
                       <li key={item.route}>
-                        <a className={styles.navLink} href={href(item.route)} aria-current={current ? 'page' : undefined} aria-label={count ? `${item.label}, ${count} new` : undefined}>
+                        <a className={styles.navLink} href={href(item.route)} title={item.label} aria-current={current ? 'page' : undefined} aria-label={count ? `${item.label}, ${count} new` : undefined}>
                           <Icon aria-hidden="true" />
                           <span className={styles.navLabel}>{item.label}</span>
                           {count ? <span className={styles.navBadge} aria-hidden="true">{count}</span> : null}
@@ -190,11 +211,11 @@ export function DeskShell({ route, title, parent, pageKey, column = false, await
               </nav>
 
               <div className={styles.sideActions}>
-                <Button fullWidth iconStart={<Plus />} onClick={() => setAdding(true)}>
-                  Add spending
+                <Button fullWidth iconStart={<Plus />} onClick={() => setAdding(true)} title="Add spending" className={styles.sideActionBtn}>
+                  <span className={styles.sideActionLabel}>Add spending</span>
                 </Button>
-                <Button variant="secondary" size="sm" fullWidth iconStart={<Camera />} href={href('receipt')} aria-current={route === 'receipt' ? 'page' : undefined}>
-                  Receipt or file
+                <Button variant="secondary" size="sm" fullWidth iconStart={<Camera />} href={href('receipt')} title="Receipt or file" aria-current={route === 'receipt' ? 'page' : undefined} className={styles.sideActionBtn}>
+                  <span className={styles.sideActionLabel}>Receipt or file</span>
                 </Button>
               </div>
 
@@ -214,13 +235,13 @@ export function DeskShell({ route, title, parent, pageKey, column = false, await
 
               <ul className={styles.sideBottom}>
                 <li>
-                  <a className={styles.navLink} href={href('settings')} aria-current={settingsCurrent ? 'page' : undefined}>
+                  <a className={styles.navLink} href={href('settings')} title="Settings" aria-current={settingsCurrent ? 'page' : undefined}>
                     <Settings aria-hidden="true" />
                     <span className={styles.navLabel}>Settings</span>
                   </a>
                 </li>
                 <li>
-                  <button type="button" className={cx(styles.navLink, styles.quiet)} onClick={() => setViewPreference('phone')}>
+                  <button type="button" className={cx(styles.navLink, styles.quiet)} title="Phone view" onClick={() => setViewPreference('phone')}>
                     <Smartphone aria-hidden="true" />
                     <span className={styles.navLabel}>Phone view</span>
                   </button>
@@ -257,8 +278,10 @@ export function DeskShell({ route, title, parent, pageKey, column = false, await
               </main>
             </div>
 
+            {!docked && panelOpen ? <div className={styles.drawerBackdrop} onClick={closePanel} aria-hidden="true" /> : null}
+
             {panelOpen ? (
-              <aside ref={panelRef} className={styles.panel} aria-label="Bun: chat and glass box">
+              <aside ref={panelRef} className={cx(styles.panel, !docked && styles.panelDrawer)} data-mode={docked ? 'docked' : 'drawer'} aria-label="Bun: chat and glass box">
                 <div className={styles.panelHead}>
                   <div role="tablist" aria-label="Side panel" className={styles.tabs} onKeyDown={onTabKey}>
                     {PANEL_TABS.map((t, i) => {
