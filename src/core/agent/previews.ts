@@ -297,6 +297,21 @@ function recategorize(call: ToolCall, state: AppState): ActionPreview {
   }
 }
 
+function logSpending(call: ToolCall, state: AppState): ActionPreview {
+  const merchant = str(call.args.merchant) ?? 'a purchase'
+  const amount = num(call.args.amount)
+  const date = str(call.args.date)
+  const from = str(call.args.source) === 'email' ? 'an email' : str(call.args.source) === 'receipt' ? 'a receipt' : 'our chat'
+  return {
+    title: `Log ${merchant}`,
+    summary: `Adds a purchase found in ${from} to your spending. No money moves.`,
+    ...(amount ? { amount } : {}),
+    reversible: true,
+    risk: 'low',
+    effects: [`${categoryLabel(str(call.args.category))}${date ? `, paid ${date}` : ''}`, 'Counts toward this month and your tripwires', undoLine(state)],
+  }
+}
+
 function setBillReminder(call: ToolCall, state: AppState): ActionPreview {
   const bill = findBill(state, call.args.billId)
   const days = num(call.args.daysBefore)
@@ -320,4 +335,5 @@ const BUILDERS: Partial<Record<string, Builder>> = {
   create_tripwire: createTripwire,
   recategorize_transaction: recategorize,
   set_bill_reminder: setBillReminder,
+  log_spending: logSpending,
 }

@@ -14,6 +14,7 @@ import {
   summarizeMonth,
   xrayBill,
 } from '../finance'
+import { syncExpectedBills } from '../finance/expected'
 import { FIXED_CATEGORIES, isSpending, spendValue } from '../finance/ledger'
 import { uid } from '../ids'
 import type { SandboxBank } from '../sandbox/bank'
@@ -55,6 +56,7 @@ export type UndoRecord =
   | { kind: 'tripwire'; tripwireId: string }
   | { kind: 'recategorize'; txnId: string; category: CategoryId; categorySource: Transaction['categorySource']; categoryConfidence: number; ruleKey: string; previousRule?: CategoryId }
   | { kind: 'reminder'; billId: string; previous?: number }
+  | { kind: 'logged'; txnIds: string[] }
 
 export interface UntrustedText {
   source: string
@@ -561,6 +563,73 @@ function recategorizeTransaction(args: Args, host: AgentHost, call: ToolCall): T
   })
 }
 
+/** How far back a purchase may be logged (the Add spending screen allows the same). */
+export const LOG_BACKDATE_DAYS = 365
+const LOG_SOURCES = new Set(['email', 'receipt', 'chat'])
+/** Id prefixes the statement importer treats as hand-entered, so a later statement row is matched, not doubled. */
+const LOG_ID_PREFIX: Record<string, string> = { email: 'em_ai', receipt: 'receipt_ai', chat: 'manual_ai' }
+
+/** The checks log_spending's arguments must pass (also used by the policy gate before anything is proposed). */
+export function logSpendingError(args: Args, today: string): string | null {
+  const merchant = str(args.merchant)?.trim()
+  const amount = int(args.amount)
+  const date = str(args.date)
+  const category = str(args.category)
+  if (!merchant || merchant.length > 80) return 'A purchase needs a shop name (up to 80 characters).'
+  if (amount === undefined || amount <= 0) return 'A purchase needs an amount above zero, in minor units.'
+  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date))) return 'A purchase needs its date as YYYY-MM-DD.'
+  if (date > today) return 'A purchase cannot be dated in the future.'
+  if (diffDays(today, date) > LOG_BACKDATE_DAYS) return 'A purchase can be logged at most a year back.'
+  if (!category || !(category in CATEGORIES) || !isSpendingCategory(category as CategoryId)) return 'That is not a spending category.'
+  if (!LOG_SOURCES.has(str(args.source) ?? '')) return 'Say where the purchase came from: email, receipt or chat.'
+  const note = args.note
+  if (note !== undefined && (typeof note !== 'string' || note.length > 140)) return 'The note can be at most 140 characters.'
+  return null
+}
+
+/**
+ * Logs one purchase the user made (an AI read it from an email or a receipt, or the user told it). It records
+ * the past; no money moves. The shop name and note came from outside FundBun, so the result is marked untrusted.
+ */
+function logSpending(args: Args, host: AgentHost): ToolRun {
+  return host.mutate((draft) => {
+    const err = logSpendingError(args, draft.bank.today)
+    if (err) throw new Error(err)
+    const merchant = (str(args.merchant) as string).trim().replace(/\s+/g, ' ')
+    const amount = int(args.amount) as number
+    const date = str(args.date) as string
+    const category = str(args.category) as CategoryId
+    const source = str(args.source) as string
+    const note = str(args.note)?.trim().replace(/\s+/g, ' ')
+    const twin = draft.bank.transactions.find((t) => t.date === date && t.amount === -amount && t.merchant.trim().toLowerCase() === merchant.toLowerCase())
+    if (twin) throw new Error('That purchase is already in your spending (same day, amount and shop).')
+    const accountId = draft.bank.accounts.find((a) => a.type === 'checking')?.id ?? draft.bank.accounts[0]?.id ?? 'acct'
+    const txn: Transaction = {
+      id: uid(LOG_ID_PREFIX[source]),
+      accountId,
+      date,
+      amount: -amount,
+      currency: draft.profile?.currency ?? 'CNY',
+      merchant,
+      description: note ?? merchant,
+      category,
+      categorySource: 'llm',
+      categoryConfidence: 1,
+    }
+    draft.bank.transactions = [...draft.bank.transactions, txn].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
+    // a logged purchase counts like any other: this month's can trip a wire, and it keeps the expected bills right
+    if (date.slice(0, 7) === draft.bank.today.slice(0, 7)) host.afterTransactions([txn])
+    syncExpectedBills(draft.bank, draft.subscriptions)
+    const f = money(draft)
+    const data = compact({ txnId: txn.id, merchant, amount, date, category, source, note })
+    return {
+      outcome: ok(data, `Logged ${merchant} ${f(amount)} on ${date}`, [{ type: 'transactions', title: 'Logged', txns: [structuredClone(txn)] }], { untrusted: true, txnIds: [txn.id] }),
+      undo: { kind: 'logged', txnIds: [txn.id] },
+      untrustedTexts: [{ source: 'logged-purchase', text: [merchant, note].filter(Boolean).join(' · ') }],
+    }
+  })
+}
+
 function setBillReminder(args: Args, host: AgentHost): ToolRun {
   const billId = str(args.billId)
   const daysBefore = int(args.daysBefore)
@@ -675,6 +744,7 @@ const EXECUTORS: Partial<Record<ToolName, Executor>> = {
   create_tripwire: createTripwire,
   recategorize_transaction: recategorizeTransaction,
   set_bill_reminder: setBillReminder,
+  log_spending: logSpending,
   transfer_to_goal: (args, host) => moveGoalMoney(args, host, 'in'),
   withdraw_from_goal: (args, host) => moveGoalMoney(args, host, 'out'),
   pay_bill: payBill,
@@ -704,6 +774,10 @@ export function applyUndo(undo: UndoRecord, draft: AppState, bank: SandboxBank):
       draft.categoryRules = rules
       return
     }
+    case 'logged':
+      draft.bank.transactions = draft.bank.transactions.filter((t) => !undo.txnIds.includes(t.id))
+      syncExpectedBills(draft.bank, draft.subscriptions)
+      return
     case 'reminder': {
       const reminders = { ...draft.billReminders }
       if (undo.previous !== undefined) reminders[undo.billId] = undo.previous

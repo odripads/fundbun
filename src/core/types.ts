@@ -788,6 +788,7 @@ export type ToolName =
   | 'create_tripwire'
   | 'recategorize_transaction'
   | 'set_bill_reminder'
+  | 'log_spending'
   // T2 move own money
   | 'transfer_to_goal'
   | 'withdraw_from_goal'

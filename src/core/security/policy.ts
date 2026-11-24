@@ -1,4 +1,5 @@
 import { TOOL_SPECS, isToolName } from '../agent/specs'
+import { logSpendingError } from '../agent/tools'
 import { addDays } from '../dates'
 import { fmt, toMinor } from '../money'
 import type {
@@ -266,7 +267,10 @@ export function evaluatePolicy(call: ToolCall, ctx: PolicyContext): PolicyDecisi
     if (moneyDenial) return deny(moneyDenial.ruleId, moneyDenial.reason)
   }
 
-  return gate(tier, mandate.autonomy, tainted, amount, money, mandate.undoWindowSec)
+  // a purchase an AI logs came from outside FundBun (an email, a receipt it read): treated like outside text, so the
+  // user always taps to accept it, whatever the autonomy setting
+  const outside = tainted || (tool === 'log_spending' && !byUser)
+  return gate(tier, mandate.autonomy, outside, amount, money, mandate.undoWindowSec)
 }
 
 function gate(tier: Tier, autonomy: Autonomy, tainted: boolean, amount: Minor, money: (m: Minor) => string, undoSec: number): PolicyDecision {
@@ -342,6 +346,8 @@ function checkEntities(tool: ToolName, args: Record<string, unknown>, ctx: Polic
       return findBill(bank, args.billId) ? null : "That bill doesn't exist, so no reminder was set."
     case 'recategorize_transaction':
       return findTxn(bank, args.txnId) ? null : "That transaction doesn't exist."
+    case 'log_spending':
+      return logSpendingError(args, bank.today)
     case 'dispute_transaction': {
       const txn = findTxn(bank, args.txnId)
       if (!txn) return "That transaction doesn't exist, so it can't be disputed."

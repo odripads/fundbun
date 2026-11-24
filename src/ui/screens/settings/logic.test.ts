@@ -158,7 +158,7 @@ describe('tools', () => {
     const groups = toolGroups()
     expect(groups.map((g) => g.tier)).toEqual([0, 1, 2, 3, 4])
     expect(groups.every((g) => g.tools.every((t) => t.tier === g.tier))).toBe(true)
-    expect(groups.flatMap((g) => g.tools)).toHaveLength(24)
+    expect(groups.flatMap((g) => g.tools)).toHaveLength(25)
     expect(groups[4].tools.map((t) => t.name)).toContain('change_mandate')
   })
 

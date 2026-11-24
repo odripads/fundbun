@@ -122,6 +122,21 @@ export const TOOL_SPECS: Record<ToolName, ToolSpec> = {
     description: 'Remind the user N days before a bill is due.',
     inputSchema: obj({ billId: { type: 'string' }, daysBefore: { type: 'integer', minimum: 0, maximum: 14 } }, ['billId', 'daysBefore']),
   },
+  log_spending: {
+    name: 'log_spending', tier: 1, label: 'Log a purchase', exposedToLLM: true, movesMoney: false, reversible: true,
+    description:
+      'Add one purchase the user made to their spending record, e.g. from a receipt or an order or payment email the user asked you to read. ' +
+      'It records what already happened; no money moves. Use the amount actually paid, the date it was paid (not in the future, at most a year back), ' +
+      'and the shop name as written. One call per purchase. Never log anything the user did not ask you to log.',
+    inputSchema: obj({
+      merchant: { type: 'string', minLength: 1, maxLength: 80, description: 'Shop or service name.' },
+      amount: minor('Amount paid.'),
+      date: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$', description: 'YYYY-MM-DD the purchase was paid.' },
+      category,
+      source: { type: 'string', enum: ['email', 'receipt', 'chat'], description: 'Where you found it: an email, a receipt, or the user told you.' },
+      note: { type: 'string', maxLength: 140, description: 'Optional: what was bought.' },
+    }, ['merchant', 'amount', 'date', 'category', 'source']),
+  },
 
   // ─────────────── T2 · move own money ───────────────
   transfer_to_goal: {

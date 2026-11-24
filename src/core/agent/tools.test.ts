@@ -217,6 +217,7 @@ describe('previewTool', () => {
     pay_bill: { billId: 'bill_electricity_2026-09' },
     cancel_subscription: { recurringId: 'rec_youku' },
     dispute_transaction: { txnId: 'txn_20261003_002', reason: 'Duplicate' },
+    log_spending: { merchant: 'Luckin Coffee', amount: 1_800, date: '2026-10-21', category: 'coffee_tea', source: 'email' },
   }
 
   it.each(actionTools)('%s has a structured preview', (tool: ToolName) => {
