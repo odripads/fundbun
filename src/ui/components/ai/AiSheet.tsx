@@ -133,7 +133,7 @@ export function AiSheet({ open, onClose }: { open: boolean; onClose: () => void 
                         </label>
                       ) : (
                         <p className={styles.note}>
-                          Runs as <code className={styles.mono}>{(c.command ?? []).join(' ') || 'its own command'}</code> in FundBun’s own folder. It asks you before it runs commands or changes files.
+                          Runs as <code className={styles.mono}>{(c.command ?? []).join(' ') || 'its own command'}</code>, started in FundBun’s own folder. FundBun puts it in its ask-first mode, so it asks you before it runs commands or changes files.
                         </p>
                       )}
                       <div className={styles.rowActions}>
@@ -355,8 +355,8 @@ function AgentConfirm({ agent, onConnect }: { agent: DetectedAgent; onConnect: (
       <dl className={styles.facts}>
         <div><dt>FundBun will run</dt><dd className={styles.mono}>{runs}</dd></div>
         {agent.launch.via === 'npx' ? <div><dt>Note</dt><dd>That is {agent.name}’s ACP adapter, downloaded from npm the first time.</dd></div> : null}
-        <div><dt>Where</dt><dd>In FundBun’s own folder, not in your documents.</dd></div>
-        <div><dt>What it gets</dt><dd>FundBun’s tools, through the same rules as any model. It must ask you before it runs commands or changes files.</dd></div>
+        <div><dt>Where</dt><dd>It starts in FundBun’s own folder. It is not sandboxed by FundBun: it can only run commands or change files after you say yes.</dd></div>
+        <div><dt>What it gets</dt><dd>FundBun’s tools, through the same rules as any model. FundBun switches it to ask first; an agent that cannot be switched is not used.</dd></div>
       </dl>
       <Sent local={false} />
       {error ? <p className={cx(styles.test, styles.bad)} role="alert">{error}</p> : null}

@@ -119,7 +119,33 @@ export function safeModeOf(modes: unknown): { id: string; current: string; neede
   return { id: safe.id, current, needed: safe.id !== current }
 }
 
+export class UnsafeModeError extends Error {
+  constructor(public readonly mode: string) {
+    super('unsafe mode')
+    this.name = 'UnsafeModeError'
+  }
+}
+
+/**
+ * Leaves the session in a mode that asks the user before the agent acts, or reports that it cannot.
+ * No modes reported: ACP's default is that the agent asks (session/request_permission), so that is accepted.
+ * A reported mode that acts without asking must be switched to a safe one; if that is impossible, the answer is no.
+ */
+export async function asksFirst(conn: Pick<AcpConnection, 'request'>, sessionId: string, modes: unknown): Promise<boolean> {
+  const reported = obj(modes)
+  const current = text(reported.currentModeId, 80)
+  const listed = Array.isArray(reported.availableModes) && reported.availableModes.length > 0
+  if (!current && !listed) return true
+  const safe = safeModeOf(modes)
+  if (!safe) return Boolean(current) && !UNSAFE_MODE.test(current) && !listed
+  if (!safe.needed) return true
+  return conn.request('session/set_mode', { sessionId, modeId: safe.id }, 20_000).then(() => true, () => false)
+}
+
 function friendlyStartError(e: unknown, stderr: string, label: string): { code: string; message: string } {
+  if (e instanceof UnsafeModeError) {
+    return { code: 'agent_unsafe_mode', message: `${label} is set to act without asking${e.mode ? ` ("${e.mode}")` : ''} and FundBun could not switch it to ask first, so FundBun will not use it. Change its permission mode, then try again.` }
+  }
   const raw = `${e instanceof Error ? e.message : ''} ${stderr}`.toLowerCase()
   if (/auth|log ?in|sign ?in|credential|unauthori|401|api key/.test(raw)) {
     return { code: 'agent_signed_out', message: `${label} is not signed in on this computer. Sign in with its own command in a terminal, then try again.` }
@@ -242,15 +268,10 @@ export function createAgentRuntime(opts: AgentRuntimeOptions): AgentRuntime {
       }, START_TIMEOUT_MS)
       const sessionId = text(created.sessionId, 200)
       if (!sessionId) throw new AcpError('The agent did not open a session.')
-      // inside a finance app the agent asks before it runs commands or changes files, whatever its usual setting
-      const mode = safeModeOf(created.modes)
-      let asksFirst = mode !== null && !mode.needed
-      if (mode?.needed) {
-        asksFirst = await conn.request('session/set_mode', { sessionId, modeId: mode.id }, 20_000).then(() => true, () => false)
-      }
-      const current = text(obj(created.modes).currentModeId, 80)
-      if (!asksFirst && current && UNSAFE_MODE.test(current)) {
-        emit({ type: 'status', text: `${label} is set to act without asking ("${current}") and FundBun could not change that. It only works inside its own folder here.` })
+      // Inside a finance app the agent must ask before it runs commands or changes files, whatever its usual setting.
+      // Fail closed: an agent left in a no-questions mode that FundBun cannot switch is not used at all.
+      if (!(await asksFirst(conn, sessionId, created.modes))) {
+        throw new UnsafeModeError(text(obj(created.modes).currentModeId, 80))
       }
       const s: Session = { key: input.sessionKey, connectionId: input.connectionId, conn, sessionId, token, fresh: true, busy: false, emit: null, tools: new Map(), perms: new Map(), seen: new Map() }
       sessions.set(s.key, s)

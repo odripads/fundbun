@@ -62,7 +62,8 @@ Test suite at f4ac1d0: 3,496 tests, all passing except the 3 desk-shell DOM test
   FundBun's tools reach the agent through `server/agents/mcp-bridge.mjs` (a stdio MCP server with a per-session token)
   and come back to the app as `fundbun_tool` events; the app runs each through the **same policy gate** as any model
   (`src/core/agent/agent-engine.ts`). The agent's own tools (shell, files) are put to the user as a permission question.
-  A FundBun tool is recognised only by its exact adapter id `mcp__fundbun__<tool>`, never by title.
+  A FundBun tool is recognised only by its exact adapter id `mcp__fundbun__<tool>`, never by title. The agent must be
+  in an ask-first mode: FundBun switches it (`asksFirst` in runtime.ts) and refuses to use it if it cannot (fails closed).
 - **App**: `src/core/ai/client.ts`, `src/ui/components/ai/*` (AiSheet, ModelChip, LiveReply, safe Markdown with no
   links or images loaded). With the user's own AI, Bun may answer non-money questions (prompt section "Beyond money");
   figures about the user's money are still grounding-checked (`checkGrounding(..., { moneyOnly })` for general answers).
