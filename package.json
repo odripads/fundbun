@@ -29,7 +29,11 @@
     "demo:record": "tsx scripts/record-demo.ts",
     "screens": "tsx scripts/capture-screens.ts",
     "deck": "tsx deck/build.ts",
-    "docs:export": "tsx docs/export/build.ts"
+    "docs:export": "tsx docs/export/build.ts",
+    "local": "npm run build && tsx server/local.ts",
+    "local:api": "tsx server/local.ts --api-only",
+    "desktop": "node scripts/desktop-build.mjs && electron desktop/app",
+    "desktop:build": "node scripts/desktop-build.mjs --package"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.132.0",

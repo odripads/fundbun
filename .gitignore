@@ -29,3 +29,9 @@ docs/export/out/
 # Vercel CLI project link (vercel link)
 .vercel
 public/ocr/
+
+# desktop build output
+desktop/app/
+desktop/release/
+desktop/icon.icns
+desktop/icon.iconset/
