@@ -122,7 +122,7 @@ function ProfileForm({ profile }: { profile: Profile }) {
               className={styles.span2}
               checked={aboveOk}
               onChange={setAboveOk}
-              label="Yes — I plan to spend more than I earn"
+              label="Yes, I plan to spend more than I earn"
               description="Bun will treat every month as over budget and flag it."
             />
           ) : null}

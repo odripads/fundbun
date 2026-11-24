@@ -39,7 +39,7 @@ export function ApprovalHost() {
   const notNow = () => {
     flow.reject()
     closeApproval()
-    toast.show({ id: 'approval-declined', tone: 'neutral', title: 'Okay — nothing ran', message: 'Ask Bun again any time.' })
+    toast.show({ id: 'approval-declined', tone: 'neutral', title: 'Okay, nothing ran', message: 'Ask Bun again any time.' })
   }
 
   const lockText = lockedSecs > 0 ? `PIN entry is locked for ${Math.ceil(lockedSecs / 60)} more minute${lockedSecs > 60 ? 's' : ''} after too many wrong tries.` : null

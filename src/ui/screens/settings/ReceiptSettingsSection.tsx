@@ -25,7 +25,7 @@ export function ReceiptSettingsSection() {
           <span className={styles.consentText}>
             <span className={styles.consentTitle}>Receipt scans</span>
             <span className={styles.consentSub}>
-              {receiptScans ? 'On — photographs are read on this device and never kept.' : 'Off by default.'}
+              {receiptScans ? 'On: photographs are read on this device and never kept.' : 'Off by default.'}
             </span>
           </span>
           <Badge variant={receiptScans ? 'under' : 'neutral'} size="sm">{receiptScans ? 'On' : 'Off'}</Badge>

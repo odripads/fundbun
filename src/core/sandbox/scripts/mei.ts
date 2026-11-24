@@ -345,7 +345,7 @@ export const MEI: PersonaScript = {
     targetSpend: y(9_500),
     payday: 10,
     story:
-      "Over budget this month — late-night delivery, a subscription price hike, a double charge and a spiking power bill. The Mirror shows the Weekend in Chengdu she could've had.",
+      "Over budget this month: late-night delivery, a subscription price hike, a double charge and a spiking power bill. The Mirror shows the Weekend in Chengdu she could've had.",
   },
   tone: 'cheeky',
   account: { name: 'Everyday account', maskedNumber: '•••• 4821', openingBalance: y(6_500) },

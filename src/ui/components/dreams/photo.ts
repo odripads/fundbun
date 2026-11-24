@@ -18,8 +18,8 @@ export class PhotoError extends Error {
 
 /** A user-facing reason the file can't be used, or null when it looks like an image we can try. */
 export function photoFileProblem(file: { type: string; size: number }): string | null {
-  if (!file.type.startsWith('image/')) return 'That file isn’t a photo — pick a JPG, PNG or WebP.'
-  if (file.size > MAX_PHOTO_BYTES) return 'That photo is too large — try one under 25 MB.'
+  if (!file.type.startsWith('image/')) return 'That file isn’t a photo. Pick a JPG, PNG or WebP.'
+  if (file.size > MAX_PHOTO_BYTES) return 'That photo is too large. Try one under 25 MB.'
   return null
 }
 
@@ -48,7 +48,7 @@ async function decode(file: File): Promise<Decoded> {
     return { source: img, width: img.naturalWidth, height: img.naturalHeight, release: () => URL.revokeObjectURL(url) }
   } catch {
     URL.revokeObjectURL(url)
-    throw new PhotoError('Couldn’t read that photo — try a JPG or PNG.')
+    throw new PhotoError('Couldn’t read that photo. Try a JPG or PNG.')
   }
 }
 
@@ -64,12 +64,12 @@ export async function photoToDataUrl(file: File, max = MAX_PHOTO_PX): Promise<st
   const img = await decode(file)
   try {
     const { width, height } = fitWithin(img.width, img.height, max)
-    if (!width || !height) throw new PhotoError('That photo looks empty — try another one.')
+    if (!width || !height) throw new PhotoError('That photo looks empty. Try another one.')
     const canvas = document.createElement('canvas')
     canvas.width = width
     canvas.height = height
     const ctx = canvas.getContext('2d')
-    if (!ctx) throw new PhotoError('This browser can’t resize photos — pick a picture instead.')
+    if (!ctx) throw new PhotoError('This browser can’t resize photos. Pick a picture instead.')
     // JPEG has no alpha: give transparent PNGs the cream dough plate instead of black
     ctx.fillStyle = plateColour()
     ctx.fillRect(0, 0, width, height)

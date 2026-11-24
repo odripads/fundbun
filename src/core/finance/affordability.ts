@@ -63,19 +63,19 @@ export function checkAffordability(ctx: FinanceContext, amount: Minor, label = '
     : 'go'
 
   const reasons: string[] = []
-  if (price === 0) reasons.push('Nothing to check — there is no cost.')
+  if (price === 0) reasons.push('Nothing to check: there is no cost.')
   if (cantPay) reasons.push(`Your checking balance (${f(checking!.balance)}) doesn't cover ${fx(price)}.`)
   if (price > 0) {
     if (alreadyOver) reasons.push(`You're already ${f(s.spent - target)} over your ${f(target)} target this month.`)
     else if (takesOver) reasons.push(`It takes your spending ${f(s.spent + price - target)} past your ${f(target)} target.`)
     else if (heading > band) {
-      reasons.push(`You're already on pace to end the month ${f(heading - target)} over your ${f(target)} target${fitsToday ? ` — it fits today's safe-to-spend, so it's your call` : ''}.`)
+      reasons.push(`You're already on pace to end the month ${f(heading - target)} over your ${f(target)} target${fitsToday ? `. It fits today's safe-to-spend, so it's your call` : ''}.`)
     } else if (overTargetBy > 0) {
-      reasons.push(`With this, the month would end around ${f(projectedAfter)} — ${f(overTargetBy)} over your ${f(target)} target.`)
+      reasons.push(`With this, the month would end around ${f(projectedAfter)}, ${f(overTargetBy)} over your ${f(target)} target.`)
     } else {
-      reasons.push(`With this, you'd finish around ${f(projectedAfter)}, leaving ${f(headroom)} of your ${f(target)} target${headroom < target * HEADROOM ? ' — a thin cushion' : ''}.`)
+      reasons.push(`With this, you'd finish around ${f(projectedAfter)}, leaving ${f(headroom)} of your ${f(target)} target${headroom < target * HEADROOM ? ' (a thin cushion)' : ''}.`)
     }
-    if (early) reasons.push(`It's early in the month, so that counts what you've spent plus bills still due — not a projection.`)
+    if (early) reasons.push(`It's early in the month, so that counts what you've spent plus bills still due, not a projection.`)
   }
   if (breachesCategory) reasons.push(`${CATEGORIES[category!].label} would reach ${f(catAfter)} of its ${f(catLimit!)} budget.`)
   if (price > 0) {

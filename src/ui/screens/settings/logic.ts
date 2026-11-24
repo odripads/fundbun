@@ -274,7 +274,7 @@ export function checkProfileDraft(d: ProfileDraft, p: Profile, opts: DraftCheckO
   const errors: DraftCheck['errors'] = {}
   const patch: ProfilePatch = {}
   const max = MAX_MONTHLY_MAJOR * MINOR_PER_MAJOR[p.currency]
-  const tooBig = `That’s more than ${fmt(max, p.currency).replace(/\.00$/, '')} a month — check for an extra zero`
+  const tooBig = `That’s more than ${fmt(max, p.currency).replace(/\.00$/, '')} a month. Check for an extra zero`
   const name = d.name.trim()
   if (!name) errors.name = 'Tell Bun what to call you'
   else if (name.length > 40) errors.name = 'Keep it under 40 characters'
@@ -292,7 +292,7 @@ export function checkProfileDraft(d: ProfileDraft, p: Profile, opts: DraftCheckO
     const unchanged = target === p.targetSpend && income === p.monthlyIncome
     aboveIncome = !errors.income && income !== null && target > income && !unchanged
     if (aboveIncome && !opts.allowAboveIncome) {
-      errors.target = `That’s above your ${fmt(income as number, p.currency).replace(/\.00$/, '')} income — lower it, or confirm below that you plan to spend more than you earn`
+      errors.target = `That’s above your ${fmt(income as number, p.currency).replace(/\.00$/, '')} income. Lower it, or confirm below that you plan to spend more than you earn`
     } else if (target !== p.targetSpend) patch.targetSpend = target
   }
   const day = Number(d.payday)
@@ -333,10 +333,10 @@ export function engineCopy(s: {
     }
   }
   const line = 'On-device Bun Engine'
-  if (!s.llmConsent) return { line, why: 'Cloud AI is off — nothing is sent to an LLM.' }
-  if (!s.llmEnabled) return { line, why: 'Cloud AI is switched off in settings — Bun answers on-device.' }
+  if (!s.llmConsent) return { line, why: 'Cloud AI is off, so nothing is sent to an LLM.' }
+  if (!s.llmEnabled) return { line, why: 'Cloud AI is switched off in settings; Bun answers on-device.' }
   if (!s.llm.checked) return { line, why: 'Checking whether the cloud AI is reachable…' }
-  return { line, why: 'Cloud AI unavailable right now — Bun answers on-device.', ...(s.llm.reason ? { detail: s.llm.reason } : {}) }
+  return { line, why: 'Cloud AI is unavailable right now, so Bun answers on-device.', ...(s.llm.reason ? { detail: s.llm.reason } : {}) }
 }
 
 /** The patch that puts back what `patch` changed (the save toast's Undo). */

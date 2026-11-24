@@ -55,7 +55,7 @@ export const MOODS: Readonly<Record<BunMood, MoodParts>> = {
     shake: false,
     blink: true,
     breath: 2.8,
-    label: 'Bun is beaming — on target, with money left over',
+    label: 'Bun is beaming: on target, with money left over',
   },
   calm: {
     eyes: 'round',
@@ -70,7 +70,7 @@ export const MOODS: Readonly<Record<BunMood, MoodParts>> = {
     shake: false,
     blink: true,
     breath: 3.6,
-    label: 'Bun is content — on track',
+    label: 'Bun is content: on track',
   },
   worried: {
     eyes: 'round',
@@ -85,7 +85,7 @@ export const MOODS: Readonly<Record<BunMood, MoodParts>> = {
     shake: false,
     blink: true,
     breath: 2.4,
-    label: 'Bun looks worried — spending pace is high',
+    label: 'Bun looks worried: spending pace is high',
   },
   angry: {
     eyes: 'glare',
@@ -100,7 +100,7 @@ export const MOODS: Readonly<Record<BunMood, MoodParts>> = {
     shake: false,
     blink: false,
     breath: 1.9,
-    label: 'Bun is cross — over budget',
+    label: 'Bun is cross: over budget',
   },
   furious: {
     eyes: 'glare',
@@ -115,7 +115,7 @@ export const MOODS: Readonly<Record<BunMood, MoodParts>> = {
     shake: true,
     blink: false,
     breath: 1.2,
-    label: 'Bun is furious — way over budget',
+    label: 'Bun is furious: way over budget',
   },
   burnt: {
     eyes: 'dizzy',
@@ -130,7 +130,7 @@ export const MOODS: Readonly<Record<BunMood, MoodParts>> = {
     shake: false,
     blink: false,
     breath: 3.2,
-    label: 'Bun got a little toasted — over budget',
+    label: 'Bun got a little toasted: over budget',
   },
   sleepy: {
     eyes: 'closed',
@@ -145,7 +145,7 @@ export const MOODS: Readonly<Record<BunMood, MoodParts>> = {
     shake: false,
     blink: false,
     breath: 5.2,
-    label: 'Bun is napping — no data yet',
+    label: 'Bun is napping: no data yet',
   },
 }
 

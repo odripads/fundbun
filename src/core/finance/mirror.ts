@@ -119,7 +119,7 @@ function overCopy(c: CopyInput): Copy {
       numbers: `${f(delta)} over budget.`,
     }),
     subline: byTone(c.tone, {
-      cheeky: `${base}${hasDelay ? ` — and your ${c.goal!.name} just moved ${delayPhrase(c.delayDays)} further away.` : '.'}`,
+      cheeky: `${base}${hasDelay ? `, and your ${c.goal!.name} just moved ${delayPhrase(c.delayDays)} further away.` : '.'}`,
       gentle: `${base}${hasDelay ? `, which nudges your ${c.goal!.name} back ${delayPhrase(c.delayDays)}.` : '.'}${gentleTail}`,
       numbers: `Spent ${f(s.spent)} of ${f(s.target)}.${c.item ? ` Equals ${equivalentLabel(c)}.` : ''}${delayedNote(c)}`,
     }),
@@ -133,12 +133,12 @@ function paceOverCopy(c: CopyInput): Copy {
   const goalTail = c.goal ? ` keeps your ${c.goal.name} on schedule.` : ' gets you back on target.'
   return {
     headline: byTone(c.tone, {
-      cheeky: c.item ? `Careful — at this pace you'll trade away ${itemPhrase(c)}.` : `Careful — this pace overshoots by ${f(delta)}.`,
-      gentle: c.item ? `Heads up — this pace would cost ${itemPhrase(c)}.` : `Heads up — this pace runs ${f(delta)} over.`,
+      cheeky: c.item ? `Careful: at this pace you'll trade away ${itemPhrase(c)}.` : `Careful: this pace overshoots by ${f(delta)}.`,
+      gentle: c.item ? `Heads up: this pace would cost ${itemPhrase(c)}.` : `Heads up: this pace runs ${f(delta)} over.`,
       numbers: `Projected ${f(delta)} over budget.`,
     }),
     subline: byTone(c.tone, {
-      cheeky: `You're heading for ${f(s.projected)} against a ${f(s.target)} target — ${f(delta)} over, with ${plural(left, 'day')} to turn it around.`,
+      cheeky: `You're heading for ${f(s.projected)} against a ${f(s.target)} target (${f(delta)} over), with ${plural(left, 'day')} to turn it around.`,
       gentle: `You're on track for about ${f(s.projected)}, ${f(delta)} over your ${f(s.target)} target. ${keep}${goalTail}`,
       numbers: `Projected ${f(s.projected)} vs ${f(s.target)} target; ${plural(left, 'day')} left; safe to spend ${f(s.safeToSpendToday)}/day.${delayedNote(c)}`,
     }),
@@ -174,22 +174,22 @@ function underCopy(c: CopyInput, split: SurplusSplit): Copy {
   const pace = s.isCurrent ? `You're on pace to spend ${f(delta)} less than your ${f(s.target)} target.` : `You spent ${f(delta)} less than your ${f(s.target)} target.`
   const left = s.isCurrent ? `On pace for ${f(delta)} left over` : `${f(delta)} left over`
   if (!goal) {
-    const headline = treat ? `${left} — that's ${withArticle(treat.name)}, guilt-free!` : `${left}.`
-    return { headline: c.tone === 'numbers' ? `${left}.` : headline, subline: `${pace} Spend it or save it — your call.` }
+    const headline = treat ? `${left}. That's ${withArticle(treat.name)}, guilt-free!` : `${left}.`
+    return { headline: c.tone === 'numbers' ? `${left}.` : headline, subline: `${pace} Spend it or save it, your call.` }
   }
   const now = `${Math.floor(goal.pct)}%`
   // "(0% there)" reads like a scolding — an empty pot gets a fresh-start line instead
   const started = goal.saved > 0
   const headline = byTone(c.tone, {
-    gentle: started ? `${f(delta)} closer to your ${goal.name} (${now} there).` : `${left} — a first stash for your ${goal.name}?`,
-    cheeky: `${left} — your ${goal.name} is blushing.`,
+    gentle: started ? `${f(delta)} closer to your ${goal.name} (${now} there).` : `${left}. A first stash for your ${goal.name}?`,
+    cheeky: `${left}, and your ${goal.name} is blushing.`,
     numbers: `${left}.`,
   })
   const proj = s.isCurrent ? `Projected ${f(s.projected)}` : `Spent ${f(s.spent)}`
   const saved = started ? `${now} saved` : 'nothing saved yet'
   if (stash <= 0) {
     // nothing to stash (the goal is funded, or the surplus is tiny): the surplus is the user's to keep
-    const choice = treat ? `It covers ${withArticle(treat.name)}, guilt-free — or keep it as breathing room.` : 'Keep it as breathing room.'
+    const choice = treat ? `It covers ${withArticle(treat.name)}, guilt-free, or keep it as breathing room.` : 'Keep it as breathing room.'
     return {
       headline,
       subline: byTone(c.tone, {
@@ -204,8 +204,8 @@ function underCopy(c: CopyInput, split: SurplusSplit): Copy {
   return {
     headline,
     subline: byTone(c.tone, {
-      gentle: `${pace} Stash ${f(stash)} and your ${goal.name} is ${after} there — ${treat ? `${otherTreat}.` : 'or keep it as breathing room.'} Your call.`,
-      cheeky: `${pace} Stash ${f(stash)} and you're ${after} of the way there${treat ? ` — ${otherTreat}` : ', or keep it as breathing room'} — your call, legend.`,
+      gentle: `${pace} Stash ${f(stash)} and your ${goal.name} is ${after} there${treat ? `, and ${otherTreat}.` : ', or keep it as breathing room.'} Your call.`,
+      cheeky: `${pace} Stash ${f(stash)} and you're ${after} of the way there${treat ? `, and ${otherTreat}` : ', or keep it as breathing room'}. Your call, legend.`,
       numbers: `${proj} vs ${f(s.target)} target. ${goal.name}: ${saved}, ${after} with ${f(stash)} stashed.${treat ? ` The other ${f(rest)} covers ${treat.name} (${f(treat.price)}).` : ''}`,
     }),
   }
@@ -215,7 +215,7 @@ function onTrackCopy(c: CopyInput): Copy {
   const { f, s } = c
   const left = daysToGo(s)
   const current = `${f(s.spent)} spent of your ${f(s.target)} target, ${plural(left, 'day')} to go. Safe to spend today: ${f(s.safeToSpendToday)}.`
-  const past = `You landed at ${f(s.spent)} — right on your ${f(s.target)} target.`
+  const past = `You landed at ${f(s.spent)}, right on your ${f(s.target)} target.`
   return {
     headline: byTone(c.tone, { gentle: 'Right on track.', cheeky: 'Steady as a steamed bun.', numbers: `On track: ${f(s.spent)} of ${f(s.target)}.` }),
     subline: byTone(c.tone, {
@@ -239,7 +239,7 @@ function welcomeCopy(c: CopyInput, name: string): Copy {
       numbers: `First month: ${f(s.spent)} of ${f(s.target)} so far.`,
     }),
     subline: byTone(c.tone, {
-      gentle: `${f(s.spent)} spent of your ${f(s.target)} target, ${plural(left, 'day')} to go. Give it a few more days of spending${grow} — no verdicts yet.`,
+      gentle: `${f(s.spent)} spent of your ${f(s.target)} target, ${plural(left, 'day')} to go. Give it a few more days of spending${grow}. No verdicts yet.`,
       cheeky: `${f(s.spent)} of ${f(s.target)} so far, ${plural(left, 'day')} to go. A few more days of data${grow}.`,
       numbers: `${plural(left, 'day')} left; safe to spend ${f(s.safeToSpendToday)}/day. Verdicts start once there is a little more history.`,
     }),
@@ -252,11 +252,11 @@ function noDataCopy(c: CopyInput, welcome?: string): Copy {
     const hi = welcome ? `Welcome, ${welcome}!` : 'Welcome!'
     return {
       headline: byTone(c.tone, { gentle: `${hi} Your mirror is ready.`, cheeky: `${hi} Bun is ready when you are.`, numbers: `No spending recorded for ${label} yet.` }),
-      subline: `Your ${f0(c)} target is set. As spending shows up, Bun will mirror your month in dream items${c.goal ? ` — starting with your ${c.goal.name}` : ''}.`,
+      subline: `Your ${f0(c)} target is set. As spending shows up, Bun will mirror your month in dream items${c.goal ? `, starting with your ${c.goal.name}` : ''}.`,
     }
   }
   return {
-    headline: byTone(c.tone, { gentle: 'Nothing to mirror yet.', cheeky: 'Bun is napping — no spending yet.', numbers: `No spending recorded for ${label}.` }),
+    headline: byTone(c.tone, { gentle: 'Nothing to mirror yet.', cheeky: 'Bun is napping: no spending yet.', numbers: `No spending recorded for ${label}.` }),
     subline: `Once spending shows up for ${label}, your dreams will show up here.`,
   }
 }

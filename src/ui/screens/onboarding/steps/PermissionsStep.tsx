@@ -88,7 +88,7 @@ export function PermissionsStep({ draft, update, errors, pinSet, onPin, quick = 
                 ) : (
                   <p className={p.empty}>
                     {lane.id === 'tap' && draft.autonomy === 'autopilot'
-                      ? 'Only after Bun reads outside text — a bill, memo or import. Then every move waits for you.'
+                      ? 'Only after Bun reads outside text (a bill, memo or import). Then every move waits for you.'
                       : 'Nothing at this level'}
                   </p>
                 )}
@@ -156,7 +156,7 @@ export function PermissionsStep({ draft, update, errors, pinSet, onPin, quick = 
       <section id="ob-pin" className={s.section} aria-labelledby="ob-pin-title">
         <div className={s.sectionHead}>
           <h2 id="ob-pin-title" className={s.h2}>Your PIN</h2>
-          <p className={s.sub}>Guards every payment and any loosening of these limits. It stays in memory until you finish — never saved as you go.</p>
+          <p className={s.sub}>Guards every payment and any loosening of these limits. It stays in memory until you finish, never saved as you go.</p>
         </div>
         {errors.pin ? (
           <p className={s.error} role="alert">
@@ -192,7 +192,7 @@ function PinSetup({ pinSet, onPin }: { pinSet: boolean; onPin: (pin: string | nu
         </span>
         <span className={p.pinDoneText}>
           <span className={p.pinDoneTitle}>PIN set</span>
-          <span className={p.pinDoneSub}>Kept only as a salted hash on this device — never in plain text.</span>
+          <span className={p.pinDoneSub}>Kept only as a salted hash on this device, never in plain text.</span>
         </span>
         <Button variant="ghost" size="sm" onClick={() => onPin(null)}>
           Change
@@ -223,7 +223,7 @@ function PinSetup({ pinSet, onPin }: { pinSet: boolean; onPin: (pin: string | nu
           }
           if (pin !== first) {
             setFirst(null)
-            fail('Those didn’t match — let’s start again.')
+            fail('Those didn’t match. Let’s start again.')
             return
           }
           setFirst(null)

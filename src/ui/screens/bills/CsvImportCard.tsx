@@ -22,7 +22,7 @@ export function CsvImportCard() {
     e.currentTarget.value = ''
     if (!file) return
     if (file.size > MAX_CSV_BYTES) {
-      toast.show({ tone: 'danger', title: 'That file is too big', message: 'Try a statement under 5 MB — one or two years of transactions.' })
+      toast.show({ tone: 'danger', title: 'That file is too big', message: 'Try a statement under 5 MB (one or two years of transactions).' })
       return
     }
     setBusy(true)
@@ -50,7 +50,7 @@ export function CsvImportCard() {
             Import a statement
           </h2>
           <p className={styles.body}>
-            A CSV from your bank, WeChat Pay or Alipay. Bun looks for new bills and subscriptions — the file never leaves this device. A PDF, Excel
+            A CSV from your bank, WeChat Pay or Alipay. Bun looks for new bills and subscriptions, and the file never leaves this device. A PDF, Excel
             file, Word file or a photo?{' '}
             <a href={href('receipt')} className={styles.link}>Add from a receipt or file</a>.
           </p>

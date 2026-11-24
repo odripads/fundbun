@@ -24,7 +24,7 @@ export function TripwiresStep({ draft, update, errors }: StepProps) {
 
   return (
     <>
-      <p className={s.lede}>Tripwires are lines you draw. Cross one and Bun nudges you with your dream’s picture — no lectures.</p>
+      <p className={s.lede}>Tripwires are lines you draw. Cross one and Bun nudges you with your dream’s picture, with no lectures.</p>
 
       <section className={s.section} aria-labelledby="ob-tw-title">
         <div className={s.sectionHead}>
@@ -104,7 +104,7 @@ export function TripwiresStep({ draft, update, errors }: StepProps) {
         <p className={s.note}>
           <HeartHandshake aria-hidden="true" />
           {draft.tone === 'cheeky'
-            ? 'You opted in to Cheeky. It’s blunt on purpose — if it ever stings, switch back to Gentle in Settings.'
+            ? 'You opted in to Cheeky. It’s blunt on purpose; if it ever stings, switch back to Gentle in Settings.'
             : 'Cheeky is opt-in only. Blunt copy can backfire, so Bun starts gentle and never shames.'}
         </p>
       </section>

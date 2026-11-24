@@ -90,7 +90,7 @@ export function safeText(text: string, max = TITLE_MAX): string {
 function argText(v: unknown): string {
   if (typeof v === 'string') return safeText(v, ARG_MAX)
   if (typeof v === 'number' || typeof v === 'boolean') return String(v)
-  if (v === null || v === undefined) return '—'
+  if (v === null || v === undefined) return '–'
   try {
     return safeText(JSON.stringify(v), ARG_MAX)
   } catch {

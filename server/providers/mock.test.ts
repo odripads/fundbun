@@ -318,7 +318,7 @@ describe('"move ¥X to <goal name>"', () => {
     const text = textOf(third)
     expect(text).toContain('action card')
     expect(text).toContain('¥500')
-    expect(text).toBe("I've prepared that — please review it on the action card. It's ready: Move ¥500 to Birkin 25 (Checking •••• 4821 → Birkin 25 pot). It hasn't happened yet — nothing moves until you approve it.")
+    expect(text).toBe("I've prepared that. Please review it on the action card. It's ready: Move ¥500 to Birkin 25 (Checking •••• 4821 → Birkin 25 pot). It hasn't happened yet; nothing moves until you approve it.")
     expect(text).not.toMatch(/\bDone\b/)
   })
 
@@ -332,7 +332,7 @@ describe('"move ¥X to <goal name>"', () => {
       { role: 'user', content: [{ type: 'tool_result', tool_use_id: call.id, content: wrappedGoals() }] },
     ]))
     expect(r.stopReason).toBe('end_turn')
-    expect(textOf(r)).toBe('Which goal should the ¥500 go to — Birkin 25, Weekend in Chengdu, AirPods Pro or New running shoes?')
+    expect(textOf(r)).toBe('Which goal should the ¥500 go to: Birkin 25, Weekend in Chengdu, AirPods Pro or New running shoes?')
   })
 })
 
@@ -348,7 +348,7 @@ describe('natural replies quote tool numbers', () => {
     expect(after('analyze_bills', { count: 6, findings: [{ title: 'Tencent Video charged you twice' }, { title: 'iQIYI went up ¥5' }], upcoming: [{ name: 'China Mobile', amountDue: 12_800, dueDate: '2026-10-25' }] }))
       .toBe('I found 6 things worth a look in your bills. Top of the list: Tencent Video charged you twice; iQIYI went up ¥5. Next up: China Mobile, ¥128 due 2026-10-25.')
     expect(after('list_recurring', { count: 6, monthlyTotal: 52_000, annualTotal: 624_000, priceHike: { merchant: 'iQIYI', from: 2_500, to: 3_000 }, overlap: { merchants: ['iQIYI', 'Tencent Video', 'Youku'] } }))
-      .toBe("Your 6 active subscriptions cost ¥520 a month — ¥6,240 a year. Heads-up: iQIYI went from ¥25 to ¥30. You're also paying for iQIYI, Tencent Video and Youku — all video streaming.")
+      .toBe("Your 6 active subscriptions cost ¥520 a month (¥6,240 a year). Heads-up: iQIYI went from ¥25 to ¥30. You're also paying for iQIYI, Tencent Video and Youku, all video streaming.")
     expect(after('get_spending_breakdown', { total: 1_214_000, categories: [{ label: 'Housing', spent: 420_000 }, { label: 'Food delivery', spent: 100_740 }] }))
       .toBe("You've spent ¥12,140 so far; the biggest chunks are Housing ¥4,200 and Food delivery ¥1,007.40.")
     expect(after('get_insights', { count: 1, insights: [{ title: 'The midnight snack tax: ¥1,007', body: '12 purchases between 10pm and 4am.' }] }))

@@ -244,7 +244,7 @@ export function xrayBill(text: string, ctx: FinanceContext, scan: (text: string)
       `This bill contains text that looks like instructions aimed at an AI assistant${injection.signals.length ? ` (${injection.signals.join(', ')})` : ''}. FundBun treats bill text as data only and will not act on it.`,
     )
   }
-  if (total === undefined) warnings.push(`Couldn't find a total — please check the amount yourself.`)
+  if (total === undefined) warnings.push(`Couldn't find a total, so please check the amount yourself.`)
   if (!dueDate) warnings.push('No due date found.')
   if (total !== undefined && lineItems.length >= 2) {
     const sum = lineItems.reduce((s, li) => s + li.amount, 0)

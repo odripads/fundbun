@@ -201,7 +201,7 @@ function SplitSection({ s, currency }: { s: MonthSummary; currency: Currency }) 
             </dl>
             <p className={styles.footnote}>
               {rest ? `${fmt(Math.round(rest.value / 100) * 100, currency)} (${rest.pct}%) ${s.isCurrent ? 'not spent yet' : 'left over'}. ` : ''}
-              {'Guide: 50/30/20 — needs\u00a0≤\u00a050%, wants\u00a0≤\u00a030%, saved\u00a0≥\u00a020% of income.'}
+              {'Guide: 50/30/20 (needs\u00a0≤\u00a050%, wants\u00a0≤\u00a030%, saved\u00a0≥\u00a020% of income).'}
             </p>
           </>
         ) : null}

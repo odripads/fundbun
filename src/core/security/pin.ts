@@ -52,7 +52,7 @@ export function checkPin(pin: string, mandate: Mandate, now: ISODateTime): { ok:
 
   const remaining = pinLockRemainingMinutes(mandate, now)
   if (remaining > 0) {
-    return { ok: false, mandate, reason: `Too many wrong PINs. PIN entry is locked — try again in ${plural(remaining, 'minute')}.` }
+    return { ok: false, mandate, reason: `Too many wrong PINs. PIN entry is locked; try again in ${plural(remaining, 'minute')}.` }
   }
 
   const base: Mandate = mandate.pinLockedUntil ? withoutLock({ ...mandate, failedPinAttempts: 0 }) : mandate

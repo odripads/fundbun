@@ -118,7 +118,7 @@ describe('BillsScreen — Jing', () => {
     await flush(20)
     const outcome = container.querySelector('#bills-xray [data-xray-outcome]') as HTMLElement
     const text = outcome.textContent ?? ''
-    expect(text).toContain('This bill contains hidden instructions aimed at AI assistants. FundBun ignored them — nothing was paid or moved.')
+    expect(text).toContain('This bill contains hidden instructions aimed at AI assistants. FundBun ignored them, so nothing was paid or moved.')
     expect(text).toContain('Tries to override instructions')
     expect(text).toContain('No money moved')
     expect(text).toMatch(/Logged · audit #\d+/)

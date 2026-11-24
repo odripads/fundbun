@@ -78,7 +78,7 @@ describe('starter prompts', () => {
 
 describe('greeting', () => {
   it('speaks in the chosen tone, gentle by default', () => {
-    expect(greeting('gentle', 'Jing').title).toBe('Hi, Jing — I’m Bun')
+    expect(greeting('gentle', 'Jing').title).toBe('Hi, Jing, I’m Bun')
     expect(greeting('cheeky', 'Jing').title).toBe('Spill the tea, Jing')
     expect(greeting('numbers', '').title).toBe('Ask me anything')
     expect(greeting('gentle', '').body).toMatch(/only with your OK/)

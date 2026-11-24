@@ -226,7 +226,7 @@ function Seal({ hash }: { hash: string }) {
       {open ? (
         <div id={id} className={styles.sealPanel}>
           <p>
-            This seal is a SHA-256 fingerprint of exactly this action — the tool, the amount and the payee. FundBun checks it again
+            This seal is a SHA-256 fingerprint of exactly this action: the tool, the amount and the payee. FundBun checks it again
             right before running: <strong>what you approve is exactly what runs.</strong> If anything changed, nothing runs.
           </p>
           <code className={styles.fullHash}>{hash}</code>

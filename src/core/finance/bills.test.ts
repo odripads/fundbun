@@ -252,7 +252,7 @@ describe('analyzeBills — subscriptions', () => {
     const txns = monthly('Pure Fitness', 'health', 399, 15, MONTHS)
     const [f] = analyze(makeCtx({ today: TODAY, txns, dreams: MEI_DREAMS }))
     expect(f).toMatchObject({ kind: 'annual_cost', amount: yuan(399 * 12) })
-    expect(f.detail).toBe("Your subscription adds up to ¥399 a month — ¥4,788 a year. That's a Weekend in Chengdu.")
+    expect(f.detail).toBe("Your subscription adds up to ¥399 a month (¥4,788 a year). That's a Weekend in Chengdu.")
   })
 
   it('no subscriptions, no bills → no findings', () => {

@@ -369,7 +369,7 @@ function checkEntities(tool: ToolName, args: Record<string, unknown>, ctx: Polic
 /** What the user can do instead when the assistant's own limit stops a money move (the caps bind the assistant, not the user). */
 function overCapNextStep(tool: ToolName): string {
   const raise = 'raise the limit in Settings → Permissions with your PIN'
-  if (tool === 'pay_bill') return ` You can pay it yourself — tap Pay on the bill in Bills (it asks for your PIN) — or ${raise}.`
+  if (tool === 'pay_bill') return ` You can pay it yourself by tapping Pay on the bill in Bills (it asks for your PIN), or ${raise}.`
   if (tool === 'transfer_to_goal') return ` You can move it yourself with Add money on the goal, or ${raise}.`
   return ` You can ask for a smaller amount, or ${raise}.`
 }

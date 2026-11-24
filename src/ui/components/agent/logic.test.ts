@@ -170,7 +170,7 @@ describe('evidence formatting', () => {
     expect(formatEvidence('from', 2500, 'CNY')).toBe('¥25')
     expect(formatEvidence('pct', 57.25, 'CNY')).toBe('57.3%')
     expect(formatEvidence('daysApart', 0, 'CNY')).toBe('0')
-    expect(formatEvidence('ratio', Number.NaN, 'CNY')).toBe('—')
+    expect(formatEvidence('ratio', Number.NaN, 'CNY')).toBe('–')
     expect(formatEvidence('firstDate', '2026-10-03', 'CNY')).toBe('Oct 3')
     expect(formatEvidence('rule', 'series', 'CNY')).toBe('series')
   })

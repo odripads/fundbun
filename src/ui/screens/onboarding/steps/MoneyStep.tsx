@@ -126,7 +126,7 @@ export function MoneyStep({ draft, update, errors }: StepProps) {
         <TextField
           id="ob-income"
           label="Monthly take-home pay"
-          hint={draft.spendMode === 'tracking' ? 'After tax. Bun uses it to say what a purchase is worth in hours of work.' : 'After tax — what actually lands in your account.'}
+          hint={draft.spendMode === 'tracking' ? 'After tax. Bun uses it to say what a purchase is worth in hours of work.' : 'After tax: what actually lands in your account.'}
           prefix={symbol}
           inputMode="decimal"
           autoComplete="off"

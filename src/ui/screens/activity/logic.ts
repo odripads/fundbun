@@ -117,7 +117,7 @@ export function typeVariant(e: Pick<AuditEntry, 'type' | 'data'>): BadgeVariant 
 
 /** "3f9a…c21b" — enough to compare links in the chain by eye. */
 export function shortHash(hash: string | undefined, head = 4, tail = 4): string {
-  if (!hash) return '—'
+  if (!hash) return '–'
   if (hash.length <= head + tail + 1) return hash
   return `${hash.slice(0, head)}…${hash.slice(-tail)}`
 }
@@ -216,7 +216,7 @@ export function activityStats(entries: readonly AuditEntry[]): ActivityStats {
 
 /** The first `n` hex characters of a hash ("3f9a"), for dense chips. */
 export function hashHead(hash: string | undefined, n = 4): string {
-  return hash ? hash.slice(0, Math.max(1, n)) : '—'
+  return hash ? hash.slice(0, Math.max(1, n)) : '–'
 }
 
 /** The newest `n` entries, oldest first (for drawing the end of the chain left → right). */

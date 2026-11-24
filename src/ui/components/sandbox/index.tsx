@@ -203,7 +203,7 @@ export function SandboxPanel({ compact = false, onDone }: SandboxPanelProps) {
         <p className={styles.personaBlurb}>{PERSONAS.find((p) => p.id === personaValue)?.blurb}</p>
         {personaId ? (
           <p className={styles.demoPin}>
-            Demo PIN <strong className={styles.demoPinValue}>{DEMO_PIN}</strong> — approves payments and loosens permissions in this sandbox.
+            Demo PIN <strong className={styles.demoPinValue}>{DEMO_PIN}</strong>: approves payments and loosens permissions in this sandbox.
           </p>
         ) : null}
         <Button

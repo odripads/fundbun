@@ -25,7 +25,7 @@ const STATUS_TEXT: Record<AgentStatus, string> = {
  * then says what it means and what a tap does.
  */
 export function agentPillName(status: AgentStatus): string {
-  if (status === 'active') return 'Pause the agent: it is on — one tap freezes it now (kill switch, no PIN)'
+  if (status === 'active') return 'Pause the agent: it is on. One tap freezes it now (kill switch, no PIN)'
   if (status === 'breaker') return 'Breaker: the circuit breaker stopped the agent. Open the kill switch in Settings to resume'
   return 'Paused: the agent is frozen. Open the kill switch in Settings to resume'
 }
@@ -61,7 +61,7 @@ export function AgentStatusPill() {
       type="button"
       className={cx(styles.pill, styles[status])}
       aria-label={agentPillName(status)}
-      title={active ? 'Bun is on — tap to pause it' : 'Bun is frozen — resume in Settings'}
+      title={active ? 'Bun is on · tap to pause it' : 'Bun is frozen · resume in Settings'}
       onClick={() => {
         if (!active) {
           openKillSwitch()

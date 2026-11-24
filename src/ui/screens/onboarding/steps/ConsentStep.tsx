@@ -29,7 +29,7 @@ export function ConsentStep({ draft, update, errors }: StepProps) {
   const set = (key: ConsentKey) => (value: boolean) => update((d) => ({ ...d, consent: { ...d.consent, [key]: value } }))
   return (
     <>
-      <p className={s.lede}>Nothing here is pre-ticked. Switch on what you’re comfortable with — you can change any of it later in Settings.</p>
+      <p className={s.lede}>Nothing here is pre-ticked. Switch on what you’re comfortable with, and you can change any of it later in Settings.</p>
       <div className={s.stack}>
         <section id="ob-financialData" className={cx(s.card, c.financialData && s.cardOn, errors.financialData && s.cardError)} aria-label="Financial data consent">
           <Toggle
@@ -41,7 +41,7 @@ export function ConsentStep({ draft, update, errors }: StepProps) {
           <dl className={s.facts}>
             <div className={s.fact}>
               <dt><span className={s.factIcon}><Receipt /></span>What</dt>
-              <dd>Transactions, balances and bills — plus the dreams you add.</dd>
+              <dd>Transactions, balances and bills, plus the dreams you add.</dd>
             </div>
             <div className={s.fact}>
               <dt><span className={s.factIcon}><Target /></span>Why</dt>

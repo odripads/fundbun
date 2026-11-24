@@ -88,10 +88,10 @@ describe('labels', () => {
     expect(shortHash(h)).toBe('abcd…6789')
     expect(shortHash(h, 8, 6)).toBe('abcdef01…456789')
     expect(shortHash('abc')).toBe('abc')
-    expect(shortHash(undefined)).toBe('—')
+    expect(shortHash(undefined)).toBe('–')
     expect(hashHead(h)).toBe('abcd')
     expect(hashHead(h, 6)).toBe('abcdef')
-    expect(hashHead(undefined)).toBe('—')
+    expect(hashHead(undefined)).toBe('–')
   })
 
   it('labels days and times', () => {

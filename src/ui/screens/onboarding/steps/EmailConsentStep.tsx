@@ -27,7 +27,7 @@ export function EmailConsentStep({ draft, update }: Props) {
       <dl className={s.facts}>
         <div className={s.fact}>
           <dt><span className={s.factIcon}><Mail /></span>What</dt>
-          <dd>Transaction emails and e-statements (电子账单) from your bank and payment apps only — no other emails are opened.</dd>
+          <dd>Transaction emails and e-statements (电子账单) from your bank and payment apps only. No other emails are opened.</dd>
         </div>
         <div className={s.fact}>
           <dt><span className={s.factIcon}><Target /></span>Why</dt>

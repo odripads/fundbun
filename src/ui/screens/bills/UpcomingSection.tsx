@@ -76,7 +76,7 @@ export function UpcomingSection({ currency, today, bills, payees, findings, remi
       {overdue.length > 0 && !selected ? (
         <p className={styles.overdueNote}>
           {STATUS_ICON.overdue}
-          {overdue.length === 1 ? `${overdue[0].name} is past its due date` : `${overdue.length} bills are past their due date`} — paying now avoids late fees.
+          {overdue.length === 1 ? `${overdue[0].name} is past its due date` : `${overdue.length} bills are past their due date`}. Paying now avoids late fees.
         </p>
       ) : null}
 
@@ -97,7 +97,7 @@ export function UpcomingSection({ currency, today, bills, payees, findings, remi
         </div>
       ) : (
         <>
-          {shown.some((b) => isOpen(b) && b.status !== 'scheduled' && b.source !== 'expected' && !!b.payeeId) ? <PinHint tool="pay_bill">Paying or scheduling needs your PIN — Bun never pays on its own</PinHint> : null}
+          {shown.some((b) => isOpen(b) && b.status !== 'scheduled' && b.source !== 'expected' && !!b.payeeId) ? <PinHint tool="pay_bill">Paying or scheduling needs your PIN. Bun never pays on its own</PinHint> : null}
           {shown.some((b) => isOpen(b) && (b.source === 'expected' || !b.payeeId)) ? (
             <p className={styles.noBank}>
               <Info aria-hidden="true" />
@@ -308,7 +308,7 @@ function BillRow({ bill, today, currency, payee, spike, reminder, awaiting, runn
         <p className={styles.flag}>
           <TrendingUp aria-hidden="true" />
           <span>
-            {pct}% above your usual{usual !== undefined ? ` ${fmt(usual, currency)}` : ''} — worth a look before it’s due
+            {pct}% above your usual{usual !== undefined ? ` ${fmt(usual, currency)}` : ''}, worth a look before it’s due
           </span>
         </p>
       ) : null}

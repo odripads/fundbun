@@ -422,7 +422,7 @@ describe('agent delegation', () => {
   it('checkLlm on a static build reports the on-device engine', async () => {
     const { app } = demoKit()
     await app.checkLlm()
-    expect(app.getSnapshot().derived.llm).toEqual({ checked: true, available: false, reason: 'Static build — on-device engine only' })
+    expect(app.getSnapshot().derived.llm).toEqual({ checked: true, available: false, reason: 'Static build · on-device engine only' })
     expect(app.getSnapshot().derived.engine).toBe('offline')
   })
 
@@ -1086,7 +1086,7 @@ describe('F3 · the circuit breaker counts attack signals, not honest mistakes',
     const s = app.getSnapshot().state
     expect(s.mandate.frozen).toBe(false)
     expect(s.audit.some((e) => e.type === 'circuit_breaker')).toBe(false)
-    expect(rent.text).toMatch(/tap Pay on the bill in Bills/)
+    expect(rent.text).toMatch(/tapping Pay on the bill in Bills/)
     await app.sendMessage('Move ¥100 to Chengdu')
     expect(app.getSnapshot().state.pending.at(-1)?.status).toBe('pending')
   })

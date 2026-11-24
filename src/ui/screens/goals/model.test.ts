@@ -87,7 +87,7 @@ describe('pace and ETA', () => {
     expect(etaFact(progress())).toEqual({ value: 'Aug 2029', sub: '~2.8 yrs at your pace' })
     expect(etaFact(progress({ etaMonths: 9.9, etaDate: '2027-08-20' }))).toEqual({ value: 'Aug 2027', sub: '~10 mo at your pace' })
     expect(etaFact(progress({ etaMonths: 0.5 })).sub).toBe('under a month')
-    expect(etaFact(progress({ monthlyRate: 0 })).value).toBe('—')
+    expect(etaFact(progress({ monthlyRate: 0 })).value).toBe('–')
     expect(etaFact(progress({ saved: 9_800_000 })).value).toBe('Ready')
     expect(etaFact(undefined).sub).toBe('No pot yet')
     expect(monthYear('2029-08-04')).toBe('Aug 2029')
@@ -114,7 +114,7 @@ describe('adding money', () => {
   it('warns (without blocking) when a stash leaves checking short of bills due soon', () => {
     const bills = [bill('2026-10-25', 12_800), bill('2026-10-28', 48_620), bill('2026-11-30', 420_000), bill('2026-10-23', 9_999, 'paid')]
     expect(billsDueWithin(bills, '2026-10-22')).toBe(61_420)
-    expect(liquidityNote(100_000, 50_000, 61_420, 'CNY')).toBe('This leaves ¥500 in checking — less than the ¥614 in bills due in the next two weeks.')
+    expect(liquidityNote(100_000, 50_000, 61_420, 'CNY')).toBe('This leaves ¥500 in checking, which is less than the ¥614 in bills due in the next two weeks.')
     expect(liquidityNote(1_000_000, 50_000, 61_420, 'CNY')).toBeNull()
     expect(liquidityNote(100_000, 0, 61_420, 'CNY')).toBeNull()
     expect(liquidityNote(100_000, 50_000, 0, 'CNY')).toBeNull()
@@ -132,7 +132,7 @@ describe('celebration', () => {
     const birkin = dream('dream_birkin', { name: 'Birkin 25', price: 9_800_000 })
     for (const tone of ['gentle', 'cheeky', 'numbers'] as const) {
       const c = celebrationCopy(birkin, 9_800_000, tone, 'CNY')
-      expect(c.title).toBe('Birkin 25 — achieved!')
+      expect(c.title).toBe('Birkin 25: achieved!')
       expect(c.body).toContain('¥98,000')
       expect(`${c.title} ${c.body}`).not.toMatch(/buy|shop|spend/i)
     }
@@ -141,7 +141,7 @@ describe('celebration', () => {
   it('falls back to the price when the pot is empty, and keeps treats calm', () => {
     expect(celebrationCopy(dream('x', { name: 'X', price: 50_000 }), 0, 'gentle', 'CNY').body).toContain('¥500')
     const treat = celebrationCopy(dream('t', { name: 'Concert ticket', kind: 'treat', price: 48_000 }), 0, 'gentle', 'CNY')
-    expect(treat.title).toBe('Concert ticket — enjoyed, guilt-free')
+    expect(treat.title).toBe('Concert ticket · enjoyed, guilt-free')
     expect(treat.body).toMatch(/planned/)
     expect(fmtWhole(48_050, 'CNY')).toBe('¥481')
   })

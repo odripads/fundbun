@@ -445,8 +445,8 @@ describe('safety receipt', () => {
 describe('copy', () => {
   it('speaks in the user’s tone and stays calm when there is nothing to do', () => {
     const f = mei.derived.findings
-    expect(heroLine('cheeky', f)).toBe('Bun sniffed out 5 things — one is sneaky.')
-    expect(heroLine('gentle', f)).toBe('5 things worth a look — one needs you soon.')
+    expect(heroLine('cheeky', f)).toBe('Bun sniffed out 5 things, and one is sneaky.')
+    expect(heroLine('gentle', f)).toBe('5 things worth a look: one needs you soon.')
     expect(heroLine('numbers', f)).toBe('5 issues found · 1 urgent.')
     expect(heroLine('gentle', [finding()])).toBe('All calm on the bills front.')
     expect(heroLine('gentle', arif.derived.findings)).toBe('1 small thing worth a look, whenever you’re ready.')

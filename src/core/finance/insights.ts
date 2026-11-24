@@ -64,7 +64,7 @@ function pace(env: Env): Scored[] {
   const evidence = { spent: s.spent, projected: s.projected, target: s.target, dayOfMonth: s.dayOfMonth, daysInMonth: s.daysInMonth, safeToSpendToday: s.safeToSpendToday }
   if (status === 'over') {
     return [make(env, 'pace_warning', 'over', 100, {
-      title: byTone(env.tone, { gentle: `${f(over)} past your target`, cheeky: `${f(over)} over — ouch`, numbers: `Over budget by ${f(over)}` }),
+      title: byTone(env.tone, { gentle: `${f(over)} past your target`, cheeky: `${f(over)} over, ouch`, numbers: `Over budget by ${f(over)}` }),
       body: `You've spent ${f(s.spent)} against a ${f(s.target)} target${s.isCurrent ? `, with ${plural(daysLeft(s), 'day')} to go` : ''}.${thats(dream)}`,
       amount: over,
       severity: 'warn',
@@ -194,7 +194,7 @@ function topMerchant(env: Env): Scored[] {
   const dream = dreamFor(amount, env)
   return [make(env, 'top_merchant', '', 50, {
     title: byTone(env.tone, { gentle: `${merchant} is your top spot`, cheeky: `${merchant} misses you already`, numbers: `Top merchant: ${merchant}` }),
-    body: `${f(amount)} across ${plural(txns.length, 'purchase')} — ${share}% of your spending.${thats(dream)}`,
+    body: `${f(amount)} across ${plural(txns.length, 'purchase')}, ${share}% of your spending.${thats(dream)}`,
     amount,
     category: dominantCategory(txns).category,
     severity: 'neutral',
@@ -254,7 +254,7 @@ function smallFrequent(env: Env): Scored[] {
   const dream = dreamEquivalents(yearly, env.ctx.dreams, 1)[0]
   return [make(env, 'small_frequent', '', 65, {
     title: byTone(env.tone, { gentle: `Small buys add up: ${f(amount)}`, cheeky: `The latte factor strikes: ${f(amount)}`, numbers: `${small.length} purchases under ${f(env.minor(SMALL_MAJOR))}: ${f(amount)}` }),
-    body: `${plural(small.length, 'purchase')} under ${f(env.minor(SMALL_MAJOR))}, mostly ${CATEGORIES[category].label.toLowerCase()}. At this rate that's ${f(yearly)} a year${dream ? ` — ${dream.label}` : ''}.`,
+    body: `${plural(small.length, 'purchase')} under ${f(env.minor(SMALL_MAJOR))}, mostly ${CATEGORIES[category].label.toLowerCase()}. At this rate that's ${f(yearly)} a year${dream ? ` (${dream.label})` : ''}.`,
     amount,
     category,
     severity: 'neutral',
@@ -355,7 +355,7 @@ function savingsRate(env: Env): Scored[] {
   const progress = goalItem ? goalProgress(goalItem, ctx) : undefined
   const dream = s.savedToGoals > 0 ? dreamFor(s.savedToGoals, env) : undefined
   const body = s.savedToGoals > 0
-    ? `${f(s.savedToGoals)} went into your goal pots${progress ? ` — your ${progress.name} is ${Math.floor(progress.pct)}% there` : ''}.`
+    ? `${f(s.savedToGoals)} went into your goal pots${progress ? `, and your ${progress.name} is ${Math.floor(progress.pct)}% there` : ''}.`
     : `Nothing has gone into your goal pots yet this month.`
   return [make(env, 'savings_rate', '', 45, {
     title: byTone(env.tone, { gentle: `You saved ${pct}% of your income`, cheeky: `${pct}% of your pay went to dreams`, numbers: `Savings rate: ${pct}%` }),

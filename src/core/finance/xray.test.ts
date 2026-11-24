@@ -107,7 +107,7 @@ describe('xrayBill — robustness', () => {
     const r = xrayBill('Hello there\nnothing useful', ctx, clean)
     expect(r.total).toBeUndefined()
     expect(r.dueDate).toBeUndefined()
-    expect(r.warnings).toEqual(["Couldn't find a total — please check the amount yourself.", 'No due date found.'])
+    expect(r.warnings).toEqual(["Couldn't find a total, so please check the amount yourself.", 'No due date found.'])
   })
 
   it('handles empty, huge and hostile input without throwing', () => {

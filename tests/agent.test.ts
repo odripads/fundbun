@@ -887,7 +887,7 @@ describe.each(DRIVERS)('review fixes · actions, corrections and undo (%s)', (_n
     expect(traced(payday, 'intent', /credit/)).toBe(false)
     expect(lastPending(d)).toMatchObject({ status: 'pending', call: { tool: 'transfer_to_goal', args: { amount: 50_000 } } })
     const all = await d.send('move all my money to the Birkin')
-    expect(textOf(all)).toMatch(/at most ¥500 per move/)
+    expect(textOf(all)).toMatch(/up to ¥500 per move/)
     expect(clarifyOptions(all)[0]).toBe('¥500')
     const a = make('arif')
     const spotify = await a.send('batalkan langganan spotify')
@@ -900,7 +900,7 @@ describe.each(DRIVERS)('review fixes · actions, corrections and undo (%s)', (_n
     const d = make('mei')
     const msg = await d.send('help me save for the Birkin faster')
     // the time gained reads on the shared unit convention (days under two weeks, then weeks, then months)
-    expect(textOf(msg)).toMatch(/^For Birkin 25: these fixes free up about ¥\d+ a month — roughly \d+ (?:days|weeks|months) sooner/)
+    expect(textOf(msg)).toMatch(/^For Birkin 25: these fixes free up about ¥\d+ a month, roughly \d+ (?:days|weeks|months) sooner/)
     expect(textOf(msg)).toMatch(/next month’s line/)
     const plan = d.state().plans.at(-1)!
     const move = plan.steps.find((s) => s.tool === 'transfer_to_goal')!

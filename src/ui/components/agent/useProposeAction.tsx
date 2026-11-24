@@ -26,7 +26,7 @@ export function useProposeAction() {
             toast.show({
               tone: 'ai',
               title: 'Bun has the answer',
-              message: `${action.label} — it’s waiting in the chat.`,
+              message: `${action.label}. It’s waiting in the chat.`,
               actions: [{ label: 'Open chat', variant: 'primary', onClick: () => navigate('chat') }],
               icon: <MessageCircle />,
             })

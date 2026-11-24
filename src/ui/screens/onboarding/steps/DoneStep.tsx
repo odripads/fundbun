@@ -91,7 +91,7 @@ export function DoneStep({ draft, pinSet, problems, error, onEdit }: DoneStepPro
       step: 'mode',
       icon: Mail,
       label: 'Spending source',
-      value: draft.mode === 'auto' && draft.emailConsent ? 'Auto — Bun reads your bank emails' : 'Manual — you add spending yourself',
+      value: draft.mode === 'auto' && draft.emailConsent ? 'Auto: Bun reads your bank emails' : 'Manual: you add spending yourself',
     },
     {
       step: 'consent',
@@ -103,7 +103,7 @@ export function DoneStep({ draft, pinSet, problems, error, onEdit }: DoneStepPro
 
   return (
     <>
-      <p className={x.lede}>Here’s everything Bun knows. Tap a row to change it — then meet your mirror.</p>
+      <p className={x.lede}>Here’s everything Bun knows. Tap a row to change it, then meet your mirror.</p>
 
       {error ? (
         <Callout tone="block" title="Bun couldn’t finish setting up">

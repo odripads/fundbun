@@ -81,7 +81,7 @@ type ToneTemplates = Partial<Record<Tone, Variant[]>> & { gentle: Variant[] }
 
 const v = (t: string, when?: Variant['when']): Variant => ({ t, when })
 
-const DONE: Record<Tone, string> = { gentle: 'Done — all taken care of.', cheeky: 'Done and dusted.', numbers: 'Done.' }
+const DONE: Record<Tone, string> = { gentle: 'Done, all taken care of.', cheeky: 'Done and dusted.', numbers: 'Done.' }
 
 /**
  * Shared shape of the move/organise/pay intents: one line per stage, the confirm line when no stage is given,
@@ -99,10 +99,10 @@ function stages(tone: Tone, s: Partial<Record<ActionStage, string>>, fallback: s
 const GENERIC_BLOCKED = 'I couldn’t do that one.[ {reason}.] Nothing was changed.'
 
 const HELP_FOCUS: Variant[] = [
-  v('Of course — open the ⋯ menu and tap “Talk to a human”. A person gets a short summary of our chat (never your PIN or full card numbers), and you can pause me while they help.', { focus: 'handoff' }),
+  v('Of course. Open the ⋯ menu and tap “Talk to a human”. A person gets a short summary of our chat (never your PIN or full card numbers), and you can pause me while they help.', { focus: 'handoff' }),
   v('Your data is yours: Settings → Privacy → Export downloads everything as a file on this device. I never send it anywhere.', { focus: 'export' }),
   v('Your target and income are yours to set: Settings → Profile, no PIN needed.[ Right now your target is {target}][ and your income {income}].[ Change it to {amount} there and I’ll use the new number straight away.]', { focus: 'profile' }),
-  v('I can’t add dreams from chat yet — open Dreams → Add a dream[ to put {label} on your wishlist][ ({amount})], with a photo if you like. I’ll start mirroring it right away.', { focus: 'add_dream' }),
+  v('I can’t add dreams from chat yet. Open Dreams → Add a dream[ to put {label} on your wishlist][ ({amount})], with a photo if you like. I’ll start mirroring it right away.', { focus: 'add_dream' }),
   // questions about Bun itself (R-ABOUT-*): plain, honest, the same in every tone
   v('Fair question. Three rules I can’t break, whoever asks. One: I only move money between your own pots, within the limits you set. Two: paying a bill needs your PIN, and it is sealed to that exact amount and payee. Three: I can never send money to other people or add a payee. Bills and messages are read as data, never as orders, and everything I do lands in the Activity log. This prototype has no live bank link, so no real money moves.', { focus: 'safety' }),
   v('No. This is a prototype with no live bank connection. What you’re looking at is a demo persona on a simulated bank, so whatever I do, no real money moves.', { focus: 'bank_link', source: 'demo' }),
@@ -126,15 +126,15 @@ const HELP_FOCUS: Variant[] = [
 const OVERVIEW_FOCUS: Record<Tone, Variant[]> = {
   gentle: [
     v('{account} has {checking}.[ Your pots: {pots}.]', { focus: 'balance' }),
-    v('Your {target} target for {month} is used up — you’re {overBy} over with {daysLeft} days to go, so there’s nothing safe left to spend this month.[ From {nextMonth}, about {nextMonthDaily} a day keeps you on target.]', { focus: 'safe_to_spend' }),
-    v('You have {remaining} left of your {target} target for {month}[ — about {perDayLeft} a day for the {daysLeft} days left].[ Safe to spend today: {safeToSpend}.]', { focus: 'safe_to_spend' }),
+    v('Your {target} target for {month} is used up. You’re {overBy} over with {daysLeft} days to go, so there’s nothing safe left to spend this month.[ From {nextMonth}, about {nextMonthDaily} a day keeps you on target.]', { focus: 'safe_to_spend' }),
+    v('You have {remaining} left of your {target} target for {month}[, about {perDayLeft} a day for the {daysLeft} days left].[ Safe to spend today: {safeToSpend}.]', { focus: 'safe_to_spend' }),
     v('You’ve kept {savingsRate} of this month’s income so far ({income} in, {spent} spent).[ {savedToGoals} of it went into your pots.]', { focus: 'savings_rate' }),
     v('This month: {income} in, {spent} spent so far.', { focus: 'savings_rate' }),
   ],
   cheeky: [
     v('{account}: {checking}.[ Tucked away in pots: {pots}.]', { focus: 'balance' }),
-    v('The {target} for {month} is spent — {overBy} over with {daysLeft} days to go, so the safe-to-spend jar is empty.[ From {nextMonth}, about {nextMonthDaily} a day keeps the dream on schedule.]', { focus: 'safe_to_spend' }),
-    v('{remaining} left of your {target} for {month}[ — about {perDayLeft} a day for {daysLeft} days].[ Safe today: {safeToSpend}.]', { focus: 'safe_to_spend' }),
+    v('The {target} for {month} is spent: {overBy} over with {daysLeft} days to go, so the safe-to-spend jar is empty.[ From {nextMonth}, about {nextMonthDaily} a day keeps the dream on schedule.]', { focus: 'safe_to_spend' }),
+    v('{remaining} left of your {target} for {month}[, about {perDayLeft} a day for {daysLeft} days].[ Safe today: {safeToSpend}.]', { focus: 'safe_to_spend' }),
     v('You’re keeping {savingsRate} of this month’s pay ({income} in, {spent} out).[ {savedToGoals} already went to your pots.]', { focus: 'savings_rate' }),
     v('This month: {income} in, {spent} out so far.', { focus: 'savings_rate' }),
   ],
@@ -152,18 +152,18 @@ const BREAKDOWN_FOCUS: Variant[] = [
   v('{category}: {categorySpent} in {month} vs {categoryPrev} in {prevMonth} ({change}).', { focus: 'compare' }),
   v('{month} so far: {total} vs {prevToDate} by the same day of {prevMonth} ({change}).[ Biggest moves: {movers}.][ All of {prevMonth}: {prevTotal}.]', { focus: 'compare', likeForLike: 'yes' }),
   v('{month}: {total} vs {prevTotal} in {prevMonth} ({change}).[ Biggest moves: {movers}.]', { focus: 'compare' }),
-  v('{category} over the last {monthsCount} months: {rangeList}[ — {rangeTotal} in total].'),
-  v('{groupLabel} overall[ in {month}]: {groupSpent} — {groupParts}.[ Last month: {groupPrev}.]'),
+  v('{category} over the last {monthsCount} months: {rangeList}[ ({rangeTotal} in total)].'),
+  v('{groupLabel} overall[ in {month}]: {groupSpent} ({groupParts}).[ Last month: {groupPrev}.]'),
 ]
 
 const SEARCH_FOCUS: Variant[] = [
-  v('No late-night orders[ in {month}] — nice.', { focus: 'late_night', count: '0' }),
-  v('{count} late-night orders[ in {month}][ — {total} in total].[ The biggest: {largest}.]', { focus: 'late_night' }),
+  v('No late-night orders[ in {month}]. Nice.', { focus: 'late_night', count: '0' }),
+  v('{count} late-night orders[ in {month}][ ({total} in total)].[ The biggest: {largest}.]', { focus: 'late_night' }),
   v('Your biggest purchase[ in {month}]: {largest}.[ Next: {second}.]', { focus: 'largest' }),
 ]
 
 const SUBS_FOCUS: Variant[] = [
-  v('I’d cancel {recommend}.[ Together that’s {saving} a year back.] Tap one below to cancel it — you’ll confirm with your PIN.', { focus: 'recommend' }),
+  v('I’d cancel {recommend}.[ Together that’s {saving} a year back.] Tap one below to cancel it, and you’ll confirm with your PIN.', { focus: 'recommend' }),
   v('Nothing stands out to cancel: no overlaps, price hikes or double charges.[ Your subscriptions cost {annualTotal} a year.]', { focus: 'recommend' }),
 ]
 
@@ -183,11 +183,11 @@ const UNKNOWN_FOCUS: Variant[] = [
 export const TEMPLATES: Record<Intent, ToneTemplates> = {
   greeting: {
     gentle: [v('Hi[ {name}]! [{headline} ]I’m Bun, your money sidekick. Ask me how your month is going, what’s due, or whether something fits your budget.')],
-    cheeky: [v('Hey[ {name}]! [{headline} ]What are we poking at today — the month, the bills, or the dream fund?')],
+    cheeky: [v('Hey[ {name}]! [{headline} ]What are we poking at today: the month, the bills, or the dream fund?')],
     numbers: [v('Hello[ {name}]. [{headline} ]Ask for: month overview, categories, bills, subscriptions, goals.')],
   },
   help: {
-    gentle: [...HELP_FOCUS, v('Here’s what I can do: show how your month is going, break spending down by category, find transactions, review bills and subscriptions, check whether a purchase fits, and move money between your own goal pots — you always confirm first. I never send money to other people. If you’d rather talk to a person, tap “Talk to a human”.')],
+    gentle: [...HELP_FOCUS, v('Here’s what I can do: show how your month is going, break spending down by category, find transactions, review bills and subscriptions, check whether a purchase fits, and move money between your own goal pots, always with your confirmation first. I never send money to other people. If you’d rather talk to a person, tap “Talk to a human”.')],
     cheeky: [...HELP_FOCUS, v('I’m Bun: part budget, part dumpling. I can mirror your month, sniff out sneaky subscriptions, x-ray bills, run the “should I buy it?” check, and stash money in your dream pots (with your OK). Sending money to other people? That’s your job, not mine. Need a human? Tap “Talk to a human”.')],
     numbers: [...HELP_FOCUS, v('Capabilities: month overview, category breakdown, transaction search, bills and subscriptions review, affordability check, goal pots (own accounts only, with confirmation), budgets and tripwires. Not supported: transfers to others, investments, credit. Human support: “Talk to a human”.')],
   },
@@ -199,13 +199,13 @@ export const TEMPLATES: Record<Intent, ToneTemplates> = {
   overview: {
     gentle: [
       ...OVERVIEW_FOCUS.gentle,
-      v('You’ve spent {spent} of your {target} target for {month} — {delta} over. No judgement: want to see which categories ran hot?', { status: 'over' }),
+      v('You’ve spent {spent} of your {target} target for {month}, {delta} over. No judgement: want to see which categories ran hot?', { status: 'over' }),
       v('So far you’ve spent {spent} of {target} for {month}.[ At this pace you’d finish around {projected}.][ Keeping to about {safeToSpend} a day brings you back on track.]', { status: 'pace_over' }),
       v('Nice work: {spent} of your {target} target so far[, heading for about {projected}].[ You’re on course to have {delta} left over.][ Want to stash it in {goalName}?]', { status: 'under' }),
-      v('You’re on track: {spent} of {target} spent for {month}[, with {remaining} left][ — about {safeToSpend} a day].', { status: 'on_track' }),
+      v('You’re on track: {spent} of {target} spent for {month}[, with {remaining} left][, about {safeToSpend} a day].', { status: 'on_track' }),
       v('You’ve spent {spent} in {month} so far. You’re tracking, not budgeting, so that’s the whole story: want to see where it went?', { status: 'tracking' }),
       v('I don’t see any spending for {month} yet. Once transactions come in, I’ll mirror your month back to you.', { status: 'no_data' }),
-      v('You’ve spent {spent} of your {target} target[ for {month}][ — {remaining} left].'),
+      v('You’ve spent {spent} of your {target} target[ for {month}][, with {remaining} left].'),
       v('I couldn’t load your month just now. Try again in a moment?'),
     ],
     cheeky: [
@@ -213,12 +213,12 @@ export const TEMPLATES: Record<Intent, ToneTemplates> = {
       v('{spent} spent against a {target} target, and {month} still has {daysLeft} days to go. Shall we find the culprit?', { status: 'over' }),
       v('{spent} spent against a {target} target[ in {month}]. Shall we find the culprit?', { status: 'over' }),
       v('{spent} down, {target} allowed.[ At this pace you’ll land near {projected}.][ Keep it within {safeToSpend} a day and your dreams stay safe.]', { status: 'pace_over' }),
-      v('{spent} of {target} — that’s {delta} left over![ That’s {goalName} money.] Shall I stash it?', { status: 'under' }),
+      v('{spent} of {target}: that’s {delta} left over![ That’s {goalName} money.] Shall I stash it?', { status: 'under' }),
       v('Steady hands: {spent} of {target} spent[, {remaining} to go]. Bun approves.', { status: 'on_track' }),
       v('{spent} out the door in {month} so far. No target, no drama. Want the breakdown?', { status: 'tracking' }),
       v('Nothing spent in {month} yet. Suspiciously saintly.', { status: 'no_data' }),
-      v('{spent} spent of {target}[ — {remaining} left].'),
-      v('My crystal dumpling is cloudy — I couldn’t load your month. Try again?'),
+      v('{spent} spent of {target}[, {remaining} left].'),
+      v('My crystal dumpling is cloudy, so I couldn’t load your month. Try again?'),
     ],
     numbers: [
       ...OVERVIEW_FOCUS.numbers,
@@ -235,13 +235,13 @@ export const TEMPLATES: Record<Intent, ToneTemplates> = {
   breakdown: {
     gentle: [
       ...BREAKDOWN_FOCUS,
-      v('{category} came to {categorySpent}[ in {month}][ across {count} purchases][ — {categoryPct} of its {categoryLimit} budget].[ Last month: {categoryPrev}.][ That’s {itemEquivalent}.]'),
+      v('{category} came to {categorySpent}[ in {month}][ across {count} purchases][, {categoryPct} of its {categoryLimit} budget].[ Last month: {categoryPrev}.][ That’s {itemEquivalent}.]'),
       v('[In {month} you’ve spent {total}. ]Your biggest category is {topCategory} at {topAmount}[ ({topShare} of spending)]. Tap a category to dig in.'),
       v('Here’s your spending by category.'),
     ],
     cheeky: [
       ...BREAKDOWN_FOCUS,
-      v('{category}: {categorySpent}[ in {month}][, {count} purchases][, {categoryPct} of budget].[ That’s {itemEquivalent} — just saying.]'),
+      v('{category}: {categorySpent}[ in {month}][, {count} purchases][, {categoryPct} of budget].[ That’s {itemEquivalent}, just saying.]'),
       v('{topCategory} is winning[ {month}] at {topAmount}[ ({topShare})].[ Total: {total}.]'),
       v('Here’s where the money wandered off to.'),
     ],
@@ -256,13 +256,13 @@ export const TEMPLATES: Record<Intent, ToneTemplates> = {
     gentle: [
       ...SEARCH_FOCUS,
       v('I couldn’t find any transactions[ for {query}][ in {month}]. Want to try a different name or month?', { count: '0' }),
-      v('I found {count} transactions[ for {query}][ in {month}][ — {total} of spending].[ Another {transfers} went to your own pots or transfers.][ The largest: {largest}.]'),
+      v('I found {count} transactions[ for {query}][ in {month}][ ({total} of spending)].[ Another {transfers} went to your own pots or transfers.][ The largest: {largest}.]'),
       v('Here are the transactions I found.'),
     ],
     cheeky: [
       ...SEARCH_FOCUS,
       v('Nothing[ for {query}][ in {month}]. Either it never happened or it’s very good at hiding.', { count: '0' }),
-      v('{count} hits[ for {query}][ in {month}][ — {total} spent].[ Another {transfers} went to your pots and transfers.][ Biggest: {largest}.]'),
+      v('{count} hits[ for {query}][ in {month}][ ({total} spent)].[ Another {transfers} went to your pots and transfers.][ Biggest: {largest}.]'),
       v('Here’s what I dug up.'),
     ],
     numbers: [
@@ -276,13 +276,13 @@ export const TEMPLATES: Record<Intent, ToneTemplates> = {
     gentle: [
       ...SUBS_FOCUS,
       v('I don’t see any subscriptions right now.', { count: '0' }),
-      v('You have {count} subscriptions[ costing about {monthlyTotal} a month][ ({annualTotal} a year)].[ Heads-up: {priceHike}.][ Also, {overlap} — worth keeping all of them?]'),
+      v('You have {count} subscriptions[ costing about {monthlyTotal} a month][ ({annualTotal} a year)].[ Heads-up: {priceHike}.][ Also, {overlap}. Worth keeping all of them?]'),
       v('Here are your subscriptions and recurring charges.'),
     ],
     cheeky: [
       ...SUBS_FOCUS,
       v('Zero subscriptions. A rare and beautiful creature.', { count: '0' }),
-      v('{count} subscriptions[, {annualTotal} a year].[ {priceHike} — sneaky.][ {overlap}. Do all of them still spark joy?]'),
+      v('{count} subscriptions[, {annualTotal} a year].[ {priceHike}. Sneaky.][ {overlap}. Do all of them still spark joy?]'),
       v('Here’s everything quietly charging you every month.'),
     ],
     numbers: [
@@ -294,10 +294,10 @@ export const TEMPLATES: Record<Intent, ToneTemplates> = {
   },
   bills: {
     gentle: [
-      v('Done — I’ll remind you {reminder}.'),
+      v('Done: I’ll remind you {reminder}.'),
       ...BILLS_FOCUS,
-      v('Your bills look calm — nothing unusual[, and the next one is {nextBill}].', { count: '0' }),
-      v('I checked your bills — {actionable} to look at[ and {fyi} just FYI].[ {duplicate}.][ {spike}.][ {priceHike}.][ Next up: {nextBill}.]'),
+      v('Your bills look calm, nothing unusual[, and the next one is {nextBill}].', { count: '0' }),
+      v('I checked your bills: {actionable} to look at[ and {fyi} just FYI].[ {duplicate}.][ {spike}.][ {priceHike}.][ Next up: {nextBill}.]'),
       v('I checked your bills and found {count} things worth a look.[ {duplicate}.][ {spike}.][ {priceHike}.][ Next up: {nextBill}.]'),
       v('Next up: {nextBill}.'),
       v('Here’s what’s going on with your bills.'),
@@ -306,8 +306,8 @@ export const TEMPLATES: Record<Intent, ToneTemplates> = {
       v('Reminder set: I’ll nudge you {reminder}.'),
       ...BILLS_FOCUS,
       v('Bills are behaving. Suspicious, but nice.[ Next up: {nextBill}.]', { count: '0' }),
-      v('Bill check — {actionable} to look at[, plus {fyi} FYI].[ {duplicate} — someone’s double-dipping.][ {spike}.][ {priceHike}.][ Next due: {nextBill}.]'),
-      v('{count} things in your bills need eyes.[ {duplicate} — someone’s double-dipping.][ {spike}.][ {priceHike}.][ Next due: {nextBill}.]'),
+      v('Bill check: {actionable} to look at[, plus {fyi} FYI].[ {duplicate}. Someone’s double-dipping.][ {spike}.][ {priceHike}.][ Next due: {nextBill}.]'),
+      v('{count} things in your bills need eyes.[ {duplicate}. Someone’s double-dipping.][ {spike}.][ {priceHike}.][ Next due: {nextBill}.]'),
       v('Next due: {nextBill}.'),
       v('Here’s the bill situation.'),
     ],
@@ -323,7 +323,7 @@ export const TEMPLATES: Record<Intent, ToneTemplates> = {
   },
   insights: {
     gentle: [
-      v('Nothing unusual this month — your spending looks steady.', { count: '0' }),
+      v('Nothing unusual this month: your spending looks steady.', { count: '0' }),
       v('Here’s what stands out: {top}.[ {topWhy}.][ That’s {itemEquivalent}.][ Also: {second}.]'),
       v('Here are a few things I noticed about your spending.'),
     ],
@@ -342,22 +342,22 @@ export const TEMPLATES: Record<Intent, ToneTemplates> = {
     gentle: [
       v('How much is {label}? Tell me the price and I’ll check it against your month.', { stage: 'need_amount' }),
       v('How much is it? Tell me the price and I’ll check it against your month.', { stage: 'need_amount' }),
-      v('{label} at {amount}: that fits your budget — you’d still have {remainingAfter} left this month.[ It’s about {hoursOfWork} hours of work.][ If you skip it, that could go to {goalName} instead.] Your call.', { verdict: 'go' }),
-      v('{label} at {amount} would fit, but only just — {remainingAfter} left for the rest of the month.[ It would push {goalName} back {goalDelay}.] Maybe sleep on it?', { verdict: 'think' }),
+      v('{label} at {amount}: that fits your budget, and you’d still have {remainingAfter} left this month.[ It’s about {hoursOfWork} hours of work.][ If you skip it, that could go to {goalName} instead.] Your call.', { verdict: 'go' }),
+      v('{label} at {amount} would fit, but only just, with {remainingAfter} left for the rest of the month.[ It would push {goalName} back {goalDelay}.] Maybe sleep on it?', { verdict: 'think' }),
       v('I’d hold off on {label} for now: at {amount} it would take you {overTargetBy} over your target.[ {goalName} would wait {goalDelay} longer.][ It’s the same as {equivalent}.]', { verdict: 'skip' }),
       v('That fits your budget: you’d still have {remainingAfter} left this month.', { verdict: 'go' }),
-      v('That would fit, but only just — {remainingAfter} left for the month. Maybe sleep on it?', { verdict: 'think' }),
+      v('That would fit, but only just: {remainingAfter} left for the month. Maybe sleep on it?', { verdict: 'think' }),
       v('I’d hold off for now: it would take you {overTargetBy} over your target.', { verdict: 'skip' }),
       v('Here’s how that purchase lands in your month.'),
     ],
     cheeky: [
       v('Ooh, {label}! What’s the price tag? I’ll run the numbers.', { stage: 'need_amount' }),
       v('What’s the price tag? I’ll run the numbers.', { stage: 'need_amount' }),
-      v('Good news — {label}? That fits. You’d still have {remainingAfter} left.[ Or it’s {equivalent} — your call.]', { verdict: 'go' }),
-      v('Hmm, {label}? That squeezes in with {remainingAfter} to spare.[ {goalName} would wait {goalDelay} longer.] Tempting — maybe sleep on it?', { verdict: 'think' }),
+      v('Good news: {label}? That fits. You’d still have {remainingAfter} left.[ Or it’s {equivalent}. Your call.]', { verdict: 'go' }),
+      v('Hmm, {label}? That squeezes in with {remainingAfter} to spare.[ {goalName} would wait {goalDelay} longer.] Tempting, but maybe sleep on it?', { verdict: 'think' }),
       v('Plot twist: {label} would put you {overTargetBy} over budget.[ You could’ve gotten {equivalent} instead.][ {goalName} would slip {goalDelay}.] Future you says: maybe next month.', { verdict: 'skip' }),
       v('It fits! You’d still have {remainingAfter} left.', { verdict: 'go' }),
-      v('It squeezes in with {remainingAfter} to spare. Tempting — maybe sleep on it?', { verdict: 'think' }),
+      v('It squeezes in with {remainingAfter} to spare. Tempting, but maybe sleep on it?', { verdict: 'think' }),
       v('That one would put you {overTargetBy} over budget. Future you says: maybe next month.', { verdict: 'skip' }),
       v('Here’s the damage report.'),
     ],
@@ -371,15 +371,15 @@ export const TEMPLATES: Record<Intent, ToneTemplates> = {
   },
   goals: {
     gentle: [
-      v('Saving {monthly} a month, {goalName} is about {months} months away — around {eta}.[ That’s {sooner} months sooner than your current {currentRate} a month.]', { focus: 'what_if' }),
+      v('Saving {monthly} a month, {goalName} is about {months} months away, around {eta}.[ That’s {sooner} months sooner than your current {currentRate} a month.]', { focus: 'what_if' }),
       v('You haven’t added any dreams yet. Add one and I’ll keep it in view.', { count: '0' }),
       v('{goalName}: {saved} of {price} saved ({pct}).[ At your pace you’ll get there around {eta}.][ Other dreams: {others}.]'),
       v('Here’s how your dreams are coming along.'),
     ],
     cheeky: [
-      v('At {monthly} a month, {goalName} lands in about {months} months — around {eta}.[ That’s {sooner} months sooner than your current {currentRate} a month.]', { focus: 'what_if' }),
-      v('No dreams on the board yet. Dream big — I’ll guard the pot.', { count: '0' }),
-      v('{goalName} is {pct} there — {saved} of {price}.[ ETA {eta} — keep feeding the pot.][ Also cooking: {others}.]'),
+      v('At {monthly} a month, {goalName} lands in about {months} months, around {eta}.[ That’s {sooner} months sooner than your current {currentRate} a month.]', { focus: 'what_if' }),
+      v('No dreams on the board yet. Dream big, and I’ll guard the pot.', { count: '0' }),
+      v('{goalName} is {pct} there ({saved} of {price}).[ ETA {eta}, keep feeding the pot.][ Also cooking: {others}.]'),
       v('Your dreams, as of today.'),
     ],
     numbers: [
@@ -394,14 +394,14 @@ export const TEMPLATES: Record<Intent, ToneTemplates> = {
       need_amount: 'How much would you like to move[ into {goalName}]?',
       need_target: 'Which dream should it go to?[ You have {options}.]',
       blocked: GENERIC_BLOCKED,
-      done: 'Done — {amount} is now in {goalName}.[ That’s {newPct} of the way there!]',
+      done: 'Done: {amount} is now in {goalName}.[ That’s {newPct} of the way there!]',
       confirm: 'Ready to move {amount} into {goalName}. Check the card and tap to confirm.',
     }, 'Check the card below to confirm the move.'),
     cheeky: stages('cheeky', {
       need_amount: 'How much are we feeding[ {goalName}] today?',
       need_target: 'Which dream gets the snack?[ Options: {options}.]',
       blocked: 'Couldn’t do that one.[ {reason}.] Nothing moved.',
-      done: '{amount} tucked into {goalName}.[ {newPct} there — look at you go!]',
+      done: '{amount} tucked into {goalName}.[ {newPct} there, look at you go!]',
       confirm: '{amount} → {goalName}. One tap and it’s done.',
     }, 'One tap on the card and it’s done.'),
     numbers: stages('numbers', {
@@ -417,8 +417,8 @@ export const TEMPLATES: Record<Intent, ToneTemplates> = {
       need_amount: 'How much would you like to take out[ of {goalName}]?',
       need_target: 'Which pot should it come from?[ You have {options}.]',
       blocked: GENERIC_BLOCKED,
-      done: 'Done — {amount} is back in your checking account.',
-      confirm: 'Ready to move {amount} from {goalName} back to checking. Plans change — that’s okay. Tap to confirm.',
+      done: 'Done: {amount} is back in your checking account.',
+      confirm: 'Ready to move {amount} from {goalName} back to checking. Plans change, and that’s okay. Tap to confirm.',
     }, 'Check the card below to confirm.'),
     cheeky: stages('cheeky', {
       need_amount: 'How much are we borrowing from future you[ and {goalName}]?',
@@ -440,7 +440,7 @@ export const TEMPLATES: Record<Intent, ToneTemplates> = {
       need_amount: 'What monthly limit should {category} have?',
       need_target: 'Which category should I set a budget for?',
       blocked: GENERIC_BLOCKED,
-      done: 'Done — {category} is now capped at {limit} a month.[ Last month you spent {lastMonth} there.][ Heads-up: {loosens}.]',
+      done: 'Done: {category} is now capped at {limit} a month.[ Last month you spent {lastMonth} there.][ Heads-up: {loosens}.]',
       confirm: 'Set {category} to {limit} a month?[ It was {previousLimit}.] Tap to confirm.',
     }, 'What monthly limit would you like?'),
     cheeky: stages('cheeky', {
@@ -463,12 +463,12 @@ export const TEMPLATES: Record<Intent, ToneTemplates> = {
       blocked: GENERIC_BLOCKED,
       done: 'Your new budget is in: {total} a month[ using {method}].[ Needs {needs}, wants {wants}, savings {savings}.][ {rationale}.]',
       confirm: 'Here’s a plan[ based on {method}]: {total} a month.[ Needs {needs}, wants {wants}, savings {savings}.] Tap to apply it.',
-    }, 'I’ve drafted a budget plan for you — take a look below.'),
+    }, 'I’ve drafted a budget plan for you. Take a look below.'),
     cheeky: stages('cheeky', {
       blocked: 'Couldn’t do that one.[ {reason}.]',
       done: 'New budget, who dis? {total} a month[ ({method})].[ Needs {needs} · wants {wants} · savings {savings}.]',
       confirm: 'Fresh plan, hot from the steamer: {total} a month[ ({method})]. Tap to apply.',
-    }, 'Fresh plan below — tap to apply.'),
+    }, 'Fresh plan below. Tap to apply.'),
     numbers: stages('numbers', {
       blocked: 'Not executed.[ Reason: {reason}.]',
       done: 'Budget applied: {total}/month[ · method {method}][ · needs {needs} · wants {wants} · savings {savings}].',
@@ -477,13 +477,13 @@ export const TEMPLATES: Record<Intent, ToneTemplates> = {
   },
   tripwire: {
     gentle: stages('gentle', {
-      need_amount: 'What should trip it — a share of your target (like 80%) or an amount for a single purchase?',
+      need_amount: 'What should trip it: a share of your target (like 80%) or an amount for a single purchase?',
       blocked: GENERIC_BLOCKED,
       done: 'Tripwire set: {label}.[ When it fires, I’ll show you {itemName} so you remember what you’re saving for.]',
       confirm: 'Set a tripwire for {label}? Tap to confirm.',
     }, 'Tell me the threshold and I’ll set the tripwire.'),
     cheeky: stages('cheeky', {
-      need_amount: 'Where do I string the wire — 80% of your target? Purchases over a certain amount?',
+      need_amount: 'Where do I string the wire: 80% of your target, or purchases over a certain amount?',
       blocked: 'Couldn’t do that one.[ {reason}.]',
       done: 'Tripwire armed: {label}.[ {itemName} will be watching.]',
       confirm: 'Arm a tripwire for {label}? Tap to confirm.',
@@ -499,14 +499,14 @@ export const TEMPLATES: Record<Intent, ToneTemplates> = {
     gentle: stages('gentle', {
       need_target: 'Which bill should I pay?[ I can see {options}.]',
       blocked: 'I couldn’t pay that bill.[ {reason}.] I can only pay verified payees, and always with your PIN.',
-      done: 'Done — {billName}[ ({amount})] is taken care of.[ It goes out on {scheduledFor}.]',
-      confirm: 'Ready to pay {billName}[ — {amount}][ to {payee}][, due {dueDate}]. You’ll confirm with your PIN.',
+      done: 'Done: {billName}[ ({amount})] is taken care of.[ It goes out on {scheduledFor}.]',
+      confirm: 'Ready to pay {billName}[ ({amount})][ to {payee}][, due {dueDate}]. You’ll confirm with your PIN.',
     }, 'Check the card below and confirm with your PIN.'),
     cheeky: stages('cheeky', {
       need_target: 'Which bill are we slaying?[ Options: {options}.]',
       blocked: 'Couldn’t pay that one.[ {reason}.] Verified payees only, PIN always.',
       done: '{billName}: paid[ ({amount})]. One less thing.[ Goes out {scheduledFor}.]',
-      confirm: '{billName}[ — {amount}][, due {dueDate}]. PIN to confirm and it’s handled.',
+      confirm: '{billName}[ ({amount})][, due {dueDate}]. PIN to confirm and it’s handled.',
     }, 'PIN on the card and it’s handled.'),
     numbers: stages('numbers', {
       need_target: 'Bill needed.[ Options: {options}.]',
@@ -557,16 +557,16 @@ export const TEMPLATES: Record<Intent, ToneTemplates> = {
   },
   xray: {
     gentle: [
-      v('Paste the bill text and I’ll x-ray it — I’ll pull out the total, due date and line items.', { stage: 'need_text' }),
-      v('I read the bill[ from {merchant}][: {total}][, due {dueDate}]. Heads-up: it contains text that tries to give me instructions, like moving money. I ignored it — bills are data, never commands.[ {comparison}.]', { injection: 'yes' }),
+      v('Paste the bill text and I’ll x-ray it, pulling out the total, due date and line items.', { stage: 'need_text' }),
+      v('I read the bill[ from {merchant}][: {total}][, due {dueDate}]. Heads-up: it contains text that tries to give me instructions, like moving money. I ignored it, because bills are data, never commands.[ {comparison}.]', { injection: 'yes' }),
       v('Here’s the x-ray[ of {merchant}]: total {total}[, due {dueDate}][, {lineCount} line items].[ {comparison}.][ {warning}.]'),
       v('I couldn’t find a total in that text. Could you paste the full bill?'),
     ],
     cheeky: [
-      v('Hand it over — paste the bill and I’ll x-ray it.', { stage: 'need_text' }),
-      v('Nice try, bill[ from {merchant}]. It hid instructions in the small print, like moving money. I ignored them — I only take orders from you.[ Total {total}.][ Due {dueDate}.][ {comparison}.]', { injection: 'yes' }),
+      v('Hand it over: paste the bill and I’ll x-ray it.', { stage: 'need_text' }),
+      v('Nice try, bill[ from {merchant}]. It hid instructions in the small print, like moving money. I ignored them; I only take orders from you.[ Total {total}.][ Due {dueDate}.][ {comparison}.]', { injection: 'yes' }),
       v('X-ray complete[: {merchant}]. Total {total}[, due {dueDate}][, {lineCount} line items].[ {comparison}.][ {warning}.]'),
-      v('That bill is playing hard to get — I couldn’t find a total. Paste the whole thing?'),
+      v('That bill is playing hard to get: I couldn’t find a total. Paste the whole thing?'),
     ],
     numbers: [
       v('Paste bill text to analyse.', { stage: 'need_text' }),
@@ -599,13 +599,13 @@ export const REFUSALS: Partial<Record<Intent, Record<Tone, Refusal>>> = {
     numbers: { title: 'Transfer not permitted', text: 'Transfers to other people are not available to the agent (tier T4). Available: moves between your own pots; verified bill payments with PIN.' },
   },
   add_payee: {
-    gentle: { title: 'New payees are yours to add', text: 'Adding a new payee is something only you can do, in your banking app — I can only ever pay payees you’ve already verified. I can show your upcoming bills or set a reminder instead.' },
-    cheeky: { title: 'No new friends for me', text: 'I don’t make new payee friends — only you can add one, in your banking app. I’ll happily handle bills from payees you’ve already verified.' },
+    gentle: { title: 'New payees are yours to add', text: 'Adding a new payee is something only you can do, in your banking app. I can only ever pay payees you’ve already verified. I can show your upcoming bills or set a reminder instead.' },
+    cheeky: { title: 'No new friends for me', text: 'I don’t make new payee friends. Only you can add one, in your banking app. I’ll happily handle bills from payees you’ve already verified.' },
     numbers: { title: 'Adding payees not permitted', text: 'Adding payees is not available to the agent (tier T4). Available: payments to verified payees with PIN; bill reminders.' },
   },
   invest: {
-    gentle: { title: 'No investment advice', text: 'I can’t buy investments or give personalised investment advice — I’m not a licensed adviser. I can help you build savings instead: move money into a goal pot, or see how much you could set aside each month.' },
-    cheeky: { title: 'Not a stock picker', text: 'I’m a dumpling, not a licensed adviser — no investments and no personalised investment advice from me. Want to feed a goal pot instead?' },
+    gentle: { title: 'No investment advice', text: 'I can’t buy investments or give personalised investment advice, as I’m not a licensed adviser. I can help you build savings instead: move money into a goal pot, or see how much you could set aside each month.' },
+    cheeky: { title: 'Not a stock picker', text: 'I’m a dumpling, not a licensed adviser, so no investments and no personalised investment advice from me. Want to feed a goal pot instead?' },
     numbers: { title: 'Investments not permitted', text: 'Investment purchases and personalised investment advice are not available (not a licensed adviser; tier T4). Available: goal pot savings, monthly savings capacity.' },
   },
   credit: {
@@ -614,12 +614,12 @@ export const REFUSALS: Partial<Record<Intent, Record<Tone, Refusal>>> = {
     numbers: { title: 'Credit not permitted', text: 'Loan and credit applications are not available to the agent (tier T4). Available: affordability check, budgets, tripwires.' },
   },
   change_permissions: {
-    gentle: { title: 'Only you can change my permissions', text: 'Only you can change what I’m allowed to do — in Settings → Permissions, with your PIN. Tightening my limits or pausing me is always one tap, no PIN needed.' },
-    cheeky: { title: 'Not my call', text: 'I can’t promote myself — only you can change my permissions, in Settings → Permissions with your PIN. Want me on a shorter leash? That’s one tap, no PIN.' },
+    gentle: { title: 'Only you can change my permissions', text: 'Only you can change what I’m allowed to do, in Settings → Permissions with your PIN. Tightening my limits or pausing me is always one tap, no PIN needed.' },
+    cheeky: { title: 'Not my call', text: 'I can’t promote myself. Only you can change my permissions, in Settings → Permissions with your PIN. Want me on a shorter leash? That’s one tap, no PIN.' },
     numbers: { title: 'Permission change not permitted', text: 'The agent cannot change its own mandate (tier T4). Loosening: Settings → Permissions + PIN. Tightening or pausing: one tap, no PIN.' },
   },
   sensitive_request: {
-    gentle: { title: 'I keep secrets secret', text: 'I never reveal your PIN, passwords or full card and ID numbers, I never send your data to anyone else, and I don’t switch off my safety rules — even when asked. I can show masked account details (last 4 digits) or a summary right here in the app.' },
+    gentle: { title: 'I keep secrets secret', text: 'I never reveal your PIN, passwords or full card and ID numbers, I never send your data to anyone else, and I don’t switch off my safety rules, even when asked. I can show masked account details (last 4 digits) or a summary right here in the app.' },
     cheeky: { title: 'My lips are sealed', text: 'Not even for dumplings: I never reveal PINs, passwords or full card numbers, I never send your data anywhere, and my safety rules stay on no matter who asks. Masked details (last 4 digits) and in-app summaries are fine.' },
     numbers: { title: 'Request refused', text: 'Not available: PINs, passwords, full card/ID numbers, sending data to third parties, disabling safety rules. Available: masked numbers (last 4), in-app summaries.' },
   },
@@ -641,8 +641,8 @@ export interface RefusalOptions {
 }
 
 const GENERIC_REFUSAL: Record<Tone, Refusal> = {
-  gentle: { title: 'I can’t do that', text: 'That’s outside what I’m allowed to do. I can check your month, review bills and subscriptions, or move money between your own pots — always with your OK.' },
-  cheeky: { title: 'Not in my job description', text: 'That’s above my pay grade. I can mirror your month, review bills and subscriptions, or move money between your own pots — with your OK.' },
+  gentle: { title: 'I can’t do that', text: 'That’s outside what I’m allowed to do. I can check your month, review bills and subscriptions, or move money between your own pots, always with your OK.' },
+  cheeky: { title: 'Not in my job description', text: 'That’s above my pay grade. I can mirror your month, review bills and subscriptions, or move money between your own pots, with your OK.' },
   numbers: { title: 'Not permitted', text: 'Not available to the agent. Available: overview, bills, subscriptions, own-pot transfers with confirmation.' },
 }
 
@@ -661,7 +661,7 @@ export function refusal(intent: Intent, tone: Tone, opts: RefusalOptions = {}): 
   const set = REFUSALS[intent] ?? GENERIC_REFUSAL
   const base = { ...(set[tone] ?? set.gentle) }
   if (opts.attack && tone === 'cheeky' && REFUSALS[intent] && !/^nice try/i.test(base.text)) {
-    base.text = `Nice try — ${base.text.charAt(0).toLowerCase()}${base.text.slice(1)}`
+    base.text = `Nice try: ${base.text.charAt(0).toLowerCase()}${base.text.slice(1)}`
     if (intent === 'change_permissions') base.title = 'Nice try'
   }
   return base

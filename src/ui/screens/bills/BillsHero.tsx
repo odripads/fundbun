@@ -41,7 +41,7 @@ export function BillsHero({ currency, tone, today, bills, findings, recurring, d
             {due.count > 0
               ? `${due.count} ${due.count === 1 ? 'bill' : 'bills'}${due.next ? ` · next one ${relativeDay(due.next.dueDate, today).toLowerCase()}` : ''}`
               : bills.length === 0
-                ? 'No bills yet — paste one into the X-ray below'
+                ? 'No bills yet. Paste one into the X-ray below'
                 : 'Nothing else due this month'}
           </p>
         </div>

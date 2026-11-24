@@ -46,7 +46,7 @@ describe('InsightsScreen', () => {
     expect(hero.textContent).toContain('Per day')
     const first = container.querySelector('article')!
     expect(first.textContent).toContain('Heads-up')
-    expect(first.textContent).toContain('over — ouch')
+    expect(first.textContent).toContain('over, ouch')
     expect(first.querySelector('[aria-label^="AI-generated"]')).not.toBeNull()
     // headings start at h2 (the shell's TopBar owns h1)
     expect(container.querySelector('h1')).toBeNull()

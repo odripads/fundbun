@@ -613,7 +613,7 @@ function goalPlan(host: AgentHost, runner: PlanRunner, goalId: string, fixes: Ov
   const transfer = Math.min(monthly, state.mandate.perActionCap)
   if (transfer > 0) {
     // independent of the other fixes (a cancellation may still be waiting for the PIN): its own card, your tap
-    const step = runner.add({ tool: 'transfer_to_goal', args: { goalId, amount: transfer }, dependsOn: [after], label: `Move ${f(transfer)} into ${dream.name} — what these fixes free up each month` })
+    const step = runner.add({ tool: 'transfer_to_goal', args: { goalId, amount: transfer }, dependsOn: [after], label: `Move ${f(transfer)} into ${dream.name} (what these fixes free up each month)` })
     runner.run(step)
   }
   return { goalId, goalName: dream.name, monthly, parts, ...(daysSooner && daysSooner > 0 ? { daysSooner } : {}), ...(transfer > 0 ? { transfer } : {}) }
@@ -726,24 +726,24 @@ export function planReply(outcome: PlanOutcome, state: AppState, tone: Tone): st
   const list = listJoin(actions.map((s) => lower(s.label)))
   const lead = status === 'under'
     ? byTone(tone, {
-      gentle: `You’re on course to have ${delta || 'money'} left over — let’s put it to work. My plan: ${list}.`,
+      gentle: `You’re on course to have ${delta || 'money'} left over, so let’s put it to work. My plan: ${list}.`,
       cheeky: `Look at you, finishing with ${delta || 'money'} left over! Let’s make that money count: ${list}.`,
       numbers: `Projected ${delta || 'money'} left over. Plan: ${list}.`,
     })
     : byTone(tone, {
       gentle: `Here’s a plan to get back on track${spent && target ? ` (you’re at ${spent} of your ${target} target)` : ''}. I checked where the money went and your bills, then lined up ${actions.length} fixes: ${list}.`,
-      cheeky: `Rescue mission time${spent && target ? `: ${spent} spent against a ${target} target` : ''}. I dug through your spending and bills — the plan: ${list}.`,
+      cheeky: `Rescue mission time${spent && target ? `: ${spent} spent against a ${target} target` : ''}. I dug through your spending and bills. The plan: ${list}.`,
       numbers: `Recovery plan${spent && target ? ` (spent ${spent} of ${target})` : ''}: ${list}.`,
     })
   const parts = [lead]
   const impact = outcome.goalImpact
   if (impact) {
-    const lead2 = `For ${impact.goalName}: these fixes free up about ${f(impact.monthly)} a month${impact.daysSooner ? ` — roughly ${durationText(impact.daysSooner)} sooner at your saving pace` : ''}.`
+    const lead2 = `For ${impact.goalName}: these fixes free up about ${f(impact.monthly)} a month${impact.daysSooner ? `, roughly ${durationText(impact.daysSooner)} sooner at your saving pace` : ''}.`
     parts[0] = `${lead2} ${lead}`
   }
   const cap = outcome.cap
   if (cap && cap.spent >= cap.limit) parts.push(`You’re already at ${f(cap.spent)} on ${categoryLabel(cap.category)} this month, so treat ${f(cap.limit)} as next month’s line.`)
-  if (done.length) parts.push(`${countWord(done.length)} ${done.length === 1 ? 'is' : 'are'} already done — you can undo ${done.length === 1 ? 'it' : 'them'} from the card for a short while.`)
+  if (done.length) parts.push(`${countWord(done.length)} ${done.length === 1 ? 'is' : 'are'} already done, and you can undo ${done.length === 1 ? 'it' : 'them'} from the card for a short while.`)
   if (waiting.length) parts.push(`${countWord(waiting.length)} ${waiting.length === 1 ? 'needs' : 'need'} your OK on the card${waiting.some((s) => s.tool === 'cancel_subscription' || s.tool === 'pay_bill' || s.tool === 'dispute_transaction') ? ' (with your PIN)' : ''}.`)
   if (blocked.length) parts.push(`${countWord(blocked.length)} couldn’t go ahead: ${lowerFirst(blocked[0].resultSummary ?? 'blocked by your permission rules')}`)
   parts.push('Say “stop” any time to cancel the rest.')

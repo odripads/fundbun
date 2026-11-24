@@ -87,7 +87,7 @@ function HumanHandoff({ open, onClose }: { open: boolean; onClose: () => void })
     >
       <div className={styles.sheetStack}>
         <Callout tone="info" title="This is a sandbox">
-          No one is on the other end in the demo — the request is shown, not sent.
+          No one is on the other end in the demo, so the request is shown, not sent.
         </Callout>
         <section className={styles.handoff} aria-label="What the adviser would see">
           <p className={styles.handoffTitle}>
@@ -98,7 +98,7 @@ function HumanHandoff({ open, onClose }: { open: boolean; onClose: () => void })
               {summary.topics.map((t, i) => <li key={i}>“{t}”</li>)}
             </ul>
           ) : (
-            <p className={styles.handoffEmpty}>No questions yet — they’d start fresh with you.</p>
+            <p className={styles.handoffEmpty}>No questions yet, so they’d start fresh with you.</p>
           )}
           <p className={styles.handoffMeta}>
             {summary.messages} message{summary.messages === 1 ? '' : 's'} · {summary.awaiting ? `${summary.awaiting} action${summary.awaiting === 1 ? '' : 's'} waiting for you` : 'nothing waiting'}
@@ -144,7 +144,7 @@ function ClearChat({ open, onClose }: { open: boolean; onClose: () => void }) {
             onClick={() => {
               app.clearChat()
               onClose()
-              toast.show({ tone: 'neutral', title: 'Conversation cleared', message: 'A fresh start — Bun still remembers your numbers, not your chat.' })
+              toast.show({ tone: 'neutral', title: 'Conversation cleared', message: 'A fresh start: Bun still remembers your numbers, not your chat.' })
             }}
           >
             Clear conversation

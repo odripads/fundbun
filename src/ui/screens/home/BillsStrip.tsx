@@ -47,7 +47,7 @@ export function BillsStrip() {
         <p className={styles.empty}>
           <CircleCheck aria-hidden="true" />
           {/* a brand-new user has no bills at all — "every bill is paid" would be a claim about nothing */}
-          {hasAnyBill ? 'Nothing due — every bill is paid.' : 'No bills yet — import a statement and Bun will spot them.'}
+          {hasAnyBill ? 'Nothing due: every bill is paid.' : 'No bills yet. Import a statement and Bun will spot them.'}
         </p>
       ) : (
         <ul className={styles.strip} role="list">

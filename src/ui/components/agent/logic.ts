@@ -39,9 +39,9 @@ export const PHASE_META: Record<ActionPhase, PhaseMeta> = {
   done: { label: 'Done', tone: 'under', muted: false },
   blocked: { label: 'Blocked by your safety rules', tone: 'over', muted: false },
   failed: { label: 'Didn’t run', tone: 'over', muted: false },
-  expired: { label: 'Expired — nothing ran', tone: 'neutral', muted: true },
-  rejected: { label: 'Not now — nothing ran', tone: 'neutral', muted: true },
-  undone: { label: 'Undone — back as it was', tone: 'neutral', muted: true },
+  expired: { label: 'Expired · nothing ran', tone: 'neutral', muted: true },
+  rejected: { label: 'Not now · nothing ran', tone: 'neutral', muted: true },
+  undone: { label: 'Undone · back as it was', tone: 'neutral', muted: true },
 }
 
 /** Whole seconds until `until` (ISO), never negative; 0 when absent or unparseable. */
@@ -283,7 +283,7 @@ export function humanizeKey(key: string): string {
 /** Format one evidence value: money-ish keys with integer values become ¥ amounts, dates stay readable. */
 export function formatEvidence(key: string, value: number | string, currency: Currency): string {
   if (typeof value === 'number') {
-    if (!Number.isFinite(value)) return '—'
+    if (!Number.isFinite(value)) return '–'
     if (/pct|percent|ratio/i.test(key)) return `${Math.round(value * 10) / 10}%`
     if (MONEY_KEY.test(key) && Number.isInteger(value)) return fmt(value, currency)
     return Number.isInteger(value) ? value.toLocaleString('en-US') : String(Math.round(value * 100) / 100)

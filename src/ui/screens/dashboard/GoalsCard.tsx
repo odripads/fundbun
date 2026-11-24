@@ -57,7 +57,7 @@ export function GoalsCard({ area }: { area: string }) {
                   </span>
                   <span className={styles.goalFact} data-on={g.onSchedule === true || undefined} data-late={g.onSchedule === false || undefined}>
                     {g.onSchedule !== undefined ? <CalendarClock aria-hidden="true" /> : null}
-                    {g.factValue !== '—' ? <strong>{g.factValue}</strong> : null}
+                    {g.factValue !== '–' ? <strong>{g.factValue}</strong> : null}
                     <span>{g.factSub}</span>
                   </span>
                 </p>

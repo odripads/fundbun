@@ -95,8 +95,8 @@ export function maskPinInChat(text: string, stepUpWaiting: boolean): { text: str
 
 function pinHygiene(host: AgentHost, turn: Turn): void {
   const lang = turn.lang ?? 'en'
-  trace(turn, 'redaction', 'PIN masked before storage — never kept, never sent', { kind: 'pin', masked: 1 })
-  host.audit('system', 'user_action', 'A PIN was typed into chat — masked before storage', { type: 'credential_hygiene', kind: 'pin_in_chat' })
+  trace(turn, 'redaction', 'PIN masked before storage: never kept, never sent', { kind: 'pin', masked: 1 })
+  host.audit('system', 'user_action', 'A PIN was typed into chat and masked before storage', { type: 'credential_hygiene', kind: 'pin_in_chat' })
   addNotice(turn, 'warn', line('pinNoticeTitle', lang), line('pinNoticeText', lang), 'pin')
 }
 
@@ -104,7 +104,7 @@ function pinHygiene(host: AgentHost, turn: Turn): void {
 function pinOnlyReply(host: AgentHost, turn: Turn): Reply {
   const lang = turn.lang ?? 'en'
   const waiting = awaitingStepUp(host.state())
-  trace(turn, 'intent', 'PIN typed in chat (masked) — approvals only happen on the card keypad', { act: 'pin_in_chat', engine: 'offline' })
+  trace(turn, 'intent', 'PIN typed in chat (masked): approvals only happen on the card keypad', { act: 'pin_in_chat', engine: 'offline' })
   if (waiting) {
     addCard(turn, { type: 'action', pendingId: waiting.id })
     addSource(turn, waiting)

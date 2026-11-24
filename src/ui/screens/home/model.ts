@@ -151,7 +151,7 @@ export function shortName(name: string, max = 24): string {
   if (n.length <= max) return n
   const cut = n.slice(0, max - 1)
   const space = cut.lastIndexOf(' ')
-  return `${(space >= 8 ? cut.slice(0, space) : cut).replace(/[\s,;:·–—-]+$/, '')}…`
+  return `${(space >= 8 ? cut.slice(0, space) : cut).replace(/[\s,;:·–\u2014-]+$/, '')}…`
 }
 
 /** The three evidence tiles under the mirror headline. */
@@ -245,7 +245,7 @@ export function ctaIcon(action: SuggestedAction): CtaIcon {
 /** One reassuring line under a CTA: what the permission tier means for this tap. */
 export function ctaHint(action: SuggestedAction, bank = true): string {
   const tier = toolTier(action.tool)
-  if (tier <= 1) return 'A rule, not a payment — switch it off anytime.'
+  if (tier <= 1) return 'A rule, not a payment. Switch it off anytime.'
   // no bank connected: a pot is an envelope Bun keeps count of
   if (tier === 2) return bank ? 'Moves your own money. You confirm first.' : 'An envelope: Bun keeps count, you move the money.'
   return 'Bun asks for your tap and PIN first.'
@@ -312,7 +312,7 @@ export function safeToSpendNote(s: MonthSummary, tone: Tone, currency: Currency)
   if (s.remaining <= 0) {
     if (tone === 'cheeky') return 'The wallet is on a diet until the 1st.'
     if (tone === 'numbers') return `${f(-s.remaining)} over budget, ${daysLeft} days left.`
-    return 'Past this month’s target — every yuan you keep now still counts.'
+    return 'Past this month’s target. Every yuan you keep now still counts.'
   }
   if (tone === 'cheeky') return 'Stay within it and the month lands on target.'
   if (tone === 'numbers') return `${f(s.remaining)} left over ${daysLeft} days.`
@@ -450,8 +450,8 @@ export function historyBars(points: HistoryPoint[], currentMonth: YearMonth, cur
     const amount = fmtWhole(Math.abs(p.delta), currency)
     const so = current ? (p.status === 'over' ? ' so far' : ' on pace') : ''
     let caption: string
-    if (direction === 'over') caption = `${name}: ${amount} over${so}${p.item ? ` — ${p.item.label} you could’ve had` : ''}.`
-    else if (direction === 'under') caption = `${name}: ${amount} under${so}${p.item ? ` — ${p.item.label} you didn’t spend` : ''}.`
+    if (direction === 'over') caption = `${name}: ${amount} over${so}${p.item ? ` (${p.item.label} you could’ve had)` : ''}.`
+    else if (direction === 'under') caption = `${name}: ${amount} under${so}${p.item ? ` (${p.item.label} you didn’t spend)` : ''}.`
     else if (p.status === 'no_data') caption = `${name}: no spending recorded.`
     else caption = `${name}: right on target.`
     return {
@@ -509,7 +509,7 @@ export function couldveHeadline(c: CouldveTotals, months: number, currency: Curr
   if (c.totalOver <= 0 && c.totalUnder <= 0) return `Nothing to tally from the last ${months} months yet.`
   if (c.totalOver <= 0) return `${f(c.totalUnder)} left over in ${span}.`
   const eq = c.equivalents[0]
-  return `${f(c.totalOver)} over budget in ${span}${eq ? ` — ${eq.label}` : ''}.`
+  return `${f(c.totalOver)} over budget in ${span}${eq ? `: ${eq.label}` : ''}.`
 }
 
 // ───────────────────────────── "Should I buy it?" ─────────────────────────────
@@ -528,7 +528,7 @@ export function verdictMeta(verdict: AffordabilityResult['verdict'], tone: Tone,
     return { badge: 'Fits', tone: 'under', mood: 'happy', title: tone === 'cheeky' ? 'Bun can live with that' : tone === 'numbers' ? 'Fits the budget' : 'It fits your month' }
   }
   if (verdict === 'think') {
-    return { badge: 'Think it over', tone: 'warn', mood: 'worried', title: tone === 'cheeky' ? 'Hmm — think twice' : tone === 'numbers' ? 'Thin margin' : 'Maybe sleep on it' }
+    return { badge: 'Think it over', tone: 'warn', mood: 'worried', title: tone === 'cheeky' ? 'Hmm, think twice' : tone === 'numbers' ? 'Thin margin' : 'Maybe sleep on it' }
   }
   return { badge: 'Skip for now', tone: 'over', mood: tone === 'gentle' ? 'worried' : 'angry', title: tone === 'cheeky' ? 'Your dreams say no' : tone === 'numbers' ? 'Over budget' : 'Better to skip it for now' }
 }
@@ -561,7 +561,7 @@ export function itemReason(m: MirrorState, currency: Currency): string | null {
     return `With money left over, Bun leads with your main goal, ${m.item.name} (${f(m.item.price)})${stash > 0 ? `: stashing ${f(stash)} of the ${f(m.delta)} takes it to ${Math.floor(pctAfter(m.goal, stash))}%` : ''}.${m.treat ? ` The rest covers ${m.treat.label}, if you’d like it.` : ''}`
   }
   if (m.quantity) {
-    return `${m.item.name} (${f(m.item.price)}) is the biggest dream on your list that ${f(m.delta)} fully covers${m.quantity >= 2 ? ` — ${m.quantity} times over` : ''}.`
+    return `${m.item.name} (${f(m.item.price)}) is the biggest dream on your list that ${f(m.delta)} fully covers${m.quantity >= 2 ? `, ${m.quantity} times over` : ''}.`
   }
   if (m.fraction !== undefined) {
     return `None of your dreams fits inside ${f(m.delta)}, so Bun shows it as a share of your main goal, ${m.item.name} (${f(m.item.price)}).`

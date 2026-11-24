@@ -316,7 +316,7 @@ function annualCost(ctx: FinanceContext, series: RecurringSeries[], f: Fmt): Bil
     kind: 'annual_cost',
     severity: 'info',
     title: `Subscriptions: ${f(annual)} a year`,
-    detail: `${subs.length === 1 ? 'Your subscription adds' : `Your ${subs.length} subscriptions add`} up to ${f(Math.round(annual / 12))} a month — ${f(annual)} a year${eq ? `. That's ${eq.label}.` : '.'}`,
+    detail: `${subs.length === 1 ? 'Your subscription adds' : `Your ${subs.length} subscriptions add`} up to ${f(Math.round(annual / 12))} a month (${f(annual)} a year)${eq ? `. That's ${eq.label}.` : '.'}`,
     amount: annual,
     txnIds: subs.flatMap((s) => s.txnIds),
     suggestedAction: { tool: 'list_recurring', args: { onlySubscriptions: true }, label: 'Review subscriptions' },

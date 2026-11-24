@@ -48,7 +48,7 @@ export function TrendChart({ bars, selected, currency, onSelect }: TrendChartPro
             <span key={t} className={styles.grid} style={{ bottom: zoneBottom((t / g.max) * 100) }} aria-hidden="true" />
           ))}
           {targetPct !== null ? <span className={styles.targetLine} style={{ bottom: zoneBottom(targetPct) }} aria-hidden="true" /> : null}
-          <ol className={styles.cols} aria-label="Spending by month — choose a month to see it">
+          <ol className={styles.cols} aria-label="Spending by month. Choose a month to see it">
             {bars.map((b, i) => {
               const geo = g.bars[i]
               const over = b.over

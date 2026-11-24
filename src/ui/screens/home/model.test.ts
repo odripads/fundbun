@@ -383,8 +383,8 @@ describe("could've collection", () => {
     expect(bars.map((b) => b.amountText)).toEqual(['+¥92', '−¥55', '±0', '±0', '+¥2,580'])
     expect(bars[4].current).toBe(true)
     expect(bars[4].height).toBe(1)
-    expect(bars[4].caption).toBe('October: ¥2,580 over so far — a Weekend in Chengdu you could’ve had.')
-    expect(bars[1].caption).toBe('June: ¥55 under — <0.1% of your Birkin you didn’t spend.')
+    expect(bars[4].caption).toBe('October: ¥2,580 over so far (a Weekend in Chengdu you could’ve had).')
+    expect(bars[1].caption).toBe('June: ¥55 under (<0.1% of your Birkin you didn’t spend).')
     expect(bars[2].caption).toBe('July: right on target.')
     expect(bars[3].caption).toBe('August: no spending recorded.')
     expect(bars[0].short).toBe('May')
@@ -409,7 +409,7 @@ describe("could've collection", () => {
 
   it('sums six months in one line', () => {
     const eq = [{ itemId: 'c', itemName: 'Chengdu', image: 'preset:plane', fraction: 1.7, label: 'a Weekend in Chengdu' }]
-    expect(couldveHeadline({ totalOver: 413_213, totalUnder: 5_531, equivalents: eq }, 6, 'CNY')).toBe('¥4,132 over budget in 6 finished months — a Weekend in Chengdu.')
+    expect(couldveHeadline({ totalOver: 413_213, totalUnder: 5_531, equivalents: eq }, 6, 'CNY')).toBe('¥4,132 over budget in 6 finished months: a Weekend in Chengdu.')
     expect(couldveHeadline({ totalOver: 0, totalUnder: 156_818, equivalents: [] }, 6, 'CNY')).toBe('¥1,568 left over in 6 finished months.')
     expect(couldveHeadline({ totalOver: 0, totalUnder: 0, equivalents: [] }, 6, 'CNY')).toMatch(/Nothing to tally/)
   })

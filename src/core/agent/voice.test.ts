@@ -91,7 +91,7 @@ describe('composeReply', () => {
     expect(composeReply('overview', { status: 'under', spent: '¥2,190', target: '¥3,600', delta: '¥620', goalName: 'MacBook Air' }, 'gentle')).toMatch(/left over.*MacBook Air/)
     expect(composeReply('afford', { verdict: 'go', label: 'new headphones', amount: '¥399', remainingAfter: '¥1,021' }, 'gentle')).toMatch(/^New headphones at ¥399: that fits/)
     expect(composeReply('afford', { verdict: 'skip', label: 'a Switch 2', amount: '¥2,299', overTargetBy: '¥4,979' }, 'gentle')).toMatch(/hold off/)
-    expect(composeReply('save_to_goal', { stage: 'done', amount: '¥620', goalName: 'MacBook Air' }, 'gentle')).toMatch(/^Done — ¥620 is now in MacBook Air/)
+    expect(composeReply('save_to_goal', { stage: 'done', amount: '¥620', goalName: 'MacBook Air' }, 'gentle')).toMatch(/^Done: ¥620 is now in MacBook Air/)
     expect(composeReply('save_to_goal', { amount: '¥620', goalName: 'MacBook Air' }, 'gentle')).toMatch(/^Ready to move ¥620 into MacBook Air/)
     expect(composeReply('save_to_goal', { stage: 'need_amount', goalName: 'MacBook Air' }, 'gentle')).toBe('How much would you like to move into MacBook Air?')
     expect(composeReply('search', { count: '0', query: 'Luckin' }, 'numbers')).toBe('0 transactions for Luckin.')
@@ -145,7 +145,7 @@ describe('composeReply', () => {
 
   it('capitalises a fact that opens a sentence but leaves brand casing alone', () => {
     expect(composeReply('subscriptions', { count: '6', annualTotal: '¥6,540', priceHike: 'iQIYI went from ¥25 to ¥30', overlap: 'you pay for 3 video apps' }, 'cheeky'))
-      .toBe('6 subscriptions, ¥6,540 a year. iQIYI went from ¥25 to ¥30 — sneaky. You pay for 3 video apps. Do all of them still spark joy?')
+      .toBe('6 subscriptions, ¥6,540 a year. iQIYI went from ¥25 to ¥30. Sneaky. You pay for 3 video apps. Do all of them still spark joy?')
   })
 
   it('answers refusal intents with the refusal text', () => {

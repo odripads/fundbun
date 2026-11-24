@@ -29,7 +29,7 @@ const GOAL_TOOLS = new Set(['transfer_to_goal'])
 export function undoWithToast(app: FundBunApp, toast: ToastApi, p: Pick<PendingAction, 'id' | 'preview'>): boolean {
   const r = app.undoAction(p.id)
   if (r.ok) {
-    toast.show({ id: `action-${p.id}`, tone: 'neutral', icon: <Undo2 />, title: 'Undone', message: `${p.preview.title} — back exactly as it was.` })
+    toast.show({ id: `action-${p.id}`, tone: 'neutral', icon: <Undo2 />, title: 'Undone', message: `${p.preview.title}: back exactly as it was.` })
     return true
   }
   toast.show({ id: `action-${p.id}`, tone: 'danger', title: 'Couldn’t undo that', message: r.error ?? 'The undo window has passed.' })
@@ -43,7 +43,7 @@ export function announceExecuted(app: FundBunApp, toast: ToastApi, p: PendingAct
   toast.show({
     id: `action-${p.id}`,
     tone: 'success',
-    title: saving ? 'Stashed — nice one' : 'Done',
+    title: saving ? 'Stashed, nice one' : 'Done',
     message: left > 1 ? `${p.preview.title}. You can undo for ${left} s.` : `${p.preview.title}. It’s in your activity log.`,
     image: saving ? <BunMascot mood="happy" size={44} /> : undefined,
     icon: saving ? <PiggyBank /> : undefined,

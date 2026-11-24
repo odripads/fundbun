@@ -23,11 +23,11 @@ export interface EmailSourceMeta {
 }
 
 const NOTES: Record<EmailSource['id'], string> = {
-  sandbox: 'Synthetic demo mailbox — no account needed.',
-  qq: 'Not live-tested — needs your QQ Mail 授权码 (never your password).',
-  '163': 'Not live-tested — needs your 163 Mail 授权码 (never your password).',
-  gmail: 'After pilot — unreliable in mainland China.',
-  outlook: 'After pilot — unreliable in mainland China.',
+  sandbox: 'Synthetic demo mailbox. No account needed.',
+  qq: 'Not live-tested. Needs your QQ Mail 授权码 (never your password).',
+  '163': 'Not live-tested. Needs your 163 Mail 授权码 (never your password).',
+  gmail: 'After pilot (unreliable in mainland China).',
+  outlook: 'After pilot (unreliable in mainland China).',
 }
 
 function unavailableStub(id: EmailSource['id'], name: string, kind: EmailSourceKind): EmailSource {

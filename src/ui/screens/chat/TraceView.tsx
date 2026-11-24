@@ -35,7 +35,7 @@ export function TraceView({ trace, grounding, engine = 'offline', currency }: Tr
       <div className={styles.panel}>
         <p className={styles.engine}>
           {engine === 'llm'
-            ? 'Answered via the LLM gateway with minimised, redacted context. The model can only propose — FundBun’s policy engine decides.'
+            ? 'Answered via the LLM gateway with minimised, redacted context. The model can only propose; FundBun’s policy engine decides.'
             : 'Answered by the on-device Bun Engine (intent classifier + rules). Nothing left this device.'}
         </p>
         <ol className={styles.list}>

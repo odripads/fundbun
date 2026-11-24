@@ -41,7 +41,7 @@ function PrivacyView() {
     <div className={styles.stack}>
       <p className={styles.obLead}>
         <LockKeyhole aria-hidden="true" />
-        Nothing has been read yet. Here is what Bun will — and won’t — get.
+        Nothing has been read yet. Here is what Bun will (and won’t) get.
       </p>
       <ul className={styles.obPoints} role="list">
         {PRIVACY_POINTS.map((p, i) => {

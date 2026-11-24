@@ -54,7 +54,7 @@ describe('useProposeAction', () => {
     await click(byText(sheet, 'Not now', 'button'))
     await flush()
     expect(app.getSnapshot().state.pending.at(-1)!.status).toBe('rejected')
-    expect(document.body.textContent).toContain('Okay — nothing ran')
+    expect(document.body.textContent).toContain('Okay, nothing ran')
   })
 
   it('toasts an action that ran on its own, with a working Undo', async () => {
@@ -138,7 +138,7 @@ describe('ChatCardView', () => {
     expect(container.textContent).toContain('Not this month')
     expect(container.textContent).toContain('Your dreams')
     expect(container.textContent).toContain('Budget · October')
-    expect(container.textContent).toContain('Hidden instructions found — ignored')
+    expect(container.textContent).toContain('Hidden instructions found and ignored')
     expect(container.textContent).toContain('Task plan')
     expect(Array.from(container.querySelectorAll('[role="alert"]')).some((a) => a.textContent?.includes('Blocked: test'))).toBe(true)
     // an untrusted merchant memo is shown as quoted text, never as markup

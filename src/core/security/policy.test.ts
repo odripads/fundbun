@@ -513,7 +513,7 @@ describe('F30: a button the user tapped is the user\'s decision — the assistan
     // the same call proposed by the assistant is still capped, with a next step
     const agent = evaluatePolicy(call('pay_bill', { billId: 'bill_rent' }), ctx())
     expect(agent).toMatchObject({ decision: 'deny', ruleIds: ['P-CAP-PER-ACTION'] })
-    expect(agent.reasons[0]).toMatch(/^¥4,200 is more than the ¥500 limit you set for a single assistant action\. You can pay it yourself — tap Pay on the bill in Bills/)
+    expect(agent.reasons[0]).toMatch(/^¥4,200 is more than the ¥500 limit you set for a single assistant action\. You can pay it yourself by tapping Pay on the bill in Bills/)
   })
 
   it('daily / monthly caps and the hourly rate limit bind only the assistant', () => {

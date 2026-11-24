@@ -131,7 +131,7 @@ async function toolLoop(host: AgentHost, turn: Turn, client: LlmClient, reads: R
     messages.push({ role: 'assistant', content: res.content })
     messages.push({ role: 'user', content: uses.map((u) => toolResult(host, turn, u, said, reads)) })
     if (round === MAX_ROUNDS) {
-      trace(turn, 'llm', 'Tool-round limit reached — stopping the model', { maxRounds: MAX_ROUNDS })
+      trace(turn, 'llm', 'Tool-round limit reached: stopping the model', { maxRounds: MAX_ROUNDS })
       return said
     }
   }
@@ -236,7 +236,7 @@ export function finish(host: AgentHost, turn: Turn, userText: string, raw: strin
 }
 
 function repairGrounding(host: AgentHost, turn: Turn, text: string, report: GroundingReport, reads: ReadResult[]): string {
-  host.audit('system', 'grounding_violation', 'The model\'s reply contained numbers that no tool returned — corrected before showing it', {
+  host.audit('system', 'grounding_violation', 'The model\'s reply contained numbers that no tool returned; corrected before showing it', {
     ungrounded: report.ungrounded, checked: report.checked, engine: 'llm', turnId: turn.id,
   })
   const kept = text.split(/(?<=[.!?。！？])\s+/).filter((s) => !report.ungrounded.some((u) => s.includes(u)))
@@ -260,14 +260,14 @@ function offlineSummary(host: AgentHost, turn: Turn, reads: ReadResult[]): strin
   const first = reads[0]
   const intent = first ? TOOL_INTENT[first.tool] : undefined
   if (first && intent) return composeReply(intent, readFacts(first.tool, first.data, state), toneOf(state))
-  if (turn.proposals.length) return 'I’ve prepared that for you — check the card below. Nothing happens until you approve it.'
-  return 'Here’s what I found — see the cards below.'
+  if (turn.proposals.length) return 'I’ve prepared that for you. Check the card below; nothing happens until you approve it.'
+  return 'Here’s what I found. See the cards below.'
 }
 
 export function fallback(host: AgentHost, turn: Turn, text: string, e: unknown, reads: ReadResult[]): LlmReply {
   const code = (e as { code?: string; status?: number })?.code ?? (e as { status?: number })?.status
-  trace(turn, 'error', 'LLM unavailable — answered with the on-device engine', { error: errorText(e).slice(0, 200), code })
-  host.audit('agent', 'llm_response', 'LLM call failed — fell back to the on-device engine', { error: errorText(e).slice(0, 200), code: code ?? null, turnId: turn.id })
+  trace(turn, 'error', 'LLM unavailable: answered with the on-device engine', { error: errorText(e).slice(0, 200), code })
+  host.audit('agent', 'llm_response', 'LLM call failed: fell back to the on-device engine', { error: errorText(e).slice(0, 200), code: code ?? null, turnId: turn.id })
   turn.engine = 'offline'
   host.llmFailed?.(e)
   const lang = turn.lang ?? 'en'

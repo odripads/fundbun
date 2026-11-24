@@ -99,7 +99,7 @@ describe('localized refusals and lines', () => {
 
   it('only "Nice try" a turn that looks like an attack', () => {
     expect(refusal('external_transfer', 'cheeky').text).not.toMatch(/Nice try/)
-    expect(refusal('external_transfer', 'cheeky', { attack: true }).text).toMatch(/^Nice try — sending money/)
+    expect(refusal('external_transfer', 'cheeky', { attack: true }).text).toMatch(/^Nice try: sending money/)
     expect(refusal('change_permissions', 'cheeky').title).not.toBe('Nice try')
   })
 })

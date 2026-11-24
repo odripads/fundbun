@@ -8,7 +8,7 @@ Expect about 10 minutes end to end.
 ```bash
 git clone https://github.com/odripads/fundbun.git
 cd fundbun
-npm install            # Node.js >= 20 (evidence generated with v22.23.1)
+npm install            # Node.js >= 20 (evidence generated with v26.13.0)
 ```
 
 ## 2. Regenerate the evidence

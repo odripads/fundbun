@@ -92,7 +92,7 @@ export function CouldveStrip() {
         <p className={styles.kept}>
           <DreamImage image={data.kept.image} alt="" size={48} />
           <span>
-            That’s <strong>{data.kept.label}</strong> — kept, not spent.
+            That’s <strong>{data.kept.label}</strong>, kept, not spent.
           </span>
         </p>
       ) : null}

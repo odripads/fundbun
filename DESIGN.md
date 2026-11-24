@@ -1,6 +1,6 @@
 ---
 name: FundBun
-description: "An AI money buddy that shows the dream you could've had — a warm, steamed-bun warm interface for sticking to your budget."
+description: "An AI money buddy that shows the dream you could've had: a warm, steamed-bun interface for sticking to your budget."
 colors:
   primary: "#e3a21a"
   primary-deep: "#b97f09"
@@ -90,11 +90,11 @@ FundBun looks like a warm bamboo steamer: cream dough, golden yuan, rising steam
 freshly-steamed mascot at the centre. The palette is literally named for it, the background
 is a slow-rising steam wash, and every surface reads as gently *warmed* rather than flat.
 
-The mood is **playful and bold**, and **Bun is the host** — the mascot greets you at the
+The mood is **playful and bold**, and **Bun is the host**: the mascot greets you at the
 "Ask Bun" button, celebrates wins, and reacts (blush, sweat, sparkle, a dimmed pocket) to
 your money moments. Personality comes from the mascot and the copy, not from loud color:
 the interface stays warm and legible so the personality can afford to be expressive. It is a
-money buddy, never a scold — chili red appears only to *mark* an overspend, and the voice
+money buddy, never a scold; chili red appears only to *mark* an overspend, and the voice
 stays on your side.
 
 The system deliberately rejects the cold blue-to-purple "AI fintech" gradient look and
@@ -103,7 +103,7 @@ reserved for *information* and focus rings, and it never paints a surface.
 
 **Key Characteristics:**
 - Warm, edible neutrals (cream, dough, soy) under a single yuan-gold accent.
-- Full-pill buttons and chips; softly rounded (8–28px) everything — "steamed", never sharp.
+- Full-pill buttons and chips; softly rounded (8–28px) everything: "steamed", never sharp.
 - Fraunces serif for the story (hero amounts, the Dream Mirror), DM Sans for everything functional.
 - Layered depth: 1px hairline → soft shadow → frosted glass.
 - Bun the mascot as the interface's host and emotional weather-vane.
@@ -123,7 +123,7 @@ reserved exclusively for money states (over / under), and the neutrals do most o
 - **Jade Green** (#2e8b66): *under-budget only*. Success, "under", safe-to-spend, goal progress, positive savings.
 
 ### Neutral
-- **Cream** (#fffaf2): the app background — warm, not white.
+- **Cream** (#fffaf2): the app background, warm rather than white.
 - **Cream Sunken** (#fff4e3): recessed / secondary background.
 - **Surface** (#ffffff): cards and panels, always over cream.
 - **Dough** (#efd7ad) / **Bamboo** (#b9874b): mascot body and warm mid-tones.
@@ -131,18 +131,18 @@ reserved exclusively for money states (over / under), and the neutrals do most o
 - **Muted** (#75614f): hints, captions, placeholders (≥ 4.5:1 on surfaces).
 
 ### Named Rules
-**The One Gold Rule.** Yuan gold is the only accent for action and emphasis. Chili and jade are state colors, never decoration — if a screen shows red, the user is over; if it shows green, they're under.
+**The One Gold Rule.** Yuan gold is the only accent for action and emphasis. Chili and jade are state colors, never decoration: if a screen shows red, the user is over; if it shows green, they're on target.
 
 ## Typography
 
-**Display Font:** Fraunces Variable (fallback Georgia, Songti SC) — a soft, warm serif with a "SOFT" optical axis and a "WONK" axis reserved for special emphasis.
-**Body Font:** DM Sans Variable (fallback system-ui, PingFang SC) — a geometric humanist sans, self-hosted, no external CDN.
-**Mono Font:** `ui-monospace, 'SF Mono', Menlo, Consolas, monospace` — reserved for data, code, and audit text (the Glass Box agent trace, hash chains, bill X-ray, raw amounts). Regular numbers use `tabular-nums` on DM Sans so currency columns align.
+**Display Font:** Fraunces Variable (fallback Georgia, Songti SC), a soft, warm serif with a "SOFT" optical axis and a "WONK" axis reserved for special emphasis.
+**Body Font:** DM Sans Variable (fallback system-ui, PingFang SC), a geometric humanist sans, self-hosted, no external CDN.
+**Mono Font:** `ui-monospace, 'SF Mono', Menlo, Consolas, monospace`, reserved for data, code, and audit text (the Glass Box agent trace, hash chains, bill X-ray, raw amounts). Regular numbers use `tabular-nums` on DM Sans so currency columns align.
 
 **Character:** an old-money serif warmed down to feel like a dim-sum menu, paired with a friendly, legible sans. The serif tells the story; the sans does the work.
 
 ### Hierarchy
-- **Display** (Fraunces, 620, `clamp(2rem, 7vw, 2.75rem)`, line-height 1.15): hero amounts and the Dream Mirror headline — the emotional moment.
+- **Display** (Fraunces, 620, `clamp(2rem, 7vw, 2.75rem)`, line-height 1.15): hero amounts and the Dream Mirror headline, the emotional moment.
 - **Headline** (Fraunces, 620, 1.75rem): screen titles and section heroes.
 - **Title** (DM Sans, 620, 1.125rem): card titles and list headers.
 - **Body** (DM Sans, 400, 1rem, line-height 1.5): all reading and form text.
@@ -151,7 +151,7 @@ reserved exclusively for money states (over / under), and the neutrals do most o
 **Scale:** the full step is 12 / 14 / 16 / 18 / 22 / 28 / 36 px (`fs-xs` → `fs-3xl`) plus the hero clamp. Micro-labels (tab-bar 11px, dense settings captions 10.5–12px) are intentional exceptions for crowded chrome; the mono font runs at the small end of the same ramp.
 
 ### Named Rules
-**The Serif-for-Story Rule.** Fraunces appears where money has an emotional meaning (the Dream Mirror, "you could've had X", goal progress). DM Sans carries every functional surface — a button, chip, or table never switches to the serif.
+**The Serif-for-Story Rule.** Fraunces appears where money has an emotional meaning (the Dream Mirror, "you could've had X", goal progress). DM Sans carries every functional surface; a button, chip, or table never switches to the serif.
 
 ## Layout
 
@@ -168,7 +168,7 @@ column; on mobile it fills the viewport with the same column constraints.
 Depth is layered, not just shadowed. The first layer is a **1px hairline** (`inset 0 0 0 1px`
 at 12% brown); the second is a **soft ambient shadow** (`shadow-1` resting, `shadow-2` for
 raised/pressed); the third is **frosted glass** (backdrop blur + saturation) for the tab bar
-and floating surfaces. Nothing is harsh — shadows stay in the warm brown family (never black).
+and floating surfaces. Nothing is harsh; shadows stay in the warm brown family (never black).
 
 ### Shadow Vocabulary
 - **hairline** (`inset 0 0 0 1px rgba(58,42,31,0.12)`): every card, chip, and input edge.
@@ -177,11 +177,11 @@ and floating surfaces. Nothing is harsh — shadows stay in the warm brown famil
 - **ring** (`0 0 0 3px bg, 0 0 0 5px focus`): focus-visible, blue.
 
 ### Named Rules
-**The Hairline-First Rule.** Depth always begins with a 1px warm hairline; a shadow alone never defines an edge. **The Glazed-Bun Rule.** The primary button is the only surface with a baked gradient (lit top edge + darker base) — that glazed look belongs to the one primary action, nowhere else.
+**The Hairline-First Rule.** Depth always begins with a 1px warm hairline; a shadow alone never defines an edge. **The Glazed-Bun Rule.** The primary button is the only surface with a baked gradient (lit top edge + darker base). That glazed look belongs to the one primary action, nowhere else.
 
 ## Shapes
 
-Soft, organic, "steamed" — nothing is square. Buttons and chips are **full pills** (999px).
+Soft, organic, "steamed": nothing is square. Buttons and chips are **full pills** (999px).
 Cards are **20px** radius, inputs **14px**, small icon tiles **8px**, and the floating tab bar
 **26px**. The mascot's silhouette (a rounded bun with a ¥-shaped pocket) is the system's
 recurring geometry, echoed in circular avatars and the round "Ask Bun" button. Borders are
@@ -194,7 +194,7 @@ hairs, never heavy; there are no sharp-corner containers.
 - **Primary ("glazed bun"):** yuan-gold with a lit top edge + darker base gradient, warm ink text (#24180f). Hover brightens slightly; active presses down 1px and scales 0.98.
 - **Secondary:** white surface, hairline + soft shadow; hover tints warm.
 - **Ghost:** transparent, muted text; hover adds a faint warm wash.
-- **Soft:** gold tint with a gold hairline — for gentle emphasis without commitment.
+- **Soft:** gold tint with a gold hairline, for gentle emphasis without commitment.
 - **Danger:** deep chili with cream text; hover brightens. Labels on primary/danger wrap instead of ellipsizing.
 
 ### Chips
@@ -220,23 +220,23 @@ hairs, never heavy; there are no sharp-corner containers.
 ### Bun Mascot (signature)
 A rounded steamed bun with a ¥-shaped pocket that *glows* or *dims* with money state. It
 blushes, sweats, sparkles, and steams, with every animation gated behind the reduced-motion
-settings so it always leaves a complete, still drawing. It is the emotional host — not a
+settings so it always leaves a complete, still drawing. It is the emotional host, not a
 decoration.
 
 ## Do's and Don'ts
 
 ### Do:
 - **Do** lead with the Dream Mirror: put the "you could've had X" amount in Fraunces, warm and large.
-- **Do** keep chili red strictly to overspend/warning state and jade green strictly to under/success.
+- **Do** keep chili red strictly to overspend/warning state and jade green strictly to on-target/success.
 - **Do** put every card on a 1px warm hairline first, then a soft shadow.
 - **Do** use full pills for any tappable action; keep ≥ 44px tap targets.
-- **Do** let Bun react to the money state — but always keep a still, complete mascot under reduced motion.
+- **Do** let Bun react to the money state, while always keeping a still, complete mascot under reduced motion.
 - **Do** keep body text ≥ 4.5:1 contrast and honor the 4px spacing grid.
 
 ### Don't:
 - **Don't** introduce a blue or purple gradient, glassmorphism-for-its-own-sake, or any cool accent beyond the single info blue.
-- **Don't** use chili red or jade green as decoration — they mean over/under.
+- **Don't** use chili red or jade green as decoration; they mean over/on-target.
 - **Don't** use pure black or pure white neutrals; stay in the cream/dough/soy family.
-- **Don't** make a sharp-corner container — nothing is square.
+- **Don't** make a sharp-corner container; nothing is square.
 - **Don't** set Fraunces on buttons, chips, tables, or form controls.
 - **Don't** scold: warnings show the dream cost ("that's 1.3% of your Birkin"), never a lecture.

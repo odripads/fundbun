@@ -34,7 +34,7 @@ interface DemoCard {
 
 const DEMOS: readonly DemoCard[] = [
   { id: 'mei', name: 'Jing', age: 26, role: 'UX designer', image: 'preset:plane', status: 'over', mirror: 'Could’ve had a weekend in Chengdu.' },
-  { id: 'arif', name: 'Arif', age: 23, role: 'Grad student', image: 'preset:laptop', status: 'under', mirror: 'Closer to his MacBook — or a concert, guilt-free.' },
+  { id: 'arif', name: 'Arif', age: 23, role: 'Grad student', image: 'preset:laptop', status: 'under', mirror: 'Closer to his MacBook, or a concert, guilt-free.' },
 ]
 
 /** the dreams that drift around Bun, at evenly spaced angles */
@@ -63,7 +63,7 @@ export function WelcomeStep({ headingRef, resumable, onboarded, demoLoading, onS
           See what your spending <em>could have been.</em>
         </h1>
         <p className={styles.lede}>
-          Bun mirrors your month as the things you’re dreaming of — and helps you get there. Gently, and on this device.
+          Bun mirrors your month as the things you’re dreaming of, and helps you get there. Gently, and on this device.
         </p>
       </div>
 

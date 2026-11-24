@@ -73,7 +73,7 @@ describe('OnboardingScreen', () => {
     const { container } = await renderOnboarding(createTestApp({ storage: memoryStorage() }), '#/onboarding?step=money')
     await changeValue(container.querySelector<HTMLInputElement>('#ob-income'), '18500')
     await changeValue(container.querySelector<HTMLInputElement>('#ob-target'), '9500')
-    expect(container.textContent).toContain('That’s 51% of your income — leaves ¥9,000 to save.')
+    expect(container.textContent).toContain('That’s 51% of your income, leaving ¥9,000 to save.')
     expect(JSON.parse(sessionStorage.getItem(DRAFT_KEY)!).income).toBe('18500')
   })
 

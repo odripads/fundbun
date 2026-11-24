@@ -44,7 +44,7 @@ export function createVaultApi(core: Core, onUnlocked: () => void): VaultApi {
       const t = nextThrottle(persistence.unlockThrottle(), nowMs)
       persistence.setUnlockThrottle(t)
       Object.assign(lock, { failures: t.failures, lockedUntil: t.lockedUntil })
-      return fail(t.lockedUntil > nowMs ? `Wrong PIN. Too many wrong PINs — try again in ${Math.ceil((t.lockedUntil - nowMs) / 60_000)} min.` : 'Wrong PIN')
+      return fail(t.lockedUntil > nowMs ? `Wrong PIN. Too many wrong PINs; try again in ${Math.ceil((t.lockedUntil - nowMs) / 60_000)} min.` : 'Wrong PIN')
     }
     if (!lock.locked) return OK // a concurrent unlock already finished
     const state = parseState(data)

@@ -126,13 +126,13 @@ describe('money', () => {
   })
 
   it('gives the live hint from the brief: "That’s 51% of your income — leaves ¥9,000 to save."', () => {
-    expect(incomeHint(1_850_000, 950_000, 'CNY')).toEqual({ tone: 'save', spendPct: 51, save: 900_000, text: 'That’s 51% of your income — leaves ¥9,000 to save.' })
+    expect(incomeHint(1_850_000, 950_000, 'CNY')).toEqual({ tone: 'save', spendPct: 51, save: 900_000, text: 'That’s 51% of your income, leaving ¥9,000 to save.' })
   })
 
   it('flags tight, break-even and over-income targets', () => {
     expect(incomeHint(1_000_000, 950_000, 'CNY')?.tone).toBe('tight')
     expect(incomeHint(1_000_000, 1_000_000, 'CNY')?.text).toMatch(/nothing left/)
-    expect(incomeHint(480_000, 500_000, 'CNY')).toMatchObject({ tone: 'over', save: -20_000, text: 'That’s ¥200 more than you earn — Bun will flag it every month.' })
+    expect(incomeHint(480_000, 500_000, 'CNY')).toMatchObject({ tone: 'over', save: -20_000, text: 'That’s ¥200 more than you earn, so Bun will flag it every month.' })
     expect(incomeHint(0, 1, 'CNY')).toBeNull()
   })
 
@@ -173,7 +173,7 @@ describe('tripwires', () => {
     expect(tripwireDetail('month80', 80, 950_000, 'CNY')).toBe('When the month passes ¥7,600 of your ¥9,500.')
     expect(tripwireDetail('month100', 100, 950_000, 'CNY')).toBe('The moment the month reaches ¥9,500.')
     expect(tripwireDetail('single', 95_000, 950_000, 'CNY', 'Birkin')).toBe('Any one purchase over ¥950, shown as a slice of your Birkin.')
-    expect(tripwireDetail('pace', 110, 950_000, 'CNY')).toBe('When you’re on pace to end 10% over — about ¥10,450.')
+    expect(tripwireDetail('pace', 110, 950_000, 'CNY')).toBe('When you’re on pace to end 10% over (about ¥10,450).')
   })
 
   it('sends every tripwire to the controller, switched-off ones disabled', () => {

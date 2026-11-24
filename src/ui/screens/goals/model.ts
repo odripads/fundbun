@@ -48,9 +48,9 @@ export interface Fact {
 
 /** The ETA tile: a month as the value, the pace phrase underneath. */
 export function etaFact(p?: GoalProgress): Fact {
-  if (!p) return { value: '—', sub: 'No pot yet' }
+  if (!p) return { value: '–', sub: 'No pot yet' }
   if (isFunded(p)) return { value: 'Ready', sub: 'Fully funded' }
-  if (!p.monthlyRate || p.monthlyRate <= 0 || p.etaMonths === undefined || !p.etaDate) return { value: '—', sub: 'Add monthly to see it' }
+  if (!p.monthlyRate || p.monthlyRate <= 0 || p.etaMonths === undefined || !p.etaDate) return { value: '–', sub: 'Add monthly to see it' }
   const m = p.etaMonths
   const sub = m < 1 ? 'under a month' : m < 24 ? `~${Math.round(m)} mo at your pace` : `~${Number((m / 12).toFixed(1))} yrs at your pace`
   return { value: monthYear(p.etaDate), sub }
@@ -86,7 +86,7 @@ export function isNegativeInput(text: string): boolean {
   return /^\s*[-−–]/.test(text)
 }
 
-export const NEGATIVE_AMOUNT_ERROR = 'Amounts go into the pot — to take money out, ask Bun to move it back to checking'
+export const NEGATIVE_AMOUNT_ERROR = 'Amounts go into the pot. To take money out, ask Bun to move it back to checking'
 
 /** Why a contribution can't go ahead (null when it can). Pass the typed `text` so a minus sign is caught. */
 export function contributionError(amount: Minor | null, available: Minor, currency: Currency, text?: string): string | null {
@@ -108,7 +108,7 @@ export function billsDueWithin(bills: Bill[], today: ISODate, days = 14): Minor 
 export function liquidityNote(available: Minor, amount: Minor, billsDue: Minor, currency: Currency): string | null {
   const left = available - amount
   if (amount <= 0 || billsDue <= 0 || left >= billsDue) return null
-  return `This leaves ${fmtWhole(Math.max(0, left), currency)} in checking — less than the ${fmtWhole(billsDue, currency)} in bills due in the next two weeks.`
+  return `This leaves ${fmtWhole(Math.max(0, left), currency)} in checking, which is less than the ${fmtWhole(billsDue, currency)} in bills due in the next two weeks.`
 }
 
 /** Saved % after adding `amount` (capped at 100, one decimal). */
@@ -127,17 +127,17 @@ export function celebrationCopy(item: DreamItem, saved: Minor, tone: Tone, curre
   const f = (m: Minor) => fmtWhole(m, currency)
   if (item.kind === 'treat') {
     return {
-      title: `${item.name} — enjoyed, guilt-free`,
+      title: `${item.name} · enjoyed, guilt-free`,
       body: tone === 'numbers' ? `${f(item.price)} treat, planned ahead.` : 'You planned for this one. That’s the whole point.',
     }
   }
   const amount = saved > 0 ? saved : item.price
   return {
-    title: `${item.name} — achieved!`,
+    title: `${item.name}: achieved!`,
     body:
       tone === 'cheeky' ? `Look at you. ${f(amount)}, saved the slow way. Bun is doing a little dance.`
       : tone === 'numbers' ? `${f(amount)} saved toward a ${f(item.price)} goal.`
-      : `You saved ${f(amount)} for this. That took real patience — well done.`,
+      : `You saved ${f(amount)} for this. That took real patience. Well done.`,
   }
 }
 

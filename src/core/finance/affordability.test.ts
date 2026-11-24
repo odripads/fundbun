@@ -43,13 +43,13 @@ describe('checkAffordability', () => {
   it("'skip' when the month would end clearly over budget (beyond the mirror's 5% band)", () => {
     const r = checkAffordability(ctx(), yuan(2_300))
     expect(r).toMatchObject({ verdict: 'skip', overTargetBy: yuan(400), projectedAfter: yuan(5_400), basis: 'projection' })
-    expect(r.reasons[0]).toBe('With this, the month would end around ¥5,400 — ¥400 over your ¥5,000 target.')
+    expect(r.reasons[0]).toBe('With this, the month would end around ¥5,400, ¥400 over your ¥5,000 target.')
   })
 
   it("'think' (not skip) when it lands within the mirror's 5% band — the mirror would still say on track", () => {
     const r = checkAffordability(ctx(), yuan(2_000))
     expect(r).toMatchObject({ verdict: 'think', overTargetBy: yuan(100) })
-    expect(r.reasons[0]).toBe('With this, the month would end around ¥5,100 — ¥100 over your ¥5,000 target.')
+    expect(r.reasons[0]).toBe('With this, the month would end around ¥5,100, ¥100 over your ¥5,000 target.')
   })
 
   it("'skip' when checking can't cover it, whatever the budget says", () => {

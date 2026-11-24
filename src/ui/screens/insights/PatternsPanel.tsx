@@ -38,7 +38,7 @@ function LateNight({ map, monthLong, currency, dreams }: { map: HeatmapData; mon
         </p>
         {map.lateScheduled.count ? (
           <p className={styles.lateNote}>
-            Plus {map.lateScheduled.count} {map.lateScheduled.count === 1 ? 'subscription that renews' : 'subscriptions that renew'} after midnight ({fmt(map.lateScheduled.amount, currency)}) — scheduled, not a habit.
+            Plus {map.lateScheduled.count} {map.lateScheduled.count === 1 ? 'subscription that renews' : 'subscriptions that renew'} after midnight ({fmt(map.lateScheduled.amount, currency)}), scheduled rather than a habit.
           </p>
         ) : null}
         {dream ? (

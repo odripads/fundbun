@@ -292,7 +292,7 @@ export function MirrorHero({ onCheck, onSandbox, onPlan }: MirrorHeroProps) {
     return (
       <p className={styles.hint}>
         {a.kind === 'prompt' ? <Sparkles aria-hidden="true" /> : <ShieldCheck aria-hidden="true" />}
-        {a.kind === 'prompt' ? 'Bun lines up fixes — money never moves without your OK.' : ctaHint(a.action, sandboxDate !== null)}
+        {a.kind === 'prompt' ? 'Bun lines up fixes. Money never moves without your OK.' : ctaHint(a.action, sandboxDate !== null)}
       </p>
     )
   }
@@ -401,7 +401,7 @@ export function MirrorHero({ onCheck, onSandbox, onPlan }: MirrorHeroProps) {
               <Button size="lg" fullWidth iconStart={<FlaskConical />} onClick={onSandbox}>
                 Try a sandbox purchase
               </Button>
-              <p className={styles.hint}>Or import a statement file in Bills — it stays on this device.</p>
+              <p className={styles.hint}>Or import a statement file in Bills. It stays on this device.</p>
             </>
           ) : null}
         </div>
@@ -426,7 +426,7 @@ export function MirrorHero({ onCheck, onSandbox, onPlan }: MirrorHeroProps) {
         open={why}
         onClose={() => setWhy(false)}
         title="Why am I seeing this?"
-        description="How Bun built this month’s mirror from your own numbers — all on this device."
+        description="How Bun built this month’s mirror from your own numbers, all on this device."
         media={hero.item ? <DreamImage image={hero.item.image} alt="" size={52} /> : <BunMascot mood={mirror.mood} size={52} />}
         footer={
           <>

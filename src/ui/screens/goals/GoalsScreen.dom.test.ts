@@ -101,7 +101,7 @@ describe('GoalsScreen', () => {
     await flush()
     expect(app.getSnapshot().state.dreams.find((d) => d.id === 'dream_concert')!.achievedAt).toBeTruthy()
     const dialogs = Array.from(document.querySelectorAll('[role="dialog"]'))
-    expect(dialogs.some((d) => d.textContent?.includes('Concert ticket — enjoyed, guilt-free'))).toBe(true)
+    expect(dialogs.some((d) => d.textContent?.includes('Concert ticket · enjoyed, guilt-free'))).toBe(true)
     expect(container.textContent).toContain('Achieved')
   })
 

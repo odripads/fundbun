@@ -27,8 +27,8 @@ export function XrayCard({ card }: CardProps<'xray'>) {
         icon={<ScanLine />}
       />
       {r.injection.suspicious ? (
-        <Callout tone="block" icon={<ShieldAlert />} title="Hidden instructions found — ignored" className={styles.gapBelow}>
-          This bill tries to give orders to AI assistants. FundBun reads bill text as data, never as commands — nothing was moved.
+        <Callout tone="block" icon={<ShieldAlert />} title="Hidden instructions found and ignored" className={styles.gapBelow}>
+          This bill tries to give orders to AI assistants. FundBun reads bill text as data, never as commands, so nothing was moved.
           {r.injection.signals.length ? (
             <span className={styles.signals}>
               {r.injection.signals.map((s) => (

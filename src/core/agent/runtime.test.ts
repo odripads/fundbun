@@ -59,7 +59,7 @@ describe('respond (offline Bun Engine)', () => {
     expect(pendingOf(host)[1]).toMatchObject({ status: 'pending', call: { args: { goalId: 'dream_chengdu', amount: 15_000 } } })
     expect(host.state().dialogue.lastProposalId).toBe(pendingOf(host)[1].id)
     const yes = await engine.respond('yes do it')
-    expect(yes.text).toMatch(/tap Approve/)
+    expect(yes.text).toMatch(/Tap Approve/i)
     expect(pendingOf(host)[1].status).toBe('pending')
   })
 

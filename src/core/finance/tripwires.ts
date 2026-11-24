@@ -100,7 +100,7 @@ function monthPct(t: Tripwire, { ctx, s, f }: EvalInput): Firing[] {
   const dream = goalEquivalent(stake, ctx.dreams)
   const pct = Math.round((s.spent / s.target) * 100)
   const lead = over > 0 ? `You're ${f(over)} over your ${f(s.target)} target.` : `You've spent ${f(s.spent)} of your ${f(s.target)} target with ${plural(left, 'day')} to go.`
-  const dreamText = dream ? (over > 0 ? `That ${f(stake)} = ${dream.label}.` : s.projected > s.target ? `At this pace you'd end ${f(stake)} over — ${dream.label}.` : `The ${f(stake)} left = ${dream.label}.`) : ''
+  const dreamText = dream ? (over > 0 ? `That ${f(stake)} = ${dream.label}.` : s.projected > s.target ? `At this pace you'd end ${f(stake)} over (${dream.label}).` : `The ${f(stake)} left = ${dream.label}.`) : ''
   return [{
     key: s.month,
     title: byTone(tone, {
@@ -108,7 +108,7 @@ function monthPct(t: Tripwire, { ctx, s, f }: EvalInput): Firing[] {
       cheeky: over > 0 ? `Target smashed (not in the good way)` : `${pct}% gone already?!`,
       numbers: `Month spend at ${pct}% of target`,
     }),
-    message: join(lead, dreamText, byTone(tone, { gentle: `Small swaps add up — you've got this.`, cheeky: 'Bun believes in you.', numbers: '' })),
+    message: join(lead, dreamText, byTone(tone, { gentle: `Small swaps add up. You've got this.`, cheeky: 'Bun believes in you.', numbers: '' })),
     amount: s.spent,
     ...(dream ? { dream } : {}),
   }]
@@ -183,7 +183,7 @@ function dailyOver(t: Tripwire, { ctx, f, txns, newTxns }: EvalInput): Firing[] 
       key: date,
       title: byTone(ctx.profile.tone, {
         gentle: `Busy spending day: ${f(total)}`,
-        cheeky: `${f(total)} in one day — big day!`,
+        cheeky: `${f(total)} in one day: big day!`,
         numbers: `Daily spend ${f(total)} > ${f(t.threshold)}`,
       }),
       message: join(`You've spent ${f(total)} today, above your ${f(t.threshold)} daily line.`, dreamLine(dream, total, f)),
@@ -203,7 +203,7 @@ function paceOver(t: Tripwire, { ctx, s, f }: EvalInput): Firing[] {
     key: s.month,
     title: byTone(ctx.profile.tone, {
       gentle: `Heads up: on pace for ${f(s.projected)}`,
-      cheeky: `Careful — this pace has a price`,
+      cheeky: `Careful: this pace has a price`,
       numbers: `Projected ${f(s.projected)} vs ${f(s.target)} target`,
     }),
     message: join(

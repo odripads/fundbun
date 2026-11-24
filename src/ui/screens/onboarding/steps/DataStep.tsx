@@ -15,7 +15,7 @@ export interface DataStepProps extends StepProps {
 const MAX_CSV_BYTES = 5 * 1024 * 1024
 
 const OPTIONS: readonly { kind: DataKind; icon: LucideIcon; title: string; body: string; badge?: string }[] = [
-  { kind: 'persona', icon: Landmark, title: 'Connect a sandbox bank', body: 'A simulated account with six months of history — the quickest way to see Bun work.', badge: 'Simulated' },
+  { kind: 'persona', icon: Landmark, title: 'Connect a sandbox bank', body: 'A simulated account with six months of history: the quickest way to see Bun work.', badge: 'Simulated' },
   { kind: 'csv', icon: FileSpreadsheet, title: 'Import a CSV', body: 'A WeChat Pay, Alipay or bank export.' },
   { kind: 'empty', icon: Sprout, title: 'Start empty', body: 'Begin with a balance and let spending arrive as it happens.' },
 ]
@@ -42,7 +42,7 @@ export function DataStep({ draft, update, errors, csv }: DataStepProps) {
     if (!file) return
     setFileError(null)
     if (file.size > MAX_CSV_BYTES) {
-      setFileError('That file is over 5 MB — try exporting a shorter period.')
+      setFileError('That file is over 5 MB. Try exporting a shorter period.')
       return
     }
     setReading(true)
@@ -153,7 +153,7 @@ export function DataStep({ draft, update, errors, csv }: DataStepProps) {
                   {balanceField}
                   <p className={s.note}>
                     <ShieldCheck aria-hidden="true" />
-                    Read on this device — nothing is uploaded. Memos are treated as data, never as instructions.
+                    Read on this device; nothing is uploaded. Memos are treated as data, never as instructions.
                   </p>
                 </div>
               ) : null}

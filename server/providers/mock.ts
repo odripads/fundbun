@@ -119,7 +119,7 @@ function afterTools(results: ToolResultBlock[], req: ProviderRequest, userText: 
     if (goal) return [toolUse(req.messages.length, 0, { name: 'transfer_to_goal', input: { goalId: goal.id, amount: move.amount } })]
     if (goals.length) {
       const names = listJoin(goals.slice(0, 4).map((g) => g.name), 'or')
-      return [{ type: 'text', text: `Which goal should the ${fmtMoney(move.amount, money)} go to — ${names}?` }]
+      return [{ type: 'text', text: `Which goal should the ${fmtMoney(move.amount, money)} go to: ${names}?` }]
     }
   }
   return [{ type: 'text', text: summarizeResults(results, req.messages, money, hallucinate) }]
@@ -220,7 +220,7 @@ export function goalsFromSystem(system: string): MockGoal[] {
   for (const m of system.matchAll(/^[ \t]*[-*•]?[ \t]*([^\n()[\]]{2,60}?)[ \t]*[([][ \t]*(?:id[:=]?[ \t]*)?(dream_[a-z0-9_]+)[ \t]*[)\]]/gim)) {
     out.set(m[2], { id: m[2], name: m[1].trim() })
   }
-  for (const m of system.matchAll(/\b(dream_[a-z0-9_]+)[ \t]*(?:[:=—–]|-(?=\s))[ \t]*([^\n,;()]{2,60})/g)) {
+  for (const m of system.matchAll(/\b(dream_[a-z0-9_]+)[ \t]*(?:[:=\u2014–]|-(?=\s))[ \t]*([^\n,;()]{2,60})/g)) {
     if (!out.has(m[1])) out.set(m[1], { id: m[1], name: m[2].trim() })
   }
   return [...out.values()]
@@ -307,7 +307,7 @@ function summarizeOne(result: ToolResultBlock, tool: string, money: Money): stri
   if (result.is_error) {
     const data = parseToolContent(result.content)
     if (isObj(data) && data.status === 'denied') return "FundBun's policy blocked that, so nothing was done."
-    return `I couldn't complete ${humanTool(tool)} — it returned an error, so I won't guess any numbers.`
+    return `I couldn't complete ${humanTool(tool)}. It returned an error, so I won't guess any numbers.`
   }
   const data = parseToolContent(result.content)
   const leaves = flatten(data)
@@ -326,7 +326,7 @@ function outcomeLine(leaves: [string, unknown][]): string {
   const values = new Set(leaves.filter(([k]) => k === 'status' || k === 'decision').map(([, v]) => String(v)))
   if (values.has('denied') || values.has('deny')) return "FundBun's policy blocked that, so nothing was done."
   if (values.has('executed')) return 'Done.'
-  if (['pending', 'confirm', 'step_up'].some((s) => values.has(s))) return "I've prepared that — please review it on the action card."
+  if (['pending', 'confirm', 'step_up'].some((s) => values.has(s))) return "I've prepared that. Please review it on the action card."
   return ''
 }
 
@@ -347,7 +347,7 @@ function naturalReply(tool: string, d: Obj, money: Money, outcome: string): stri
     const title = typeof p.title === 'string' && p.title ? p.title : cap(humanTool(tool))
     const route = typeof p.from === 'string' && typeof p.to === 'string' && p.from && p.to ? ` (${p.from} → ${p.to})` : ''
     const money = amount && !title.includes(amount) ? ` for ${amount}` : ''
-    return `It's ready: ${title}${money}${route}. It hasn't happened yet — nothing moves until you approve it${d.decision === 'step_up' ? ' with your PIN' : ''}.`
+    return `It's ready: ${title}${money}${route}. It hasn't happened yet; nothing moves until you approve it${d.decision === 'step_up' ? ' with your PIN' : ''}.`
   }
   if (d.status === 'executed') return typeof d.summary === 'string' && d.summary ? `${d.summary}.` : ''
   switch (tool) {
@@ -380,7 +380,7 @@ function overviewReply(d: Obj, m: M): string {
 function goalsReply(d: Obj, m: M): string {
   if (!Array.isArray(d.goals)) return ''
   const goals = d.goals.filter(isObj).slice(0, 3)
-  if (!goals.length) return "You don't have any dream goals yet — add one in Goals and I'll track it."
+  if (!goals.length) return "You don't have any dream goals yet. Add one in Goals and I'll track it."
   const lines = goals.map((g) => {
     const name = String(g.name ?? 'Your goal')
     const pct = typeof g.pct === 'number' ? `${round1(g.pct)}%` : undefined
@@ -392,8 +392,8 @@ function goalsReply(d: Obj, m: M): string {
 }
 
 const VERDICT: Record<string, string> = {
-  go: 'Good news — it fits your budget.',
-  think: "It's a maybe — worth sleeping on.",
+  go: 'Good news: it fits your budget.',
+  think: "It's a maybe, worth sleeping on.",
   skip: "I'd skip this one for now.",
 }
 
@@ -413,7 +413,7 @@ function billsReply(d: Obj, m: M): string {
   const upcoming = (Array.isArray(d.upcoming) ? d.upcoming : []).filter(isObj)
   const next = upcoming[0]
   const nextLine = next && typeof next.name === 'string' && m(next.amountDue) ? ` Next up: ${next.name}, ${m(next.amountDue)}${typeof next.dueDate === 'string' ? ` due ${next.dueDate}` : ''}.` : ''
-  if (!findings.length) return `Your bills look clean — nothing unusual.${nextLine}`
+  if (!findings.length) return `Your bills look clean, with nothing unusual.${nextLine}`
   const titles = findings.slice(0, 2).map((f) => String(f.title ?? '')).filter(Boolean)
   return `I found ${typeof d.count === 'number' ? d.count : 'a few'} things worth a look in your bills. Top of the list: ${titles.join('; ')}.${nextLine}`
 }
@@ -426,16 +426,16 @@ function recurringReply(d: Obj, m: M): string {
     ? ` Heads-up: ${d.priceHike.merchant} went from ${m(d.priceHike.from)} to ${m(d.priceHike.to)}.`
     : ''
   const overlap = isObj(d.overlap) && Array.isArray(d.overlap.merchants) && d.overlap.merchants.length >= 2
-    ? ` You're also paying for ${listJoin(d.overlap.merchants.map(String), 'and')} — all video streaming.`
+    ? ` You're also paying for ${listJoin(d.overlap.merchants.map(String), 'and')}, all video streaming.`
     : ''
-  return `Your ${typeof d.count === 'number' ? `${d.count} ` : ''}active subscriptions cost ${monthly} a month — ${annual} a year.${hike}${overlap}`
+  return `Your ${typeof d.count === 'number' ? `${d.count} ` : ''}active subscriptions cost ${monthly} a month (${annual} a year).${hike}${overlap}`
 }
 
 function breakdownReply(d: Obj, m: M): string {
   const total = m(d.total)
   if (!total) return ''
   if (isObj(d.focus) && typeof d.focus.label === 'string' && m(d.focus.spent)) {
-    return `${d.focus.label}: ${m(d.focus.spent)} this month${typeof d.focus.equivalent === 'string' ? ` — that's ${d.focus.equivalent}` : ''}.`
+    return `${d.focus.label}: ${m(d.focus.spent)} this month${typeof d.focus.equivalent === 'string' ? `, which is ${d.focus.equivalent}` : ''}.`
   }
   const rows = (Array.isArray(d.categories) ? d.categories : []).filter(isObj).slice(0, 2)
   const top = rows.map((r) => `${String(r.label ?? r.category)} ${m(r.spent) ?? ''}`.trim())

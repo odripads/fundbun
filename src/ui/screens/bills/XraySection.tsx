@@ -106,7 +106,7 @@ export function XraySection({ currency, profileName, today, bills, payees, findi
       eyebrow="Paste · scan · understand"
       title="Bill X-ray"
       aside={<AiBadge engine="offline" />}
-      lead={<span>Bun pulls out the total, due date and line items, compares them with your history — and reads every bill as data, never as instructions.</span>}
+      lead={<span>Bun pulls out the total, due date and line items, compares them with your history, and reads every bill as data, never as instructions.</span>}
     >
       <div className={styles.panel}>
         {samples.length > 0 ? (
@@ -200,7 +200,7 @@ function statusLine(run: RunState): string {
   if (run.status === 'error') return 'Bun couldn’t read that bill.'
   if (run.status !== 'done') return ''
   const result = xrayOf(run.message.cards)
-  if (result?.injection.suspicious) return 'X-ray done. Hidden instructions found and ignored — nothing was paid or moved.'
+  if (result?.injection.suspicious) return 'X-ray done. Hidden instructions found and ignored. Nothing was paid or moved.'
   return result ? `X-ray done: ${result.merchant ?? 'unknown sender'}.` : 'X-ray done.'
 }
 
@@ -284,8 +284,8 @@ function InjectionBanner({ result, text, receipt }: { result: XrayResult; text: 
 
       <p className={styles.injBody}>
         {clean
-          ? 'This bill contains hidden instructions aimed at AI assistants. FundBun ignored them — nothing was paid or moved.'
-          : 'This bill contains hidden instructions aimed at AI assistants. FundBun did not follow them — check Activity for what changed while it ran.'}
+          ? 'This bill contains hidden instructions aimed at AI assistants. FundBun ignored them, so nothing was paid or moved.'
+          : 'This bill contains hidden instructions aimed at AI assistants. FundBun did not follow them; check Activity for what changed while it ran.'}
       </p>
 
       {lines.length > 0 || fallback ? (
@@ -459,7 +459,7 @@ function XrayCard({ result, currency, today, bills, payees, reminders, awaiting,
               {suspicious ? 'Paying goes to ' : 'Matches your bill from '}
               <strong>{payee?.name ?? bill.name}</strong>
               {payee?.verified ? ' (verified)' : ''}
-              {suspicious ? ' — never to an account written in the bill.' : '.'}
+              {suspicious ? ', never to an account written in the bill.' : '.'}
             </span>
           </p>
           <div className={styles.actionRow}>
@@ -502,7 +502,7 @@ function XrayCard({ result, currency, today, bills, payees, reminders, awaiting,
       ) : bill && billStatus === 'paid' ? (
         <p className={styles.payNote}>
           <CircleCheck aria-hidden="true" />
-          <span>Already paid — nothing to do.</span>
+          <span>Already paid. Nothing to do.</span>
         </p>
       ) : !bill ? (
         <p className={styles.payNote}>

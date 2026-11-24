@@ -455,7 +455,7 @@ function xrayBillTool(args: Args, host: AgentHost): ToolRun {
     comparison: result.comparison,
   })
   const f = money(host.state())
-  const summary = `${result.merchant ?? 'Bill'}${result.total !== undefined ? ` ${f(result.total)}` : ''}${result.injection.suspicious ? ' — injection flagged' : ''}`
+  const summary = `${result.merchant ?? 'Bill'}${result.total !== undefined ? ` ${f(result.total)}` : ''}${result.injection.suspicious ? ' · injection flagged' : ''}`
   return { outcome: ok(data, summary, [{ type: 'xray', result }], { untrusted: true }), untrustedTexts: [{ source: 'bill', text }] }
 }
 

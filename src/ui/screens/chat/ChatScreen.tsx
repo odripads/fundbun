@@ -135,7 +135,7 @@ export function ChatScreen({ variant = 'page' }: ChatScreenProps = {}) {
           className={cx(styles.jump, unread && styles.jumpUnread)}
           style={{ bottom: composerH + 8 }}
           onClick={scrollToEnd}
-          aria-label={unread ? 'New reply from Bun — jump to it' : 'Jump to the latest message'}
+          aria-label={unread ? 'New reply from Bun, jump to it' : 'Jump to the latest message'}
         >
           <ArrowDown aria-hidden="true" />
           {unread ? <span aria-hidden="true">New reply</span> : null}

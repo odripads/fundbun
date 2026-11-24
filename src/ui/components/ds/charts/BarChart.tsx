@@ -140,7 +140,7 @@ export function BarChart({ data, label, currency = 'CNY', format, max, onSelect,
       <DataTable
         caption={label}
         columns={['Category', 'Amount', 'Limit', 'Status']}
-        rows={rows.map((r) => [r.label, f(r.value), r.limit !== undefined ? f(r.limit) : '—', r.over ? `Over by ${f(r.overBy)}` : r.limit !== undefined ? 'Within limit' : '—'])}
+        rows={rows.map((r) => [r.label, f(r.value), r.limit !== undefined ? f(r.limit) : '–', r.over ? `Over by ${f(r.overBy)}` : r.limit !== undefined ? 'Within limit' : '–'])}
       />
     </figure>
   )

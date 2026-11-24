@@ -593,8 +593,8 @@ export function heroLine(tone: Tone, findings: BillFinding[]): string {
     return tone === 'cheeky' ? 'Your bills are boringly perfect. Love that for you.' : tone === 'numbers' ? 'No issues found.' : 'All calm on the bills front.'
   }
   if (tone === 'numbers') return `${plural(worth, 'issue')} found${alert ? ` · ${alert} urgent` : ''}.`
-  if (tone === 'cheeky') return alert ? `Bun sniffed out ${plural(worth, 'thing')} — ${alert === 1 ? 'one is' : `${alert} are`} sneaky.` : `Bun sniffed out ${plural(worth, 'thing')} worth a look.`
-  return alert ? `${plural(worth, 'thing')} worth a look — ${alert === 1 ? 'one needs' : `${alert} need`} you soon.` : `${plural(worth, 'small thing')} worth a look, whenever you’re ready.`
+  if (tone === 'cheeky') return alert ? `Bun sniffed out ${plural(worth, 'thing')}, and ${alert === 1 ? 'one is' : `${alert} are`} sneaky.` : `Bun sniffed out ${plural(worth, 'thing')} worth a look.`
+  return alert ? `${plural(worth, 'thing')} worth a look: ${alert === 1 ? 'one needs' : `${alert} need`} you soon.` : `${plural(worth, 'small thing')} worth a look, whenever you’re ready.`
 }
 
 export function moodFor(findings: BillFinding[]): 'happy' | 'calm' | 'worried' {
@@ -681,7 +681,7 @@ export function importSummary(fileName: string, r: { added: number; skipped: num
     const message =
       r.skipped === 0 ? 'Bun couldn’t find any rows to read.'
       : matched === r.skipped ? `${plural(matched, 'row')} matched what you’d already typed in. Nothing is counted twice.`
-      : `${plural(r.skipped, 'row')} skipped — already here or not a purchase.`
+      : `${plural(r.skipped, 'row')} skipped (already here or not a purchase).`
     return { fileName, title: 'No new transactions', message, tone: 'warn', errors }
   }
   const other = r.skipped - matched

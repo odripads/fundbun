@@ -88,7 +88,7 @@ export function DataSourcesSection() {
       </Card>
 
       <Card className={styles.card}>
-        <p className={styles.sandboxLead}>Try it now against a synthetic mailbox — the same flow a real bank would use, with none of the risk.</p>
+        <p className={styles.sandboxLead}>Try it now against a synthetic mailbox: the same flow a real bank would use, with none of the risk.</p>
         <div>
           <Button variant="secondary" iconStart={loading ? undefined : <Inbox />} loading={loading} onClick={check}>
             {loading ? 'Checking…' : 'Check inbox'}
@@ -106,7 +106,7 @@ export function DataSourcesSection() {
           <div className={styles.review} role="status">
             <p className={styles.reviewHead}>
               <MailCheck aria-hidden="true" />
-              Bun found {review.candidates.length} new spending{review.candidates.length === 1 ? '' : 's'} — check them.
+              Bun found {review.candidates.length} new spending{review.candidates.length === 1 ? '' : 's'}. Check them.
             </p>
             {review.flagged ? (
               <p className={styles.reviewNote}>
@@ -115,7 +115,7 @@ export function DataSourcesSection() {
               </p>
             ) : null}
             {review.candidates.length === 0 ? (
-              <p className={styles.reviewNote}>Nothing new to add — the mailbox is already covered.</p>
+              <p className={styles.reviewNote}>Nothing new to add: the mailbox is already covered.</p>
             ) : (
               <ul className={styles.reviewList} role="list">
                 {review.candidates.map((c) => (
@@ -148,7 +148,7 @@ export function DataSourcesSection() {
               </ul>
             )}
             <div className={styles.reviewActions}>
-              <Badge variant="accent" icon={<ShieldCheck />}>Adds spending records only — no money moves</Badge>
+              <Badge variant="accent" icon={<ShieldCheck />}>Adds spending records only · no money moves</Badge>
               <Button iconStart={<MailCheck />} disabled={review.candidates.length === 0} onClick={confirm}>
                 Confirm
               </Button>

@@ -195,7 +195,7 @@ function stableArgs(args: Record<string, unknown>): string {
 function reuseTwin(host: AgentHost, turn: Turn, call: ToolCall, twin: PendingAction): GateResult {
   trace(turn, 'tool_call', `${call.proposedBy} → ${call.tool}`, { callId: call.id, tool: call.tool, args: summarizeArgs(call.args), proposedBy: call.proposedBy })
   trace(turn, 'policy', `${twin.decision.decision.toUpperCase()} · ${call.tool} (already waiting)`, { tool: call.tool, decision: twin.decision.decision, tier: twin.decision.tier, ruleIds: twin.decision.ruleIds, reasons: twin.decision.reasons, pendingId: twin.id, reused: true })
-  host.audit('agent', 'tool_call', `${call.proposedBy} proposed ${call.tool} again — the waiting card was reused`, { callId: call.id, tool: call.tool, proposedBy: call.proposedBy, reusedPendingId: twin.id, args: summarizeArgs(call.args) })
+  host.audit('agent', 'tool_call', `${call.proposedBy} proposed ${call.tool} again; the waiting card was reused`, { callId: call.id, tool: call.tool, proposedBy: call.proposedBy, reusedPendingId: twin.id, args: summarizeArgs(call.args) })
   addCard(turn, { type: 'action', pendingId: twin.id })
   addSource(turn, { tool: call.tool, args: summarizeArgs(call.args), preview: twin.preview, reasons: twin.decision.reasons })
   if (turn.source === 'chat') turn.dialogue.lastProposalId = twin.id
@@ -311,8 +311,8 @@ export function scanUntrusted(host: AgentHost, turn: Turn, tool: string, source:
   if (!report.suspicious) return false
   const kind = source.startsWith('memo') ? 'memo' : 'bill'
   trace(turn, 'injection', `Prompt injection detected in ${kind} text`, { tool, source, score: report.score, signals: report.signals })
-  host.audit('system', 'injection_detected', `Instructions aimed at the assistant found in ${kind} text — ignored`, { tool, source, score: report.score, signals: report.signals })
-  const title = kind === 'memo' ? 'A transaction memo contains instructions aimed at AI assistants — I ignored them' : 'This bill contains instructions aimed at AI assistants — I ignored them'
+  host.audit('system', 'injection_detected', `Instructions aimed at the assistant found in ${kind} text and ignored`, { tool, source, score: report.score, signals: report.signals })
+  const title = kind === 'memo' ? 'A transaction memo contains instructions aimed at AI assistants. I ignored them' : 'This bill contains instructions aimed at AI assistants. I ignored them'
   addNotice(turn, 'warn', 'Hidden instructions ignored', `${title}. Bills and memos are data, never commands. Nothing was moved.`, `inject:${kind}`)
   return true
 }
@@ -388,7 +388,7 @@ export function checkBreaker(host: AgentHost, turn?: Turn): boolean {
     host.audit('system', 'circuit_breaker', 'Circuit breaker tripped: the assistant is paused (read-only)', { reason })
   })
   if (turn) {
-    trace(turn, 'policy', 'Circuit breaker tripped — agent frozen', { reason })
+    trace(turn, 'policy', 'Circuit breaker tripped: agent frozen', { reason })
     addNotice(turn, 'block', 'I’ve paused myself', `${reason} I can still read and explain. To let me act again, unfreeze me in Settings with your PIN.`, 'breaker')
   }
   return true
@@ -452,7 +452,7 @@ export function approvePending(host: AgentHost, id: string, pin?: string): Appro
     const error = 'This action changed after you saw it, so I didn’t run it. Nothing was moved.'
     markPending(host, id, 'failed', error)
     host.audit('system', 'action_failed', `Binding check failed: ${p.preview.title}`, { pendingId: id, tool: p.call.tool, reason: 'binding_mismatch' })
-    steps.push({ kind: 'error', label: 'Binding hash mismatch — execution refused' })
+    steps.push({ kind: 'error', label: 'Binding hash mismatch: execution refused' })
     return { ok: false, error, steps }
   }
   steps.push({ kind: 'policy', label: 'Binding hash verified: what you saw is what runs', detail: { bindingHash: p.bindingHash } })

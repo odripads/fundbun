@@ -28,5 +28,5 @@ export const DEMO_SETTINGS: AppSettings = {
   receiptScans: false,
 }
 
-export const WARMING_UP = 'Bun is still warming up — chat isn\'t ready yet, but Home, bills and goals work as usual.'
-export const STATIC_BUILD_REASON = 'Static build — on-device engine only'
+export const WARMING_UP = 'Bun is still warming up. Chat isn\'t ready yet, but Home, bills and goals work as usual.'
+export const STATIC_BUILD_REASON = 'Static build · on-device engine only'

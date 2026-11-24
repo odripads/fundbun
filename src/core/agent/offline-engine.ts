@@ -297,7 +297,7 @@ function fallbackReply(host: AgentHost, turn: Turn, nlu: NluResult | undefined, 
   }
   const guesses = (nlu?.alternatives ?? []).filter((a) => a.confidence >= 0.2).map((a) => altChip(a.intent, lang)).filter((c): c is string => !!c)
   const suggestions = [...new Set([...guesses, ...chips(turn, 'unknown')])].slice(0, 4)
-  const tail = guesses.length ? (lang === 'zh' ? '也可以点下面的建议——我猜你可能想问其中一个。' : lang === 'id' ? 'Atau ketuk salah satu saran di bawah — mungkin itu yang kamu maksud.' : 'Or tap one of the suggestions below — I think you might mean one of those.') : ''
+  const tail = guesses.length ? (lang === 'zh' ? '也可以点下面的建议，我猜你可能想问其中一个。' : lang === 'id' ? 'Atau ketuk salah satu saran di bawah, mungkin itu yang kamu maksud.' : 'Or tap one of the suggestions below. I think you might mean one of those.') : ''
   return { text: joinSentences([compose(host, turn, 'unknown', {}), tail], lang), intent: 'unknown', suggestions }
 }
 
@@ -394,8 +394,8 @@ function followUp(host: AgentHost, nlu: NluResult, intent: Intent, text: string)
 function flagOverride(host: AgentHost, turn: Turn, nlu: NluResult, intent: Intent): void {
   const lang = langOf(turn)
   taint(turn, 'The message tried to override FundBun’s safety rules')
-  trace(turn, 'injection', 'Override attempt in the message — safety rules stay on', { source: 'user_message', signals: ['instruction_override'], rule: nlu.override, underlying: intent })
-  host.audit('system', 'injection_detected', 'A chat message tried to override the assistant’s rules — ignored', {
+  trace(turn, 'injection', 'Override attempt in the message: safety rules stay on', { source: 'user_message', signals: ['instruction_override'], rule: nlu.override, underlying: intent })
+  host.audit('system', 'injection_detected', 'A chat message tried to override the assistant’s rules and was ignored', {
     source: 'user_message', kind: 'override_attempt', rule: nlu.override, underlying: intent, slots: summarizeArgs(nlu.slots as Record<string, unknown>),
   })
   addNotice(turn, 'warn', line('overrideNoticeTitle', lang), line('overrideNoticeText', lang), 'override')
@@ -404,7 +404,7 @@ function flagOverride(host: AgentHost, turn: Turn, nlu: NluResult, intent: Inten
 /** Nothing actionable behind the override (or it would need a question): restate the rules, act on nothing. */
 function overrideOnly(host: AgentHost, turn: Turn): Reply {
   const r = refusal('sensitive_request', toneOf(host.state()), { override: true, attack: true, lang: langOf(turn) })
-  trace(turn, 'policy', 'Override refused — nothing was changed', { rule: 'R-OVERRIDE-ATTEMPT' })
+  trace(turn, 'policy', 'Override refused: nothing was changed', { rule: 'R-OVERRIDE-ATTEMPT' })
   turn.dialogue.pendingClarification = null
   return { text: r.text, intent: 'sensitive_request', suggestions: chips(turn, 'sensitive_request') }
 }
@@ -480,13 +480,13 @@ function recommendCancel(host: AgentHost, turn: Turn): Reply {
   if (overlap.length >= 2) {
     const pool = series.filter((s) => overlap.includes(s.merchant)).sort((a, b) => a.lastAmount - b.lastAmount || a.merchant.localeCompare(b.merchant))
     const s = pool[0]
-    if (s) add(s, lang === 'zh' ? `${s.merchant}（每月${f(s.lastAmount)}，你有${overlap.length}个视频会员）` : lang === 'id' ? `${s.merchant} (${f(s.lastAmount)}/bulan — salah satu dari ${overlap.length} aplikasi video)` : `${s.merchant} (${f(s.lastAmount)}/month — one of your ${overlap.length} video apps)`)
+    if (s) add(s, lang === 'zh' ? `${s.merchant}（每月${f(s.lastAmount)}，你有${overlap.length}个视频会员）` : lang === 'id' ? `${s.merchant} (${f(s.lastAmount)}/bulan, salah satu dari ${overlap.length} aplikasi video)` : `${s.merchant} (${f(s.lastAmount)}/month, one of your ${overlap.length} video apps)`)
   }
   const hike = series.find((s) => findings.some((x) => x.kind === 'price_hike' && x.recurringId === s.id) || (s.priceChange && s.priceChange.to > s.priceChange.from))
   if (hike?.priceChange) add(hike, lang === 'zh' ? `${hike.merchant}（刚从${f(hike.priceChange.from)}涨到${f(hike.priceChange.to)}）` : lang === 'id' ? `${hike.merchant} (baru naik dari ${f(hike.priceChange.from)} ke ${f(hike.priceChange.to)})` : `${hike.merchant} (just went up from ${f(hike.priceChange.from)} to ${f(hike.priceChange.to)})`)
   const priciest = [...series].sort((a, b) => b.lastAmount - a.lastAmount)[0]
   const median = [...series].map((s) => s.lastAmount).sort((a, b) => a - b)[Math.floor(series.length / 2)] ?? 0
-  if (priciest && priciest.lastAmount >= median * 3) add(priciest, lang === 'zh' ? `${priciest.merchant}（每月${f(priciest.lastAmount)}，最贵的一个——如果不常用的话）` : lang === 'id' ? `${priciest.merchant} (${f(priciest.lastAmount)}/bulan — paling mahal; kalau jarang dipakai)` : `${priciest.merchant} (${f(priciest.lastAmount)}/month — your priciest, if you’re not using it)`)
+  if (priciest && priciest.lastAmount >= median * 3) add(priciest, lang === 'zh' ? `${priciest.merchant}（每月${f(priciest.lastAmount)}，最贵的一个，如果不常用的话）` : lang === 'id' ? `${priciest.merchant} (${f(priciest.lastAmount)}/bulan, paling mahal; kalau jarang dipakai)` : `${priciest.merchant} (${f(priciest.lastAmount)}/month, your priciest, if you’re not using it)`)
   const facts: Facts = { focus: 'recommend' }
   const annual = (subs.outcome?.data as { annualTotal?: number } | undefined)?.annualTotal
   if (annual) facts.annualTotal = c(annual)
@@ -525,10 +525,10 @@ export function actionReply(host: AgentHost, turn: Turn, intent: Intent, r: Gate
   const facts = actionFacts(tool, r.call.args, state, { stage, data: r.outcome?.data, reason: reasonIn(r.reason, r.decision?.ruleIds, lang), recurring: safeRecurring(host), lang })
   let text = tool === 'set_bill_reminder' && stage !== 'done' ? reminderText(host, r, stage) : composeReply(TOOL_INTENT[tool] ?? intent, facts, toneOf(state), lang)
   const p = r.pending
-  if (r.reused && p) text = joinSentences([lang === 'zh' ? '这个已经在等你确认了——就在下面这张卡片上。' : lang === 'id' ? 'Yang ini sudah menunggu konfirmasimu — di kartu bawah.' : 'You already have this one waiting — approve it on the card below.', text], lang)
+  if (r.reused && p) text = joinSentences([lang === 'zh' ? '这个已经在等你确认了，就在下面这张卡片上。' : lang === 'id' ? 'Yang ini sudah menunggu konfirmasimu di kartu bawah.' : 'You already have this one waiting. Approve it on the card below.', text], lang)
   if (stage === 'done' && p?.undoUntil) text += lang === 'zh' ? ` ${state.mandate.undoWindowSec}秒内可以撤销。` : lang === 'id' ? ` Bisa dibatalkan dalam ${state.mandate.undoWindowSec} detik.` : ` You can undo it for ${state.mandate.undoWindowSec} seconds.`
   if (stage === 'confirm' && p?.decision.ruleIds.includes('P-TAINT')) text += lang === 'en' ? ' Because this conversation included outside text, it waits for your tap.' : lang === 'zh' ? ' 因为这段对话里有外部文本，需要你点确认。' : ' Karena percakapan ini memuat teks dari luar, ini menunggu ketukanmu.'
-  if (turn.noticeKeys.has('breaker')) text += ' For your safety I’ve paused myself — you can unfreeze me in Settings with your PIN.'
+  if (turn.noticeKeys.has('breaker')) text += ' For your safety I’ve paused myself. You can unfreeze me in Settings with your PIN.'
   return { text: joinSentences([prefix, text], langOf(turn)), intent, suggestions: chips(turn, intent) }
 }
 
@@ -606,8 +606,8 @@ function interruptReply(host: AgentHost, turn: Turn, soft: boolean): Reply {
   if (plans.plans) trace(turn, 'policy', 'Plan cancelled by the user', plans)
   const parts: string[] = []
   if (plans.plans) parts.push(`Stopped. I cancelled the plan and skipped ${plans.skipped === 1 ? 'the remaining step' : `the remaining ${plans.skipped} steps`}.`)
-  if (rejected) parts.push(`${rejected === 1 ? 'The pending action was' : `${rejected} pending actions were`} dropped — nothing will run.`)
-  if (!parts.length) parts.push(hadClar ? 'No problem — dropped that.' : 'Okay — nothing is running right now, so there’s nothing to stop.')
+  if (rejected) parts.push(`${rejected === 1 ? 'The pending action was' : `${rejected} pending actions were`} dropped, so nothing will run.`)
+  if (!parts.length) parts.push(hadClar ? 'No problem, dropped that.' : 'Okay, nothing is running right now, so there’s nothing to stop.')
   if (plans.plans) parts.push('Anything already done stays done; you can undo it from its card.')
   return { text: parts.join(' '), intent: 'interrupt', suggestions: ['How am I doing this month?', 'Show my goals', 'Check my bills'] }
 }

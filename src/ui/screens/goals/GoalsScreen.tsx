@@ -65,7 +65,7 @@ export function GoalsScreen() {
       toast.show({
         tone: 'success',
         title: `${added.name} is on your list`,
-        message: added.kind === 'goal' ? 'It has its own pot — add to it whenever you like.' : 'A guilt-free treat for a month with money left over.',
+        message: added.kind === 'goal' ? 'It has its own pot. Add to it whenever you like.' : 'A guilt-free treat for a month with money left over.',
         image: <DreamImage image={added.image} alt="" size={48} />,
       })
     }
@@ -93,7 +93,7 @@ export function GoalsScreen() {
       <div className={styles.page}>
         <EmptyState
           title="What are you dreaming of?"
-          body="Add a goal to save toward — a trip, a laptop, a bag — or a small treat for a month with money left over. Bun will mirror your spending in it."
+          body="Add a goal to save toward (a trip, a laptop, a bag) or a small treat for a month with money left over. Bun will mirror your spending in it."
           mood="happy"
           action={<Button iconStart={<Plus />} onClick={() => openEditor({ mode: 'add' })}>Add your first dream</Button>}
         />
@@ -139,7 +139,7 @@ export function GoalsScreen() {
         <section className={styles.section} aria-labelledby={goalsId}>
           <div className={styles.sectionHead}>
             <h2 id={goalsId} className={styles.sectionTitle}>Saving toward</h2>
-            <p className={styles.sectionNote}>Each goal has its own pot. You move the money — Bun only suggests.</p>
+            <p className={styles.sectionNote}>Each goal has its own pot. You move the money; Bun only suggests.</p>
           </div>
           <div className={styles.list}>
             {groups.goals.map((row, i) => (
@@ -162,7 +162,7 @@ export function GoalsScreen() {
         <section className={styles.section} aria-labelledby={treatsId}>
           <div className={styles.sectionHead}>
             <h2 id={treatsId} className={styles.sectionTitle}>Treats</h2>
-            <p className={styles.sectionNote}>Guilt-free rewards for months you finish with money left over — your call, never a nudge.</p>
+            <p className={styles.sectionNote}>Guilt-free rewards for months you finish with money left over. Your call, never a nudge.</p>
           </div>
           <div className={styles.list}>
             {groups.treats.map((row, i) => (

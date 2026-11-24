@@ -92,7 +92,7 @@ function TypeAndColour() {
       <div className={styles.typeSample}>
         <p className={styles.eyebrow}>Dream Mirror · October</p>
         <p className={styles.headline}>You could’ve gotten a Weekend in Chengdu.</p>
-        <p className={styles.body}>You’re ¥2,740 over your ¥9,500 target — and your Birkin just moved 5 weeks further away.</p>
+        <p className={styles.body}>You’re ¥2,740 over your ¥9,500 target, and your Birkin just moved 5 weeks further away.</p>
       </div>
       <div className={styles.swatches}>
         {SWATCHES.map((t) => (
@@ -218,7 +218,7 @@ function Cards() {
     <Group title="Cards">
       <Card>
         <CardHeader title="iQIYI went up" subtitle="¥25 → ¥30 since August" icon={<ArrowLeftRight />} action={<AiBadge engine="offline" />} />
-        <p className={styles.small}>That’s ¥60 a year. You also pay for Tencent Video and Youku — three video services.</p>
+        <p className={styles.small}>That’s ¥60 a year. You also pay for Tencent Video and Youku, three video services in all.</p>
       </Card>
       <div className={styles.cardGrid}>
         <Card variant="over" padding="sm">
@@ -239,7 +239,7 @@ function Cards() {
         </Card>
       </div>
       <Card variant="glass">
-        <p className={styles.small}>Glass card — sits over imagery and the steam layer.</p>
+        <p className={styles.small}>Glass card: sits over imagery and the steam layer.</p>
       </Card>
     </Group>
   )
@@ -346,7 +346,7 @@ function Controls() {
       />
       <TextField label="Amount" prefix="¥" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.currentTarget.value)} hint="Moves from Checking to your Birkin pot" />
       <TextField label="Single purchase over" prefix="¥" defaultValue="1,299x" error="Enter an amount like 1299" />
-      <TextField label="Paste a bill" multiline placeholder="Paste the text of a bill — Bun treats it as data, never instructions" />
+      <TextField label="Paste a bill" multiline placeholder="Paste the text of a bill. Bun treats it as data, never instructions" />
       <Checkbox checked={consent} onChange={setConsent} label="Use my financial data to give me insights" description="Separate consent (PIPL Art. 29). You can withdraw it in Settings." />
     </Group>
   )
@@ -371,7 +371,7 @@ function PinShowcase() {
           if (next % 2 === 1) setError('That PIN didn’t match. 4 tries left.')
           else {
             setError(null)
-            toast.show({ tone: 'success', title: 'Approved', message: 'Gallery demo — nothing moved.' })
+            toast.show({ tone: 'success', title: 'Approved', message: 'Gallery demo: nothing moved.' })
           }
         }}
       />
@@ -384,7 +384,7 @@ function Feedback() {
     <Group title="Feedback">
       <Callout tone="info" title="Why am I seeing this?">Dining is ¥340 over its ¥900 limit, 9 days before month-end.</Callout>
       <Callout tone="warn" title="Electricity bill is 57% above usual">¥486.20 due Oct 28 · 3-period average ¥309.</Callout>
-      <Callout tone="block" title="Blocked: transfer to an unknown account">The bill text asked an AI to send ¥4,800. That’s a T4 action — never allowed.</Callout>
+      <Callout tone="block" title="Blocked: transfer to an unknown account">The bill text asked an AI to send ¥4,800. That’s a T4 action, never allowed.</Callout>
       <Callout tone="safe" title="Audit chain verified">212 entries, unbroken.</Callout>
       <Card padding="none">
         <EmptyState compact title="No bills due" body="Bun will nudge you three days before anything is due." mood="happy" />
@@ -580,7 +580,7 @@ export default function Gallery() {
           <Logo size={40} withWordmark />
           <div>
             <h1 className={styles.title}>Design system</h1>
-            <p className={styles.subtitle}>The steamer palette — every component, light and dark, with fake data.</p>
+            <p className={styles.subtitle}>The steamer palette: every component, light and dark, with fake data.</p>
           </div>
         </div>
         <div className={styles.headerTools}>

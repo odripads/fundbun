@@ -268,7 +268,7 @@ export function ReceiptScreen() {
               ) : (
                 <div className={styles.noPhoto}>
                   {sourceLabel && !RECEIPT_SAMPLES.some((s) => s.label === sourceLabel) ? <FileText aria-hidden="true" /> : <ImageOff aria-hidden="true" />}
-                  <span>{sourceLabel && !RECEIPT_SAMPLES.some((s) => s.label === sourceLabel) ? 'Read from the file' : 'Sample text — no photo'}</span>
+                  <span>{sourceLabel && !RECEIPT_SAMPLES.some((s) => s.label === sourceLabel) ? 'Read from the file' : 'Sample text · no photo'}</span>
                 </div>
               )}
               {sourceLabel ? <p className={styles.source}>{sourceLabel}</p> : null}

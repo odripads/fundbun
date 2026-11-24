@@ -123,7 +123,7 @@ function fromHistory(ctx: FinanceContext, history: Weights, f: Fmt): Allocation 
     return {
       alloc: scaleTo(needs, target),
       method: 'history',
-      rationale: `Your essentials alone usually run ${f(Math.round(needsTotal))}, above your ${f(target)} target, so this plan covers needs only — worth revisiting the target.`,
+      rationale: `Your essentials alone usually run ${f(Math.round(needsTotal))}, above your ${f(target)} target, so this plan covers needs only. Worth revisiting the target.`,
     }
   }
   const wants = pick(history, isWant)

@@ -86,7 +86,7 @@ describe('proposeBudget — history', () => {
   it('covers needs only when essentials alone exceed the target', () => {
     const plan = proposeBudget(withTarget(heavy(), yuan(3_000)), 'history', '2026-11')
     expect(plan.categories.map((c) => c.category)).toEqual(['housing'])
-    expect(plan.rationale).toContain('worth revisiting the target')
+    expect(plan.rationale).toContain('Worth revisiting the target')
   })
 
   it('falls back to 50/30/20 when there is no history', () => {

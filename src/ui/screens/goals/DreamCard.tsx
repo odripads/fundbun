@@ -50,7 +50,7 @@ export function GoalCard({ row, currency, index = 0, onAdd, onAchieve, onEdit }:
         <div className={styles.fact}>
           <dt><TrendingUp aria-hidden="true" />Pace</dt>
           <dd>
-            <span className={styles.factValue}>{p && p.monthlyRate > 0 ? `${fmtWhole(p.monthlyRate, currency)}/mo` : '—'}</span>
+            <span className={styles.factValue}>{p && p.monthlyRate > 0 ? `${fmtWhole(p.monthlyRate, currency)}/mo` : '–'}</span>
             <span className={styles.factSub}>{p && p.monthlyRate > 0 ? '3-month average' : 'No monthly habit yet'}</span>
           </dd>
         </div>

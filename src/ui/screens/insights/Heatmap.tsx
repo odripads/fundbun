@@ -100,7 +100,7 @@ export function Heatmap({ map, monthLong, currency }: HeatmapProps) {
                 <th scope="row">{day}</th>
                 {BANDS.map((b, i) => (
                   <td key={b.id} className={cx(b.id === 'late' && map.bands[r][i] > 0 && styles.lateValue)}>
-                    {map.bands[r][i] > 0 ? fmt(Math.round(map.bands[r][i] / 100) * 100, currency) : '—'}
+                    {map.bands[r][i] > 0 ? fmt(Math.round(map.bands[r][i] / 100) * 100, currency) : '–'}
                   </td>
                 ))}
               </tr>

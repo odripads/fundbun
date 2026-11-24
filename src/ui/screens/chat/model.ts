@@ -75,11 +75,11 @@ export function greeting(tone: Tone, name: string): { title: string; body: strin
   const who = name ? `, ${name}` : ''
   switch (tone) {
     case 'cheeky':
-      return { title: `Spill the tea${who}`, body: 'Ask me where the money went, what’s due, or whether those sneakers are a good idea. I’ll be honest — and kind.' }
+      return { title: `Spill the tea${who}`, body: 'Ask me where the money went, what’s due, or whether those sneakers are a good idea. I’ll be honest, and kind.' }
     case 'numbers':
       return { title: `Ask me anything${who}`, body: 'Spending, bills, goals, affordability. Short answers, real numbers from your own data.' }
     default:
-      return { title: `Hi${who} — I’m Bun`, body: 'Ask me about your spending, bills or dreams. I explain, plan and — only with your OK — move money between your own pots.' }
+      return { title: `Hi${who}, I’m Bun`, body: 'Ask me about your spending, bills or dreams. I explain, plan and, only with your OK, move money between your own pots.' }
   }
 }
 

@@ -94,7 +94,7 @@ export function parseMoney(text: string, currency: Currency, opts: { what: strin
   const minor = parseAmount(t, currency)
   if (minor === null || !Number.isFinite(minor)) return { ok: false, error: `Enter a number, like ${opts.example}` }
   if (minor === 0 && !opts.allowZero) return { ok: false, error: `${capitalise(opts.what)} needs to be more than zero` }
-  if (minor > MAX_MAJOR * MINOR_PER_MAJOR[currency]) return { ok: false, error: 'That number looks too big — check the zeros' }
+  if (minor > MAX_MAJOR * MINOR_PER_MAJOR[currency]) return { ok: false, error: 'That number looks too big. Check the zeros' }
   return { ok: true, minor: Math.round(minor) }
 }
 
@@ -130,10 +130,10 @@ export function incomeHint(income: Minor, target: Minor, currency: Currency): In
   const save = income - target
   const f = (m: Minor) => fmt(m, currency)
   if (save > 0) {
-    return { tone: spendPct >= 90 ? 'tight' : 'save', spendPct, save, text: `That’s ${spendPct}% of your income — leaves ${f(save)} to save.` }
+    return { tone: spendPct >= 90 ? 'tight' : 'save', spendPct, save, text: `That’s ${spendPct}% of your income, leaving ${f(save)} to save.` }
   }
-  if (save === 0) return { tone: 'tight', spendPct, save, text: 'That’s all of your income — nothing left over to save.' }
-  return { tone: 'over', spendPct, save, text: `That’s ${f(-save)} more than you earn — Bun will flag it every month.` }
+  if (save === 0) return { tone: 'tight', spendPct, save, text: 'That’s all of your income, with nothing left over to save.' }
+  return { tone: 'over', spendPct, save, text: `That’s ${f(-save)} more than you earn, so Bun will flag it every month.` }
 }
 
 export function ordinal(n: number): string {
@@ -163,7 +163,7 @@ export function validateMoney(d: OnboardingDraft): Errors {
 }
 
 export function validateDreams(d: OnboardingDraft): Errors {
-  return d.dreams.length > 0 ? {} : { dreams: 'Add at least one dream — tap “Add to my list” to save it.' }
+  return d.dreams.length > 0 ? {} : { dreams: 'Add at least one dream: tap “Add to my list” to save it.' }
 }
 
 /** The mode step is always valid: MANUAL is the default and AUTO without consent simply stays off. */
@@ -241,7 +241,7 @@ export function tripwireDetail(key: TripwireKey, threshold: number, target: Mino
     case 'single':
       return dreamName ? `Any one purchase over ${f(threshold)}, shown as a slice of your ${dreamName}.` : `Any one purchase over ${f(threshold)}, shown with your dream’s picture.`
     case 'pace':
-      return `When you’re on pace to end ${threshold - 100}% over — about ${f(at)}.`
+      return `When you’re on pace to end ${threshold - 100}% over (about ${f(at)}).`
   }
 }
 
@@ -442,14 +442,14 @@ export function pinProblem(pin: string): string | null {
   if (pin.length < 4 || pin.length > 6) return 'Use 4 to 6 digits.'
   const d = [...pin].map(Number)
   const steps = d.slice(1).map((x, i) => x - d[i])
-  if (steps.every((s) => s === 0)) return 'Too easy to guess — avoid one repeated digit like 1111.'
-  if (steps.every((s) => s === 1) || steps.every((s) => s === -1)) return 'Too easy to guess — avoid straight runs like 1234 or 9876.'
+  if (steps.every((s) => s === 0)) return 'Too easy to guess. Avoid one repeated digit like 1111.'
+  if (steps.every((s) => s === 1) || steps.every((s) => s === -1)) return 'Too easy to guess. Avoid straight runs like 1234 or 9876.'
   return isValidPinFormat(pin) ? null : 'Pick a PIN that’s harder to guess.'
 }
 
 export function validatePermissions(d: OnboardingDraft, pinSet: boolean): Errors {
   const { errors } = parseCaps(d)
-  return pinSet ? errors : { ...errors, pin: 'Create a PIN — it guards every payment and any loosening of these limits.' }
+  return pinSet ? errors : { ...errors, pin: 'Create a PIN: it guards every payment and any loosening of these limits.' }
 }
 
 // ───────────────────────────── data source ─────────────────────────────
@@ -517,7 +517,7 @@ export function dataKindOf(d: OnboardingDraft): OnboardingDraft['data']['kind'] 
 
 export function validateData(d: OnboardingDraft, csv: CsvSummary | null): Errors {
   const k = dataKindOf(d)
-  if (!k) return { source: 'Choose where Bun should look — a sandbox bank is the quickest.' }
+  if (!k) return { source: 'Choose where Bun should look. A sandbox bank is the quickest.' }
   if (k === 'persona') return d.data.personaId ? {} : { persona: 'Pick one of the two sandbox ledgers' }
   const e: Errors = {}
   if (k === 'csv') {

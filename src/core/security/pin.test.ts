@@ -95,7 +95,7 @@ describe('checkPin', () => {
     const locked = withPin({ failedPinAttempts: 3, pinLockedUntil: at(5) })
     const r = checkPin('2580', locked, at(2))
     expect(r.ok).toBe(false)
-    expect(r.reason).toMatch(/locked — try again in 3 minutes/)
+    expect(r.reason).toMatch(/locked; try again in 3 minutes/)
     expect(r.mandate).toBe(locked)
   })
 

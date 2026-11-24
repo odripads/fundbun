@@ -335,7 +335,7 @@ describe('profile validation (F46)', () => {
   it('a typo with extra zeros is rejected outright', () => {
     const d = { ...profileDraft(profile), target: '99999999' }
     const r = checkProfileDraft(d, profile, { allowAboveIncome: true })
-    expect(r.errors.target).toMatch(/check for an extra zero/)
+    expect(r.errors.target).toMatch(/Check for an extra zero/i)
     expect(r.patch).toEqual({})
     expect(checkProfileDraft({ ...profileDraft(profile), income: String(MAX_MONTHLY_MAJOR + 1) }, profile).errors.income).toMatch(/extra zero/)
   })
@@ -367,7 +367,7 @@ describe('dates and copy on the Settings screen (F55, F67)', () => {
     const base = { engine: 'offline' as const, llmConsent: true, llmEnabled: true }
     const down = engineCopy({ ...base, llm: { checked: true, available: false, reason: 'Gateway answered HTTP 502' } })
     expect(down.line).toBe('On-device Bun Engine')
-    expect(down.why).toBe('Cloud AI unavailable right now — Bun answers on-device.')
+    expect(down.why).toBe('Cloud AI is unavailable right now, so Bun answers on-device.')
     expect(down.why).not.toMatch(/HTTP|502|gateway/i)
     expect(down.detail).toBe('Gateway answered HTTP 502')
     expect(engineCopy({ ...base, llmConsent: false, llm: { checked: true, available: false } }).why).toMatch(/Cloud AI is off/)

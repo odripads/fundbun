@@ -192,7 +192,7 @@ function cancelSubscription(call: ToolCall, state: AppState, recurring: Recurrin
       `Stops ${f(s.lastAmount)} ${s.cadence} charges`,
       `Saves about ${f(s.annualCost)} a year`,
       'Needs your PIN',
-      `Can't be undone from FundBun — you'd re-subscribe with ${s.merchant}`,
+      `Can't be undone from FundBun; you'd re-subscribe with ${s.merchant}`,
     ],
   }
 }
@@ -224,7 +224,7 @@ function setCategoryBudget(call: ToolCall, state: AppState): ActionPreview {
   const spent = spentIn(state, category)
   return {
     title: `Set ${categoryLabel(category)} budget to ${f(limit)} a month`,
-    summary: 'Changes your budget only — no money moves.',
+    summary: 'Changes your budget only. No money moves.',
     reversible: true,
     risk: 'low',
     effects: [
@@ -278,7 +278,7 @@ function createTripwire(call: ToolCall, state: AppState): ActionPreview {
   }
   return {
     title: `Tripwire: ${label}`,
-    summary: 'Adds a spending alert — no money moves.',
+    summary: 'Adds a spending alert. No money moves.',
     reversible: true,
     risk: 'low',
     effects: ['Shows a reminder with your dream item when it fires', undoLine(state)],
@@ -290,7 +290,7 @@ function recategorize(call: ToolCall, state: AppState): ActionPreview {
   const to = categoryLabel(str(call.args.category))
   return {
     title: `File ${txn?.merchant ?? 'this transaction'} under ${to}`,
-    summary: 'Changes a category — no money moves.',
+    summary: 'Changes a category. No money moves.',
     reversible: true,
     risk: 'low',
     effects: [`${categoryLabel(txn?.category)} → ${to}`, `Future ${txn?.merchant ?? ''} purchases are filed under ${to} too`.replace('  ', ' '), undoLine(state)],
@@ -320,7 +320,7 @@ function setBillReminder(call: ToolCall, state: AppState): ActionPreview {
     summary: bill ? `${bill.name} is due ${shortDate(bill.dueDate)}.` : 'Bill not found.',
     reversible: true,
     risk: 'low',
-    effects: ['Adds a reminder — no money moves', undoLine(state)],
+    effects: ['Adds a reminder. No money moves', undoLine(state)],
   }
 }
 

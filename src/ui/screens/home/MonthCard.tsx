@@ -80,7 +80,7 @@ export function MonthCard() {
           Saved to goals
         </p>
         <Money amount={s.savedToGoals} currency={currency} size="lg" decimals={false} tone={s.savedToGoals > 0 ? 'under' : 'neutral'} signed={s.savedToGoals > 0} />
-        <p className={styles.note}>{s.savedToGoals > 0 ? 'this month — nice.' : 'this month, so far'}</p>
+        <p className={styles.note}>{s.savedToGoals > 0 ? 'this month. Nice.' : 'this month, so far'}</p>
       </div>
     </Card>
   )
@@ -113,7 +113,7 @@ function TrackingMonth({ s, currency, spentToday, headingId }: { s: MonthSummary
           Saved to goals
         </p>
         <Money amount={s.savedToGoals} currency={currency} size="lg" decimals={false} tone={s.savedToGoals > 0 ? 'under' : 'neutral'} signed={s.savedToGoals > 0} />
-        <p className={styles.note}>{s.savedToGoals > 0 ? 'this month — nice.' : 'this month, so far'}</p>
+        <p className={styles.note}>{s.savedToGoals > 0 ? 'this month. Nice.' : 'this month, so far'}</p>
       </div>
     </Card>
   )
