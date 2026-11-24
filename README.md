@@ -4,7 +4,7 @@
 
 <h1 align="center">FundBun</h1>
 <p align="center"><em>"You could've gotten a Birkin."</em><br/>An AI money buddy that shows you the dream you could've had, and an agent you can trust inside your bank.</p>
-<p align="center"><a href="https://youtu.be/Se5TD4KQ35A"><b>▶ Watch the 5-minute demo</b></a> · <a href="https://fundbun.vercel.app/?demo=jing"><b>Try the live demo</b></a> (<a href="https://odripads.github.io/fundbun/?demo=jing">mirror</a>) · <a href="docs/TECHNICAL.md">Technical document</a> · <a href="docs/SECURITY_SELF_ASSESSMENT.md">Security self-assessment</a> · <a href="evidence/latest/SUMMARY.md">Evidence</a></p>
+<p align="center"><a href="https://youtu.be/Se5TD4KQ35A"><b>▶ Watch the 5-minute demo</b></a> · <a href="https://fundbun.vercel.app/?demo=jing"><b>Try the live demo</b></a> (<a href="https://odripads.github.io/fundbun/?demo=jing">mirror</a>) · <a href="https://github.com/odripads/fundbun/releases/tag/v1.0.0-preview"><b>Download macOS preview</b></a> · <a href="docs/TECHNICAL.md">Technical document</a> · <a href="docs/SECURITY_SELF_ASSESSMENT.md">Security self-assessment</a> · <a href="evidence/latest/SUMMARY.md">Evidence</a></p>
 
 ---
 
@@ -85,6 +85,16 @@ changed, nothing leaked. A small sandbox test, not a guarantee.
 > **No install needed to try it:** open https://fundbun.vercel.app/?demo=jing (or `?demo=arif`; mirror:
 > https://odripads.github.io/fundbun/?demo=jing), demo PIN **2580**. The hosted demo is the static build with the
 > on-device engine, so your data stays in your browser.
+
+### Download (macOS Apple Silicon preview)
+
+- Download `FundBun-1.0.0-mac-arm64.dmg` from the [v1.0.0-preview release](https://github.com/odripads/fundbun/releases/tag/v1.0.0-preview),
+  open the `.dmg`, and drag **FundBun.app** into **Applications**.
+- **First launch (unsigned preview):** macOS Gatekeeper will warn because the preview is ad-hoc signed rather than
+  notarised. Open it via **System Settings -> Privacy & Security -> Open Anyway**, or run
+  `xattr -cr /Applications/FundBun.app` in Terminal. On first open, click **Always Allow** on the macOS Keychain prompt
+  so saved AI keys can stay encrypted.
+- **Windows, Linux, or Intel Mac:** use the web app at https://fundbun.vercel.app or run from source below.
 
 ```bash
 git clone https://github.com/odripads/fundbun.git
