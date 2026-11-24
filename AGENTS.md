@@ -1,5 +1,9 @@
 # AGENTS.md — FundBun handover (read this first, every session)
 
+> **25 Nov 2026: work in progress on branch `desktop`. Read `HANDOFF.md` first.** It has the state, the tasks
+> (`docs/handoff/T1` to `T4`), how to run the desktop app and the local AI server, and the rules.
+
+
 You are helping **Odri** (Odri Prince Sembiring, UGM, Indonesia) finish and present **FundBun** at the
 **2026 Shenzhen International FinTechathon** (Shenzhen University × WeBank, 8th edition), International
 Track, Topic A (personal-finance AI agent). FundBun is a **Top 10 Finalist** — never claim it won anything.
