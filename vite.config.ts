@@ -8,8 +8,8 @@ const API_PORT = Number(process.env.FUNDBUN_API_PORT ?? 8787)
 
 /**
  * Build modes that ship the static app (on-device engine only, no LLM gateway):
- *   pages  — GitHub Pages under /fundbun/      (npm run build:pages)
- *   vercel — Vercel at the domain root          (npm run build:vercel, see vercel.json)
+ *   pages  : GitHub Pages under /fundbun/      (npm run build:pages)
+ *   vercel : Vercel at the domain root          (npm run build:vercel, see vercel.json)
  */
 export const STATIC_MODES = ['pages', 'vercel'] as const
 
@@ -49,7 +49,7 @@ export function injectCspMeta(html: string, csp: string = BUILD_CSP): string {
   return html.replace(/<head[^>]*>/i, (m) => `${m}\n    ${tag}`)
 }
 
-/** Adds the CSP <meta> to the built index.html — build only. */
+/** Adds the CSP <meta> to the built index.html (build only). */
 export function cspMetaPlugin(csp: string = BUILD_CSP): Plugin {
   return {
     name: 'fundbun:csp-meta',
@@ -63,7 +63,7 @@ export function cspMetaPlugin(csp: string = BUILD_CSP): Plugin {
 
 /**
  * The dev proxy's answer when the gateway is not running (`npm run dev:web` alone). /api/health gets a normal
- * 200 "offline" body — the app treats it as "use the on-device engine" and the browser console stays clean;
+ * 200 "offline" body: the app treats it as "use the on-device engine" and the browser console stays clean;
  * other /api calls get a JSON 503 the LLM client can explain. Returns false when the response already started.
  */
 export function answerGatewayOffline(req: Pick<IncomingMessage, 'url'>, res: ServerResponse): boolean {
@@ -72,7 +72,7 @@ export function answerGatewayOffline(req: Pick<IncomingMessage, 'url'>, res: Ser
   const isHealth = path === '/api/health'
   const body = isHealth
     ? { ok: false, reason: 'gateway offline' }
-    : { error: 'gateway_offline', message: 'The LLM gateway is not running — Bun answers on-device.' }
+    : { error: 'gateway_offline', message: 'The LLM gateway is not running, so Bun answers on-device.' }
   res.writeHead(isHealth ? 200 : 503, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
   res.end(JSON.stringify(body))
   return true
@@ -90,7 +90,7 @@ export function siteUrlFor(mode: string, env: Record<string, string | undefined>
   return null
 }
 
-const SHARE_TITLE = 'FundBun — the dream you could’ve had'
+const SHARE_TITLE = 'FundBun: the dream you could’ve had'
 const SHARE_DESCRIPTION = 'The AI money buddy that turns overspending into the dream it cost. Runs on-device; money only moves with your OK.'
 
 /** Open Graph / Twitter share-card tags (the card image needs an absolute URL, so it is added only when known). */

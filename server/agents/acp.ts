@@ -52,6 +52,33 @@ export interface AcpTransport {
 const MAX_LINE = 8 * 1024 * 1024
 const STDERR_TAIL = 2000
 
+/** How a command is started: the program, its arguments, and whether Node must pass them through unchanged. */
+export interface SpawnPlan {
+  file: string
+  args: string[]
+  verbatim: boolean
+}
+
+/** Characters cmd.exe still reads inside double quotes (expansion, escapes, quote toggling, line breaks). */
+const CMD_UNSAFE = /["%!^\r\n\0]/
+
+/**
+ * How to start `command` without a shell. Windows cannot start a .cmd or .bat file directly (Node refuses
+ * since CVE-2024-27980), and agents installed with npm are exactly that (npx.cmd, claude.cmd), so those go
+ * through cmd.exe: every part is quoted, and anything cmd.exe would still read inside quotes is refused
+ * instead of escaped (fail closed). Everything else, and every command on macOS and Linux, starts as it is.
+ */
+export function spawnPlan(command: string, args: string[], platform: NodeJS.Platform = process.platform, comSpec?: string): SpawnPlan | { error: string } {
+  if (platform !== 'win32' || !/\.(?:cmd|bat)$/i.test(command)) return { file: command, args, verbatim: false }
+  for (const part of [command, ...args]) {
+    // a trailing backslash would escape the closing quote when the program reads its arguments
+    if (CMD_UNSAFE.test(part) || part.endsWith('\\')) return { error: `FundBun will not pass ${JSON.stringify(part)} to a Windows .cmd file.` }
+  }
+  const line = [command, ...args].map((part) => `"${part}"`).join(' ')
+  // /d: skip AutoRun scripts; /s /c: strip only the outer quotes and run the line once
+  return { file: comSpec || 'cmd.exe', args: ['/d', '/s', '/c', `"${line}"`], verbatim: true }
+}
+
 export function processTransport(command: string, args: string[], opts: AcpSpawnOptions): AcpTransport {
   let child: ChildProcessWithoutNullStreams
   const lineHandlers: ((line: string) => void)[] = []
@@ -64,8 +91,10 @@ export function processTransport(command: string, args: string[], opts: AcpSpawn
     for (const h of closeHandlers) h(code)
   }
   try {
-    // no shell: the command and each argument are passed as they are
-    child = spawn(command, args, { cwd: opts.cwd, env: opts.env, stdio: ['pipe', 'pipe', 'pipe'], shell: false })
+    const plan = spawnPlan(command, args, process.platform, process.env.ComSpec)
+    if ('error' in plan) throw new Error(plan.error)
+    // no shell: the command and each argument are passed as they are (cmd.exe only for a .cmd/.bat, see spawnPlan)
+    child = spawn(plan.file, plan.args, { cwd: opts.cwd, env: opts.env, stdio: ['pipe', 'pipe', 'pipe'], shell: false, windowsVerbatimArguments: plan.verbatim, windowsHide: true })
   } catch {
     queueMicrotask(() => close(null))
     return { write: () => undefined, onLine: (h) => void lineHandlers.push(h), onClose: (h) => void closeHandlers.push(h), onStderr: (h) => void errHandlers.push(h), kill: () => undefined }
@@ -103,6 +132,15 @@ export function processTransport(command: string, args: string[], opts: AcpSpawn
     onStderr: (h) => void errHandlers.push(h),
     kill: () => {
       if (closed) return
+      if (process.platform === 'win32' && child.pid) {
+        // killing cmd.exe would leave the agent it started running: end the whole process tree
+        try {
+          spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true }).on('error', () => child.kill())
+          return
+        } catch {
+          // fall through to a plain kill
+        }
+      }
       child.kill('SIGTERM')
       setTimeout(() => !closed && child.kill('SIGKILL'), 2000).unref()
     },

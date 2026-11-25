@@ -2,14 +2,18 @@
 /**
  * Builds the FundBun desktop app.
  *   node scripts/desktop-build.mjs            → desktop/app (run it with `npx electron desktop/app`)
- *   node scripts/desktop-build.mjs --package  → also desktop/release/FundBun.app and a .dmg (macOS)
+ *   node scripts/desktop-build.mjs --package  → also a packaged app for the computer it runs on, in desktop/release:
+ *     macOS   FundBun-darwin-<arch>/FundBun.app + FundBun-<version>-mac-<arch>.dmg
+ *     Windows FundBun-win32-<arch>/ + FundBun-<version>-win-<arch>.zip
+ *     Linux   FundBun-linux-<arch>/ + FundBun-<version>-linux-<arch>.tar.gz
+ *   Each platform packages only for itself (the GitHub Actions workflow desktop-release.yml builds all three).
  * The app folder holds: main.mjs (Electron main + FundBun's server, one file), mcp-bridge.mjs, dist/ (the web app).
  */
 import { build } from 'esbuild'
 import { execFileSync } from 'node:child_process'
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { arch, platform } from 'node:os'
-import { dirname, join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -17,8 +21,10 @@ const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
 const appDir = join(root, 'desktop', 'app')
 const releaseDir = join(root, 'desktop', 'release')
 const run = (cmd, args, opts = {}) => execFileSync(cmd, args, { cwd: root, stdio: 'inherit', ...opts })
+// npm is npm.cmd on Windows, which Node starts only through a shell (fixed arguments, nothing from outside)
+const npm = (args) => run('npm', args, { shell: platform() === 'win32' })
 
-if (!process.argv.includes('--skip-web')) run('npm', ['run', 'build'])
+if (!process.argv.includes('--skip-web')) npm(['run', 'build'])
 if (!existsSync(join(root, 'dist', 'index.html'))) throw new Error('dist/ is missing: run `npm run build` first')
 
 rmSync(appDir, { recursive: true, force: true })
@@ -43,10 +49,11 @@ writeFileSync(join(appDir, 'package.json'), JSON.stringify({ name: 'fundbun', pr
 console.log(`[desktop] app folder ready: ${appDir}`)
 
 if (process.argv.includes('--package')) {
-  if (platform() !== 'darwin') throw new Error('Packaging is set up for macOS only so far.')
+  const os = platform()
+  if (!['darwin', 'win32', 'linux'].includes(os)) throw new Error(`Packaging is set up for macOS, Windows and Linux, not ${os}.`)
   const { packager } = await import('@electron/packager')
   rmSync(releaseDir, { recursive: true, force: true })
-  const icon = makeIcns()
+  const icon = os === 'darwin' ? makeIcns() : null
   const [out] = await packager({
     dir: appDir,
     out: releaseDir,
@@ -54,14 +61,21 @@ if (process.argv.includes('--package')) {
     appBundleId: 'com.kalcerinstitute.fundbun',
     appCategoryType: 'public.app-category.finance',
     appCopyright: 'MIT licensed. Kalcer Institute.',
-    platform: 'darwin',
+    platform: os,
     arch: arch(),
     // the agents run mcp-bridge.mjs as a plain file, so the app is not packed into an archive
     asar: false,
     overwrite: true,
     prune: false,
     ...(icon ? { icon } : {}),
+    ...(os === 'win32' ? { win32metadata: { CompanyName: 'Kalcer Institute', ProductName: 'FundBun', FileDescription: 'FundBun' } } : {}),
   })
+  if (os === 'darwin') packageMac(out)
+  else if (os === 'win32') packageWindows(out)
+  else packageLinux(out)
+}
+
+function packageMac(out) {
   const bundle = join(out, 'FundBun.app')
   // Apple silicon runs only signed code: an ad-hoc signature (no Apple Developer ID; Gatekeeper will still ask)
   run('codesign', ['--force', '--deep', '--sign', '-', bundle])
@@ -73,6 +87,23 @@ if (process.argv.includes('--package')) {
   run('hdiutil', ['create', '-volname', 'FundBun', '-srcfolder', stage, '-ov', '-format', 'UDZO', dmg])
   rmSync(stage, { recursive: true, force: true })
   console.log(`[desktop] ${bundle}\n[desktop] ${dmg}`)
+}
+
+function packageWindows(out) {
+  // unsigned: Windows SmartScreen will ask "Run anyway" on first start
+  const zip = join(releaseDir, `FundBun-${pkg.version}-win-${arch()}.zip`)
+  rmSync(zip, { force: true })
+  // the folder name stays inside the zip, so it unpacks to FundBun-win32-<arch>\FundBun.exe
+  run('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', 'Compress-Archive -LiteralPath $env:FUNDBUN_SRC -DestinationPath $env:FUNDBUN_DEST -Force'], {
+    env: { ...process.env, FUNDBUN_SRC: out, FUNDBUN_DEST: zip },
+  })
+  console.log(`[desktop] ${join(out, 'FundBun.exe')}\n[desktop] ${zip}`)
+}
+
+function packageLinux(out) {
+  const tarball = join(releaseDir, `FundBun-${pkg.version}-linux-${arch()}.tar.gz`)
+  run('tar', ['-czf', tarball, '-C', releaseDir, basename(out)])
+  console.log(`[desktop] ${join(out, 'FundBun')}\n[desktop] ${tarball}`)
 }
 
 /** public/icon-512.png → an .icns file (macOS tools only); null when they are missing. */

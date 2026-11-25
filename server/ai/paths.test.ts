@@ -1,6 +1,6 @@
 import { chmodSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
-import { delimiter, join } from 'node:path'
+import { delimiter, join, win32 } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { childEnv, findCommand, searchPath } from './paths'
 
@@ -158,5 +158,68 @@ describe('childEnv', () => {
     const env = { PATH: '/usr/bin', CLAUDECODE: '1' }
     childEnv(env)
     expect(env).toEqual({ PATH: '/usr/bin', CLAUDECODE: '1' })
+  })
+})
+
+describe('Windows', () => {
+  const W = { platform: 'win32' as const }
+  /** A pretend Windows disk: the set of files that exist. */
+  const disk = (...files: string[]) => {
+    const set = new Set(files.map((f) => f.toLowerCase()))
+    return (full: string) => set.has(full.toLowerCase())
+  }
+
+  it('reads PATH spelled `Path`, splits it on semicolons, and adds the usual tool folders', () => {
+    const env = { Path: 'C:\\Windows\\system32;C:\\Tools', APPDATA: 'C:\\Users\\x\\AppData\\Roaming', LOCALAPPDATA: 'C:\\Users\\x\\AppData\\Local', USERPROFILE: 'C:\\Users\\x' }
+    const dirsOut = searchPath(env, 'win32')
+    expect(dirsOut.slice(0, 2)).toEqual(['C:\\Windows\\system32', 'C:\\Tools'])
+    for (const dir of [
+      'C:\\Users\\x\\AppData\\Roaming\\npm', 'C:\\Users\\x\\AppData\\Local\\Programs',
+      'C:\\Users\\x\\.local\\bin', 'C:\\Users\\x\\.bun\\bin', 'C:\\Users\\x\\.cargo\\bin',
+    ]) expect(dirsOut).toContain(dir)
+    expect(dirsOut).not.toContain('/opt/homebrew/bin')
+  })
+
+  it('reads PATH in any spelling and lists a folder once whatever its case', () => {
+    expect(searchPath({ pAtH: 'C:\\A' }, 'win32')[0]).toBe('C:\\A')
+    const dirsOut = searchPath({ PATH: 'C:\\Tools;c:\\tools;C:\\TOOLS', USERPROFILE: 'C:\\Users\\x' }, 'win32')
+    expect(dirsOut.filter((d) => d.toLowerCase() === 'c:\\tools')).toHaveLength(1)
+  })
+
+  it('finds npx as npx.cmd in npm\'s global folder', () => {
+    const env = { Path: 'C:\\Windows', APPDATA: 'C:\\Users\\x\\AppData\\Roaming', USERPROFILE: 'C:\\Users\\x' }
+    const full = win32.join('C:\\Users\\x\\AppData\\Roaming\\npm', 'npx.cmd')
+    expect(findCommand('npx', env, { ...W, exists: disk(full) })).toBe(full)
+  })
+
+  it('tries .exe, then .cmd, then .bat in each folder, in PATH order', () => {
+    const env = { Path: 'C:\\A;C:\\B', USERPROFILE: 'C:\\Users\\x' }
+    expect(findCommand('agent', env, { ...W, exists: disk('C:\\A\\agent.bat', 'C:\\A\\agent.cmd', 'C:\\A\\agent.exe') })).toBe('C:\\A\\agent.exe')
+    expect(findCommand('agent', env, { ...W, exists: disk('C:\\A\\agent.bat', 'C:\\A\\agent.cmd') })).toBe('C:\\A\\agent.cmd')
+    expect(findCommand('agent', env, { ...W, exists: disk('C:\\A\\agent.bat') })).toBe('C:\\A\\agent.bat')
+    expect(findCommand('agent', env, { ...W, exists: disk('C:\\B\\agent.exe', 'C:\\A\\agent.bat') })).toBe('C:\\A\\agent.bat')
+  })
+
+  it('does not run a file with no extension or an unknown one (it would not start on Windows)', () => {
+    const env = { Path: 'C:\\A', USERPROFILE: 'C:\\Users\\x' }
+    expect(findCommand('agent', env, { ...W, exists: disk('C:\\A\\agent', 'C:\\A\\agent.ps1') })).toBeNull()
+  })
+
+  it('takes a name that already ends in .exe, .cmd or .bat as it is', () => {
+    const env = { Path: 'C:\\A', USERPROFILE: 'C:\\Users\\x' }
+    expect(findCommand('agent.cmd', env, { ...W, exists: disk('C:\\A\\agent.cmd') })).toBe('C:\\A\\agent.cmd')
+    expect(findCommand('agent.cmd', env, { ...W, exists: disk('C:\\A\\agent.cmd.exe') })).toBeNull()
+  })
+
+  it('still refuses paths and shell characters', () => {
+    const anything = () => true
+    for (const name of ['C:\\A\\agent', '..\\agent', 'agent&calc', 'agent|x', '%COMSPEC%']) expect(findCommand(name, { Path: 'C:\\A' }, { ...W, exists: anything })).toBeNull()
+  })
+
+  it('childEnv keeps one PATH variable, joined with semicolons', () => {
+    const out = childEnv({ Path: 'C:\\A', USERPROFILE: 'C:\\Users\\x', OTHER: '1' }, 'win32')
+    expect(Object.keys(out).filter((k) => k.toLowerCase() === 'path')).toEqual(['PATH'])
+    expect(out.PATH.split(';')[0]).toBe('C:\\A')
+    expect(out.OTHER).toBe('1')
   })
 })

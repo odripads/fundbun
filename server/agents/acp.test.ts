@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { AcpError, connectAcp, type AcpTransport, type JsonObject } from './acp'
+import { AcpError, connectAcp, spawnPlan, type AcpTransport, type JsonObject } from './acp'
 
 function fakeTransport() {
   const lineHandlers: ((line: string) => void)[] = []
@@ -133,5 +133,39 @@ describe('connectAcp', () => {
     t.push({ jsonrpc: '2.0', id: 1, result: { late: true } })
     conn.close()
     expect(t.killed).toBe(true)
+  })
+})
+
+describe('spawnPlan (how a command is started)', () => {
+  it('starts every command as it is on macOS and Linux, and .exe files on Windows', () => {
+    expect(spawnPlan('/usr/local/bin/npx', ['-y', 'pkg'], 'darwin')).toEqual({ file: '/usr/local/bin/npx', args: ['-y', 'pkg'], verbatim: false })
+    expect(spawnPlan('/usr/bin/x.cmd', ['a'], 'linux')).toEqual({ file: '/usr/bin/x.cmd', args: ['a'], verbatim: false })
+    expect(spawnPlan('C:\\A\\agent.exe', ['--acp'], 'win32')).toEqual({ file: 'C:\\A\\agent.exe', args: ['--acp'], verbatim: false })
+  })
+
+  it('runs a Windows .cmd or .bat through cmd.exe with every part quoted', () => {
+    const plan = spawnPlan('C:\\Program Files (x86)\\nodejs\\npx.CMD', ['-y', '@agentclientprotocol/claude-agent-acp@0.106.0', '--model=a b&c'], 'win32', 'C:\\Windows\\system32\\cmd.exe')
+    expect(plan).toEqual({
+      file: 'C:\\Windows\\system32\\cmd.exe',
+      args: ['/d', '/s', '/c', '""C:\\Program Files (x86)\\nodejs\\npx.CMD" "-y" "@agentclientprotocol/claude-agent-acp@0.106.0" "--model=a b&c""'],
+      verbatim: true,
+    })
+    expect(spawnPlan('C:\\A\\run.bat', [], 'win32')).toMatchObject({ file: 'cmd.exe', verbatim: true })
+  })
+
+  it.each([
+    ['a quote', 'a"&calc'],
+    ['a variable', '%COMSPEC%'],
+    ['delayed expansion', '!x!'],
+    ['a caret', 'a^b'],
+    ['a line break', 'a\ncalc'],
+    ['a null byte', 'a\u0000'],
+    ['a trailing backslash', 'C:\\dir\\'],
+  ])('refuses %s in an argument to a .cmd file instead of escaping it', (_what, arg) => {
+    expect(spawnPlan('C:\\A\\npx.cmd', ['-y', arg], 'win32')).toHaveProperty('error')
+  })
+
+  it('refuses a .cmd path that cmd.exe would expand', () => {
+    expect(spawnPlan('C:\\%TEMP%\\npx.cmd', [], 'win32')).toHaveProperty('error')
   })
 })
