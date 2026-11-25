@@ -61,6 +61,10 @@ export async function handlePlugins(
   if (method !== 'GET' && method !== 'HEAD' && !req.headers.origin) {
     return helpers.sendJson(res, 403, { error: 'forbidden_origin', message: 'Only the FundBun app may change plugins.' })
   }
+  // a JSON body only: a cross-site form cannot send one without a CORS preflight, which this server never approves
+  if ((method === 'POST' || method === 'PATCH') && !/^application\/json\b/i.test(String(req.headers['content-type'] ?? ''))) {
+    return helpers.sendJson(res, 415, { error: 'unsupported_media_type', message: 'Send JSON.' })
+  }
 
   if (pathname === '/api/plugins/state') {
     if (method !== 'GET') return helpers.methodNotAllowed(res, 'GET')

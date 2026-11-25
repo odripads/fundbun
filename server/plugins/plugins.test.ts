@@ -216,6 +216,10 @@ describe('/api/plugins/* routes', () => {
     const res = await fetch(`${base}/api/plugins/mode`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled: true }) })
     expect(res.status).toBe(403)
     expect(plugins.isEnabled()).toBe(false)
+    // the app's own origin with a form-style body is refused too
+    const form = await fetch(`${base}/api/plugins/mode`, { method: 'POST', headers: { 'Content-Type': 'text/plain', Origin: base }, body: '{"enabled":true}' })
+    expect(form.status).toBe(415)
+    expect(plugins.isEnabled()).toBe(false)
     // reading is fine
     expect((await fetch(`${base}/api/plugins/state`)).status).toBe(200)
   })
