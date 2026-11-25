@@ -302,6 +302,8 @@ function friendlyStartError(e: unknown, stderr: string, label: string): { code: 
 export function createAgentRuntime(opts: AgentRuntimeOptions): AgentRuntime {
   const sessions = new Map<string, Session>()
   const byToken = new Map<string, Session>()
+  /** Tokens valid for `tools/list` while `openSession` (`session/new`) is still starting the agent's MCP bridge. */
+  const startingTokens = new Set<string>()
   const toolNames = new Set(llmToolDefinitions().map((t) => t.name))
   const startTransport = opts.transport ?? ((command, args, cwd) => processTransport(command, args, { cwd, env: childEnv() }))
   const clock = opts.now ?? (() => Date.now())
@@ -453,6 +455,7 @@ export function createAgentRuntime(opts: AgentRuntimeOptions): AgentRuntime {
     let generation = generationOf(input.connectionId)
     const conn = connectAcp(startTransport(cmd.value.command, cmd.value.args, opts.workspace))
     const token = randomBytes(24).toString('hex')
+    startingTokens.add(token)
     try {
       const { sessionId, models, picked } = await openSession(conn, [{
         name: 'fundbun',
@@ -487,6 +490,8 @@ export function createAgentRuntime(opts: AgentRuntimeOptions): AgentRuntime {
       opts.ai.markError(input.connectionId, err.message)
       emit({ type: 'error', ...err })
       return null
+    } finally {
+      startingTokens.delete(token)
     }
   }
 
@@ -637,10 +642,12 @@ export function createAgentRuntime(opts: AgentRuntimeOptions): AgentRuntime {
     },
     async bridge(token, payload) {
       const s = byToken.get(token)
-      if (!s) throw new AcpError('Unknown session', 401)
-      if (payload.method === 'tools/list') {
-        return { tools: llmToolDefinitions().map((t) => ({ name: t.name, description: t.description, inputSchema: t.input_schema })) }
+      const listTools = () => ({ tools: llmToolDefinitions().map((t) => ({ name: t.name, description: t.description, inputSchema: t.input_schema })) })
+      if (!s) {
+        if (payload.method === 'tools/list' && startingTokens.has(token)) return listTools()
+        throw new AcpError('Unknown session', 401)
       }
+      if (payload.method === 'tools/list') return listTools()
       if (payload.method !== 'tools/call') throw new AcpError('Unknown method', 400)
       const name = text(payload.name, 64)
       if (!toolNames.has(name)) return { content: JSON.stringify({ status: 'denied', reason: 'FundBun has no such tool.' }), isError: true }
@@ -667,6 +674,7 @@ export function createAgentRuntime(opts: AgentRuntimeOptions): AgentRuntime {
         if (s) end(s)
         return
       }
+      startingTokens.clear()
       for (const s of [...sessions.values()]) end(s)
       for (const conn of [...probeConns.keys()]) conn.close()
     },

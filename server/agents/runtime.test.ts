@@ -350,6 +350,40 @@ describe('createAgentRuntime', () => {
     await expect(runtime.bridge(bridgeToken, { method: 'tools/list' })).rejects.toMatchObject({ code: 401 })
   })
 
+  it('allows tools/list (while still denying tools/call) during session/new, and cleans up if startup fails', async () => {
+    let bridgeToken = ''
+    let pendingNewId: number | undefined
+    let apiRef!: ReturnType<typeof scriptedAgent>['transport'] extends never ? never : { send: (m: JsonObject) => void }
+    const { connectionId, runtime } = await setupRuntime((msg, api) => {
+      apiRef = api
+      const { id, method, params } = msg as { id?: number; method: string; params: JsonObject }
+      if (method === 'initialize') return api.send({ id, result: {} })
+      if (method === 'session/new') {
+        const mcpServers = params.mcpServers as { env: { name: string; value: string }[] }[]
+        bridgeToken = mcpServers[0].env.find((e) => e.name === 'FUNDBUN_BRIDGE_TOKEN')!.value
+        pendingNewId = id
+      }
+    })
+
+    const events: AgentEvent[] = []
+    const turnP = runtime.turn({ connectionId, sessionKey: 's-starting', text: 'hi', preamble: '' }, (e) => events.push(e))
+    await vi.waitFor(() => expect(pendingNewId).toBeGreaterThan(0))
+
+    // While session/new is still in flight, the agent's MCP bridge can call tools/list cleanly (without T4)
+    const listed = await runtime.bridge(bridgeToken, { method: 'tools/list' })
+    const names = (listed.tools as { name: string }[]).map((t) => t.name)
+    expect(names).toContain('get_overview')
+    expect(names).not.toContain('transfer_external')
+    // tools/call is still refused while the session is not open
+    await expect(runtime.bridge(bridgeToken, { method: 'tools/call', name: 'get_overview', arguments: {} })).rejects.toMatchObject({ code: 401 })
+
+    // If startup fails, the starting token is cleaned up immediately
+    apiRef.send({ id: pendingNewId, error: { code: -32000, message: 'boom' } })
+    await turnP
+    await expect(runtime.bridge(bridgeToken, { method: 'tools/list' })).rejects.toMatchObject({ code: 401 })
+    runtime.close()
+  })
+
   it('rejects tools/call outside a turn and times out stalled tool calls', async () => {
     let bridgeToken = ''
     let promptId = 0
