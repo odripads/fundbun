@@ -4,7 +4,7 @@ import { createGatewayServer } from '../../../server/app'
 import { createPluginService } from '../../../server/plugins/service'
 import { createPluginMemoryStore } from '../../../server/plugins/store'
 import { fakeHost } from '../../../tests/helpers/fake-host'
-import { PluginsClient } from '../plugins/client'
+import { browserLikeClient } from '../../../tests/helpers/plugins'
 import { runCreatorTool } from './creator-tools'
 import { startTurn, taint } from './turn'
 
@@ -22,7 +22,7 @@ async function setup(enabled: boolean) {
     server.close(() => r())
   }))
   const host = fakeHost({ persona: 'mei' })
-  host.plugins = new PluginsClient(`http://127.0.0.1:${(server.address() as AddressInfo).port}/api`)
+  host.plugins = browserLikeClient(`http://127.0.0.1:${(server.address() as AddressInfo).port}`)
   return { host, service }
 }
 

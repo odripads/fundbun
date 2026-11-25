@@ -56,6 +56,11 @@ export async function handlePlugins(
   helpers: PluginRouteHelpers,
 ): Promise<void> {
   const method = req.method ?? 'GET'
+  // a change must come from FundBun's own page: a browser always sends Origin on these methods, so a request without
+  // one is another program on this computer, not the app
+  if (method !== 'GET' && method !== 'HEAD' && !req.headers.origin) {
+    return helpers.sendJson(res, 403, { error: 'forbidden_origin', message: 'Only the FundBun app may change plugins.' })
+  }
 
   if (pathname === '/api/plugins/state') {
     if (method !== 'GET') return helpers.methodNotAllowed(res, 'GET')

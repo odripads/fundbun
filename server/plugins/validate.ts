@@ -105,6 +105,30 @@ const JS_FORBIDDEN_RULES: readonly ForbiddenRule[] = [
     fix: 'Let the FundBun host handle snapshots and sizing automatically.',
   },
   {
+    rule: 'plugin/no-navigation',
+    pattern: /(?<![.\w$])(?:location|navigation)\b|\b(?:window|self|document|frames)\s*\.\s*(?:location|navigation|history)\b/,
+    message: 'Widgets cannot navigate or change the address of their frame.',
+    fix: 'Render inside root only; a widget never leaves its card.',
+  },
+  {
+    rule: 'plugin/no-navigation',
+    pattern: /\.\s*click\s*\(/,
+    message: 'Widgets cannot click elements from code (a link click would navigate away).',
+    fix: 'Render static content; widgets have no links or actions.',
+  },
+  {
+    rule: 'plugin/no-global-lookup',
+    pattern: /\b(?:window|self|globalThis|document|defaultView)\s*\[/,
+    message: 'Looking up browser globals by a computed name is not allowed in widgets.',
+    fix: 'Use the root, data and helpers arguments; reach for nothing else.',
+  },
+  {
+    rule: 'plugin/no-global-lookup',
+    pattern: /\b(?:globalThis|defaultView)\b/,
+    message: 'globalThis and defaultView are not allowed in widgets.',
+    fix: 'Use the root, data and helpers arguments; reach for nothing else.',
+  },
+  {
     rule: 'plugin/no-storage',
     pattern: /\blocalStorage\b/,
     message: 'localStorage access is blocked in FundBun plugins.',

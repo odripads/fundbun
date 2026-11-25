@@ -48,11 +48,17 @@ export function PluginFrame({ src, title }: PluginFrameProps) {
   const token = useMemo(newToken, [src])
   const [height, setHeight] = useState(120)
   const [ready, setReady] = useState(false)
+  // a widget loads once; a second load means it navigated its frame, so it is shut down (the desktop app also
+  // blocks the navigation itself before anything leaves the computer)
+  const loads = useRef(0)
+  const [stopped, setStopped] = useState(false)
   const snap = useSnapshot(selectAll)
   const data = useMemo(() => buildPluginSnapshot(snap), [snap])
 
   useEffect(() => {
     setReady(false)
+    loads.current = 0
+    setStopped(false)
     const onMessage = (ev: MessageEvent) => {
       // only this frame's own messages, carrying the token it was given
       if (ev.source !== ref.current?.contentWindow) return
@@ -76,6 +82,9 @@ export function PluginFrame({ src, title }: PluginFrameProps) {
   }, [ready, data, token])
 
   const sep = src.includes('?') ? '&' : '?'
+  if (stopped) {
+    return <p className={styles.stopped} role="status">This widget tried to leave its card, so FundBun stopped it.</p>
+  }
   return (
     <iframe
       ref={ref}
@@ -86,6 +95,10 @@ export function PluginFrame({ src, title }: PluginFrameProps) {
       referrerPolicy="no-referrer"
       loading="lazy"
       style={{ height }}
+      onLoad={() => {
+        loads.current += 1
+        if (loads.current > 1) setStopped(true)
+      }}
     />
   )
 }

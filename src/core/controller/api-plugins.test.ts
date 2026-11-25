@@ -5,7 +5,7 @@ import { createPluginService } from '../../../server/plugins/service'
 import { STARTER_PLUGINS } from '../../../server/plugins/starters'
 import { createPluginMemoryStore } from '../../../server/plugins/store'
 import { createTestApp } from '../app'
-import { PluginsClient } from '../plugins/client'
+import { browserLikeClient } from '../../../tests/helpers/plugins'
 import { DEMO_PIN } from './constants'
 
 const closers: (() => Promise<void>)[] = []
@@ -22,7 +22,7 @@ async function setup() {
     server.closeAllConnections()
     server.close(() => r())
   }))
-  const app = createTestApp({ plugins: new PluginsClient(`http://127.0.0.1:${port}/api`) })
+  const app = createTestApp({ plugins: browserLikeClient(`http://127.0.0.1:${port}`) })
   app.loadDemo('mei')
   return { app, service }
 }

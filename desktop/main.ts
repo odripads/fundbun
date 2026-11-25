@@ -57,7 +57,25 @@ function createWindow(): void {
     event.preventDefault()
     openOutside(url)
   })
+  // a frame inside the page (a Creator Mode widget) may never leave this computer: a navigation could carry data out
+  win.webContents.on('will-frame-navigate', (event) => {
+    if (event.isMainFrame || isOurs(event.url) || event.url === 'about:blank') return
+    event.preventDefault()
+  })
+  // the page talks only to the FundBun server on this computer; any other request from it (or a frame in it) is cut
+  win.webContents.session.webRequest.onBeforeRequest({ urls: ['http://*/*', 'https://*/*', 'ws://*/*', 'wss://*/*'] }, (details, done) => {
+    done({ cancel: !isLoopbackUrl(details.url) })
+  })
   void win.loadURL(local.url)
+}
+
+function isLoopbackUrl(url: string): boolean {
+  try {
+    const host = new URL(url).hostname
+    return host === '127.0.0.1' || host === 'localhost' || host === '[::1]' || host === '::1'
+  } catch {
+    return false
+  }
 }
 
 function buildMenu(): void {
