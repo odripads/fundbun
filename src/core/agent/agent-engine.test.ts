@@ -213,5 +213,15 @@ describe('respondAgent with attached files', () => {
     expect(text).toContain('<untrusted source="attached-file">')
     expect(text).toContain('File: receipt.pdf (pdf)')
   })
-})
 
+  it('keeps every later turn in the same agent session untrusted, long after the file', async () => {
+    const { engine } = scriptedAgentSetup(async (_req, emit) => {
+      await emit({ type: 'text', delta: 'ok' })
+      await emit({ type: 'done', stopReason: 'end_turn' })
+    }, { fresh: false })
+    await engine.respond('Read this', { attachments: [{ name: 'notes.txt', kind: 'text', text: 'hello' }] })
+    let last
+    for (let i = 0; i < 12; i++) last = await engine.respond(`Question ${i}: what is a tripwire?`)
+    expect(last?.trace?.some((t) => t.kind === 'injection')).toBe(true)
+  })
+})

@@ -27,8 +27,11 @@ import { composeReply, line } from './voice'
 
 /** Creates the FundBun agent runtime (offline Bun Engine + LLM tool loop, policy-gated). */
 export const createAgentEngine: AgentEngineFactory = (host) => {
+  // agent sessions that were sent a file: an agent keeps its own memory of the session, so every later turn in it
+  // stays untrusted, however long ago the file was (a new chat starts a new session)
+  const sessionsWithFiles = new Set<string>()
   const engine: AgentEngine = {
-    respond: (text, opts) => respond(host, text, opts?.source ?? 'chat', opts?.attachments),
+    respond: (text, opts) => respond(host, text, opts?.source ?? 'chat', opts?.attachments, sessionsWithFiles),
     propose: async (action, proposedBy) => propose(host, action, proposedBy),
     approve: async (pendingId, pin) => approve(host, pendingId, pin),
     reject: (pendingId) => void rejectPending(host, pendingId),
@@ -41,7 +44,7 @@ export const createAgentEngine: AgentEngineFactory = (host) => {
 
 // ───────────────────────────── turns ─────────────────────────────
 
-async function respond(host: AgentHost, text: string, source: 'chat' | 'xray', attached?: unknown): Promise<ChatMessage> {
+async function respond(host: AgentHost, text: string, source: 'chat' | 'xray', attached?: unknown, sessionsWithFiles: Set<string> = new Set()): Promise<ChatMessage> {
   const turn = startTurn(host, source)
   const files = source === 'chat' ? cleanAttachments(attached) : []
   const raw = String(text ?? '').slice(0, 8000).trim() || (files.length ? (files.length === 1 ? 'Have a look at this file.' : 'Have a look at these files.') : '')
@@ -65,6 +68,10 @@ async function respond(host: AgentHost, text: string, source: 'chat' | 'xray', a
   const request = pin.request
   const useModel = source === 'chat' && !pin.masked && (files.length > 0 || !needsDeterministicPath(host, request))
   const agent = useModel ? host.agent?.() ?? null : null
+  if (agent) {
+    if (files.length) sessionsWithFiles.add(agent.sessionKey)
+    if (sessionsWithFiles.has(agent.sessionKey)) taint(turn, 'file earlier in this agent session')
+  }
   const client = useModel && !agent ? host.llm() : null
   let reply: Reply & { grounding?: GroundingReport; via?: string; rich?: boolean }
   if (agent) reply = await respondAgent(host, turn, request, agent, files)
