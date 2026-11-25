@@ -109,6 +109,11 @@ describe('childEnv', () => {
     CLAUDE_PID: '4242',
     CODEX_SANDBOX: 'seatbelt',
     CODEX_SANDBOX_NETWORK_DISABLED: '1',
+    ANTIGRAVITY_AGENT: '1',
+    ANTIGRAVITY_CONVERSATION_ID: 'conv-1',
+    AGY_ACP_FORCE_FILE_STORAGE: '1',
+    T3_ACP_MCP_ENDPOINT: 'http://127.0.0.1:9999',
+    T3CODE_THREAD_ID: 'thread-1',
   }
 
   it('drops the identity of an agent session FundBun was started from', () => {
@@ -174,7 +179,7 @@ describe('Windows', () => {
     const dirsOut = searchPath(env, 'win32')
     expect(dirsOut.slice(0, 2)).toEqual(['C:\\Windows\\system32', 'C:\\Tools'])
     for (const dir of [
-      'C:\\Users\\x\\AppData\\Roaming\\npm', 'C:\\Users\\x\\AppData\\Local\\Programs',
+      'C:\\Users\\x\\AppData\\Roaming\\npm', 'C:\\Users\\x\\AppData\\Local\\Programs', 'C:\\Users\\x\\AppData\\Local\\agy\\bin',
       'C:\\Users\\x\\.local\\bin', 'C:\\Users\\x\\.bun\\bin', 'C:\\Users\\x\\.cargo\\bin',
     ]) expect(dirsOut).toContain(dir)
     expect(dirsOut).not.toContain('/opt/homebrew/bin')

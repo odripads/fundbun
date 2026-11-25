@@ -97,6 +97,11 @@ export const AGENTS: readonly AgentPreset[] = [
     note: 'Uses the ChatGPT plan you are signed in to.',
   },
   {
+    id: 'antigravity', name: 'Antigravity', vendor: 'Google', bin: 'agy', login: 'agy acp --login',
+    launch: { via: 'bin', args: ['acp'] },
+    note: 'Uses the Google / Gemini plan you are signed in to.',
+  },
+  {
     id: 'qwen-code', name: 'Qwen Code', vendor: 'Alibaba', bin: 'qwen', login: 'qwen (then choose a sign-in)',
     launch: { via: 'bin', args: ['--acp'] },
     note: 'Uses your Qwen sign-in.',

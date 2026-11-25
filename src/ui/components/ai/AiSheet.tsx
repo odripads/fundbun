@@ -222,7 +222,7 @@ function WebOnly() {
   return (
     <div className={styles.stack}>
       <Callout tone="info" title="This is the web version">
-        Here Bun answers with the built-in engine on this device. To plug in your own AI (Claude Code, Codex, DeepSeek, Qwen, a model on your laptop), use the FundBun desktop app, which runs on your computer and keeps your keys there.
+        Here Bun answers with the built-in engine on this device. To plug in your own AI (Claude Code, Antigravity, Codex, DeepSeek, Qwen, Grok, a model on your laptop), use the FundBun desktop app, which runs on your computer and keeps your keys there.
       </Callout>
       <Button href={REPO_URL} target="_blank" rel="noreferrer" variant="secondary" fullWidth>How to get the desktop app</Button>
     </div>

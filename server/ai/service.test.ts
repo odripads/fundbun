@@ -209,20 +209,26 @@ describe('createAiService: secrets, validation and connections', () => {
   })
 
   it('resolves agentCommand for npx, bin, missing binaries and custom commands', async () => {
-    const bins: Record<string, string | null> = { npx: '/opt/homebrew/bin/npx', opencode: '/Users/me/.opencode/bin/opencode', claude: null, 'my-agent': '/usr/local/bin/my-agent' }
+    const bins: Record<string, string | null> = { npx: '/opt/homebrew/bin/npx', agy: '/Users/me/.local/bin/agy', opencode: '/Users/me/.opencode/bin/opencode', claude: null, 'my-agent': '/usr/local/bin/my-agent' }
     const svc = createAiService({ store: createMemoryStore(), find: (b) => bins[b] ?? null })
 
     const claude = await svc.add({ presetId: 'claude-code' })
+    const antigravity = await svc.add({ presetId: 'antigravity' })
     const openCode = await svc.add({ presetId: 'opencode' })
     const qwen = await svc.add({ presetId: 'qwen-code' })
     const customBare = await svc.add({ presetId: CUSTOM_AGENT_ID, command: ['my-agent', '--acp', '--flag'] })
     const customMissing = await svc.add({ presetId: CUSTOM_AGENT_ID, command: ['no-such-bin', '--acp'] })
     const customPath = await svc.add({ presetId: CUSTOM_AGENT_ID, command: ['/opt/custom/agent', 'acp'] })
-    if (!claude.ok || !openCode.ok || !qwen.ok || !customBare.ok || !customMissing.ok || !customPath.ok) throw new Error('add failed')
+    if (!claude.ok || !antigravity.ok || !openCode.ok || !qwen.ok || !customBare.ok || !customMissing.ok || !customPath.ok) throw new Error('add failed')
 
+    expect(svc.state().agents.find((a) => a.id === 'antigravity')).toMatchObject({ name: 'Antigravity', vendor: 'Google', bin: 'agy', installed: true })
     expect(svc.agentCommand(claude.value.id)).toEqual({
       ok: true,
       value: { command: '/opt/homebrew/bin/npx', args: ['-y', '@agentclientprotocol/claude-agent-acp@0.106.0'] },
+    })
+    expect(svc.agentCommand(antigravity.value.id)).toEqual({
+      ok: true,
+      value: { command: '/Users/me/.local/bin/agy', args: ['acp'] },
     })
     expect(svc.agentCommand(openCode.value.id)).toEqual({
       ok: true,

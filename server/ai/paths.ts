@@ -33,6 +33,7 @@ function extraDirs(env: Env, platform: NodeJS.Platform): string[] {
     return [
       env.APPDATA ? join(env.APPDATA, 'npm') : '',
       env.LOCALAPPDATA ? join(env.LOCALAPPDATA, 'Programs') : '',
+      env.LOCALAPPDATA ? join(env.LOCALAPPDATA, 'agy', 'bin') : '',
       env.ProgramFiles ? join(env.ProgramFiles, 'nodejs') : '',
       join(home, '.local', 'bin'), join(home, '.bun', 'bin'), join(home, '.cargo', 'bin'),
     ]
@@ -91,7 +92,7 @@ export function findCommand(bin: string, env: Env = process.env, opts: FindOptio
   return null
 }
 
-const NESTED_SESSION = /^(?:CLAUDECODE$|CLAUDE_CODE_|CLAUDE_AGENT_SDK_|CLAUDE_PID$|CODEX_SANDBOX)/
+const NESTED_SESSION = /^(?:CLAUDECODE$|CLAUDE_CODE_|CLAUDE_AGENT_SDK_|CLAUDE_PID$|CODEX_SANDBOX|ANTIGRAVITY_|AGY_ACP_|T3_ACP_|T3CODE_)/
 
 /** The environment a child process (an agent, npx) is started with: the user's own, with the wider PATH. */
 export function childEnv(env: Env = process.env, platform: NodeJS.Platform = process.platform): Record<string, string> {
