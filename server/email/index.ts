@@ -1,12 +1,12 @@
 /**
- * Email-source connectors behind ONE interface (src/core/email/types.EmailSource).
+ * The public email sources behind ONE interface (src/core/email/types.EmailSource), for GET /api/email/sources
+ * and GET /api/email/fetch on every gateway, hosted or local:
+ *   - `sandbox`: the synthetic demo mailbox from src/core/email/sandbox (no account needed).
+ *   - QQ Mail, 163 Mail, Gmail, Outlook: listed as unavailable. These public routes never take a password.
  *
- * Priority for the stage demo:
- *   - `sandbox` — full, reused from src/core/email/sandbox (no account needed).
- *   - QQ Mail + 163 Mail — read-only IMAP using the user's 授权码 (authorization code), NEVER the password.
- *     Not live-tested: needs a real 授权码, which is held in memory only (never in files/logs/git). Marked
- *     `available: false` until wired.
- *   - Gmail / Outlook — stubs marked "after pilot" (blocked/unreliable in mainland China).
+ * The user's OWN mailbox is a separate, local-only path: on the desktop app or `npm run local` the user connects
+ * any IMAP mailbox through /api/email/account and reads it, read only, through /api/email/check (routes.ts,
+ * service.ts, imap.ts). Its password is kept like the AI keys, in <home>/email.json, never here.
  *
  * No credentials are ever stored here or returned by any route.
  */

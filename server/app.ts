@@ -7,6 +7,8 @@ import { handleAgent } from './agents/routes'
 import { handleAi } from './ai/routes'
 import { isLocalHost, type AiService } from './ai/service'
 import { emailSourcesMeta, fetchEmailMessages } from './email'
+import { handleEmail, isEmailAccountPath } from './email/routes'
+import type { EmailService } from './email/service'
 import { ProviderError, type LlmProvider, type ProviderRequest } from './providers/types'
 import { createRateLimiter, type RateLimiter } from './ratelimit'
 import { LIMITS, parseLlmRequest } from './schema'
@@ -48,6 +50,11 @@ export interface GatewayOptions {
   ai?: AiService
   /** Local server only: agents on this computer (Claude Code, Codex, …) driven over ACP */
   agents?: AgentRuntime
+  /**
+   * Local server only: the user's own mailbox, read only over IMAP. When set, /api/email/account and
+   * /api/email/check are served, and only to this computer; the public sandbox email routes work either way.
+   */
+  email?: EmailService
   /** production: serve dist/ for non-API paths */
   staticHandler?: StaticHandler | null
   /** one line per request: method, path, status, latency, provider — never bodies */
@@ -124,6 +131,19 @@ async function route(ctx: RouteContext, req: IncomingMessage, res: ServerRespons
     if (pathname.startsWith('/api/ai/')) return handleAi(ai, req, res, pathname, tools)
     if (!agents) return sendJson(res, 404, { error: 'not_found', message: 'Agents are not available here.' })
     return handleAgent(agents, req, res, pathname, tools)
+  }
+  if (isEmailAccountPath(pathname)) {
+    const { email } = ctx.opts
+    // the hosted gateway never takes anyone's mail password
+    if (!email) return sendJson(res, 404, { error: 'not_found', message: 'Email connections need the FundBun desktop app or the local server.' })
+    if (!isLocalRequest(req) || !isSameOrigin(req, ctx.opts)) {
+      return sendJson(res, 403, { error: 'forbidden_origin', message: 'Only this computer may use this route.' })
+    }
+    return handleEmail(email, req, res, pathname, {
+      sendJson: (r: ServerResponse, status: number, body: unknown) => sendJson(r, status, body),
+      readJson: readJsonBody,
+      methodNotAllowed,
+    })
   }
   if (pathname === '/api/email/sources') {
     if (req.method !== 'GET' && req.method !== 'HEAD') return methodNotAllowed(res, 'GET, HEAD')

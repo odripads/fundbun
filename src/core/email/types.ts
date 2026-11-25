@@ -1,5 +1,5 @@
 /**
- * Email data-source types — pure, framework-free (no DOM, no Node imports), so the same code runs in the
+ * Email data-source types: pure, framework-free (no DOM, no Node imports), so the same code runs in the
  * browser app, the Node server and the tests. Everything here is READ-ONLY ingestion: an email can only ever
  * become a `SpendingCandidate` that the user confirms; it can never become an action or a payment.
  */
@@ -16,6 +16,11 @@ export interface EmailMessage {
   body: string
   /** the id of the `EmailSource` that returned this message */
   source: string
+  /**
+   * 'fail' when the receiving mail server's own Authentication-Results header says DMARC failed: the From
+   * address was forged. Set by the local server; such a message is never read, whatever its sender says.
+   */
+  senderCheck?: 'fail'
 }
 
 /** A read-only mailbox connector behind one interface. */

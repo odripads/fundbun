@@ -7,22 +7,28 @@ import { createAiService, type AiService } from './ai/service'
 import { createFileStore, defaultHome, PLAIN_CODEC, type SecretCodec } from './ai/store'
 import { createGatewayServer } from './app'
 import { resolveConfig, type Env } from './config'
+import type { ImapClient } from './email/imap'
+import { createEmailService, type EmailService } from './email/service'
+import { createEmailStore } from './email/store'
 import { loadEnvFile } from './env'
 import { createStaticHandler } from './static'
 
 /**
- * FundBun on this computer: the app, the user's AI connections and the agents, all behind one address that only
- * this machine can reach. The desktop app starts it in-process; `npm run local` starts it for a browser.
+ * FundBun on this computer: the app, the user's AI connections, the agents and the user's mailbox, all behind one
+ * address that only this machine can reach. The desktop app starts it in-process; `npm run local` starts it for a browser.
  */
 export const LOCAL_PORT = 47600
 
 export interface LocalOptions {
   port?: number
-  /** FundBun's folder for connections and the agents' workspace (default ~/.fundbun) */
+  /** FundBun's folder for connections, the mailbox and the agents' workspace (default ~/.fundbun) */
   home?: string
   /** built web app to serve; null serves the API only (Vite dev server in front) */
   distDir?: string | null
+  /** how AI keys and the mail password are kept (the desktop app passes the system keychain) */
   codec?: SecretCodec
+  /** the IMAP client for the mailbox (test seam); defaults to the real one over TLS */
+  imap?: ImapClient
   /** path of the MCP bridge script and the program that runs it */
   bridgeScript?: string
   nodePath?: string
@@ -37,6 +43,7 @@ export interface LocalServer {
   url: string
   ai: AiService
   agents: AgentRuntime
+  email: EmailService
   close(): Promise<void>
 }
 
@@ -44,14 +51,17 @@ export async function startLocal(opts: LocalOptions = {}): Promise<LocalServer> 
   const env = opts.env ?? process.env
   const home = opts.home ?? defaultHome(env)
   const config = resolveConfig(env)
+  const codec = opts.codec ?? PLAIN_CODEC
   // the connections and the agents need each other: a test starts an agent, a changed model ends its sessions
   let runtime: AgentRuntime | null = null
   const ai = createAiService({
     store: createFileStore(home),
-    codec: opts.codec ?? PLAIN_CODEC,
+    codec,
     probeAgent: (id, o) => runtime?.probe(id, o) ?? Promise.resolve({ ok: false, ms: 0, error: 'FundBun is still starting. Try again in a moment.' }),
     onConnectionChange: (id) => runtime?.closeByConnection(id),
   })
+  // the mail password is kept the same way as the AI keys, in <home>/email.json
+  const email = createEmailService({ store: createEmailStore(home), codec, ...(opts.imap ? { imap: opts.imap } : {}) })
   let port = opts.port ?? LOCAL_PORT
   const agents = createAgentRuntime({
     ai,
@@ -72,6 +82,7 @@ export async function startLocal(opts: LocalOptions = {}): Promise<LocalServer> 
     allowedOrigins: config.allowedOrigins,
     ai,
     agents,
+    email,
     staticHandler: opts.distDir ? createStaticHandler({ root: opts.distDir }) : null,
     ...(opts.log ? { log: opts.log } : {}),
   })
@@ -88,6 +99,7 @@ export async function startLocal(opts: LocalOptions = {}): Promise<LocalServer> 
     url: `http://127.0.0.1:${port}`,
     ai,
     agents,
+    email,
     close: () =>
       new Promise<void>((done) => {
         agents.close()
