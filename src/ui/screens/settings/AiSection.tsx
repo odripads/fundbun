@@ -1,10 +1,11 @@
 /**
  * "Your AI" in Settings: who answers Bun's messages, and the way in to connect your own.
  */
-import { Bot, Cpu, KeyRound, Laptop } from 'lucide-react'
+import { Cpu } from 'lucide-react'
 import { useState } from 'react'
 import type { AppSnapshot } from '../../../core/app-api'
 import { AiSheet, answeringLabel } from '../../components/ai'
+import { ProviderLogo, brandBg, providerBrandOf } from '../../components/ai/ProviderLogo'
 import { Badge, Button, Card, SectionHeader } from '../../components/ds'
 import { shallowEqual, useSnapshot } from '../../state'
 import styles from './Settings.module.css'
@@ -15,7 +16,10 @@ export function AiSection() {
   const { llm, engine } = useSnapshot(selectAnswering, shallowEqual)
   const [open, setOpen] = useState(false)
   const own = engine === 'llm' && llm.local === true
-  const icon = !own ? <Cpu /> : llm.kind === 'agent' ? <Bot /> : llm.onDevice ? <Laptop /> : <KeyRound />
+  const icon = !own
+    ? <Cpu />
+    : <ProviderLogo presetId={llm.presetId} provider={llm.provider} model={llm.model} kind={llm.kind} local={llm.onDevice} />
+  const bg = own ? brandBg(providerBrandOf({ presetId: llm.presetId, provider: llm.provider, model: llm.model })) : undefined
   const sub = !own
     ? 'Rules on this device. Connect your own AI for open questions and longer answers.'
     : llm.kind === 'agent'
@@ -28,7 +32,7 @@ export function AiSection() {
       <SectionHeader id="set-ai-h" eyebrow="Bring your own" title="Your AI" />
       <Card padding="none">
         <div className={styles.consentRow}>
-          <span className={styles.rowIcon} aria-hidden="true">{icon}</span>
+          <span className={styles.rowIcon} aria-hidden="true" style={bg ? { background: bg } : undefined}>{icon}</span>
           <span className={styles.consentText}>
             <span className={styles.consentTitle}>{answeringLabel(llm, engine)}</span>
             <span className={styles.consentSub}>{sub}</span>

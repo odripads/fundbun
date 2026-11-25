@@ -112,7 +112,7 @@ export function verifyAudit(log: readonly AuditEntry[], opts: VerifyAuditOptions
   if (!Array.isArray(log)) return broken(1, 'The audit log is not a list of entries.')
   for (let i = 0; i < log.length; i++) {
     const e = log[i]
-    if (!isEntryShape(e)) return broken(i + 1, `Entry at position ${i + 1} is malformed.`)
+    if (!isAuditEntry(e)) return broken(i + 1, `Entry at position ${i + 1} is malformed.`)
     const prev = i > 0 ? log[i - 1] : undefined
     const expectedSeq = prev ? prev.seq + 1 : 1
     if (!safeHashMatches(e)) return broken(e.seq, `Entry #${e.seq} was changed after it was written (its hash no longer matches).`)
@@ -135,7 +135,7 @@ export function verifyAudit(log: readonly AuditEntry[], opts: VerifyAuditOptions
   return { ok: true, count }
 }
 
-function isEntryShape(e: unknown): e is AuditEntry {
+function isAuditEntry(e: unknown): e is AuditEntry {
   if (!e || typeof e !== 'object') return false
   const x = e as Record<string, unknown>
   return (

@@ -1,4 +1,4 @@
-import { ArrowRight, BellRing, Check, CircleCheck, CircleHelp, Clock3, Flame, FlaskConical, Gauge, MessageCircleHeart, PiggyBank, ShieldCheck, Sparkles, Target, Thermometer, ThermometerSnowflake, TriangleAlert, type LucideIcon } from 'lucide-react'
+import { ArrowRight, BellRing, Check, CircleCheck, CircleHelp, Clock3, Flame, FlaskConical, Gauge, MessageCircleHeart, PiggyBank, Plus, ShieldCheck, Sparkles, Target, Thermometer, ThermometerSnowflake, TriangleAlert, type LucideIcon } from 'lucide-react'
 import { useId, useState, type CSSProperties, type ReactNode } from 'react'
 import type { AppSnapshot } from '../../../core/app-api'
 import { dateLabel } from '../../../core/dates'
@@ -42,6 +42,8 @@ export interface MirrorHeroProps {
   onSandbox: () => void
   /** open the daily-amount sheet */
   onPlan?: () => void
+  /** open the add-goal sheet when the user has no dreams yet */
+  onAddGoal?: () => void
 }
 
 const selectPending = (s: AppSnapshot) => s.state.pending
@@ -167,7 +169,7 @@ function GoalRing({ now, after }: { now: number; after: number }) {
 /** The demo personas run on a simulated bank and a frozen calendar; a user's own data has neither. */
 const selectSandboxDate = (s: AppSnapshot): string | null => (s.derived.clock === 'sandbox' ? dateLabel(s.derived.today) : null)
 
-export function MirrorHero({ onCheck, onSandbox, onPlan }: MirrorHeroProps) {
+export function MirrorHero({ onCheck, onSandbox, onPlan, onAddGoal }: MirrorHeroProps) {
   const app = useApp()
   const { mirror, currency, dreams } = useSnapshot(selectHero, shallowEqual)
   const propose = useProposeAction()
@@ -412,6 +414,13 @@ export function MirrorHero({ onCheck, onSandbox, onPlan }: MirrorHeroProps) {
           {actions.primary && actions.secondary.kind === 'action' ? <span className={styles.or} aria-hidden="true">or</span> : null}
           {heroButton(actions.secondary, 'secondary')}
           {actions.primary?.kind === 'prompt' ? heroHint(actions.secondary) : null}
+        </div>
+      ) : null}
+      {!mirror.tracking && dreams.length === 0 && !hero.item ? (
+        <div className={styles.secondary}>
+          <Button variant="secondary" fullWidth iconStart={<Plus />} onClick={onAddGoal ?? (() => navigate('goals'))}>
+            Add a goal or dream
+          </Button>
         </div>
       ) : null}
 

@@ -1,20 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import * as mirror from '../finance/mirror'
+import { couldveCollection, mirrorHistory } from '../finance/mirror'
 import { buildDemoState } from './demo'
-import { capUsageOf, createDerived, financeFor, viewDateOf } from './derive'
+import { capUsageOf, createDerived, financeFor, viewDateOf, type MirrorOps } from './derive'
 import { emptyState } from './state'
-
-vi.mock('../finance/mirror', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('../finance/mirror')>()
-  return { ...mod, couldveCollection: vi.fn(mod.couldveCollection), mirrorHistory: vi.fn(mod.mirrorHistory) }
-})
 
 const NOW = '2026-10-22T02:00:00.000Z'
 const RT = { llm: { checked: true, available: false }, busy: 0 }
 
 afterEach(() => {
-  vi.mocked(mirror.couldveCollection).mockClear()
-  vi.mocked(mirror.mirrorHistory).mockClear()
   vi.restoreAllMocks()
 })
 
@@ -25,27 +18,32 @@ describe('createDerived — couldve & mirrorHistory', () => {
     expect(d.mirrorHistory?.map((p) => p.month)).toEqual(['2026-05', '2026-06', '2026-07', '2026-08', '2026-09', '2026-10'])
     expect(d.mirrorHistory?.[5]).toMatchObject({ status: 'over', item: { itemId: 'dream_chengdu' } })
     const ctx = financeFor(state).ctx!
-    expect(d.couldve).toEqual(mirror.couldveCollection(ctx, 6))
+    expect(d.couldve).toEqual(couldveCollection(ctx, 6))
     expect(d.couldve!.totalOver).toBeGreaterThan(0)
     expect(d.couldve!.equivalents.length).toBeGreaterThan(0)
   })
 
   it('is memoised per committed state (computed once, shared across snapshots)', () => {
     const state = buildDemoState('arif', NOW)
-    const a = createDerived(state, RT)
-    const b = createDerived(state, { ...RT, busy: 1 })
+    const couldveSpy = vi.fn(couldveCollection)
+    const historySpy = vi.fn(mirrorHistory)
+    const ops: MirrorOps = { couldveCollection: couldveSpy, mirrorHistory: historySpy }
+    const a = createDerived(state, RT, undefined, ops)
+    const b = createDerived(state, { ...RT, busy: 1 }, undefined, ops)
     expect(a.couldve).toBe(a.couldve)
     expect(a.couldve).toBe(b.couldve)
     expect(a.mirrorHistory).toBe(b.mirrorHistory)
-    expect(mirror.couldveCollection).toHaveBeenCalledTimes(1)
-    expect(mirror.mirrorHistory).toHaveBeenCalledTimes(1)
+    expect(couldveSpy).toHaveBeenCalledTimes(1)
+    expect(historySpy).toHaveBeenCalledTimes(1)
   })
 
   it('a failing analysis yields undefined instead of breaking the snapshot', () => {
     const errors = vi.spyOn(console, 'error').mockImplementation(() => {})
-    vi.mocked(mirror.couldveCollection).mockImplementationOnce(() => { throw new Error('boom') })
-    vi.mocked(mirror.mirrorHistory).mockImplementationOnce(() => { throw new Error('boom') })
-    const d = createDerived(buildDemoState('mei', NOW), RT)
+    const ops: MirrorOps = {
+      couldveCollection: () => { throw new Error('boom') },
+      mirrorHistory: () => { throw new Error('boom') },
+    }
+    const d = createDerived(buildDemoState('mei', NOW), RT, undefined, ops)
     expect(d.couldve).toBeUndefined()
     expect(d.mirrorHistory).toBeUndefined()
     expect(d.mirror?.status).toBe('over')
@@ -82,7 +80,10 @@ describe('createDerived — capUsage', () => {
 
 describe('viewDateOf — the date the analyses look from', () => {
   type Row = { date: string; amount: number }
-  const st = (today: string, transactions: Row[], personaId?: string) => ({ bank: { today, personaId, transactions } }) as unknown as Parameters<typeof viewDateOf>[0]
+  type ViewArg = Parameters<typeof viewDateOf>[0]
+  const st = (today: string, transactions: Row[], personaId?: string): ViewArg => ({
+    bank: { ...emptyState(today).bank, personaId, transactions: transactions as ViewArg['bank']['transactions'] },
+  })
 
   it('is today for a demo persona, whatever its data', () => {
     expect(viewDateOf(st('2026-10-22', [{ date: '2026-08-03', amount: -500 }], 'mei'))).toBe('2026-10-22')

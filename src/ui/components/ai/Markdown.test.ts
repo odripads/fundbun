@@ -100,9 +100,11 @@ describe('AI UI labels and summaries', () => {
 
   it('formats answeringLabel for built-in, agent, local AI, and hosted fallback', () => {
     expect(answeringLabel({ checked: true, available: false }, 'offline')).toBe('Built-in engine')
-    expect(answeringLabel({ checked: true, available: true, kind: 'agent', provider: 'Claude Code' }, 'llm')).toBe('Claude Code')
-    expect(answeringLabel({ checked: true, available: true, kind: 'agent', provider: 'Claude Code', model: '' }, 'llm')).toBe('Claude Code')
-    expect(answeringLabel({ checked: true, available: true, kind: 'agent', provider: 'Claude Code', model: 'Opus' }, 'llm')).toBe('Claude Code · Opus')
+    expect(answeringLabel({ checked: true, available: true, kind: 'agent', provider: 'Claude', presetId: 'claude-code' }, 'llm')).toBe('Claude')
+    expect(answeringLabel({ checked: true, available: true, kind: 'agent', provider: 'Claude Code', presetId: 'claude-code', model: '' }, 'llm')).toBe('Claude')
+    expect(answeringLabel({ checked: true, available: true, kind: 'agent', provider: 'Claude Code', presetId: 'claude-code', model: 'Default (recommended)' }, 'llm')).toBe('Claude')
+    expect(answeringLabel({ checked: true, available: true, kind: 'agent', provider: 'Claude Code', presetId: 'claude-code', model: 'Opus 5.5' }, 'llm')).toBe('Claude Opus 5.5')
+    expect(answeringLabel({ checked: true, available: true, kind: 'agent', provider: 'Antigravity', presetId: 'antigravity', model: 'Gemini 4 Neon' }, 'llm')).toBe('Antigravity · Gemini 4 Neon')
     expect(answeringLabel({ checked: true, available: true, kind: 'agent' }, 'llm')).toBe('Your agent')
     expect(answeringLabel({ checked: true, available: true, local: true, provider: 'DeepSeek', model: 'deepseek-chat' }, 'llm')).toBe('DeepSeek · deepseek-chat')
     expect(answeringLabel({ checked: true, available: true, local: false, provider: 'anthropic', model: 'claude' }, 'llm')).toBe('AI model')

@@ -16,17 +16,20 @@ function hostWith(llm: LlmStatus) {
 }
 
 describe('createHost().agent(): who answers, by name', () => {
-  const agent: LlmStatus = { checked: true, available: true, local: true, kind: 'agent', connectionId: 'ai_agent0000001', provider: 'Claude Code' }
+  const agent: LlmStatus = { checked: true, available: true, local: true, kind: 'agent', connectionId: 'ai_agent0000001', presetId: 'claude-code', provider: 'Claude' }
 
   it('names the agent and the model it runs on', () => {
-    expect(hostWith({ ...agent, model: 'Opus' }).agent?.()?.label).toBe('Claude Code · Opus')
+    expect(hostWith({ ...agent, model: 'Opus 5.5' }).agent?.()?.label).toBe('Claude Opus 5.5')
+    expect(hostWith({ ...agent, provider: 'Claude Code', model: 'Opus 5.5' }).agent?.()?.label).toBe('Claude Opus 5.5')
+    expect(hostWith({ ...agent, presetId: 'antigravity', provider: 'Antigravity', model: 'Gemini 4 Neon' }).agent?.()?.label).toBe('Antigravity · Gemini 4 Neon')
   })
 
   it('names the agent alone when no model is known yet', () => {
-    expect(hostWith(agent).agent?.()?.label).toBe('Claude Code')
-    expect(hostWith({ ...agent, model: '' }).agent?.()?.label).toBe('Claude Code')
-    const { provider: _none, ...unnamed } = agent
-    expect(hostWith({ ...unnamed, model: 'Opus' }).agent?.()?.label).toBe('Your agent · Opus')
+    expect(hostWith(agent).agent?.()?.label).toBe('Claude')
+    expect(hostWith({ ...agent, model: '' }).agent?.()?.label).toBe('Claude')
+    expect(hostWith({ ...agent, model: 'Default (recommended)' }).agent?.()?.label).toBe('Claude')
+    const { provider: _none, presetId: _p, ...unnamed } = agent
+    expect(hostWith({ ...unnamed, model: 'Opus' }).agent?.()?.label).toBe('Opus')
   })
 
   it('gives no agent link when an API model or the built-in engine answers', () => {

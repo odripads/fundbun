@@ -75,6 +75,7 @@ export function createAgentApi(core: Core): AgentApi {
       if (h.local) status.local = true
       if (h.kind) status.kind = h.kind
       if (h.connectionId) status.connectionId = h.connectionId
+      if (h.presetId) status.presetId = h.presetId
       if (h.onDevice) status.onDevice = true
       if (!h.ok) status.reason = h.reason ?? 'LLM gateway unavailable'
       set(status)

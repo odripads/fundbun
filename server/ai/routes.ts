@@ -9,6 +9,17 @@ export interface RouteTools {
 
 const ID = /^ai_[a-f0-9-]{6,40}$/
 
+function parseNewConnectionInput(body: Record<string, unknown>): NewConnectionInput {
+  return {
+    presetId: typeof body.presetId === 'string' ? body.presetId : '',
+    ...(typeof body.label === 'string' ? { label: body.label } : {}),
+    ...(typeof body.baseUrl === 'string' ? { baseUrl: body.baseUrl } : {}),
+    ...(typeof body.apiKey === 'string' ? { apiKey: body.apiKey } : {}),
+    ...(typeof body.model === 'string' ? { model: body.model } : {}),
+    ...(Array.isArray(body.command) ? { command: body.command.filter((x): x is string => typeof x === 'string') } : {}),
+  }
+}
+
 /**
  * /api/ai/* — the user's AI connections. Only mounted by the local server (desktop app, `npm run local`):
  * the hosted gateway never accepts anyone's keys. Callers are checked for same-origin and a local Host first.
@@ -33,7 +44,7 @@ export async function handleAi(ai: AiService, req: IncomingMessage, res: ServerR
     if (rest.length === 1 && method === 'POST') {
       const body = await readJson(req, res)
       if (!body) return
-      const r = await ai.add(body as unknown as NewConnectionInput)
+      const r = await ai.add(parseNewConnectionInput(body))
       return r.ok ? sendJson(res, 200, { connection: r.value, state: ai.state() }) : sendJson(res, 400, { error: 'invalid_connection', message: r.error })
     }
     const id = rest[1]

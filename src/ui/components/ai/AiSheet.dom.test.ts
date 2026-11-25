@@ -11,20 +11,25 @@ import { AiSheet } from './AiSheet'
 afterEach(cleanup)
 
 const CLAUDE: DetectedAgent = {
-  id: 'claude-code', name: 'Claude Code', vendor: 'Anthropic', bin: 'claude', login: 'claude auth login',
+  id: 'claude-code', name: 'Claude', vendor: 'Anthropic', bin: 'claude', login: 'claude auth login',
   launch: { via: 'npx', package: '@agentclientprotocol/claude-agent-acp@0.106.0', args: [] },
   note: 'Uses the Claude plan you are signed in to.', installed: true,
 }
+const ANTIGRAVITY: DetectedAgent = {
+  id: 'antigravity', name: 'Antigravity', vendor: 'Google', bin: 'agy', login: 'agy acp --login',
+  launch: { via: 'bin', args: ['acp'] },
+  note: 'Uses the Google / Gemini plan you are signed in to.', installed: true,
+}
 const COMMAND = ['npx', '-y', '@agentclientprotocol/claude-agent-acp@0.106.0']
-const OPTIONS: ModelOption[] = [{ id: 'default', name: 'Default (recommended)' }, { id: 'opus', name: 'Opus' }, { id: 'sonnet', name: 'sonnet' }]
+const OPTIONS: ModelOption[] = [{ id: 'default', name: 'Default (recommended)' }, { id: 'opus', name: 'Opus 5.5' }, { id: 'sonnet', name: 'sonnet' }]
 const AGENT_TEST: ConnectionTest = { ok: true, ms: 2300, tools: true, kind: 'agent', model: 'Default (recommended)', modelCount: 3 }
 
 function agentConnection(over: Partial<AiConnection> = {}): AiConnection {
-  return { id: 'ai_agent0000001', kind: 'agent', presetId: 'claude-code', label: 'Claude Code', hasKey: false, local: false, command: COMMAND, createdAt: '2026-11-25T08:00:00.000Z', ...over }
+  return { id: 'ai_agent0000001', kind: 'agent', presetId: 'claude-code', label: 'Claude', hasKey: false, local: false, command: COMMAND, createdAt: '2026-11-25T08:00:00.000Z', ...over }
 }
 
 function stateWith(connections: AiConnection[]): AiState {
-  return { local: true, presets: [], agents: [CLAUDE], connections, activeId: connections[0]?.id ?? null, keyStorage: 'Kept on this computer.' }
+  return { local: true, presets: [], agents: [CLAUDE, ANTIGRAVITY], connections, activeId: connections[0]?.id ?? null, keyStorage: 'Kept on this computer.' }
 }
 
 type Call = { method: string; path: string; body?: Record<string, unknown> }
@@ -91,12 +96,13 @@ async function openSheet(server: ReturnType<typeof fakeServer>, wrap: (app: Fund
 const text = () => document.body.textContent ?? ''
 
 describe('Your AI: the model picker and live test for agents', () => {
-  it('an agent in use lists its real models by name, and a pick is saved with its name', async () => {
+  it('an agent in use lists its real models by name, shows colored logos, and saves a pick as Claude + model', async () => {
     const server = fakeServer(stateWith([agentConnection({ model: 'default', modelName: 'Default (recommended)' })]))
     await openSheet(server)
     expect(server.calls.some((c) => c.path === '/api/ai/connections/ai_agent0000001/models')).toBe(true)
+    expect(document.body.querySelector('svg[data-brand="claude"]')).not.toBeNull()
     const select = document.body.querySelector('select')!
-    expect([...select.options].map((o) => o.textContent)).toEqual(['Default (recommended) (default)', 'Opus (opus)', 'sonnet'])
+    expect([...select.options].map((o) => o.textContent)).toEqual(['Default (recommended) (default)', 'Opus 5.5 (opus)', 'sonnet'])
     expect(select.value).toBe('default')
     expect(text()).toContain('Default (recommended) · agent on this computer, your own sign-in')
     // the real launch line, never "its own command"
@@ -105,19 +111,20 @@ describe('Your AI: the model picker and live test for agents', () => {
 
     await changeValue(select as unknown as HTMLInputElement, 'opus')
     await flush()
-    expect(server.calls.find((c) => c.method === 'PATCH')?.body).toEqual({ model: 'opus', modelName: 'Opus' })
-    expect(text()).toContain('Opus · agent on this computer, your own sign-in')
+    expect(server.calls.find((c) => c.method === 'PATCH')?.body).toEqual({ model: 'opus', modelName: 'Opus 5.5' })
+    expect(text()).toContain('Claude Opus 5.5')
+    expect(text()).toContain('Agent on this computer, your own sign-in')
   })
 
   it('waits while the agent is asked, and says so when it offers no model choice', async () => {
     let answer!: (v: { models: string[]; modelOptions: ModelOption[] }) => void
     const server = fakeServer(stateWith([agentConnection()]), { models: () => new Promise((r) => (answer = r)) })
     await openSheet(server)
-    expect(text()).toContain('Asking Claude Code which models it has…')
+    expect(text()).toContain('Asking Claude which models it has…')
     expect(document.body.querySelector('select')).toBeNull()
     answer({ models: [], modelOptions: [] })
     await flush()
-    expect(text()).not.toContain('Asking Claude Code')
+    expect(text()).not.toContain('Asking Claude')
     expect(text()).toContain('Uses this agent’s configured model.')
     expect(document.body.querySelector('select')).toBeNull()
   })
@@ -132,19 +139,20 @@ describe('Your AI: the model picker and live test for agents', () => {
   })
 
   it('shows a failed agent test as the error it is', async () => {
-    const server = fakeServer(stateWith([agentConnection({ model: 'default' })]), { test: { ok: false, ms: 800, error: 'Claude Code is not signed in on this computer. Sign in with its own command in a terminal, then try again.' } })
+    const server = fakeServer(stateWith([agentConnection({ model: 'default' })]), { test: { ok: false, ms: 800, error: 'Claude is not signed in on this computer. Sign in with its own command in a terminal, then try again.' } })
     await openSheet(server)
     await click(byText(document.body, 'Test', 'button'))
     await flush()
     expect(document.body.querySelector('[role="status"]')?.textContent).toContain('is not signed in on this computer')
   })
 
-  it('connecting an agent tests it at once and loads its models', async () => {
+  it('connecting an agent tests it at once, lists Antigravity with its logo, and loads its models', async () => {
     const server = fakeServer(stateWith([]))
     await openSheet(server)
     await click(byText(document.body, 'Connect an AI', 'button'))
-    await click(byText(document.body, /^Claude Code/, 'button'))
-    await click(byText(document.body, 'Connect Claude Code', 'button'))
+    expect(document.body.querySelector('svg[data-brand="antigravity"]')).not.toBeNull()
+    await click(byText(document.body, /^Claude/, 'button'))
+    await click(byText(document.body, 'Connect Claude', 'button'))
     await flush()
     await flush()
     const asked = server.calls.map((c) => `${c.method} ${c.path}`)

@@ -11,7 +11,7 @@ import { moodOf, overShare } from '../../../core/finance/temper'
 import { fmt, MINOR_PER_MAJOR, parseAmount } from '../../../core/money'
 import { importCsv, type CsvImportResult } from '../../../core/sandbox/csv'
 import { isValidPinFormat } from '../../../core/security/pin'
-import type { Autonomy, BunMood, Currency, DreamItem, FinanceContext, Minor, Tier, Tone, TripwireKind } from '../../../core/types'
+import type { Autonomy, BunMood, Currency, DreamItem, FinanceContext, Minor, SpendMode, Tier, Tone, TripwireKind } from '../../../core/types'
 import { STEPS, type OnboardingDraft, type PersonaId, type StepId, type TripwireDraft, type TripwireKey } from './draft'
 
 // ───────────────────────────── steps ─────────────────────────────
@@ -44,11 +44,12 @@ export const FLOW: readonly StepId[] = ['consent', 'money', 'dreams', 'tripwires
  */
 export const QUICK_FLOW: readonly StepId[] = ['consent', 'money', 'dreams', 'permissions']
 
-type FlowChoice = Pick<OnboardingDraft, 'quick'>
+type FlowChoice = { quick?: boolean; spendMode?: SpendMode }
 
-/** The steps this setup walks through. */
+/** The steps this setup walks through. Daily tracking skips the mandatory Dream step (goals can still be added later). */
 export function flowOf(d?: FlowChoice): readonly StepId[] {
-  return d?.quick ? QUICK_FLOW : FLOW
+  const base = d?.quick ? QUICK_FLOW : FLOW
+  return d?.spendMode === 'tracking' ? base.filter((s) => s !== 'dreams') : base
 }
 
 function pathOf(d?: FlowChoice): StepId[] {
@@ -163,6 +164,7 @@ export function validateMoney(d: OnboardingDraft): Errors {
 }
 
 export function validateDreams(d: OnboardingDraft): Errors {
+  if (d.spendMode === 'tracking') return {}
   return d.dreams.length > 0 ? {} : { dreams: 'Add at least one dream: tap “Add to my list” to save it.' }
 }
 

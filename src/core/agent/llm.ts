@@ -46,6 +46,7 @@ export interface LlmHealth {
   /** kind of the active connection; 'agent' = an agent on this computer answers through /api/agent */
   kind?: 'openai_compat' | 'anthropic' | 'agent'
   connectionId?: string
+  presetId?: string
   /** the model itself runs on this computer: nothing is sent to a company */
   onDevice?: boolean
 }
@@ -161,6 +162,8 @@ function toHealth(body: unknown): LlmHealth {
   if (body.kind === 'openai_compat' || body.kind === 'anthropic' || body.kind === 'agent') health.kind = body.kind
   const connectionId = str(body.connectionId)
   if (connectionId) health.connectionId = connectionId.slice(0, 64)
+  const presetId = str(body.presetId)
+  if (presetId) health.presetId = presetId.slice(0, 64)
   return health
 }
 

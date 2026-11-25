@@ -66,7 +66,7 @@ export async function readAnyFile(file: File, opts: ReadOptions): Promise<FileRe
       case 'xlsx': {
         // the first sheet with rows: a statement export usually has one
         const { readSheet } = await import('read-excel-file/browser')
-        const rows = (await readSheet(file)) as unknown as unknown[][]
+        const rows = await readSheet(file)
         const csv = rowsToCsv(rows)
         return { kind: 'statement', csv, rows: countRows(csv), source }
       }

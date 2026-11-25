@@ -59,14 +59,37 @@ export interface FinanceDerived {
 /** months covered by history, couldve and mirrorHistory */
 const HISTORY_MONTHS = 6
 
+export interface MirrorOps {
+  couldveCollection?: typeof couldveCollection
+  mirrorHistory?: typeof mirrorHistory
+}
+
+const DEFAULT_MIRROR_OPS = { couldveCollection, mirrorHistory }
 const cache = new WeakMap<AppState, FinanceDerived>()
+const opsCache = new WeakMap<MirrorOps, WeakMap<AppState, FinanceDerived>>()
 
 /** Memoised (per state object) finance analyses — shared by snapshots and the AgentHost. */
-export function financeFor(state: AppState): FinanceDerived {
-  let f = cache.get(state)
+export function financeFor(state: AppState, ops?: MirrorOps): FinanceDerived {
+  if (!ops) {
+    let f = cache.get(state)
+    if (!f) {
+      f = lazyFinance(state, DEFAULT_MIRROR_OPS)
+      cache.set(state, f)
+    }
+    return f
+  }
+  let stateCache = opsCache.get(ops)
+  if (!stateCache) {
+    stateCache = new WeakMap()
+    opsCache.set(ops, stateCache)
+  }
+  let f = stateCache.get(state)
   if (!f) {
-    f = lazyFinance(state)
-    cache.set(state, f)
+    f = lazyFinance(state, {
+      couldveCollection: ops.couldveCollection ?? couldveCollection,
+      mirrorHistory: ops.mirrorHistory ?? mirrorHistory,
+    })
+    stateCache.set(state, f)
   }
   return f
 }
@@ -90,7 +113,7 @@ export function viewDateOf(state: Pick<AppState, 'bank'>): ISODate {
   return latest ? endOfMonth(latest.slice(0, 7) as YearMonth) : today
 }
 
-function lazyFinance(state: AppState): FinanceDerived {
+function lazyFinance(state: AppState, ops: { couldveCollection: typeof couldveCollection; mirrorHistory: typeof mirrorHistory }): FinanceDerived {
   const base = ctxOf(state)
   const view = base ? viewDateOf(state) : undefined
   const ctx = base && view && view !== base.bank.today ? { ...base, bank: { ...base.bank, today: view } } : base
@@ -112,8 +135,8 @@ function lazyFinance(state: AppState): FinanceDerived {
     get insights() { return once<Insight[]>('generateInsights', [], (c) => generateInsights(c)) },
     get goals() { return once<GoalProgress[]>('allGoalProgress', [], (c) => allGoalProgress(c)) },
     get upcomingBills() { return once<Bill[]>('upcomingBills', [], (c) => upcomingBills(c.bank.bills)) },
-    get couldve() { return once<FinanceDerived['couldve']>('couldveCollection', undefined, (c) => couldveCollection(c, HISTORY_MONTHS)) },
-    get mirrorHistory() { return once<FinanceDerived['mirrorHistory']>('mirrorHistory', undefined, (c) => mirrorHistory(c, HISTORY_MONTHS)) },
+    get couldve() { return once<FinanceDerived['couldve']>('couldveCollection', undefined, (c) => ops.couldveCollection(c, HISTORY_MONTHS)) },
+    get mirrorHistory() { return once<FinanceDerived['mirrorHistory']>('mirrorHistory', undefined, (c) => ops.mirrorHistory(c, HISTORY_MONTHS)) },
   }
   return derived
 }
@@ -146,8 +169,8 @@ const isoNow = () => new Date().toISOString()
  * Derived view of a snapshot. Finance fields are lazy getters (computed once per committed state); `now`
  * is the controller's clock (cap usage is bucketed by its calendar day).
  */
-export function createDerived(state: AppState, rt: RuntimeFlags, now: () => string = isoNow): DerivedState {
-  const fin = financeFor(state)
+export function createDerived(state: AppState, rt: RuntimeFlags, now: () => string = isoNow, ops?: MirrorOps): DerivedState {
+  const fin = financeFor(state, ops)
   let caps: CapUsage | undefined
   return Object.freeze({
     today: state.bank.today,

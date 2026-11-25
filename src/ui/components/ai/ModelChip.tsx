@@ -1,8 +1,10 @@
-import { Bot, ChevronDown, Cpu, KeyRound, Laptop } from 'lucide-react'
+import { ChevronDown, Cpu } from 'lucide-react'
 import { useState } from 'react'
+import { formatAiLabel } from '../../../core/ai/labels'
 import type { AppSnapshot, LlmStatus } from '../../../core/app-api'
 import { shallowEqual, useSnapshot } from '../../state'
 import { AiSheet } from './AiSheet'
+import { ProviderLogo } from './ProviderLogo'
 import styles from './Ai.module.css'
 
 const selectAnswering = (s: AppSnapshot) => ({ llm: s.derived.llm, engine: s.derived.engine })
@@ -10,8 +12,8 @@ const selectAnswering = (s: AppSnapshot) => ({ llm: s.derived.llm, engine: s.der
 /** Who answers the next message, in a few words. */
 export function answeringLabel(llm: LlmStatus, engine: 'offline' | 'llm'): string {
   if (engine !== 'llm') return 'Built-in engine'
-  if (llm.kind === 'agent') return [llm.provider, llm.model].filter(Boolean).join(' · ') || 'Your agent'
-  if (llm.local) return [llm.provider, llm.model].filter(Boolean).join(' · ') || 'Your AI'
+  if (llm.kind === 'agent') return formatAiLabel(llm.provider, llm.model, llm.presetId) || 'Your agent'
+  if (llm.local) return formatAiLabel(llm.provider, llm.model, llm.presetId) || 'Your AI'
   return 'AI model'
 }
 
@@ -22,7 +24,10 @@ export function answeringLabel(llm: LlmStatus, engine: 'offline' | 'llm'): strin
 export function ModelChip() {
   const { llm, engine } = useSnapshot(selectAnswering, shallowEqual)
   const [open, setOpen] = useState(false)
-  const icon = engine !== 'llm' ? <Cpu /> : llm.kind === 'agent' ? <Bot /> : llm.onDevice ? <Laptop /> : <KeyRound />
+  const icon =
+    engine !== 'llm'
+      ? <Cpu />
+      : <ProviderLogo presetId={llm.presetId} provider={llm.provider} model={llm.model} kind={llm.kind} local={llm.onDevice} />
   const label = answeringLabel(llm, engine)
   return (
     <>

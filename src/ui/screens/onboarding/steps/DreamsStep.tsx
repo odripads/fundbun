@@ -14,7 +14,8 @@ import s from './Steps.module.css'
 export function DreamsStep({ draft, update, errors, setBusy }: StepProps) {
   const toast = useToast()
   const [editorKey, setEditorKey] = useState(0)
-  const [adding, setAdding] = useState(draft.dreams.length === 0)
+  const tracking = draft.spendMode === 'tracking'
+  const [adding, setAdding] = useState(draft.dreams.length === 0 && !tracking)
   const list = draft.dreams
   const mainKey = list.find((x) => x.kind === 'goal')?.key
 
@@ -33,7 +34,7 @@ export function DreamsStep({ draft, update, errors, setBusy }: StepProps) {
   function remove(item: DreamDraft) {
     const index = list.findIndex((x) => x.key === item.key)
     update((dr) => ({ ...dr, dreams: dr.dreams.filter((x) => x.key !== item.key) }))
-    if (list.length === 1) setAdding(true)
+    if (list.length === 1 && !tracking) setAdding(true)
     toast.show({
       id: 'ob-dream-removed',
       title: `Removed ${item.name}`,
@@ -57,7 +58,11 @@ export function DreamsStep({ draft, update, errors, setBusy }: StepProps) {
 
   return (
     <>
-      <p className={s.lede}>Goals are things you save toward; treats are guilt-free rewards for a good month. Bun will measure your spending in them.</p>
+      <p className={s.lede}>
+        {tracking
+          ? 'Optional in daily tracking mode. Add a goal or treat if you want one, or continue without any.'
+          : 'Goals are things you save toward; treats are guilt-free rewards for a good month. Bun will measure your spending in them.'}
+      </p>
 
       {list.length ? (
         <section className={s.section} aria-labelledby="ob-dream-list">
@@ -98,7 +103,7 @@ export function DreamsStep({ draft, update, errors, setBusy }: StepProps) {
           <h2 id="ob-dream-editor" className={cx(s.h2, d.editorTitle)}>
             {list.length ? 'Add another dream' : 'Add your first dream'}
           </h2>
-          <DreamEditor key={editorKey} currency={draft.currency} today={new Date().toISOString().slice(0, 10)} submitLabel="Add to my list" onSubmit={add} onCancel={list.length ? () => setAdding(false) : undefined} />
+          <DreamEditor key={editorKey} currency={draft.currency} today={new Date().toISOString().slice(0, 10)} submitLabel="Add to my list" onSubmit={add} onCancel={list.length || tracking ? () => setAdding(false) : undefined} />
           {errors.dreams ? (
             <p className={s.error} role="alert">
               <CircleAlert aria-hidden="true" />
@@ -108,7 +113,7 @@ export function DreamsStep({ draft, update, errors, setBusy }: StepProps) {
         </section>
       ) : (
         <Button variant="secondary" size="lg" fullWidth iconStart={<Plus />} onClick={() => setAdding(true)}>
-          Add another dream
+          {list.length ? 'Add another dream' : 'Add a goal or dream'}
         </Button>
       )}
     </>

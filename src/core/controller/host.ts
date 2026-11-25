@@ -1,6 +1,7 @@
 import type { AgentHost } from '../agent/host'
 import type { LlmClient } from '../agent/llm'
 import type { AiClient } from '../ai/client'
+import { formatAiLabel } from '../ai/labels'
 import type { FinanceContext } from '../types'
 import { appendAudit } from './audit'
 import { engineFor, financeFor } from './derive'
@@ -95,7 +96,7 @@ export function createHost({ store, now, llmClient, aiClient, session }: HostDep
       if (!aiClient || !session || status.kind !== 'agent' || !status.connectionId) return null
       if (engineFor(store.get(), status) !== 'llm') return null
       // the label names the model too, so the chat and the glass box say exactly who answered
-      const label = [status.provider ?? 'Your agent', status.model].filter(Boolean).join(' · ')
+      const label = formatAiLabel(status.provider, status.model, status.presetId) || 'Your agent'
       const link = { client: aiClient, connectionId: status.connectionId, label, sessionKey: session.key(), fresh: session.fresh(), signal: session.signal() }
       session.used()
       return link

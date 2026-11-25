@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildSystemPrompt, PROMPT_VERSION, REPLY_WORD_LIMIT, sanitizeField, type SystemPromptInput } from './prompts'
+import { buildAgentPreamble, buildSystemPrompt, PROMPT_VERSION, REPLY_WORD_LIMIT, sanitizeField, type SystemPromptInput } from './prompts'
 
 const MEI: SystemPromptInput = { name: 'Jing Lin', currency: 'CNY', today: '2026-10-22', tone: 'cheeky', autonomy: 'copilot' }
 
@@ -129,5 +129,12 @@ describe('sanitizeField', () => {
 describe('PROMPT_VERSION', () => {
   it('is a stable, dated identifier', () => {
     expect(PROMPT_VERSION).toMatch(/^bun-system-\d{4}-\d{2}-\d{2}\.\d+$/)
+  })
+})
+
+describe('buildAgentPreamble', () => {
+  it('tells agents not to run shell commands or read workspace files during ordinary conversation', () => {
+    const pre = buildAgentPreamble({ ...MEI, open: true })
+    expect(pre).toContain('reply directly without running shell commands or reading workspace files')
   })
 })

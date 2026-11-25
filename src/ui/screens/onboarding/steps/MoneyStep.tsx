@@ -88,8 +88,8 @@ export function MoneyStep({ draft, update, errors }: StepProps) {
     <>
       <p className={s.lede}>
         {draft.spendMode === 'tracking'
-          ? 'Just tracking: Bun keeps count of what you spend, day by day, with no target and no verdicts.'
-          : 'Two numbers drive everything: what lands in your account each month, and what you’re happy to spend of it.'}
+          ? 'Daily spending tracker: Bun counts what you spend each day, with no Dream Mirror and no monthly target. You can still add a goal or turn on the Dream Mirror anytime.'
+          : 'Working toward a goal: Bun sets up your Dream Mirror, tracks your monthly target, and measures your spending against your dreams.'}
       </p>
       <div className={s.stack}>
         <Segmented<'target' | 'tracking'>
@@ -97,8 +97,8 @@ export function MoneyStep({ draft, update, errors }: StepProps) {
           value={draft.spendMode}
           onChange={(v) => update((d) => ({ ...d, spendMode: v }))}
           options={[
-            { value: 'target', label: 'With a monthly target' },
-            { value: 'tracking', label: 'Just daily tracking' },
+            { value: 'target', label: 'Working toward a goal' },
+            { value: 'tracking', label: 'Daily spending tracker' },
           ]}
         />
         <TextField

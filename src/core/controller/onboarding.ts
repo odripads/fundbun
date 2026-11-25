@@ -47,7 +47,7 @@ export function validateOnboarding(input: OnboardingInput): string[] {
   if (!AUTONOMY_ORDER.includes(input.autonomy)) errors.push(`Unknown autonomy level "${String(input.autonomy)}"`)
   if (!pinFormatOk(input.pin)) errors.push('PIN must be 4–6 digits and not easy to guess (no 1111 or 1234)')
   for (const [k, v] of Object.entries(input.caps ?? {})) if (v !== undefined && !isPosInt(v)) errors.push(`${k} must be a positive whole amount`)
-  errors.push(...dreamErrors(input.dreams))
+  errors.push(...dreamErrors(input.dreams, input.mode))
   for (const t of input.tripwires ?? []) {
     const err = tripwireInputError(t)
     if (err) errors.push(err)
@@ -57,8 +57,8 @@ export function validateOnboarding(input: OnboardingInput): string[] {
   return errors
 }
 
-function dreamErrors(dreams: OnboardingInput['dreams']): string[] {
-  if (!Array.isArray(dreams) || dreams.length === 0) return ['Add at least one dream item']
+function dreamErrors(dreams: OnboardingInput['dreams'], mode?: OnboardingInput['mode']): string[] {
+  if (!Array.isArray(dreams) || dreams.length === 0) return mode === 'tracking' ? [] : ['Add at least one dream item']
   return dreams.map((d) => dreamInputError(d)).filter((e): e is string => e !== null)
 }
 

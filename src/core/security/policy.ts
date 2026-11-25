@@ -651,7 +651,7 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
   return proto === Object.prototype || proto === null
 }
 
-function hasOwn(o: object, key: string): boolean {
+function hasOwn(o: Record<string, unknown>, key: string): boolean {
   return Object.prototype.hasOwnProperty.call(o, key)
 }
 

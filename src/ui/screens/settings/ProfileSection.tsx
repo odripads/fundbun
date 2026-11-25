@@ -95,21 +95,24 @@ function ProfileForm({ profile }: { profile: Profile }) {
                 toast.show({
                   id: 'mode-saved',
                   tone: 'success',
-                  title: mode === 'tracking' ? 'Daily tracking on' : 'Monthly target on',
-                  message: mode === 'tracking' ? 'No target and no verdicts: Bun just keeps count.' : 'Bun measures your month against your target again.',
+                  title: mode === 'tracking' ? 'Daily tracking on' : 'Goal & Mirror on',
+                  message:
+                    mode === 'tracking'
+                      ? 'Dream Mirror is hidden. Bun keeps count of your spending day by day.'
+                      : 'Dream Mirror is back. Bun measures your month against your goals and target.',
                   actions: [{ label: 'Undo', onClick: () => void app.setProfile({ mode: before }) }],
                 })
               })
             }}
             options={[
-              { value: 'target', label: 'Monthly target' },
+              { value: 'target', label: 'Goal & Mirror' },
               { value: 'tracking', label: 'Daily tracking' },
             ]}
           />
           <p className={styles.modeNote}>
             {(profile.mode ?? 'target') === 'tracking'
-              ? 'Bun keeps count day by day. Your target below is kept for when you switch back.'
-              : 'Bun measures your month against your target: the Dream Mirror, the carrot and the stick.'}
+              ? 'Daily tracking hides the Dream Mirror and keeps your target saved if you switch back. You can still add goals anytime.'
+              : 'Goal & Mirror shows your Dream Mirror, monthly target, the carrot and the stick. You can add goals in either mode.'}
           </p>
         </div>
         <form className={styles.profileForm} onSubmit={save} noValidate>

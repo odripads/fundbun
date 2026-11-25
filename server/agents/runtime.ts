@@ -123,14 +123,14 @@ function blockText(content: unknown): string {
 
 /**
  * Is this tool call one of FundBun's own tools, which the policy gate in the app handles?
- * Only the adapter-assigned tool id counts (`name`, e.g. "mcp__fundbun__get_overview"), matched whole, and only
- * for calls the agent does not class as running, editing, deleting or moving. A title is free text the model can
- * influence, so it is never used: anything not recognised here is put to the user as a question.
+ * Only the adapter-assigned tool id counts (`name`, e.g. "mcp__fundbun__get_overview" or "mcp_fundbun_get_overview"),
+ * matched whole, and only for calls the agent does not class as running, editing, deleting or moving. A title is
+ * free text the model can influence, so it is never used: anything not recognised here is put to the user as a question.
  */
 export function fundbunToolOf(name: unknown, kind: unknown, names: ReadonlySet<string>): string | null {
   const k = text(kind, 20)
   if (k && k !== 'other') return null
-  const m = /^mcp__fundbun__([a-z_]{3,40})$/.exec(text(name, 80))
+  const m = /^(?:mcp__fundbun__|mcp_fundbun_)([a-z_]{3,40})$/.exec(text(name, 80))
   return m && names.has(m[1]) ? m[1] : null
 }
 

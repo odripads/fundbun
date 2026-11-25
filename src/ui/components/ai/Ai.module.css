@@ -136,18 +136,28 @@
 .detail {
   display: grid;
   gap: var(--s-3);
+  min-width: 0;
   padding: 0 var(--s-4) var(--s-4);
+}
+
+.detail > * {
+  min-width: 0;
 }
 
 .modelRow {
   display: grid;
   gap: var(--s-1);
+  min-width: 0;
   font-size: var(--fs-sm);
   font-weight: 600;
   color: var(--text-2);
 }
 
 .select {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   min-height: 44px;
   padding: 0 var(--s-3);
   border: 1.5px solid var(--border-strong);
@@ -165,6 +175,8 @@
 
 .test {
   margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-size: var(--fs-sm);
   padding: var(--s-2) var(--s-3);
   border-radius: var(--r-sm);
@@ -189,6 +201,8 @@
 .note,
 .groupNote {
   margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-size: var(--fs-sm);
   color: var(--text-2);
 }

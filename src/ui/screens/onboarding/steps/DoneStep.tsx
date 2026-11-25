@@ -67,8 +67,10 @@ export function DoneStep({ draft, pinSet, problems, error, onEdit }: DoneStepPro
     {
       step: 'dreams',
       icon: Sparkles,
-      label: draft.dreams.length === 1 ? '1 dream' : `${draft.dreams.length} dreams`,
-      value: (
+      label: draft.dreams.length === 0 ? 'Goals & dreams' : draft.dreams.length === 1 ? '1 dream' : `${draft.dreams.length} dreams`,
+      value: draft.dreams.length === 0 ? (
+        'None yet · optional (you can add one anytime)'
+      ) : (
         <span className={x.dreams}>
           <span className={x.thumbs} aria-hidden="true">
             {draft.dreams.slice(0, 5).map((d) => (
@@ -103,7 +105,11 @@ export function DoneStep({ draft, pinSet, problems, error, onEdit }: DoneStepPro
 
   return (
     <>
-      <p className={x.lede}>Here’s everything Bun knows. Tap a row to change it, then meet your mirror.</p>
+      <p className={x.lede}>
+        {draft.spendMode === 'tracking'
+          ? 'Here’s everything Bun knows. Tap a row to change it, then start tracking.'
+          : 'Here’s everything Bun knows. Tap a row to change it, then meet your mirror.'}
+      </p>
 
       {error ? (
         <Callout tone="block" title="Bun couldn’t finish setting up">

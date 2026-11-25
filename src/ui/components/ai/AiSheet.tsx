@@ -1,7 +1,9 @@
-import { Bot, Check, ChevronLeft, CircleAlert, Cpu, KeyRound, Laptop, Plus, Trash2 } from 'lucide-react'
+import { Check, ChevronLeft, CircleAlert, Cpu, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { connectionTitle } from '../../../core/ai/labels'
 import type { AiConnection, AiPreset, ConnectionTest, DetectedAgent, ModelOption } from '../../../core/ai/types'
 import { Badge, Button, Callout, Sheet, Spinner, TextField, cx } from '../ds'
+import { ProviderLogo, brandBg, providerBrandOf } from './ProviderLogo'
 import { useAi } from './aiStore'
 import styles from './Ai.module.css'
 
@@ -16,6 +18,8 @@ type ModelList = ModelOption[] | 'loading' | 'failed'
 export function describeConnection(c: AiConnection): string {
   if (c.kind === 'agent') {
     const model = c.modelName || c.model
+    const title = connectionTitle(c)
+    if (model && title !== c.label && title.includes(model)) return 'Agent on this computer, your own sign-in'
     return model ? `${model} · agent on this computer, your own sign-in` : 'An agent on this computer, with your own sign-in'
   }
   if (c.local) return `${c.model ?? 'No model picked'} · runs on this computer`
@@ -135,12 +139,16 @@ export function AiSheet({ open, onClose }: { open: boolean; onClose: () => void 
                 busy={busy === 'use:none'}
                 onSelect={() => void run('use:none', () => api.use(null))}
               />
-              {ai.connections.map((c) => (
+              {ai.connections.map((c) => {
+                const bg = brandBg(providerBrandOf({ presetId: c.presetId, provider: c.label, model: c.modelName || c.model }))
+                const titleName = connectionTitle(c)
+                return (
                 <Option
                   key={c.id}
                   selected={c.id === ai.activeId}
-                  icon={c.kind === 'agent' ? <Bot /> : c.local ? <Laptop /> : <KeyRound />}
-                  name={c.label}
+                  icon={<ProviderLogo presetId={c.presetId} provider={c.label} model={c.modelName || c.model} kind={c.kind} local={c.local} />}
+                  iconBg={bg}
+                  name={titleName}
                   sub={describeConnection(c)}
                   warn={c.lastError}
                   busy={busy === `use:${c.id}`}
@@ -169,7 +177,8 @@ export function AiSheet({ open, onClose }: { open: boolean; onClose: () => void 
                     </div>
                   ) : null}
                 </Option>
-              ))}
+                )
+              })}
             </ul>
             <Button variant="primary" fullWidth iconStart={<Plus />} onClick={() => setView({ name: 'pick' })}>Connect an AI</Button>
             <p className={styles.small}>{ai.keyStorage}</p>
@@ -222,16 +231,17 @@ function WebOnly() {
   return (
     <div className={styles.stack}>
       <Callout tone="info" title="This is the web version">
-        Here Bun answers with the built-in engine on this device. To plug in your own AI (Claude Code, Antigravity, Codex, DeepSeek, Qwen, Grok, a model on your laptop), use the FundBun desktop app, which runs on your computer and keeps your keys there.
+        Here Bun answers with the built-in engine on this device. To plug in your own AI (Claude, Antigravity, Codex, DeepSeek, Qwen, Grok, a model on your laptop), use the FundBun desktop app, which runs on your computer and keeps your keys there.
       </Callout>
       <Button href={REPO_URL} target="_blank" rel="noreferrer" variant="secondary" fullWidth>How to get the desktop app</Button>
     </div>
   )
 }
 
-function Option({ selected, icon, name, sub, warn, busy, onSelect, children }: {
+function Option({ selected, icon, iconBg, name, sub, warn, busy, onSelect, children }: {
   selected: boolean
   icon: React.ReactNode
+  iconBg?: string
   name: string
   sub: string
   warn?: string
@@ -242,7 +252,7 @@ function Option({ selected, icon, name, sub, warn, busy, onSelect, children }: {
   return (
     <li className={cx(styles.option, selected && styles.selected)}>
       <button type="button" role="radio" aria-checked={selected} className={styles.optionMain} onClick={() => !selected && onSelect()}>
-        <span className={styles.optionIcon} aria-hidden="true">{icon}</span>
+        <span className={styles.optionIcon} aria-hidden="true" style={iconBg ? { background: iconBg } : undefined}>{icon}</span>
         <span className={styles.optionText}>
           <span className={styles.optionName}>{name}</span>
           <span className={styles.optionSub}>{sub}</span>
@@ -299,18 +309,23 @@ function Picker({ presets, agents, onPick }: { presets: AiPreset[]; agents: Dete
         <h3 id="ai-pick-agents" className={styles.groupTitle}>Agents you are signed in to</h3>
         <p className={styles.groupNote}>No key needed. FundBun starts the agent on this computer and it uses your own plan.</p>
         <ul className={styles.rows}>
-          {agents.map((a) => (
+          {agents.map((a) => {
+            const bg = brandBg(providerBrandOf({ presetId: a.id, provider: a.name }))
+            return (
             <li key={a.id}>
               <button type="button" className={styles.row} onClick={() => onPick({ name: 'agent', agent: a })}>
-                <span className={styles.rowIcon} aria-hidden="true"><Bot /></span>
+                <span className={styles.rowIcon} aria-hidden="true" style={bg ? { background: bg } : undefined}>
+                  <ProviderLogo presetId={a.id} provider={a.name} kind="agent" />
+                </span>
                 <span className={styles.rowText}><span className={styles.rowName}>{a.name}</span><span className={styles.rowSub}>{a.vendor}</span></span>
                 <Badge variant={a.installed ? 'under' : 'neutral'} size="sm">{a.installed ? 'Found' : 'Not found'}</Badge>
               </button>
             </li>
-          ))}
+            )
+          })}
           <li>
             <button type="button" className={styles.row} onClick={() => onPick({ name: 'command' })}>
-              <span className={styles.rowIcon} aria-hidden="true"><Bot /></span>
+              <span className={styles.rowIcon} aria-hidden="true"><ProviderLogo kind="agent" /></span>
               <span className={styles.rowText}><span className={styles.rowName}>Another agent</span><span className={styles.rowSub}>Any command that speaks ACP</span></span>
             </button>
           </li>
@@ -320,25 +335,29 @@ function Picker({ presets, agents, onPick }: { presets: AiPreset[]; agents: Dete
         <h3 id="ai-pick-keys" className={styles.groupTitle}>With your own key</h3>
         <p className={styles.groupNote}>You pay the provider directly. The key stays on this computer.</p>
         <ul className={styles.rows}>
-          {keys.map((p) => <PresetRow key={p.id} preset={p} icon={<KeyRound />} onPick={onPick} />)}
+          {keys.map((p) => <PresetRow key={p.id} preset={p} onPick={onPick} />)}
         </ul>
       </section>
       <section aria-labelledby="ai-pick-local">
         <h3 id="ai-pick-local" className={styles.groupTitle}>A model on this computer</h3>
         <p className={styles.groupNote}>Nothing is sent anywhere. Slower, and it needs a model that can call tools.</p>
         <ul className={styles.rows}>
-          {local.map((p) => <PresetRow key={p.id} preset={p} icon={<Laptop />} onPick={onPick} />)}
+          {local.map((p) => <PresetRow key={p.id} preset={p} onPick={onPick} />)}
         </ul>
       </section>
     </div>
   )
 }
 
-function PresetRow({ preset, icon, onPick }: { preset: AiPreset; icon: React.ReactNode; onPick: (v: View) => void }) {
+function PresetRow({ preset, onPick }: { preset: AiPreset; onPick: (v: View) => void }) {
+  const local = preset.group === 'local'
+  const bg = brandBg(providerBrandOf({ presetId: preset.id, provider: preset.name }))
   return (
     <li>
       <button type="button" className={styles.row} onClick={() => onPick({ name: 'key', preset })}>
-        <span className={styles.rowIcon} aria-hidden="true">{icon}</span>
+        <span className={styles.rowIcon} aria-hidden="true" style={bg ? { background: bg } : undefined}>
+          <ProviderLogo presetId={preset.id} provider={preset.name} kind={preset.kind} local={local} />
+        </span>
         <span className={styles.rowText}><span className={styles.rowName}>{preset.name}</span><span className={styles.rowSub}>{preset.vendor}</span></span>
       </button>
     </li>

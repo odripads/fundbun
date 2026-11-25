@@ -3,6 +3,7 @@ import { act, createElement as h } from 'react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createTestApp, memoryStorage, type FundBunApp } from '../../../core/app'
 import { App, firstScreenChunks, preloadScreens, SCREENS } from '../../App'
+import { resetDashLayout } from '../../screens/home/layoutPrefs'
 import type { EngineStatus } from '../../state'
 import { byLabel, byText, cleanup, click, flush, render } from '../ds/testing'
 import { PANEL_OPEN_KEY, VIEW_STORAGE_KEY, setViewPreference } from './useDeskMode'
@@ -38,6 +39,7 @@ beforeAll(() => preloadScreens(), 60_000)
 beforeEach(() => {
   vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
   localStorage.clear()
+  resetDashLayout()
   setViewPreference('desk')
   localStorage.clear()
   mockViewport(1440)
@@ -48,6 +50,7 @@ afterEach(async () => {
   vi.restoreAllMocks()
   delete (window as { matchMedia?: unknown }).matchMedia
   localStorage.clear()
+  resetDashLayout()
   window.history.replaceState(null, '', '#')
 })
 
@@ -296,5 +299,51 @@ describe('desk shell: drawer and narrow widths', () => {
     expect(container.querySelector('[data-card]')).toBeNull()
     expect(container.querySelector('h1')!.textContent).toBe('Home')
     expect(byLabel(container, 'Switch to the desktop view')).toBeNull()
+  })
+})
+
+describe('desk dashboard mode toggle & customize blocks', () => {
+  it('hides the Dream Mirror in Daily tracking mode and restores it in Goal & Mirror', async () => {
+    const app = demo('mei')
+    const { container } = await renderAt('#/home', app)
+    const main = container.querySelector('main')!
+    expect(main.querySelector('[data-card="hero"]')).not.toBeNull()
+
+    await click(byText(main, 'Daily tracking', '[role="radio"]'))
+    await flush()
+    expect(app.getSnapshot().state.profile?.mode).toBe('tracking')
+    expect(main.querySelector('[data-card="hero"]')).toBeNull()
+
+    await click(byText(main, 'Goal & Mirror', '[role="radio"]'))
+    await flush()
+    expect(app.getSnapshot().state.profile?.mode).toBe('target')
+    expect(main.querySelector('[data-card="hero"]')).not.toBeNull()
+  })
+
+  it('lets the user move Daily check-in into another slot and reset back to default', async () => {
+    const app = demo('mei')
+    const { container } = await renderAt('#/home', app)
+    const main = container.querySelector('main')!
+
+    await click(byText(main, 'Customize', 'button'))
+    await flush()
+    expect([...main.querySelectorAll('[data-card]')].map((c) => c.getAttribute('data-card'))).toEqual(CARDS)
+
+    await click(byLabel(main, 'Move Daily check-in earlier'))
+    await flush()
+    const moved = [...main.querySelectorAll('[data-card]')].map((c) => c.getAttribute('data-card'))
+    expect(moved.slice(0, 3)).toEqual(['hero', 'checkin', 'month'])
+
+    await click(byText(main, 'Done', 'button'))
+    await flush()
+    expect([...main.querySelectorAll('[data-card]')].map((c) => c.getAttribute('data-card')).slice(0, 3)).toEqual(['hero', 'checkin', 'month'])
+
+    await click(byText(main, 'Customize', 'button'))
+    await flush()
+    await click(byText(main, 'Reset layout', 'button'))
+    await flush()
+    await click(byText(main, 'Done', 'button'))
+    await flush()
+    expect([...main.querySelectorAll('[data-card]')].map((c) => c.getAttribute('data-card'))).toEqual(CARDS)
   })
 })

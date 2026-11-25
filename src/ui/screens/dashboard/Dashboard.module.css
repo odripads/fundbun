@@ -15,18 +15,6 @@
 .grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-areas:
-    'hero'
-    'month'
-    'checkin'
-    'trip'
-    'daily'
-    'cats'
-    'six'
-    'bills'
-    'goals'
-    'check'
-    'txns';
   gap: var(--s-4);
   min-width: 0;
 }
@@ -35,15 +23,19 @@
 @container dash (min-width: 620px) {
   .grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-areas:
-      'hero month'
-      'hero checkin'
-      'hero trip'
-      'daily daily'
-      'cats six'
-      'bills goals'
-      'check check'
-      'txns txns';
+    grid-auto-flow: dense;
+  }
+
+  .grid > [data-card='hero'] {
+    grid-row: span 2;
+  }
+
+  .grid > [data-card='txns'] {
+    grid-column: 1 / -1;
+  }
+
+  .grid > [data-wide='true'] {
+    grid-column: span 2;
   }
 }
 
@@ -51,12 +43,7 @@
 @container dash (min-width: 1060px) {
   .grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    grid-template-areas:
-      'hero month daily'
-      'hero cats six'
-      'checkin bills goals'
-      'trip trip check'
-      'txns txns txns';
+    grid-auto-flow: dense;
   }
 }
 
@@ -106,6 +93,82 @@
   align-items: center;
 }
 
+.cardActionGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+}
+
+.emptyBox {
+  display: grid;
+  justify-items: start;
+  gap: var(--s-3);
+}
+
+.customTile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  min-width: 0;
+  padding: var(--s-2);
+  border-radius: calc(var(--r-lg) + 4px);
+  background: color-mix(in srgb, var(--surface) 65%, transparent);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 40%, transparent);
+  transition: box-shadow var(--dur-1) var(--ease-out), opacity var(--dur-1) var(--ease-out);
+}
+
+.customTile[data-dragging='true'] {
+  opacity: 0.55;
+}
+
+.customTile[data-drop-target='true'] {
+  box-shadow: inset 0 0 0 2px var(--accent), var(--shadow-glow);
+}
+
+.customTileBody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.customTileBody > * {
+  flex: 1;
+  min-width: 0;
+}
+
+.customBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
+  padding: 2px var(--s-1);
+}
+
+.customHandle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  color: var(--text);
+  font-size: var(--fs-sm);
+  font-weight: 650;
+  cursor: grab;
+}
+
+.customHandle svg {
+  width: 16px;
+  height: 16px;
+  color: var(--text-3);
+}
+
+.customCtrls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+}
+
 .seeAll {
   margin: -4px calc(-1 * var(--s-3)) -4px 0;
 }
@@ -120,6 +183,10 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+}
+
+.cell:empty {
+  display: none;
 }
 
 .cell > * {

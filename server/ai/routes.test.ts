@@ -154,7 +154,7 @@ describe('/api/ai/* CRUD, health shapes and /api/llm integration', () => {
     })).json() as { connection: { id: string } }
     await fetch(`${base}/api/ai/active`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: agentRes.connection.id }) })
     expect(await (await fetch(`${base}/api/health`)).json()).toEqual({
-      ok: true, provider: 'Claude Code', model: '', local: true, kind: 'agent', connectionId: agentRes.connection.id,
+      ok: true, provider: 'Claude', model: '', local: true, kind: 'agent', connectionId: agentRes.connection.id, presetId: 'claude-code',
     })
     expect((await fetch(`${base}/api/llm`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(LLM_BODY) })).status).toBe(503)
 
@@ -183,12 +183,12 @@ describe('/api/ai/* for an agent: its models, its live test, and the model it an
     expect(await (await fetch(`${base}/api/ai/connections/${id}/test`, { method: 'POST', headers: json, body: '{}' })).json()).toEqual({
       ok: true, ms: 1800, model: 'Default (recommended)', tools: true, kind: 'agent', modelCount: 2,
     })
-    expect(await (await fetch(`${base}/api/health`)).json()).toMatchObject({ ok: true, provider: 'Claude Code', model: 'Default (recommended)', kind: 'agent' })
+    expect(await (await fetch(`${base}/api/health`)).json()).toMatchObject({ ok: true, provider: 'Claude', model: 'Default (recommended)', kind: 'agent', presetId: 'claude-code' })
 
     const patched = await fetch(`${base}/api/ai/connections/${id}`, { method: 'PATCH', headers: json, body: JSON.stringify({ model: 'opus', modelName: 'Opus' }) })
     expect((await patched.json()).connection).toMatchObject({ model: 'opus', modelName: 'Opus' })
     expect(onConnectionChange).toHaveBeenCalledWith(id)
-    expect(await (await fetch(`${base}/api/health`)).json()).toMatchObject({ provider: 'Claude Code', model: 'Opus', kind: 'agent' })
+    expect(await (await fetch(`${base}/api/health`)).json()).toMatchObject({ provider: 'Claude', model: 'Opus', kind: 'agent', presetId: 'claude-code' })
 
     // a name that is not a short string is ignored, not stored
     await fetch(`${base}/api/ai/connections/${id}`, { method: 'PATCH', headers: json, body: JSON.stringify({ modelName: 'x'.repeat(5000) }) })

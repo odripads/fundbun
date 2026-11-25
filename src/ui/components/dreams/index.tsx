@@ -2,6 +2,7 @@
  * Dream items: the editor (name, price, goal/treat, preset illustration or on-device photo) shared by onboarding
  * and Goals, plus its pure helpers. Keep the DreamEditor name and props stable — Goals reuses it.
  */
+export { AddDreamSheet, type AddDreamSheetProps } from './AddDreamSheet'
 export { DreamEditor, type DreamEditorProps } from './DreamEditor'
 export {
   DREAM_SUGGESTIONS,

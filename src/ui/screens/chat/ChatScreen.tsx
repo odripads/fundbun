@@ -17,8 +17,8 @@ import styles from './ChatScreen.module.css'
 /** The chat only re-renders when messages are added or removed (messages are immutable once written). */
 const sameIds = (a: ChatMessage[], b: ChatMessage[]) => a.length === b.length && a.every((m, i) => m.id === b[i].id)
 const selectChat = (s: AppSnapshot) => s.state.chat
-/** which pending actions each plan embeds — the only plan data the layout needs */
-const selectPlanShape = (s: AppSnapshot) => s.state.plans.map((p) => `${p.id}:${p.steps.map((x) => x.pendingId ?? '').join(',')}`).join('|')
+/** which pending actions each plan embeds: the only plan data the layout needs */
+const selectPlanPendingKey = (s: AppSnapshot) => s.state.plans.map((p) => `${p.id}:${p.steps.map((x) => x.pendingId ?? '').join(',')}`).join('|')
 const selectBusy = (s: AppSnapshot) => s.derived.busy
 const selectEngine = (s: AppSnapshot) => s.derived.engine
 const selectCurrency = (s: AppSnapshot) => s.state.profile?.currency ?? 'CNY'
@@ -39,7 +39,7 @@ export function ChatScreen({ variant = 'page' }: ChatScreenProps = {}) {
   const panel = variant === 'panel'
   const app = useApp()
   const messages = useSnapshot(selectChat, sameIds)
-  const planShape = useSnapshot(selectPlanShape)
+  const planPendingKey = useSnapshot(selectPlanPendingKey)
   const busy = useSnapshot(selectBusy)
   const engine = useSnapshot(selectEngine)
   const currency = useSnapshot(selectCurrency)
@@ -53,8 +53,8 @@ export function ChatScreen({ variant = 'page' }: ChatScreenProps = {}) {
   const initialIds = useRef(new Set(messages.map((m) => m.id)))
 
   const conversation = hasConversation(messages)
-  // planShape is the change signal for the plans read here (plan objects change identity on every commit)
-  const layouts = useMemo(() => layoutConversation(messages, app.getSnapshot().state.plans), [messages, planShape, app])
+  // planPendingKey is the change signal for the plans read here (plan objects change identity on every commit)
+  const layouts = useMemo(() => layoutConversation(messages, app.getSnapshot().state.plans), [messages, planPendingKey, app])
   const ids = useMemo(() => messages.map((m) => m.id), [messages])
   const lastUser = useMemo(() => [...messages].reverse().find((m) => m.role === 'user')?.id ?? null, [messages])
   const latestAssistant = useMemo(() => [...messages].reverse().find((m) => m.role === 'assistant')?.id ?? null, [messages])

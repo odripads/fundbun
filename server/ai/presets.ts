@@ -87,7 +87,7 @@ export const PRESETS: readonly (AiPreset & { wire?: PresetWire })[] = [
  */
 export const AGENTS: readonly AgentPreset[] = [
   {
-    id: 'claude-code', name: 'Claude Code', vendor: 'Anthropic', bin: 'claude', login: 'claude auth login',
+    id: 'claude-code', name: 'Claude', vendor: 'Anthropic', bin: 'claude', login: 'claude auth login',
     launch: { via: 'npx', package: '@agentclientprotocol/claude-agent-acp@0.106.0', args: [] },
     note: 'Uses the Claude plan you are signed in to.',
   },

@@ -161,8 +161,11 @@ async function route(ctx: RouteContext, req: IncomingMessage, res: ServerRespons
 export function healthOf(opts: GatewayOptions): LlmHealth {
   if (opts.ai) {
     const active = opts.ai.active()
-    if (active?.kind === 'agent') return { ok: true, provider: active.label, model: active.modelName || active.model || '', local: true, kind: 'agent', connectionId: active.id }
-    if (active?.model) return { ok: true, provider: active.label, model: active.model, local: true, kind: active.kind, connectionId: active.id, onDevice: active.local }
+    if (active?.kind === 'agent') {
+      const provider = active.presetId === 'claude-code' && active.label === 'Claude Code' ? 'Claude' : active.label
+      return { ok: true, provider, model: active.modelName || active.model || '', local: true, kind: 'agent', connectionId: active.id, presetId: active.presetId }
+    }
+    if (active?.model) return { ok: true, provider: active.label, model: active.model, local: true, kind: active.kind, connectionId: active.id, presetId: active.presetId, onDevice: active.local }
     return { ok: false, provider: 'none', local: true, reason: active ? 'Pick a model for your AI connection' : 'No AI connected yet' }
   }
   if (opts.provider) return { ok: true, provider: opts.provider.name, model: opts.provider.model }

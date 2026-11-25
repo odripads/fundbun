@@ -190,7 +190,9 @@ export function OnboardingScreen() {
     toast.show({
       tone: 'success',
       title: `Welcome, ${built.input.name}`,
-      message: mirrored && mirrored !== 'no_data' ? 'Here’s your month, mirrored.' : 'Your mirror fills in as this month’s spending arrives.',
+      message: built.input.mode === 'tracking'
+        ? 'Ready to track your daily spending.'
+        : mirrored && mirrored !== 'no_data' ? 'Here’s your month, mirrored.' : 'Your mirror fills in as this month’s spending arrives.',
       // a greeting, not a task: brief, so it doesn't sit on the first Home's tiles and CTA (F39)
       duration: 3500,
     })
@@ -257,7 +259,9 @@ export function OnboardingScreen() {
       body = <DoneStep draft={draft} pinSet={pin !== null} problems={finish.problems} error={finish.error} onEdit={editFromSummary} />
       action = (
         <Button size="lg" fullWidth onClick={complete} loading={finishing} iconEnd={<ArrowRight />}>
-          {finishing ? 'Setting up your mirror…' : 'Show me my mirror'}
+          {draft.spendMode === 'tracking'
+            ? finishing ? 'Setting up Bun…' : 'Start tracking'
+            : finishing ? 'Setting up your mirror…' : 'Show me my mirror'}
         </Button>
       )
       break
@@ -273,7 +277,7 @@ export function OnboardingScreen() {
           title={step === 'done' && draft.name.trim() ? `You’re all set, ${draft.name.trim()}` : step === 'permissions' && draft.quick && !returnToSummary ? 'One last thing: a PIN' : meta.title}
           mood={meta.mood}
           big={step === 'done'}
-          art={step === 'done' ? <DreamOrbit items={doneOrbit(draft)} mascotSize={112} radius={96} height={draft.dreams.length <= 2 ? 184 : 232} /> : undefined}
+          art={step === 'done' && draft.dreams.length > 0 ? <DreamOrbit items={doneOrbit(draft)} mascotSize={112} radius={96} height={draft.dreams.length <= 2 ? 184 : 232} /> : undefined}
         />
         {body}
       </div>
@@ -286,7 +290,9 @@ export function OnboardingScreen() {
         {action}
         {step !== 'done' && !returnToSummary ? (
           <button type="button" className={styles.flowSwitch} onClick={() => update((d) => ({ ...d, quick: !d.quick }))}>
-            {draft.quick ? 'Set up every detail instead (7 steps)' : 'Use the short setup (4 steps)'}
+            {draft.quick
+              ? `Set up every detail instead (${flowOf({ quick: false, spendMode: draft.spendMode }).length} steps)`
+              : `Use the short setup (${flowOf({ quick: true, spendMode: draft.spendMode }).length} steps)`}
           </button>
         ) : null}
       </footer>

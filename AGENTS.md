@@ -85,7 +85,8 @@ https://odripads.github.io/fundbun/?demo=jing · demo video https://youtu.be/Se5
 ```
 npm install            # never `npm ci` (it deletes node_modules and its iCloud-ignore flag)
 npm run dev            # web (vite) + API together; the terminal prints the address to open
-npm test               # vitest, ~3,500+ tests; must stay green
+npm test               # vitest, ~4,000+ tests (includes agent lint suite); must stay green
+npx tsx scripts/lint-agents.ts   # anti-slop + Factory-style AST & architecture linter across src/ and server/
 npm run typecheck
 npm run evidence       # scripted scenarios → evidence/
 npm run local          # build + start local server on 127.0.0.1:47600 (supports Your AI)
@@ -203,6 +204,7 @@ trip a wire (`addSpending` now applies tripwires for this month's purchases).
 
 ## 8. Rules for you
 - Run `npm test` after every change; don't leave the app broken. Small commits with clear messages.
+- **Agent-directing linter (`scripts/lint-agents.ts`, enforced by `tests/lint-agents.test.ts`):** Inspired by `dmmulroy/anti-slop` and `Factory-AI/eslint-plugin`, FundBun runs 13 zero-dependency AST and boundary checks on every test run (`no-chained-type-assertions`, `no-as-any`, `no-object-parameters`, `no-reflect-apply-or-get`, `no-reduce-accumulator-copy`, `no-shape-in-symbol-names`, `no-module-mocking`, `no-ts-suppression`, `fundbun/layer-boundaries`, `no-dangerous-html-or-eval`, `no-log-before-throw`, `no-empty-catch`, and `fundbun/no-forbidden-ui-copy`). Never work around failures with type assertions, module mocks, or `@ts-ignore`; follow the `Fix:` printed by the linter.
 - Ask Odri before: publishing anything, pushing to the public repo, sending emails, spending money.
 - Never type passport/ID numbers or put personal data, API keys or voice files in the repo.
 - Report real measured numbers, not guesses.

@@ -1,11 +1,12 @@
-import { Camera, ChevronDown, FlaskConical, Plus } from 'lucide-react'
-import { useCallback, useRef, useState, type TouchEvent } from 'react'
+import { ArrowDown, ArrowUp, Camera, ChevronDown, EyeOff, FlaskConical, GripVertical, Plus } from 'lucide-react'
+import { Fragment, useCallback, useRef, useState, type ReactNode, type TouchEvent } from 'react'
 import { LogOutDialog } from '../../components/account/LogOut'
+import { AddDreamSheet } from '../../components/dreams'
 import { SandboxPanel } from '../../components/sandbox'
 import type { AppSnapshot } from '../../../core/app-api'
 import { monthLabel } from '../../../core/dates'
 import type { YearMonth } from '../../../core/types'
-import { Button, Callout, Sheet } from '../../components/ds'
+import { Button, Callout, IconButton, Sheet } from '../../components/ds'
 import { navigate } from '../../router'
 import { useSnapshot } from '../../state'
 import { BillsStrip } from './BillsStrip'
@@ -14,15 +15,17 @@ import { DailyPlanSheet } from './DailyPlanSheet'
 import { CouldveStrip } from './CouldveStrip'
 import { InsightsPeek } from './InsightsPeek'
 import { MirrorHero, type CheckRequest } from './MirrorHero'
+import { ModeBar } from './ModeBar'
 import { MonthCard } from './MonthCard'
 import { QuickAdd } from './QuickAdd'
 import { QuickCheck } from './QuickCheck'
 import { TripwireStack, useTripwireToasts } from './TripwireStack'
+import { HOME_BLOCK_LABEL, useHomeLayout, type HomeBlockId } from './layoutPrefs'
 import styles from './HomeScreen.module.css'
 
 /**
- * Home — the Dream Mirror. Hero first (the month reflected as a dream), then live tripwires, the month in numbers,
- * the "Should I buy it?" check, bills, two insights and the six-month could've collection.
+ * Home: Dream Mirror hero (in Goal & Mirror mode, hidden in Daily tracking mode), quick actions, mode switch,
+ * and the ordered, customizable stack of daily blocks.
  */
 const PULL_OPEN_PX = 140
 
@@ -32,11 +35,19 @@ const selectLookBack = (s: AppSnapshot): string | null => (s.derived.viewDate !=
 /** A demo persona: the bank is simulated, so the app shows its "bank connected" side. */
 const selectBankDemo = (s: AppSnapshot): boolean => s.derived.clock === 'sandbox'
 
+const selectTracking = (s: AppSnapshot): boolean => s.state.profile?.mode === 'tracking'
+
 export function HomeScreen() {
   const [sandbox, setSandbox] = useState(false)
   const lookBack = useSnapshot(selectLookBack)
   const bankDemo = useSnapshot(selectBankDemo)
+  const tracking = useSnapshot(selectTracking)
+  const { layout, move, reorder, toggleHide, reset, isDefault } = useHomeLayout()
   const [adding, setAdding] = useState(false)
+  const [addingGoal, setAddingGoal] = useState(false)
+  const [customizing, setCustomizing] = useState(false)
+  const [dragged, setDragged] = useState<HomeBlockId | null>(null)
+  const [dropOver, setDropOver] = useState<HomeBlockId | null>(null)
   const [leaving, setLeaving] = useState(false)
   const [planning, setPlanning] = useState(false)
   const [check, setCheck] = useState<CheckRequest | null>(null)
@@ -47,7 +58,7 @@ export function HomeScreen() {
   // reaction; a toast on top would only hide them
   useTripwireToasts({ quiet: sandbox || adding })
 
-  // swipe down when the page is already at the top opens the camera — the quick way to scan a receipt
+  // swipe down when the page is already at the top opens the camera: the quick way to scan a receipt
   const onTouchStart = (e: TouchEvent<HTMLDivElement>) => {
     touchY.current = window.scrollY <= 0 ? e.touches[0].clientY : null
   }
@@ -68,6 +79,49 @@ export function HomeScreen() {
     setPull(0)
   }
 
+  const scopedOrder = tracking ? layout.order.filter((id) => id !== 'couldve') : layout.order
+  const hiddenSet = new Set(layout.hidden)
+  const visibleBlocks = scopedOrder.filter((id) => !hiddenSet.has(id))
+  const hiddenBlocks = scopedOrder.filter((id) => hiddenSet.has(id)).map((id) => ({ id, label: HOME_BLOCK_LABEL[id] }))
+
+  function renderBlock(id: HomeBlockId): ReactNode {
+    switch (id) {
+      case 'checkin':
+        return <CheckInCard onAddSpending={() => setAdding(true)} onPlan={() => setPlanning(true)} />
+      case 'trip':
+        return <TripwireStack />
+      case 'month':
+        return <MonthCard />
+      case 'check':
+        return <QuickCheck request={check} onRequestHandled={clearCheck} />
+      case 'bills':
+        return <BillsStrip />
+      case 'insights':
+        return <InsightsPeek />
+      case 'couldve':
+        return <CouldveStrip />
+    }
+  }
+
+  const modeBar = (
+    <div className={styles.modeWrap} data-tracking={tracking ? 'true' : undefined}>
+      <ModeBar
+        onAddGoal={() => setAddingGoal(true)}
+        customizing={customizing}
+        onToggleCustomize={() => {
+          setCustomizing((c) => !c)
+          setDragged(null)
+          setDropOver(null)
+        }}
+        onSandbox={() => setSandbox(true)}
+        hiddenBlocks={hiddenBlocks}
+        onShowBlock={(id) => toggleHide(id as HomeBlockId)}
+        onResetLayout={reset}
+        isDefaultLayout={isDefault}
+      />
+    </div>
+  )
+
   return (
     <div className={styles.page} onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd} onTouchCancel={cancelPull}>
       <div className={styles.pullHint} style={{ opacity: pull }} aria-hidden="true">
@@ -81,8 +135,12 @@ export function HomeScreen() {
           </Callout>
         </div>
       ) : null}
-      <MirrorHero onCheck={setCheck} onSandbox={() => setSandbox(true)} onPlan={() => setPlanning(true)} />
-      <div className={styles.scanRow}>
+      {!tracking ? (
+        <MirrorHero onCheck={setCheck} onSandbox={() => setSandbox(true)} onPlan={() => setPlanning(true)} onAddGoal={() => setAddingGoal(true)} />
+      ) : (
+        modeBar
+      )}
+      <div className={styles.scanRow} data-tracking={tracking ? 'true' : undefined}>
         <Button variant="soft" size="lg" iconStart={<Plus />} onClick={() => setAdding(true)}>
           Add spending
         </Button>
@@ -90,15 +148,80 @@ export function HomeScreen() {
           Receipt or file
         </Button>
       </div>
+      {!tracking ? modeBar : null}
       <QuickAdd open={adding} onClose={() => setAdding(false)} />
+      <AddDreamSheet open={addingGoal} onClose={() => setAddingGoal(false)} />
       <div className={styles.sections}>
-        <CheckInCard onAddSpending={() => setAdding(true)} onPlan={() => setPlanning(true)} />
-        <TripwireStack />
-        <MonthCard />
-        <QuickCheck request={check} onRequestHandled={clearCheck} />
-        <BillsStrip />
-        <InsightsPeek />
-        <CouldveStrip />
+        {visibleBlocks.map((id, idx) => {
+          const content = renderBlock(id)
+          if (!customizing) return <Fragment key={id}>{content}</Fragment>
+          const label = HOME_BLOCK_LABEL[id]
+          const first = idx === 0
+          const last = idx === visibleBlocks.length - 1
+          return (
+            <div
+              key={id}
+              className={styles.customBlock}
+              data-home-block={id}
+              data-dragging={dragged === id ? 'true' : undefined}
+              data-drop-target={dropOver === id && dragged !== id ? 'true' : undefined}
+              draggable
+              onDragStart={(e) => {
+                setDragged(id)
+                try {
+                  e.dataTransfer.effectAllowed = 'move'
+                  e.dataTransfer.setData('text/plain', id)
+                } catch {
+                  // jsdom or restricted drag environment
+                }
+              }}
+              onDragOver={(e) => {
+                e.preventDefault()
+                if (dragged && dragged !== id) setDropOver(id)
+              }}
+              onDrop={(e) => {
+                e.preventDefault()
+                if (dragged && dragged !== id) reorder(dragged, id)
+                setDragged(null)
+                setDropOver(null)
+              }}
+              onDragEnd={() => {
+                setDragged(null)
+                setDropOver(null)
+              }}
+            >
+              <div className={styles.customBlockBar}>
+                <span className={styles.customHandle}>
+                  <GripVertical aria-hidden="true" />
+                  <span>{label}</span>
+                </span>
+                <div className={styles.customCtrls}>
+                  <IconButton
+                    size="sm"
+                    label={`Move ${label} up`}
+                    icon={<ArrowUp />}
+                    disabled={first}
+                    onClick={() => move(id, -1, layout.hidden)}
+                  />
+                  <IconButton
+                    size="sm"
+                    label={`Move ${label} down`}
+                    icon={<ArrowDown />}
+                    disabled={last}
+                    onClick={() => move(id, 1, layout.hidden)}
+                  />
+                  <IconButton
+                    size="sm"
+                    label={`Hide ${label}`}
+                    icon={<EyeOff />}
+                    onClick={() => toggleHide(id)}
+                  />
+                </div>
+              </div>
+              {content}
+            </div>
+          )
+        })}
       </div>
 
       <Sheet

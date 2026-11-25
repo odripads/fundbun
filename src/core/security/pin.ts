@@ -6,11 +6,11 @@ export const MAX_PIN_ATTEMPTS = 3
 export const PIN_LOCK_MINUTES = 5
 export const PIN_SALT_BYTES = 16
 
-const PIN_SHAPE = /^\d{4,6}$/
+const PIN_DIGITS = /^\d{4,6}$/
 
 /** 4–6 digits, not all identical, not a straight run like 1234/4321. */
 export function isValidPinFormat(pin: string): boolean {
-  if (typeof pin !== 'string' || !PIN_SHAPE.test(pin)) return false
+  if (typeof pin !== 'string' || !PIN_DIGITS.test(pin)) return false
   const digits = [...pin].map(Number)
   const steps = digits.slice(1).map((d, i) => d - digits[i])
   const allSame = steps.every((s) => s === 0)
@@ -78,7 +78,7 @@ export function checkPin(pin: string, mandate: Mandate, now: ISODateTime): { ok:
 
 function pinMatches(pin: string, mandate: Mandate): boolean {
   // malformed input can never match a stored PIN; skipping PBKDF2 also caps the cost of absurd inputs
-  if (typeof pin !== 'string' || !PIN_SHAPE.test(pin)) return false
+  if (typeof pin !== 'string' || !PIN_DIGITS.test(pin)) return false
   try {
     return constantTimeEqual(pbkdf2Sha256Hex(pin, mandate.pinSalt as string, PIN_ITERATIONS), mandate.pinHash as string)
   } catch {

@@ -4,9 +4,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createTestApp, memoryStorage, type FundBunApp } from '../../../core/app'
 import { toMinor } from '../../../core/money'
 import { ToastProvider, ToastViewport } from '../../components/ds'
-import { byText, changeValue, cleanup, click, flush, render } from '../../components/ds/testing'
+import { byLabel, byText, changeValue, cleanup, click, flush, render } from '../../components/ds/testing'
 import { AppProvider, type EngineStatus } from '../../state'
 import { HomeScreen } from './HomeScreen'
+import { resetHomeLayout } from './layoutPrefs'
 
 function demo(id: 'mei' | 'arif'): FundBunApp {
   const app = createTestApp({ storage: memoryStorage() })
@@ -36,6 +37,8 @@ beforeEach(() => {
 
 afterEach(async () => {
   await cleanup()
+  localStorage.clear()
+  resetHomeLayout()
   vi.restoreAllMocks()
   window.history.replaceState(null, '', '#')
 })
@@ -311,6 +314,58 @@ describe('Home regressions', () => {
     const { container } = await renderHome(app)
     expect(container.textContent).toContain('No bills yet')
     expect(container.textContent).not.toContain('every bill is paid')
+  })
+})
+
+describe('Home mode toggle, easy goals, and customizable layout', () => {
+  it('switches to Daily tracking (hiding Dream Mirror), lets user add a goal, and switches back to Goal & Mirror', async () => {
+    const app = demo('mei')
+    const { container } = await renderHome(app)
+    expect(container.querySelector('section[data-status]')).not.toBeNull()
+    expect(container.textContent).toContain('Dream Mirror')
+
+    await click(byText(container, 'Daily tracking', '[role="radio"]'))
+    await flush()
+    expect(app.getSnapshot().state.profile?.mode).toBe('tracking')
+    expect(container.querySelector('section[data-status]')).toBeNull()
+    expect(container.textContent).not.toContain('Dream Mirror')
+    expect(container.textContent).not.toContain('Your could’ve collection')
+
+    // Adding a goal works directly in tracking mode
+    await click(byText(container, 'Add goal', 'button'))
+    await flush()
+    const sheet = document.querySelector('[role="dialog"]')!
+    const [nameInput, priceInput] = Array.from(sheet.querySelectorAll('input')) as HTMLInputElement[]
+    await changeValue(nameInput, 'Trip to Kyoto')
+    await changeValue(priceInput, '5000')
+    await click(byText(sheet, 'Add to my goals', 'button'))
+    await flush()
+    expect(app.getSnapshot().state.dreams.some((d) => d.name === 'Trip to Kyoto')).toBe(true)
+
+    // Toggle back to Goal & Mirror
+    await click(byText(container, 'Goal & Mirror', '[role="radio"]'))
+    await flush()
+    expect(app.getSnapshot().state.profile?.mode).toBe('target')
+    expect(container.querySelector('section[data-status]')).not.toBeNull()
+  })
+
+  it('customizes block order (moves Daily check-in below Month card) and persists across renders', async () => {
+    const app = demo('mei')
+    const { container, unmount } = await renderHome(app)
+    await click(byText(container, 'Customize', 'button'))
+    await flush()
+    await click(byLabel(container, 'Move Daily check-in down'))
+    await flush()
+    const order = [...container.querySelectorAll('[data-home-block]')].map((b) => b.getAttribute('data-home-block'))
+    expect(order.slice(0, 3)).toEqual(['trip', 'checkin', 'month'])
+    unmount()
+
+    // Re-renders with persisted order
+    const { container: c2 } = await renderHome(app)
+    await click(byText(c2, 'Customize', 'button'))
+    await flush()
+    const order2 = [...c2.querySelectorAll('[data-home-block]')].map((b) => b.getAttribute('data-home-block'))
+    expect(order2.slice(0, 3)).toEqual(['trip', 'checkin', 'month'])
   })
 })
 

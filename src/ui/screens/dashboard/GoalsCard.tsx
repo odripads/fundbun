@@ -1,9 +1,9 @@
-import { CalendarClock, ChevronRight, Gift } from 'lucide-react'
+import { CalendarClock, ChevronRight, Gift, Plus } from 'lucide-react'
 import { useMemo } from 'react'
 import type { AppSnapshot } from '../../../core/app-api'
 import { DreamImage } from '../../components/brand'
-import { Badge, ProgressBar, buttonClass } from '../../components/ds'
-import { href } from '../../router'
+import { Badge, Button, ProgressBar, buttonClass } from '../../components/ds'
+import { href, navigate } from '../../router'
 import { shallowEqual, useSnapshot } from '../../state'
 import { fmtWhole } from '../home/model'
 import { DashCard } from './DashCard'
@@ -17,21 +17,32 @@ const selectGoals = (s: AppSnapshot) => ({
 })
 
 /** Every open dream with what is saved toward it and its date: the user's own deadline, or the pace's estimate. */
-export function GoalsCard({ area }: { area: string }) {
+export function GoalsCard({ area, onAddGoal }: { area: string; onAddGoal?: () => void }) {
   const { dreams, goals, currency } = useSnapshot(selectGoals, shallowEqual)
   const rows = useMemo(() => goalRows(dreams, goals, currency), [dreams, goals, currency])
+  const addGoal = onAddGoal ?? (() => navigate('goals'))
   return (
     <DashCard
       area={area}
       title="Goals"
       action={
-        <a className={buttonClass('ghost', 'sm', false, styles.seeAll)} href={href('goals')} aria-label="See all goals">
-          All goals <ChevronRight aria-hidden="true" />
-        </a>
+        <div className={styles.cardActionGroup}>
+          <Button size="sm" variant="ghost" iconStart={<Plus />} onClick={addGoal}>
+            Add
+          </Button>
+          <a className={buttonClass('ghost', 'sm', false, styles.seeAll)} href={href('goals')} aria-label="See all goals">
+            All goals <ChevronRight aria-hidden="true" />
+          </a>
+        </div>
       }
     >
       {rows.length === 0 ? (
-        <p className={styles.empty}>No dreams yet. Add one in Goals and Bun shows what your month does to it.</p>
+        <div className={styles.emptyBox}>
+          <p className={styles.empty}>No goals or dreams yet. Add one whenever you like.</p>
+          <Button size="sm" variant="secondary" iconStart={<Plus />} onClick={addGoal}>
+            Add a goal or dream
+          </Button>
+        </div>
       ) : (
         <ul className={styles.rows}>
           {rows.map((g) => (

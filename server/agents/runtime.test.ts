@@ -78,13 +78,19 @@ afterEach(() => {
 describe('fundbunToolOf', () => {
   const names = new Set(['get_overview', 'log_spending'])
 
-  it('matches only exact mcp__fundbun__<tool> names with kind other or absent', () => {
+  it('matches only exact mcp__fundbun__<tool> or mcp_fundbun_<tool> names with kind other or absent', () => {
     expect(fundbunToolOf('mcp__fundbun__get_overview', undefined, names)).toBe('get_overview')
     expect(fundbunToolOf('mcp__fundbun__log_spending', 'other', names)).toBe('log_spending')
+    expect(fundbunToolOf('mcp_fundbun_get_overview', undefined, names)).toBe('get_overview')
+    expect(fundbunToolOf('mcp_fundbun_log_spending', 'other', names)).toBe('log_spending')
     expect(fundbunToolOf('mcp__fundbun__get_overview', 'execute', names)).toBeNull()
+    expect(fundbunToolOf('mcp_fundbun_get_overview', 'execute', names)).toBeNull()
     expect(fundbunToolOf('mcp__fundbun__get_overview', 'edit', names)).toBeNull()
+    expect(fundbunToolOf('mcp_fundbun_get_overview', 'edit', names)).toBeNull()
     expect(fundbunToolOf('mcp__fundbun__transfer_external', 'other', names)).toBeNull()
+    expect(fundbunToolOf('mcp_fundbun_transfer_external', 'other', names)).toBeNull()
     expect(fundbunToolOf('mcp__other__get_overview', 'other', names)).toBeNull()
+    expect(fundbunToolOf('mcp_other_get_overview', 'other', names)).toBeNull()
     expect(fundbunToolOf('get_overview', undefined, names)).toBeNull()
   })
 })
@@ -112,7 +118,7 @@ describe('createAgentRuntime', () => {
     const events1: AgentEvent[] = []
     await runtime.turn({ connectionId, sessionKey: 'chat-1', text: 'First question', preamble: 'RULES' }, (e) => events1.push(e))
     expect(events1).toEqual([
-      { type: 'status', text: 'Starting Claude Code…' },
+      { type: 'status', text: 'Starting Claude…' },
       { type: 'thought', delta: 'thinking' },
       { type: 'text', delta: 'Hello ' },
       { type: 'text', delta: 'Jing' },
@@ -249,6 +255,37 @@ describe('createAgentRuntime', () => {
       { outcome: { outcome: 'cancelled' } },
       { outcome: { outcome: 'cancelled' } },
     ])
+    runtime.close()
+  })
+
+  it('auto-allows Antigravity-style mcp_fundbun_<tool> calls without emitting a permission event', async () => {
+    const permReplies: JsonObject[] = []
+    const { connectionId, runtime } = await setupRuntime((msg, api) => {
+      const { id, method, result } = msg as { id?: number; method?: string; result?: JsonObject }
+      if (!method && result) {
+        permReplies.push(result)
+        api.send({ id: 3, result: { stopReason: 'end_turn' } })
+        return
+      }
+      if (method === 'initialize') return api.send({ id, result: {} })
+      if (method === 'session/new') return api.send({ id, result: { sessionId: 'sess_agy_perm' } })
+      if (method === 'session/prompt') {
+        api.send({ method: 'session/update', params: { update: { sessionUpdate: 'tool_call', toolCallId: 'call_agy_1', name: 'mcp_fundbun_get_overview', kind: 'other', title: 'Run mcp_fundbun_get_overview' } } })
+        api.send({
+          id: 301,
+          method: 'session/request_permission',
+          params: {
+            toolCall: { sessionUpdate: 'tool_call', toolCallId: 'call_agy_1', name: 'mcp_fundbun_get_overview', kind: 'other', title: 'Run mcp_fundbun_get_overview' },
+            options: [{ optionId: 'allow', name: 'Allow', kind: 'allow_once' }, { optionId: 'deny', name: 'Deny', kind: 'reject_once' }],
+          },
+        })
+      }
+    })
+
+    const events: AgentEvent[] = []
+    await runtime.turn({ connectionId, sessionKey: 's-agy-perm', text: 'check', preamble: '' }, (e) => events.push(e))
+    expect(events.filter((e) => e.type === 'permission' || e.type === 'tool')).toEqual([])
+    expect(permReplies).toEqual([{ outcome: { outcome: 'selected', optionId: 'allow' } }])
     runtime.close()
   })
 
@@ -536,7 +573,7 @@ describe('probe: a live test of an agent', () => {
   it('reports an agent that cannot be started without starting anything', async () => {
     const { connectionId, agents, runtime } = await setupRuntime(modelAgent(), { ai: { find: () => null } })
     const r = await runtime.probe(connectionId)
-    expect(r).toEqual({ ok: false, ms: 0, error: 'Claude Code needs Node.js (the "npx" command was not found).' })
+    expect(r).toEqual({ ok: false, ms: 0, error: 'Claude needs Node.js (the "npx" command was not found).' })
     expect(agents).toHaveLength(0)
   })
 
@@ -629,7 +666,7 @@ describe('closeByConnection', () => {
     await turn
     expect(agents[0].kills).toBe(1)
     expect(events.filter((e) => e.type === 'error')).toEqual([
-      { type: 'error', code: 'agent_changed', message: 'Claude Code was changed in Your AI, so this answer stopped. Send your message again.' },
+      { type: 'error', code: 'agent_changed', message: 'Claude was changed in Your AI, so this answer stopped. Send your message again.' },
     ])
     expect(events.some((e) => e.type === 'done')).toBe(false)
   })

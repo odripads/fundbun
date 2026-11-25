@@ -75,13 +75,21 @@ export function checkingAccountId(bank: BankState): string {
 const arr = <T>(x: unknown): T[] => (Array.isArray(x) ? (x as T[]) : [])
 const rec = <T>(x: unknown): T => (isRecord(x) ? (x as T) : ({} as T))
 /** only the records of an array (anything else in a damaged save is dropped) */
-const records = <T>(x: unknown, ok: (r: Record<string, unknown>) => boolean = () => true): T[] =>
-  arr<unknown>(x).filter((r): r is Record<string, unknown> => isRecord(r) && ok(r)) as unknown as T[]
+const records = <T>(x: unknown, ok: (r: Record<string, unknown>) => boolean = () => true): T[] => {
+  const out: T[] = []
+  for (const item of arr<unknown>(x)) {
+    // SAFETY: `isRecord` ensures a plain object record and `ok` validates required runtime fields for T.
+    if (isRecord(item) && ok(item)) out.push(item as T)
+  }
+  return out
+}
 const isNum = (x: unknown): x is number => typeof x === 'number' && Number.isFinite(x)
 const isStr = (x: unknown): x is string => typeof x === 'string'
 
 const TONES: readonly Tone[] = ['cheeky', 'gentle', 'numbers']
 const TRIPWIRE_KINDS: readonly TripwireKind[] = ['month_pct', 'category_pct', 'single_over', 'daily_over', 'pace_over']
+const BUDGET_METHODS: readonly BudgetPlan['method'][] = ['fifty_thirty_twenty', 'history', 'custom']
+const BUDGET_CREATORS: readonly BudgetPlan['createdBy'][] = ['user', 'agent', 'default']
 const DEFAULT_WORK_HOURS = 174
 
 /**
@@ -102,15 +110,18 @@ function parseProfile(raw: unknown): Profile | null {
     grantedAt: isStr(c.grantedAt) ? c.grantedAt : '',
     version: isStr(c.version) ? c.version : '',
   }
-  const { mode: _mode, ...rest } = raw as Record<string, unknown>
-  void _mode
   return {
-    ...(rest as unknown as Profile),
     name: isStr(raw.name) ? raw.name : '',
-    tone: TONES.includes(raw.tone as Tone) ? (raw.tone as Tone) : 'gentle',
+    // SAFETY: raw.currency is verified in CURRENCY_SYMBOL above.
+    currency: raw.currency as Currency,
+    monthlyIncome: raw.monthlyIncome,
+    targetSpend: raw.targetSpend,
     payday: isNum(raw.payday) && raw.payday >= 1 && raw.payday <= 28 ? raw.payday : 1,
     workHoursPerMonth: isNum(raw.workHoursPerMonth) && raw.workHoursPerMonth > 0 ? raw.workHoursPerMonth : DEFAULT_WORK_HOURS,
+    tone: TONES.includes(raw.tone as Tone) ? (raw.tone as Tone) : 'gentle',
     consent,
+    onboardedAt: isStr(raw.onboardedAt) ? raw.onboardedAt : '',
+    ...(isStr(raw.personaId) ? { personaId: raw.personaId } : {}),
     ...(raw.mode === 'tracking' ? { mode: 'tracking' as const } : {}),
   }
 }
@@ -119,7 +130,15 @@ function parseProfile(raw: unknown): Profile | null {
 function parseBudget(raw: unknown): BudgetPlan | null {
   if (!isRecord(raw) || !Array.isArray(raw.categories) || !isStr(raw.month)) return null
   const categories = records<CategoryBudget>(raw.categories, (c) => isStr(c.category) && c.category in CATEGORIES && isNum(c.limit) && c.limit >= 0)
-  return { ...(raw as unknown as BudgetPlan), categories, total: isNum(raw.total) ? raw.total : categories.reduce((t, c) => t + c.limit, 0) }
+  return {
+    month: raw.month as YearMonth,
+    total: isNum(raw.total) ? raw.total : categories.reduce((t, c) => t + c.limit, 0),
+    categories,
+    method: BUDGET_METHODS.includes(raw.method as BudgetPlan['method']) ? (raw.method as BudgetPlan['method']) : 'custom',
+    createdBy: BUDGET_CREATORS.includes(raw.createdBy as BudgetPlan['createdBy']) ? (raw.createdBy as BudgetPlan['createdBy']) : 'default',
+    createdAt: isStr(raw.createdAt) ? raw.createdAt : '',
+    ...(isStr(raw.rationale) ? { rationale: raw.rationale } : {}),
+  }
 }
 
 /**

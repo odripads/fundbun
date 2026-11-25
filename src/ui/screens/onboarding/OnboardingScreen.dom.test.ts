@@ -203,4 +203,39 @@ describe('OnboardingScreen', () => {
     expect(s.bank.personaId).toBeUndefined()
     expect(window.location.hash).toBe('#/home')
   })
+
+  it('daily spending tracker mode skips dreams, shows "Start tracking", and completes with no dreams', async () => {
+    sessionStorage.setItem(
+      DRAFT_KEY,
+      JSON.stringify({
+        v: 1,
+        consent: { financialData: true },
+        spendMode: 'tracking',
+        name: 'Odri',
+        income: '15,000',
+        payday: 10,
+      }),
+    )
+    const app = createTestApp({ storage: memoryStorage() })
+    const { container } = await renderOnboarding(app, '#/onboarding?step=done')
+    await flush()
+    expect(window.location.hash).toBe('#/onboarding?step=permissions')
+    expect(container.textContent).toContain('Step 3 of 3')
+    const pin = async () => {
+      for (const d of '2580') await click(byText(container, d, 'button'))
+      await click(container.querySelector('[aria-label="Confirm PIN"]'))
+    }
+    await pin()
+    await pin()
+    await click(byText(container, 'Review my setup', 'button'))
+    await flush()
+    expect(window.location.hash).toBe('#/onboarding?step=done')
+    expect(container.textContent).toContain('None yet · optional')
+    await click(byText(container, 'Start tracking', 'button'))
+    await flush(80)
+    expect(app.isOnboarded()).toBe(true)
+    expect(app.getSnapshot().state.profile?.mode).toBe('tracking')
+    expect(app.getSnapshot().state.dreams).toEqual([])
+    expect(window.location.hash).toBe('#/home')
+  })
 })

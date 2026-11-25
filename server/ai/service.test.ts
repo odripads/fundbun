@@ -247,7 +247,7 @@ describe('createAiService: secrets, validation and connections', () => {
 
     const noNpx = createAiService({ store: createMemoryStore(), find: () => null })
     const c2 = await noNpx.add({ presetId: 'claude-code' })
-    if (c2.ok) expect(noNpx.agentCommand(c2.value.id)).toEqual({ ok: false, error: 'Claude Code needs Node.js (the "npx" command was not found).' })
+    if (c2.ok) expect(noNpx.agentCommand(c2.value.id)).toEqual({ ok: false, error: 'Claude needs Node.js (the "npx" command was not found).' })
 
     expect(PRESETS.length).toBeGreaterThanOrEqual(10)
   })

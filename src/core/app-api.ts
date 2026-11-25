@@ -52,9 +52,10 @@ export interface LlmStatus {
   reason?: string
   /** FundBun's server on this computer answers (desktop app): the user's own AI connection */
   local?: boolean
-  /** 'agent' = an agent on this computer (Claude Code, Codex, …) answers */
+  /** 'agent' = an agent on this computer (Claude, Antigravity, Codex, …) answers */
   kind?: 'openai_compat' | 'anthropic' | 'agent'
   connectionId?: string
+  presetId?: string
   /** the model runs on this computer */
   onDevice?: boolean
 }

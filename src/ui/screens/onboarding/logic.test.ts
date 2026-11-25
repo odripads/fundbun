@@ -353,14 +353,23 @@ describe('buildOnboardingInput → the real controller', () => {
     expect(app.getSnapshot().derived.mirror?.status).toBe('no_data')
   })
 
-  it('daily tracking needs no target; the income stands in, and the profile is in tracking mode', () => {
-    const d = complete({ spendMode: 'tracking', target: '' })
+  it('daily tracking needs no target and skips mandatory dreams; goals can still be added later', () => {
+    const d = complete({ spendMode: 'tracking', target: '', dreams: [] })
     expect(validateMoney(d)).toEqual({})
+    expect(stepErrors('dreams', d, ctx)).toEqual({})
+    expect(flowOf(d)).toEqual(['consent', 'money', 'permissions'])
+    expect(flowOf({ quick: false, spendMode: 'tracking' })).toEqual(['consent', 'money', 'tripwires', 'permissions', 'mode', 'data'])
     const built = buildOnboardingInput(d, '135790', null)
     expect(built.ok).toBe(true)
-    if (built.ok) expect(built.input).toMatchObject({ mode: 'tracking', targetSpend: built.input.monthlyIncome })
-    // with a target it is the usual setup
+    if (!built.ok) return
+    expect(built.input).toMatchObject({ mode: 'tracking', targetSpend: built.input.monthlyIncome, dreams: [] })
+    const app = createTestApp({ storage: memoryStorage(), llmBaseUrl: null })
+    expect(app.completeOnboarding(built.input)).toEqual({ ok: true })
+    expect(app.getSnapshot().state.profile?.mode).toBe('tracking')
+    expect(app.getSnapshot().state.dreams).toEqual([])
+    // with a target it is the usual setup requiring at least one dream
     expect(validateMoney(complete({ spendMode: 'target', target: '' })).target).toBeTruthy()
+    expect(stepErrors('dreams', complete({ spendMode: 'target', dreams: [] }), ctx).dreams).toBeTruthy()
   })
 
   it('refuses without a PIN even when everything else is filled', () => {
