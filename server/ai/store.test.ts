@@ -40,6 +40,23 @@ describe('normalise', () => {
     expect(normalise({ connections: [agent], activeId: agent.id }).connections).toEqual([agent])
   })
 
+  it('keeps an agent’s model with its name', () => {
+    const agent: StoredConnection = { id: 'ai_agent0000002', kind: 'agent', presetId: 'claude-code', label: 'Claude Code', model: 'opus', modelName: 'Opus', createdAt: '2026-11-25T08:00:00.000Z' }
+    expect(normalise({ connections: [agent] }).connections).toEqual([agent])
+  })
+
+  it.each([
+    ['not a string', 42],
+    ['over 120 characters', 'N'.repeat(121)],
+  ])('leaves out a model name that is %s', (_what, modelName) => {
+    expect(normalise({ connections: [{ ...conn({ kind: 'agent' }), modelName }] }).connections[0]).not.toHaveProperty('modelName')
+  })
+
+  it('leaves out a model name without a model', () => {
+    const { model: _gone, ...rest } = conn({ kind: 'agent' })
+    expect(normalise({ connections: [{ ...rest, modelName: 'Opus' }] }).connections[0]).not.toHaveProperty('modelName')
+  })
+
   it.each([
     ['null', null],
     ['a string', 'ai_0123456789ab'],

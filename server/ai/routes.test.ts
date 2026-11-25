@@ -165,3 +165,40 @@ describe('/api/ai/* CRUD, health shapes and /api/llm integration', () => {
     expect((await fetch(`${base}/api/ai/connections/${added.connection.id}`, { method: 'DELETE' })).status).toBe(200)
   })
 })
+
+describe('/api/ai/* for an agent: its models, its live test, and the model it answers with', () => {
+  it('lists named models, tests by starting the agent, takes a picked model with its name, and reports it in /api/health', async () => {
+    const options = [{ id: 'default', name: 'Default (recommended)' }, { id: 'opus', name: 'Opus' }]
+    const probeAgent = vi.fn(async () => ({ ok: true as const, ms: 1800, currentModel: 'default', currentModelName: 'Default (recommended)', options }))
+    const onConnectionChange = vi.fn()
+    const ai = createAiService({ store: createMemoryStore(), find: () => '/usr/local/bin/npx', probeAgent, onConnectionChange })
+    const { base } = await start({ ai })
+    const json = { 'Content-Type': 'application/json' }
+
+    const added = await (await fetch(`${base}/api/ai/connections`, { method: 'POST', headers: json, body: JSON.stringify({ presetId: 'claude-code' }) })).json() as { connection: { id: string; command: string[] } }
+    const id = added.connection.id
+    expect(added.connection.command).toEqual(['npx', '-y', '@agentclientprotocol/claude-agent-acp@0.106.0'])
+
+    expect(await (await fetch(`${base}/api/ai/connections/${id}/models`)).json()).toEqual({ models: ['default', 'opus'], modelOptions: options })
+    expect(await (await fetch(`${base}/api/ai/connections/${id}/test`, { method: 'POST', headers: json, body: '{}' })).json()).toEqual({
+      ok: true, ms: 1800, model: 'Default (recommended)', tools: true, kind: 'agent', modelCount: 2,
+    })
+    expect(await (await fetch(`${base}/api/health`)).json()).toMatchObject({ ok: true, provider: 'Claude Code', model: 'Default (recommended)', kind: 'agent' })
+
+    const patched = await fetch(`${base}/api/ai/connections/${id}`, { method: 'PATCH', headers: json, body: JSON.stringify({ model: 'opus', modelName: 'Opus' }) })
+    expect((await patched.json()).connection).toMatchObject({ model: 'opus', modelName: 'Opus' })
+    expect(onConnectionChange).toHaveBeenCalledWith(id)
+    expect(await (await fetch(`${base}/api/health`)).json()).toMatchObject({ provider: 'Claude Code', model: 'Opus', kind: 'agent' })
+
+    // a name that is not a short string is ignored, not stored
+    await fetch(`${base}/api/ai/connections/${id}`, { method: 'PATCH', headers: json, body: JSON.stringify({ modelName: 'x'.repeat(5000) }) })
+    await fetch(`${base}/api/ai/connections/${id}`, { method: 'PATCH', headers: json, body: JSON.stringify({ modelName: { evil: true } }) })
+    expect((await (await fetch(`${base}/api/ai/state`)).json() as AiState).connections[0].modelName).toBe('Opus')
+
+    // a failed listing is a 502 with the agent's reason
+    probeAgent.mockResolvedValueOnce({ ok: false, ms: 3, error: 'Claude Code is not signed in on this computer.' } as never)
+    const failed = await fetch(`${base}/api/ai/connections/${id}/models`)
+    expect(failed.status).toBe(502)
+    expect((await failed.json()).message).toBe('Claude Code is not signed in on this computer.')
+  })
+})

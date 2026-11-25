@@ -141,7 +141,7 @@ async function route(ctx: RouteContext, req: IncomingMessage, res: ServerRespons
 export function healthOf(opts: GatewayOptions): LlmHealth {
   if (opts.ai) {
     const active = opts.ai.active()
-    if (active?.kind === 'agent') return { ok: true, provider: active.label, model: '', local: true, kind: 'agent', connectionId: active.id }
+    if (active?.kind === 'agent') return { ok: true, provider: active.label, model: active.modelName || active.model || '', local: true, kind: 'agent', connectionId: active.id }
     if (active?.model) return { ok: true, provider: active.label, model: active.model, local: true, kind: active.kind, connectionId: active.id, onDevice: active.local }
     return { ok: false, provider: 'none', local: true, reason: active ? 'Pick a model for your AI connection' : 'No AI connected yet' }
   }

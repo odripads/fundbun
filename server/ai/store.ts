@@ -29,6 +29,8 @@ export interface StoredConnection {
   label: string
   baseUrl?: string
   model?: string
+  /** kind 'agent': the model's name as the agent shows it (e.g. "Opus 4.5" for its id) */
+  modelName?: string
   /** encoded by the SecretCodec; never sent to the app */
   secret?: string
   command?: string[]
@@ -44,6 +46,12 @@ export interface StoredAi {
 }
 
 export const EMPTY_AI: StoredAi = { version: 1, connections: [], activeId: null }
+
+/**
+ * The longest model id FundBun keeps, everywhere (the store, Your AI, an agent's model list). A longer id is left
+ * out, never cut: a cut id names another model, or none, and an agent would refuse it.
+ */
+export const MAX_MODEL_ID = 120
 
 export function defaultHome(env: Record<string, string | undefined> = process.env): string {
   return env.FUNDBUN_HOME?.trim() || join(homedir(), '.fundbun')
@@ -103,10 +111,12 @@ export function normalise(raw: unknown): StoredAi {
     if (!id || !KINDS.has(kind) || !presetId || !label) continue
     const out: StoredConnection = { id, kind, presetId, label, createdAt: str(c.createdAt, 40) ?? new Date(0).toISOString() }
     const baseUrl = str(c.baseUrl, 300)
-    const model = str(c.model, 120)
+    const model = str(c.model, MAX_MODEL_ID)
+    const modelName = str(c.modelName, 120)
     const secret = str(c.secret, 8000)
     if (baseUrl) out.baseUrl = baseUrl
     if (model) out.model = model
+    if (model && modelName) out.modelName = modelName
     if (secret) out.secret = secret
     if (Array.isArray(c.command) && c.command.length && c.command.length <= 24 && c.command.every((a) => typeof a === 'string' && a.length <= 400)) out.command = c.command as string[]
     const okAt = str(c.okAt, 40)

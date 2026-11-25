@@ -127,7 +127,7 @@ plan where FundBun supplies the model is planned, with no price set and not buil
    - **Agents you are signed in to:** Claude Code, Codex, Qwen Code, Gemini CLI, OpenCode, Kimi Code, or any custom ACP command.
      No API key is needed: the agent uses its own CLI login on your computer. FundBun starts it in `~/.fundbun/workspace` and
      switches it to ask-first mode. (Verified live with Claude Code; other listed agents connect over ACP.)
-   - **With your own API key:** DeepSeek, Qwen (China or international), Kimi, GLM, OpenAI, Claude, Gemini, OpenRouter, or any
+   - **With your own API key:** DeepSeek, Qwen (China or international), Kimi, GLM, OpenAI, Claude, Gemini, Grok, OpenRouter, or any
      OpenAI-compatible `/chat/completions` endpoint. Paste your key and pick a model from its list. Keys stay on your computer
      in `~/.fundbun/connections.json` (mode `0600`), encrypted with the macOS Keychain in the desktop app.
    - **A model on this computer:** Ollama or LM Studio over `127.0.0.1`. Nothing leaves your computer (requires a model that

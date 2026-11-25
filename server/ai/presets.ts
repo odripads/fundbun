@@ -55,6 +55,11 @@ export const PRESETS: readonly (AiPreset & { wire?: PresetWire })[] = [
     note: 'Your own Gemini API key.',
   },
   {
+    id: 'xai', name: 'Grok', vendor: 'xAI', kind: 'openai_compat', group: 'key', needsKey: true,
+    baseUrl: 'https://api.x.ai/v1', keyUrl: 'https://console.x.ai/',
+    note: 'Your own xAI API key.',
+  },
+  {
     id: 'openrouter', name: 'OpenRouter', vendor: 'OpenRouter', kind: 'openai_compat', group: 'key', needsKey: true,
     baseUrl: 'https://openrouter.ai/api/v1', keyUrl: 'https://openrouter.ai/keys',
     note: 'One key for many models.',

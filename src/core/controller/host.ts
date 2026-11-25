@@ -94,7 +94,9 @@ export function createHost({ store, now, llmClient, aiClient, session }: HostDep
       const status = store.runtime().llm
       if (!aiClient || !session || status.kind !== 'agent' || !status.connectionId) return null
       if (engineFor(store.get(), status) !== 'llm') return null
-      const link = { client: aiClient, connectionId: status.connectionId, label: status.provider ?? 'Your agent', sessionKey: session.key(), fresh: session.fresh(), signal: session.signal() }
+      // the label names the model too, so the chat and the glass box say exactly who answered
+      const label = [status.provider ?? 'Your agent', status.model].filter(Boolean).join(' · ')
+      const link = { client: aiClient, connectionId: status.connectionId, label, sessionKey: session.key(), fresh: session.fresh(), signal: session.signal() }
       session.used()
       return link
     },

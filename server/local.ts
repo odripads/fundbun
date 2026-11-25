@@ -44,7 +44,14 @@ export async function startLocal(opts: LocalOptions = {}): Promise<LocalServer> 
   const env = opts.env ?? process.env
   const home = opts.home ?? defaultHome(env)
   const config = resolveConfig(env)
-  const ai = createAiService({ store: createFileStore(home), codec: opts.codec ?? PLAIN_CODEC })
+  // the connections and the agents need each other: a test starts an agent, a changed model ends its sessions
+  let runtime: AgentRuntime | null = null
+  const ai = createAiService({
+    store: createFileStore(home),
+    codec: opts.codec ?? PLAIN_CODEC,
+    probeAgent: (id, o) => runtime?.probe(id, o) ?? Promise.resolve({ ok: false, ms: 0, error: 'FundBun is still starting. Try again in a moment.' }),
+    onConnectionChange: (id) => runtime?.closeByConnection(id),
+  })
   let port = opts.port ?? LOCAL_PORT
   const agents = createAgentRuntime({
     ai,
@@ -54,6 +61,7 @@ export async function startLocal(opts: LocalOptions = {}): Promise<LocalServer> 
     ...(opts.nodePath ? { nodePath: opts.nodePath } : {}),
     ...(opts.nodeEnv ? { nodeEnv: opts.nodeEnv } : {}),
   })
+  runtime = agents
   const server = createGatewayServer({
     // only what the user connected ever answers here: "Built-in engine" must mean that nothing leaves
     provider: null,

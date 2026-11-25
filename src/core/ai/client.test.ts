@@ -48,6 +48,22 @@ describe('AiClient.state', () => {
   })
 })
 
+describe('AiClient: an agent’s models and its model choice', () => {
+  it('passes named model options through, and sends the model name with a pick', async () => {
+    const seen: { url: string; method: string; body: unknown }[] = []
+    const client = new AiClient('/api', async (input, init) => {
+      seen.push({ url: String(input), method: init?.method ?? 'GET', body: init?.body ? JSON.parse(String(init.body)) : undefined })
+      const body = String(input).endsWith('/models')
+        ? { models: ['default', 'opus'], modelOptions: [{ id: 'default', name: 'Default' }, { id: 'opus', name: 'Opus' }] }
+        : { connection: { id: 'ai_1' }, state: {} }
+      return new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } })
+    })
+    expect(await client.models('ai_1')).toEqual({ ok: true, models: ['default', 'opus'], modelOptions: [{ id: 'default', name: 'Default' }, { id: 'opus', name: 'Opus' }] })
+    await client.update('ai_1', { model: 'opus', modelName: 'Opus' })
+    expect(seen.at(-1)).toEqual({ url: '/api/ai/connections/ai_1', method: 'PATCH', body: { model: 'opus', modelName: 'Opus' } })
+  })
+})
+
 describe('AiClient.turn & parseEvent', () => {
   it('parses NDJSON split across chunks, ignores unknown types, and awaits async handlers in order', async () => {
     const chunks = [

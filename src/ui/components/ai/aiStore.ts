@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useSyncExternalStore } from 'react'
 import type { FundBunApp } from '../../../core/app'
-import { AI_UNAVAILABLE, type AiState, type ConnectionTest, type NewConnectionInput } from '../../../core/ai/types'
+import { AI_UNAVAILABLE, type AiState, type ConnectionTest, type ModelOption, type NewConnectionInput } from '../../../core/ai/types'
 import { useApp } from '../../state'
 
 /**
@@ -34,12 +34,14 @@ function set(store: Store, state: AiState): void {
 export interface AiActions {
   refresh(): Promise<void>
   add(input: NewConnectionInput): Promise<{ ok: true; id: string } | { ok: false; error: string }>
-  setModel(id: string, model: string): Promise<void>
+  /** `modelName`: how an agent names that model, shown beside its id */
+  setModel(id: string, model: string, modelName?: string): Promise<void>
   remove(id: string): Promise<void>
   /** null = the built-in engine on this device */
   use(id: string | null): Promise<void>
   test(id: string): Promise<ConnectionTest>
-  models(id: string): Promise<string[]>
+  /** the models a connection offers; null when it could not say (the error shows when it is tested) */
+  models(id: string): Promise<ModelOption[] | null>
 }
 
 export function useAi(): { ai: AiState; loaded: boolean } & AiActions {
@@ -84,8 +86,8 @@ export function useAi(): { ai: AiState; loaded: boolean } & AiActions {
       await settle(active.ok ? active.state : r.state)
       return { ok: true, id: r.connection.id }
     },
-    async setModel(id, model) {
-      const r = await app.ai?.update(id, { model })
+    async setModel(id, model, modelName) {
+      const r = await app.ai?.update(id, { model, ...(modelName ? { modelName } : {}) })
       await settle(r?.ok ? r.state : undefined)
     },
     async remove(id) {
@@ -98,12 +100,16 @@ export function useAi(): { ai: AiState; loaded: boolean } & AiActions {
     },
     async test(id) {
       const r = (await app.ai?.test(id)) ?? { ok: false, ms: 0, error: 'Not available here.' }
-      await refresh()
+      // a test of an agent writes down the model it runs on: the chip and the chat label name it from now on
+      await settle()
       return r
     },
     async models(id) {
       const r = await app.ai?.models(id)
-      return r?.ok ? r.models : []
+      // asking an agent starts it, and the server writes down what it found (its model, or a failure): show that
+      if (store.state.connections.find((c) => c.id === id)?.kind === 'agent') await settle()
+      if (!r?.ok) return null
+      return r.modelOptions ?? r.models.map((m) => ({ id: m, name: m }))
     },
   }
 }

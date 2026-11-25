@@ -2,7 +2,7 @@
 import { createElement as h } from 'react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { cleanup, render } from '../ds/testing'
-import { describeConnection, testLine } from './AiSheet'
+import { describeConnection, modelChoices, optionLabel, testLine } from './AiSheet'
 import { Markdown, parseMarkdown } from './Markdown'
 import { answeringLabel } from './ModelChip'
 
@@ -71,9 +71,28 @@ describe('AI UI labels and summaries', () => {
     expect(testLine({ ok: true, ms: 500, tools: true })).toEqual({ tone: 'ok', text: "Answered in 0.5 s and can use FundBun's tools." })
   })
 
+  it('formats an agent test: started, ask-first verified, models counted', () => {
+    expect(testLine({ ok: true, ms: 2300, tools: true, kind: 'agent', modelCount: 3 })).toEqual({ tone: 'ok', text: 'Connected in 2.3 s (ask-first mode verified, 3 models found).' })
+    expect(testLine({ ok: true, ms: 900, kind: 'agent', modelCount: 1 }).text).toBe('Connected in 0.9 s (ask-first mode verified, 1 model found).')
+    expect(testLine({ ok: true, ms: 900, kind: 'agent', modelCount: 0 }).text).toBe('Connected in 0.9 s (ask-first mode verified).')
+    expect(testLine({ ok: false, ms: 900, kind: 'agent', error: 'Claude Code is not signed in on this computer.' })).toEqual({ tone: 'bad', text: 'Claude Code is not signed in on this computer.' })
+  })
+
+  it('lists model choices with names, and keeps a model no longer offered visible', () => {
+    const base = { id: 'ai_1', presetId: 'claude-code', label: 'Claude Code', hasKey: false, local: false, kind: 'agent' as const, createdAt: '2026-11-25T00:00:00Z' }
+    const offered = [{ id: 'default', name: 'Default (recommended)' }, { id: 'opus', name: 'opus' }]
+    expect(modelChoices({ ...base, model: 'opus' }, offered)).toEqual(offered)
+    expect(modelChoices({ ...base, model: 'retired', modelName: 'Retired' }, offered)).toEqual([{ id: 'retired', name: 'Retired' }, ...offered])
+    expect(modelChoices(base, [])).toEqual([])
+    expect(optionLabel({ id: 'default', name: 'Default (recommended)' })).toBe('Default (recommended) (default)')
+    expect(optionLabel({ id: 'opus', name: 'opus' })).toBe('opus')
+  })
+
   it('describes connections cleanly', () => {
     const base = { id: 'ai_1', presetId: 'x', label: 'X', hasKey: false, createdAt: '2026-11-25T00:00:00Z' }
     expect(describeConnection({ ...base, kind: 'agent', local: true })).toContain('An agent on this computer')
+    expect(describeConnection({ ...base, kind: 'agent', local: false, model: 'opus', modelName: 'Opus' })).toBe('Opus · agent on this computer, your own sign-in')
+    expect(describeConnection({ ...base, kind: 'agent', local: false, model: 'claude-sonnet-5' })).toBe('claude-sonnet-5 · agent on this computer, your own sign-in')
     expect(describeConnection({ ...base, kind: 'openai_compat', local: true, model: 'llama3' })).toBe('llama3 · runs on this computer')
     expect(describeConnection({ ...base, kind: 'openai_compat', local: false, model: 'deepseek-chat', hasKey: true })).toBe('deepseek-chat · your own key')
     expect(describeConnection({ ...base, kind: 'openai_compat', local: false })).toBe('No model picked · your own key')
@@ -82,6 +101,9 @@ describe('AI UI labels and summaries', () => {
   it('formats answeringLabel for built-in, agent, local AI, and hosted fallback', () => {
     expect(answeringLabel({ checked: true, available: false }, 'offline')).toBe('Built-in engine')
     expect(answeringLabel({ checked: true, available: true, kind: 'agent', provider: 'Claude Code' }, 'llm')).toBe('Claude Code')
+    expect(answeringLabel({ checked: true, available: true, kind: 'agent', provider: 'Claude Code', model: '' }, 'llm')).toBe('Claude Code')
+    expect(answeringLabel({ checked: true, available: true, kind: 'agent', provider: 'Claude Code', model: 'Opus' }, 'llm')).toBe('Claude Code · Opus')
+    expect(answeringLabel({ checked: true, available: true, kind: 'agent' }, 'llm')).toBe('Your agent')
     expect(answeringLabel({ checked: true, available: true, local: true, provider: 'DeepSeek', model: 'deepseek-chat' }, 'llm')).toBe('DeepSeek · deepseek-chat')
     expect(answeringLabel({ checked: true, available: true, local: false, provider: 'anthropic', model: 'claude' }, 'llm')).toBe('AI model')
   })

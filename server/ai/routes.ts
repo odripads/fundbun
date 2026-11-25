@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { NewConnectionInput } from '../../src/core/ai/types'
-import type { AiService } from './service'
+import type { AiService, ConnectionPatch } from './service'
 
 export interface RouteTools {
   readJson(req: IncomingMessage, res: ServerResponse): Promise<Record<string, unknown> | null>
@@ -41,9 +41,10 @@ export async function handleAi(ai: AiService, req: IncomingMessage, res: ServerR
     if (rest.length === 2 && method === 'PATCH') {
       const body = await readJson(req, res)
       if (!body) return
-      const patch: { label?: string; model?: string; apiKey?: string } = {}
+      const patch: ConnectionPatch = {}
       if (typeof body.label === 'string') patch.label = body.label
       if (typeof body.model === 'string') patch.model = body.model
+      if (typeof body.modelName === 'string' && body.modelName.length <= 200) patch.modelName = body.modelName
       if (typeof body.apiKey === 'string') patch.apiKey = body.apiKey
       const r = ai.update(id, patch)
       return r.ok ? sendJson(res, 200, { connection: r.value, state: ai.state() }) : sendJson(res, 404, { error: 'not_found', message: r.error })
@@ -53,7 +54,8 @@ export async function handleAi(ai: AiService, req: IncomingMessage, res: ServerR
     }
     if (rest.length === 3 && rest[2] === 'models' && method === 'GET') {
       const r = await ai.models(id)
-      return r.ok ? sendJson(res, 200, { models: r.value }) : sendJson(res, 502, { error: 'models_unavailable', message: r.error })
+      if (!r.ok) return sendJson(res, 502, { error: 'models_unavailable', message: r.error })
+      return sendJson(res, 200, { models: r.value, ...(r.options ? { modelOptions: r.options } : {}) })
     }
     if (rest.length === 3 && rest[2] === 'test' && method === 'POST') {
       return sendJson(res, 200, await ai.test(id))

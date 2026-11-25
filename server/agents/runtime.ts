@@ -5,6 +5,7 @@ import type { AgentEvent } from '../../src/core/ai/types'
 import { llmToolDefinitions } from '../../src/core/agent/specs'
 import { childEnv } from '../ai/paths'
 import type { AiService } from '../ai/service'
+import { MAX_MODEL_ID } from '../ai/store'
 import { AcpError, connectAcp, processTransport, type AcpConnection, type AcpTransport, type JsonObject } from './acp'
 
 /**
@@ -19,6 +20,11 @@ export const IDLE_MS = 15 * 60_000
 const START_TIMEOUT_MS = 120_000
 const TOOL_TIMEOUT_MS = 120_000
 const MAX_SESSIONS = 4
+/** a live test of an agent: npx may download the adapter the first time, so it gets a minute */
+export const PROBE_TIMEOUT_MS = 60_000
+/** how long a test's model list is reused before the agent is asked again */
+export const PROBE_CACHE_MS = 5 * 60_000
+const MAX_MODEL_OPTIONS = 200
 
 export type Emit = (event: AgentEvent) => void
 
@@ -31,8 +37,28 @@ export interface TurnInput {
   preamble: string
 }
 
+/** One model an agent offers: its id (what the agent is told) and the name people read. */
+export interface AgentModelOption {
+  id: string
+  name: string
+}
+
+/** The models an agent reported when it opened a session, and which one it is using. */
+export interface DiscoveredAgentModels {
+  /** the id of the agent's "model" setting (session/set_config_option); absent for the older session/set_model */
+  configId?: string
+  current?: string
+  options: AgentModelOption[]
+}
+
+/** What a live test of an agent found: it started, asks first, and offers these models. */
+export type ProbeResult =
+  | { ok: true; ms: number; currentModel?: string; currentModelName?: string; options: AgentModelOption[] }
+  | { ok: false; ms: number; error: string }
+
 export interface AgentRuntimeOptions {
-  ai: AiService
+  /** the connections; update() is used quietly, to remember the model an agent reported */
+  ai: Pick<AiService, 'get' | 'agentCommand' | 'markOk' | 'markError' | 'update'>
   /** folder the agents run in: an empty workspace of their own, never the user's home */
   workspace: string
   /** where the bridge reaches this server, e.g. http://127.0.0.1:8787/api/agent/mcp */
@@ -44,6 +70,8 @@ export interface AgentRuntimeOptions {
   nodeEnv?: Record<string, string>
   /** test seam: build the transport instead of spawning */
   transport?: (command: string, args: string[], cwd: string) => AcpTransport
+  /** test seam: milliseconds now, for the test cache */
+  now?: () => number
   version?: string
 }
 
@@ -59,6 +87,10 @@ export interface AgentRuntime {
   bridge(token: string, payload: JsonObject): Promise<JsonObject>
   /** end one session (new chat) or all of them (shutdown) */
   close(sessionKey?: string): void
+  /** start the agent, check it asks first, read its models, and stop it again */
+  probe(connectionId: string, opts?: { useCache?: boolean }): Promise<ProbeResult>
+  /** end every session of one connection (its model changed, or it was removed) and forget its test */
+  closeByConnection(connectionId: string): void
 }
 
 interface Session {
@@ -80,6 +112,7 @@ interface Session {
 const text = (v: unknown, max = 400): string => (typeof v === 'string' ? v.slice(0, max) : '')
 const obj = (v: unknown): JsonObject => (v && typeof v === 'object' && !Array.isArray(v) ? (v as JsonObject) : {})
 const id = (prefix: string) => `${prefix}_${randomBytes(8).toString('hex')}`
+const list = (v: unknown, max: number): unknown[] => (Array.isArray(v) ? v.slice(0, max) : [])
 
 /** The text of an ACP content block ({type:'text', text}); other kinds are named, not shown. */
 function blockText(content: unknown): string {
@@ -142,9 +175,121 @@ export async function asksFirst(conn: Pick<AcpConnection, 'request'>, sessionId:
   return conn.request('session/set_mode', { sessionId, modeId: safe.id }, 20_000).then(() => true, () => false)
 }
 
+/** A model id as FundBun keeps it: trimmed, and empty when it is too long to store (cut short, it would name no model). */
+function modelIdOf(v: unknown): string {
+  const modelId = text(v, 1000).trim()
+  return modelId.length <= MAX_MODEL_ID ? modelId : ''
+}
+
+interface ModelList {
+  options: AgentModelOption[]
+  add(idValue: unknown, nameValue: unknown): void
+}
+
+/**
+ * Collects the models an agent offers: ids checked (one too long to store is left out, never cut), names capped,
+ * duplicates dropped, and the list capped with one place kept for the model in use, so it is always a choice.
+ */
+function modelList(current: string): ModelList {
+  const options: AgentModelOption[] = []
+  const seen = new Set<string>()
+  const add = (idValue: unknown, nameValue: unknown): void => {
+    if (options.length >= MAX_MODEL_OPTIONS) return
+    const modelId = modelIdOf(idValue)
+    if (!modelId || seen.has(modelId)) return
+    if (current && modelId !== current && !seen.has(current) && options.length >= MAX_MODEL_OPTIONS - 1) return
+    seen.add(modelId)
+    options.push({ id: modelId, name: text(nameValue, 120).trim() || modelId })
+  }
+  return { options, add }
+}
+
+function modelsFound(configId: string, current: string, models: ModelList): DiscoveredAgentModels {
+  // the model in use is always one of the choices (a place was kept for it)
+  if (current) models.add(current, current)
+  return { ...(configId ? { configId } : {}), ...(current ? { current } : {}), options: models.options }
+}
+
+/**
+ * The models an agent offers, read from its session/new answer. Two shapes exist:
+ *   configOptions: [{ id: 'model', category: 'model', currentValue, options }] (options flat, or in groups)
+ *   models: { currentModelId, availableModels: [{ modelId, name }] } (the older one)
+ * The answer comes from another program, so every field is checked and the list is capped.
+ */
+export function extractAgentModels(created: JsonObject): DiscoveredAgentModels {
+  const config = list(created.configOptions, 100).map(obj).find((c) => c.category === 'model' || c.id === 'model')
+  if (config) {
+    const current = modelIdOf(config.currentValue)
+    const models = modelList(current)
+    for (const item of list(config.options, 500).map(obj)) {
+      if (Array.isArray(item.options)) {
+        for (const inner of list(item.options, 500).map(obj)) models.add(inner.value, inner.name)
+      } else models.add(item.value, item.name)
+    }
+    if (models.options.length || current) return modelsFound(text(config.id, 120).trim(), current, models)
+  }
+  // no usable model setting: try the older shape
+  const legacy = obj(created.models)
+  const current = modelIdOf(legacy.currentModelId)
+  const models = modelList(current)
+  for (const item of list(legacy.availableModels, 500).map(obj)) models.add(item.modelId, item.name)
+  return modelsFound('', current, models)
+}
+
+/** Switches the model: the agent's answer ({} when nothing had to be sent), or null when it cannot be done. */
+async function switchAgentModel(conn: Pick<AcpConnection, 'request'>, sessionId: string, modelId: string, models: DiscoveredAgentModels): Promise<JsonObject | null> {
+  const wanted = modelId.trim()
+  if (!wanted || wanted === models.current) return {}
+  if (models.options.length && !models.options.some((o) => o.id === wanted)) return null
+  try {
+    if (models.configId) return obj(await conn.request('session/set_config_option', { sessionId, configId: models.configId, value: wanted }, 20_000))
+    return obj(await conn.request('session/set_model', { sessionId, modelId: wanted }, 20_000))
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Switches a session to the model the user picked. True when it is already in use (or none was picked), or the
+ * agent accepted the switch; false when the agent refused, failed, or never offered that model.
+ */
+export async function applyAgentModel(conn: Pick<AcpConnection, 'request'>, sessionId: string, modelId: string, discovered: DiscoveredAgentModels): Promise<boolean> {
+  return (await switchAgentModel(conn, sessionId, modelId, discovered)) !== null
+}
+
+/**
+ * The session's modes after a model switch. Changing the model can change other settings, the permission mode
+ * among them, and the agent reports it in its answer (a "mode" config option) or in a current_mode_update.
+ */
+export function modesAfterSwitch(modes: unknown, reply: JsonObject, reportedMode: string): unknown {
+  const option = list(reply.configOptions, 100).map(obj).find((c) => c.category === 'mode' || c.id === 'mode')
+  const current = text(option?.currentValue, 80) || reportedMode
+  return current ? { ...obj(modes), currentModeId: current } : modes
+}
+
+export class AgentModelError extends Error {
+  constructor(public readonly model: string) {
+    super('model unavailable')
+    this.name = 'AgentModelError'
+  }
+}
+
+export class ProbeTimeoutError extends Error {
+  constructor() {
+    super('probe timed out')
+    this.name = 'ProbeTimeoutError'
+  }
+}
+
 function friendlyStartError(e: unknown, stderr: string, label: string): { code: string; message: string } {
   if (e instanceof UnsafeModeError) {
     return { code: 'agent_unsafe_mode', message: `${label} is set to act without asking${e.mode ? ` ("${e.mode}")` : ''} and FundBun could not switch it to ask first, so FundBun will not use it. Change its permission mode, then try again.` }
+  }
+  if (e instanceof AgentModelError) {
+    return { code: 'agent_model_unavailable', message: `${label} could not switch to the model "${e.model}", so FundBun did not start it. Pick another model in Your AI, then try again.` }
+  }
+  if (e instanceof ProbeTimeoutError) {
+    return { code: 'agent_timeout', message: `${label} did not answer in time. The first start can take a minute while it downloads; try again.` }
   }
   const raw = `${e instanceof Error ? e.message : ''} ${stderr}`.toLowerCase()
   if (/auth|log ?in|sign ?in|credential|unauthori|401|api key/.test(raw)) {
@@ -159,6 +304,18 @@ export function createAgentRuntime(opts: AgentRuntimeOptions): AgentRuntime {
   const byToken = new Map<string, Session>()
   const toolNames = new Set(llmToolDefinitions().map((t) => t.name))
   const startTransport = opts.transport ?? ((command, args, cwd) => processTransport(command, args, { cwd, env: childEnv() }))
+  const clock = opts.now ?? (() => Date.now())
+  /** the last successful test of each connection, and the tests still running (one at a time per connection) */
+  const probeCache = new Map<string, { at: number; result: ProbeResult }>()
+  const probing = new Map<string, Promise<ProbeResult>>()
+  /** each running test's agent, and the connection it tests */
+  const probeConns = new Map<AcpConnection, string>()
+  /**
+   * How often each connection was changed (closeByConnection). A start or a test notes it before the agent starts;
+   * when it moved on meanwhile, what that agent found or runs on may no longer be what Your AI shows.
+   */
+  const generations = new Map<string, number>()
+  const generationOf = (connectionId: string): number => generations.get(connectionId) ?? 0
 
   function end(s: Session): void {
     if (s.idle) clearTimeout(s.idle)
@@ -231,9 +388,57 @@ export function createAgentRuntime(opts: AgentRuntimeOptions): AgentRuntime {
     })
   }
 
-  async function start(input: TurnInput, emit: Emit): Promise<Session | null> {
-    const connection = opts.ai.get(input.connectionId)
-    const label = connection?.label ?? 'The agent'
+  /**
+   * initialize, session/new, the model, and the ask-first check: the same for a chat and for a test.
+   * `wanted` reads the model the user picked once the session is open, so a pick made while the agent was starting
+   * counts. The ask-first check comes last: switching the model can change the agent's mode too.
+   */
+  async function openSession(conn: AcpConnection, mcpServers: JsonObject[], wanted?: () => string): Promise<{ sessionId: string; models: DiscoveredAgentModels; picked: string }> {
+    let reportedMode = ''
+    conn.onNotification((method, params) => {
+      const u = obj(params.update)
+      if (method === 'session/update' && u.sessionUpdate === 'current_mode_update') reportedMode = text(u.currentModeId, 80)
+    })
+    await conn.request('initialize', {
+      protocolVersion: 1,
+      clientCapabilities: { fs: { readTextFile: false, writeTextFile: false }, terminal: false },
+      clientInfo: { name: 'fundbun', title: 'FundBun', version: opts.version ?? '1.0.0' },
+    }, START_TIMEOUT_MS)
+    const created = await conn.request('session/new', { cwd: opts.workspace, mcpServers }, START_TIMEOUT_MS)
+    const sessionId = text(created.sessionId, 200)
+    if (!sessionId) throw new AcpError('The agent did not open a session.')
+    const models = extractAgentModels(created)
+    // The model the user picked, or the agent's own when none was picked. Fail closed: when the agent cannot
+    // switch to the picked model, it is not started on another one without saying so.
+    const picked = wanted?.() ?? ''
+    const reply = await switchAgentModel(conn, sessionId, picked, models)
+    if (!reply) throw new AgentModelError(picked)
+    // Inside a finance app the agent must ask before it runs commands or changes files, whatever its usual setting.
+    // Fail closed: an agent left in a no-questions mode that FundBun cannot switch is not used at all.
+    const modes = modesAfterSwitch(created.modes, reply, reportedMode)
+    if (!(await asksFirst(conn, sessionId, modes))) {
+      throw new UnsafeModeError(text(obj(modes).currentModeId, 80))
+    }
+    return { sessionId, models, picked }
+  }
+
+  /**
+   * Writes down the model a session runs on (the agent's own when none was picked, or the picked one's name), quietly:
+   * nothing changed for the sessions already running. Only while the stored model is still the one the session read:
+   * a model the user picked meanwhile is never written over.
+   */
+  function remember(connectionId: string, picked: string, models: DiscoveredAgentModels): void {
+    const model = picked || models.current
+    const stored = opts.ai.get(connectionId)
+    if (!model || !stored || (stored.model ?? '') !== picked) return
+    const name = models.options.find((o) => o.id === model)?.name
+    if (picked && (stored.modelName || !name)) return
+    opts.ai.update(connectionId, { model, ...(name ? { modelName: name } : {}) }, { quiet: true })
+  }
+
+  /** Starts a session; 'changed' when the connection changed in Your AI while the agent was starting. */
+  async function startOnce(input: TurnInput, emit: Emit): Promise<Session | null | 'changed'> {
+    const label = opts.ai.get(input.connectionId)?.label ?? 'The agent'
     const cmd = opts.ai.agentCommand(input.connectionId)
     if (!cmd.ok) {
       emit({ type: 'error', code: 'agent_missing', message: cmd.error })
@@ -245,34 +450,30 @@ export function createAgentRuntime(opts: AgentRuntimeOptions): AgentRuntime {
     }
     mkdirSync(opts.workspace, { recursive: true, mode: 0o700 })
     emit({ type: 'status', text: `Starting ${label}…` })
+    let generation = generationOf(input.connectionId)
     const conn = connectAcp(startTransport(cmd.value.command, cmd.value.args, opts.workspace))
     const token = randomBytes(24).toString('hex')
     try {
-      await conn.request('initialize', {
-        protocolVersion: 1,
-        clientCapabilities: { fs: { readTextFile: false, writeTextFile: false }, terminal: false },
-        clientInfo: { name: 'fundbun', title: 'FundBun', version: opts.version ?? '1.0.0' },
-      }, START_TIMEOUT_MS)
-      const created = await conn.request('session/new', {
-        cwd: opts.workspace,
-        mcpServers: [{
-          name: 'fundbun',
-          command: opts.nodePath ?? process.execPath,
-          args: [opts.bridgeScript],
-          env: [
-            { name: 'FUNDBUN_BRIDGE_URL', value: opts.bridgeUrl() },
-            { name: 'FUNDBUN_BRIDGE_TOKEN', value: token },
-            ...Object.entries(opts.nodeEnv ?? {}).map(([name, value]) => ({ name, value })),
-          ],
-        }],
-      }, START_TIMEOUT_MS)
-      const sessionId = text(created.sessionId, 200)
-      if (!sessionId) throw new AcpError('The agent did not open a session.')
-      // Inside a finance app the agent must ask before it runs commands or changes files, whatever its usual setting.
-      // Fail closed: an agent left in a no-questions mode that FundBun cannot switch is not used at all.
-      if (!(await asksFirst(conn, sessionId, created.modes))) {
-        throw new UnsafeModeError(text(obj(created.modes).currentModeId, 80))
+      const { sessionId, models, picked } = await openSession(conn, [{
+        name: 'fundbun',
+        command: opts.nodePath ?? process.execPath,
+        args: [opts.bridgeScript],
+        env: [
+          { name: 'FUNDBUN_BRIDGE_URL', value: opts.bridgeUrl() },
+          { name: 'FUNDBUN_BRIDGE_TOKEN', value: token },
+          ...Object.entries(opts.nodeEnv ?? {}).map(([name, value]) => ({ name, value })),
+        ],
+      }], () => {
+        // read once the session is open, so a model picked while the agent was starting is the one it runs on
+        generation = generationOf(input.connectionId)
+        return opts.ai.get(input.connectionId)?.model ?? ''
+      })
+      // changed again after that (or removed): this session may run on a model Your AI no longer names
+      if (generationOf(input.connectionId) !== generation || !opts.ai.get(input.connectionId)) {
+        conn.close()
+        return 'changed'
       }
+      remember(input.connectionId, picked, models)
       const s: Session = { key: input.sessionKey, connectionId: input.connectionId, conn, sessionId, token, fresh: true, busy: false, emit: null, tools: new Map(), perms: new Map(), seen: new Map() }
       sessions.set(s.key, s)
       byToken.set(token, s)
@@ -281,10 +482,94 @@ export function createAgentRuntime(opts: AgentRuntimeOptions): AgentRuntime {
     } catch (e) {
       const err = friendlyStartError(e, conn.stderrTail(), label)
       conn.close()
+      // a failure that may be about the settings the user just changed is not reported: the next try uses the new ones
+      if (generationOf(input.connectionId) !== generation) return 'changed'
       opts.ai.markError(input.connectionId, err.message)
       emit({ type: 'error', ...err })
       return null
     }
+  }
+
+  /**
+   * Starts a session on the connection as Your AI shows it. A model picked (or the connection removed) while the
+   * agent was starting means one more start, so a session never runs on a model the app no longer names.
+   */
+  async function start(input: TurnInput, emit: Emit): Promise<Session | null> {
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      const s = await startOnce(input, emit)
+      if (s !== 'changed') return s
+    }
+    const label = opts.ai.get(input.connectionId)?.label ?? 'The agent'
+    emit({ type: 'error', code: 'agent_changed', message: `${label} was changed in Your AI while it was starting. Send your message again.` })
+    return null
+  }
+
+  /**
+   * One live test: start the agent, open a session (no FundBun tools), read its models, stop it.
+   * null when the connection changed while it ran (its agent was stopped): that test says nothing about it now.
+   */
+  async function runProbe(connectionId: string): Promise<ProbeResult | null> {
+    const started = clock()
+    const label = opts.ai.get(connectionId)?.label ?? 'The agent'
+    const cmd = opts.ai.agentCommand(connectionId)
+    if (!cmd.ok) {
+      opts.ai.markError(connectionId, cmd.error)
+      return { ok: false, ms: 0, error: cmd.error }
+    }
+    mkdirSync(opts.workspace, { recursive: true, mode: 0o700 })
+    const generation = generationOf(connectionId)
+    const conn = connectAcp(startTransport(cmd.value.command, cmd.value.args, opts.workspace))
+    probeConns.set(conn, connectionId)
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const deadline = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new ProbeTimeoutError()), PROBE_TIMEOUT_MS)
+      timer.unref?.()
+    })
+    try {
+      const { models } = await Promise.race([openSession(conn, []), deadline])
+      if (generationOf(connectionId) !== generation) return null
+      const currentName = models.options.find((o) => o.id === models.current)?.name
+      opts.ai.markOk(connectionId)
+      return {
+        ok: true,
+        ms: clock() - started,
+        ...(models.current ? { currentModel: models.current } : {}),
+        ...(currentName ? { currentModelName: currentName } : {}),
+        options: models.options,
+      }
+    } catch (e) {
+      if (generationOf(connectionId) !== generation) return null
+      const err = friendlyStartError(e, conn.stderrTail(), label)
+      opts.ai.markError(connectionId, err.message)
+      return { ok: false, ms: clock() - started, error: err.message }
+    } finally {
+      if (timer) clearTimeout(timer)
+      probeConns.delete(conn)
+      conn.close()
+    }
+  }
+
+  /** A live test, reused for five minutes when asked to, and one at a time per connection (callers share it). */
+  function probe(connectionId: string, o?: { useCache?: boolean }): Promise<ProbeResult> {
+    const cached = probeCache.get(connectionId)
+    if (o?.useCache && cached && clock() - cached.at < PROBE_CACHE_MS) return Promise.resolve(cached.result)
+    if (!o?.useCache) probeCache.delete(connectionId)
+    const running = probing.get(connectionId)
+    if (running) return running
+    const p: Promise<ProbeResult> = runProbe(connectionId)
+      .catch((): ProbeResult => ({ ok: false, ms: 0, error: 'The agent could not be started.' }))
+      .then((r) => {
+        // the connection changed while it was tested: test it again as it is now, or say it is gone
+        if (!r) return opts.ai.get(connectionId) ? probe(connectionId) : { ok: false as const, ms: 0, error: 'That connection no longer exists.' }
+        if (probing.get(connectionId) === p) {
+          probing.delete(connectionId)
+          if (r.ok) probeCache.set(connectionId, { at: clock(), result: r })
+          else probeCache.delete(connectionId)
+        }
+        return r
+      })
+    probing.set(connectionId, p)
+    return p
   }
 
   return {
@@ -383,6 +668,22 @@ export function createAgentRuntime(opts: AgentRuntimeOptions): AgentRuntime {
         return
       }
       for (const s of [...sessions.values()]) end(s)
+      for (const conn of [...probeConns.keys()]) conn.close()
+    },
+    probe,
+    closeByConnection(connectionId) {
+      generations.set(connectionId, generationOf(connectionId) + 1)
+      const label = opts.ai.get(connectionId)?.label ?? 'The agent'
+      for (const s of [...sessions.values()]) {
+        if (s.connectionId !== connectionId) continue
+        // an answer still coming stops here: it says so, so the app does not take the cut-off text for a whole answer
+        if (s.busy) s.emit?.({ type: 'error', code: 'agent_changed', message: `${label} was changed in Your AI, so this answer stopped. Send your message again.` })
+        end(s)
+      }
+      // a test still running is stopped with its agent: whoever waits for it gets a test of the connection as it is now
+      for (const [conn, tested] of [...probeConns]) if (tested === connectionId) conn.close()
+      probeCache.delete(connectionId)
+      probing.delete(connectionId)
     },
   }
 }

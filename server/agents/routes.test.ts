@@ -21,6 +21,8 @@ function fakeAgents(over: Partial<AgentRuntime> = {}): AgentRuntime {
     cancel: vi.fn(),
     bridge: vi.fn(async () => ({ tools: [] })),
     close: vi.fn(),
+    probe: vi.fn(async () => ({ ok: true as const, ms: 1, options: [] })),
+    closeByConnection: vi.fn(),
     ...over,
   }
 }

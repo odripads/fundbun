@@ -1,11 +1,11 @@
 import { randomUUID } from 'node:crypto'
-import type { AiConnection, AiState, ConnectionTest, DetectedAgent, NewConnectionInput } from '../../src/core/ai/types'
+import type { AiConnection, AiState, ConnectionTest, DetectedAgent, ModelOption, NewConnectionInput } from '../../src/core/ai/types'
 import { createAnthropicProvider } from '../providers/anthropic'
 import { createOpenAiCompatProvider } from '../providers/openai'
 import { ProviderError, type LlmProvider } from '../providers/types'
 import { findCommand } from './paths'
 import { AGENTS, CUSTOM_AGENT_ID, PRESETS, agentById, presetById } from './presets'
-import { PLAIN_CODEC, type AiStore, type SecretCodec, type StoredConnection } from './store'
+import { MAX_MODEL_ID, PLAIN_CODEC, type AiStore, type SecretCodec, type StoredConnection } from './store'
 
 /** One model call may take this long: models on a laptop are slow to load the first time. */
 export const LOCAL_TIMEOUT_MS = 180_000
@@ -17,6 +17,14 @@ const EFFORT_MODELS = /^claude-(?:fable|opus|sonnet)-/
 
 export type Result<T> = { ok: true; value: T } | { ok: false; error: string }
 
+/** A live test of an agent (server/agents/runtime probe): it started, asks first, and offers these models. */
+export type AgentProbeResult =
+  | { ok: true; ms: number; currentModel?: string; currentModelName?: string; options: ModelOption[] }
+  | { ok: false; ms: number; error: string }
+
+/** The model list of a connection; an agent also gives each model's name. */
+export type ModelList = { ok: true; value: string[]; options?: ModelOption[] } | { ok: false; error: string }
+
 export interface AiServiceOptions {
   store: AiStore
   codec?: SecretCodec
@@ -24,6 +32,18 @@ export interface AiServiceOptions {
   /** full path of an installed command, or null (test seam) */
   find?: (bin: string) => string | null
   now?: () => Date
+  /** starts an agent to test it and read its models (the agent runtime); without it, agents list no models */
+  probeAgent?: (id: string, opts?: { useCache?: boolean }) => Promise<AgentProbeResult>
+  /** an agent's model changed or a connection was removed: its running sessions must end */
+  onConnectionChange?: (id: string) => void
+}
+
+export interface ConnectionPatch {
+  label?: string
+  model?: string
+  /** the model's name as the agent shows it; cleared when the model changes without one */
+  modelName?: string
+  apiKey?: string
 }
 
 export interface ActiveProvider {
@@ -39,10 +59,11 @@ export interface AiService {
   /** the command line for an agent connection, resolved to full paths; null when it cannot be started */
   agentCommand(id: string): Result<{ command: string; args: string[] }>
   add(input: NewConnectionInput): Promise<Result<AiConnection>>
-  update(id: string, patch: { label?: string; model?: string; apiKey?: string }): Result<AiConnection>
+  /** `quiet`: only write it down (the runtime noting the model an agent reported); running sessions carry on */
+  update(id: string, patch: ConnectionPatch, opts?: { quiet?: boolean }): Result<AiConnection>
   remove(id: string): boolean
   setActive(id: string | null): Result<AiConnection | null>
-  models(id: string): Promise<Result<string[]>>
+  models(id: string): Promise<ModelList>
   test(id: string): Promise<ConnectionTest>
   /** the provider behind the active API connection; null when none is active or the active one is an agent */
   activeProvider(): ActiveProvider | null
@@ -51,6 +72,11 @@ export interface AiService {
 }
 
 const clean = (v: unknown, max: number): string => (typeof v === 'string' ? v.trim().slice(0, max) : '')
+/** A model id as FundBun keeps it: trimmed, and empty when it is too long (cut short, it would name no model). */
+const modelIdOf = (v: unknown): string => {
+  const id = typeof v === 'string' ? v.trim() : ''
+  return id.length <= MAX_MODEL_ID ? id : ''
+}
 
 export function isLocalHost(hostname: string): boolean {
   return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]' || hostname === '::1' || hostname.endsWith('.localhost')
@@ -85,11 +111,21 @@ export function createAiService(opts: AiServiceOptions): AiService {
       return false
     }
   }
-  const view = (c: StoredConnection): AiConnection => ({
-    id: c.id, kind: c.kind, presetId: c.presetId, label: c.label, hasKey: Boolean(c.secret), local: isLocal(c), createdAt: c.createdAt,
-    ...(c.baseUrl ? { baseUrl: c.baseUrl } : {}), ...(c.model ? { model: c.model } : {}), ...(c.command ? { command: c.command } : {}),
-    ...(c.okAt ? { okAt: c.okAt } : {}), ...(c.lastError ? { lastError: c.lastError } : {}),
-  })
+  /** The command line an agent runs, as people would type it: a custom agent's own, or the known agent's. */
+  const commandOf = (c: StoredConnection): string[] | undefined => {
+    if (c.command) return c.command
+    const preset = c.kind === 'agent' ? agentById(c.presetId) : undefined
+    if (!preset) return undefined
+    return preset.launch.via === 'npx' ? ['npx', '-y', preset.launch.package, ...preset.launch.args] : [preset.bin, ...preset.launch.args]
+  }
+  const view = (c: StoredConnection): AiConnection => {
+    const command = commandOf(c)
+    return {
+      id: c.id, kind: c.kind, presetId: c.presetId, label: c.label, hasKey: Boolean(c.secret), local: isLocal(c), createdAt: c.createdAt,
+      ...(c.baseUrl ? { baseUrl: c.baseUrl } : {}), ...(c.model ? { model: c.model } : {}), ...(c.model && c.modelName ? { modelName: c.modelName } : {}),
+      ...(command ? { command } : {}), ...(c.okAt ? { okAt: c.okAt } : {}), ...(c.lastError ? { lastError: c.lastError } : {}),
+    }
+  }
   const secretOf = (c: StoredConnection): string => {
     if (!c.secret) return ''
     try {
@@ -147,12 +183,63 @@ export function createAiService(opts: AiServiceOptions): AiService {
       const rows = Array.isArray(body.data) ? body.data : Array.isArray(body.models) ? body.models : []
       const ids = rows
         .map((r) => (r && typeof r === 'object' ? ((r as { id?: unknown; name?: unknown }).id ?? (r as { name?: unknown }).name) : r))
-        .filter((id): id is string => typeof id === 'string' && id.length > 0 && id.length <= 120)
+        .filter((id): id is string => typeof id === 'string' && id.length > 0 && id.length <= MAX_MODEL_ID)
         .map((id) => id.replace(/^models\//, ''))
       return { ok: true, value: [...new Set(ids)].slice(0, 300) }
     } catch {
       return { ok: false, error: isLocal(c) ? 'Nothing is answering at that address. Is the app running?' : 'Could not reach the provider.' }
     }
+  }
+
+  /**
+   * Keeps an agent connection's model in step with what a test found, quietly (running sessions already use it):
+   * the agent's own model when none was picked, a missing name, or no model when the agent offers no choice at all.
+   */
+  function rememberProbe(c: StoredConnection, probe: { currentModel?: string; currentModelName?: string; options: ModelOption[] }): StoredConnection {
+    const nameOf = (model: string) => probe.options.find((o) => o.id === model)?.name
+    let change: ((x: StoredConnection) => void) | null = null
+    if (!c.model && probe.currentModel && modelIdOf(probe.currentModel) === probe.currentModel) {
+      const model = probe.currentModel
+      const name = probe.currentModelName ?? nameOf(model)
+      change = (x) => {
+        x.model = model
+        if (name) x.modelName = name
+        else delete x.modelName
+      }
+    } else if (c.model && !probe.options.length && !probe.currentModel) {
+      // a model picked earlier could never be applied to an agent that offers none
+      change = (x) => {
+        delete x.model
+        delete x.modelName
+      }
+    } else if (c.model && !c.modelName) {
+      const name = nameOf(c.model)
+      if (name) change = (x) => void (x.modelName = name)
+    }
+    return change ? (mutate(c.id, change) ?? c) : c
+  }
+
+  /** An agent's test is a real start: it opens a session, checks the ask-first mode, and reads the models. */
+  async function testAgent(id: string, probeAgent: NonNullable<AiServiceOptions['probeAgent']>): Promise<ConnectionTest> {
+    const probe = await probeAgent(id, { useCache: false })
+    const c = stored(id)
+    if (!c) return { ok: false, ms: probe.ms, error: 'That connection no longer exists.' }
+    const fail = (error: string): ConnectionTest => {
+      mutate(id, (x) => void (x.lastError = error.slice(0, 200)))
+      return { ok: false, ms: probe.ms, error }
+    }
+    if (!probe.ok) return fail(probe.error)
+    const after = rememberProbe(c, probe)
+    // a model picked earlier that the agent no longer offers: chatting would stop, so the test says so now
+    if (after.model && !probe.options.some((o) => o.id === after.model)) {
+      return fail(`${after.label} no longer offers the model "${after.modelName || after.model}". Pick another one.`)
+    }
+    mutate(id, (x) => {
+      x.okAt = now()
+      delete x.lastError
+    })
+    const model = after.modelName || after.model || probe.currentModelName || probe.currentModel
+    return { ok: true, ms: probe.ms, ...(model ? { model } : {}), tools: true, kind: 'agent', modelCount: probe.options.length }
   }
 
   function detected(): DetectedAgent[] {
@@ -227,7 +314,7 @@ export function createAiService(opts: AiServiceOptions): AiService {
         c.baseUrl = checked.value.url
       }
       if (key) c.secret = codec.encode(key)
-      c.model = clean(input.model, 120) || preset.defaultModel || undefined
+      c.model = modelIdOf(input.model) || preset.defaultModel || undefined
       if (!c.model) {
         // ask the endpoint what it has, so the user starts with something that exists
         const listed = await listModels(c)
@@ -240,17 +327,30 @@ export function createAiService(opts: AiServiceOptions): AiService {
       store.save(data)
       return { ok: true, value: view(c) }
     },
-    update(id, patch) {
+    update(id, patch, o) {
       const label = patch.label === undefined ? undefined : clean(patch.label, 80)
-      const model = patch.model === undefined ? undefined : clean(patch.model, 120)
+      const model = patch.model === undefined ? undefined : modelIdOf(patch.model)
+      const modelName = patch.modelName === undefined ? undefined : clean(patch.modelName, 120)
       const key = patch.apiKey === undefined ? undefined : clean(patch.apiKey, 4000)
+      const before = stored(id)?.model
       const c = mutate(id, (x) => {
         if (label) x.label = label
-        if (model) x.model = model
+        if (model && model !== x.model) {
+          x.model = model
+          // a name belongs to one model: a new model without its name keeps no stale one
+          if (modelName === undefined) delete x.modelName
+        }
+        if (modelName !== undefined && x.model) {
+          if (modelName) x.modelName = modelName
+          else delete x.modelName
+        }
         if (key) x.secret = codec.encode(key)
         delete x.lastError
       })
-      return c ? { ok: true, value: view(c) } : { ok: false, error: 'That connection no longer exists.' }
+      if (!c) return { ok: false, error: 'That connection no longer exists.' }
+      // a running agent keeps the model it started with: end its sessions so the next message uses the new one
+      if (c.kind === 'agent' && c.model !== before && !o?.quiet) opts.onConnectionChange?.(id)
+      return { ok: true, value: view(c) }
     },
     remove(id) {
       const data = store.load()
@@ -259,6 +359,7 @@ export function createAiService(opts: AiServiceOptions): AiService {
       if (data.connections.length === before) return false
       if (data.activeId === id) data.activeId = data.connections[0]?.id ?? null
       store.save(data)
+      opts.onConnectionChange?.(id)
       return true
     },
     setActive(id) {
@@ -276,12 +377,20 @@ export function createAiService(opts: AiServiceOptions): AiService {
     },
     async models(id) {
       const c = stored(id)
-      return c ? listModels(c) : { ok: false, error: 'That connection no longer exists.' }
+      if (!c) return { ok: false, error: 'That connection no longer exists.' }
+      if (c.kind !== 'agent' || !opts.probeAgent) return listModels(c)
+      // an agent says which models it has when it opens a session: a recent test answers without starting it again
+      const probe = await opts.probeAgent(id, { useCache: true })
+      if (!probe.ok) return { ok: false, error: probe.error }
+      const latest = stored(id)
+      if (latest) rememberProbe(latest, probe)
+      return { ok: true, value: probe.options.map((o) => o.id), options: probe.options }
     },
     async test(id) {
       const started = Date.now()
       const c = stored(id)
       if (!c) return { ok: false, ms: 0, error: 'That connection no longer exists.' }
+      if (c.kind === 'agent' && opts.probeAgent) return testAgent(id, opts.probeAgent)
       const built = providerFor(c, 60_000)
       if (!built.ok) return { ok: false, ms: 0, error: built.error }
       try {

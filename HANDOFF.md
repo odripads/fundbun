@@ -53,7 +53,7 @@ Test suite at f4ac1d0: 3,496 tests, all passing except the 3 desk-shell DOM test
 ## How it works (read the code before changing it)
 - **Connections** live on the user's computer in `~/.fundbun/connections.json` (`server/ai/store.ts`). Keys never reach
   the web page: the server answers `hasKey` only. Presets in `server/ai/presets.ts` (DeepSeek, Qwen CN/intl, Kimi, GLM,
-  OpenAI, Claude, Gemini, OpenRouter, custom, Ollama, LM Studio; agents Claude Code, Codex, Qwen Code, Gemini CLI,
+  OpenAI, Claude, Gemini, Grok, OpenRouter, custom, Ollama, LM Studio; agents Claude Code, Codex, Qwen Code, Gemini CLI,
   OpenCode, Kimi Code, custom ACP command).
 - **Routes** `/api/ai/*` and `/api/agent/*` exist only on the local server (`GatewayOptions.ai`). The hosted gateway
   never takes keys and never starts programs. Every local route checks the Host header is local (DNS rebinding) and the

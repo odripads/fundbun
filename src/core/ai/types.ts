@@ -47,6 +47,12 @@ export interface DetectedAgent extends AgentPreset {
   installed: boolean
 }
 
+/** One model a connection offers: the id it is asked for by, and the name people read. */
+export interface ModelOption {
+  id: string
+  name: string
+}
+
 export interface AiConnection {
   id: string
   kind: ConnectionKind
@@ -54,10 +60,12 @@ export interface AiConnection {
   label: string
   baseUrl?: string
   model?: string
+  /** kind 'agent': the model's name as the agent shows it */
+  modelName?: string
   hasKey: boolean
   /** runs on this computer: nothing is sent to a company's servers */
   local: boolean
-  /** kind 'agent': the command line FundBun starts */
+  /** kind 'agent': the command line FundBun starts, as a person would type it */
   command?: string[]
   createdAt: string
   /** last successful test or answer */
@@ -92,6 +100,10 @@ export interface ConnectionTest {
   model?: string
   /** the model answered with a tool call when asked to (needed for Bun to read your numbers) */
   tools?: boolean
+  /** 'agent': the agent started, opened a session in its ask-first mode, and listed its models */
+  kind?: ConnectionKind
+  /** kind 'agent': how many models it offers */
+  modelCount?: number
   error?: string
 }
 

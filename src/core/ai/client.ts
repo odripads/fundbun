@@ -1,4 +1,4 @@
-import { AI_UNAVAILABLE, type AgentEvent, type AiConnection, type AiState, type ConnectionTest, type NewConnectionInput } from './types'
+import { AI_UNAVAILABLE, type AgentEvent, type AiConnection, type AiState, type ConnectionTest, type ModelOption, type NewConnectionInput } from './types'
 
 export type AiResult<T> = ({ ok: true } & T) | { ok: false; error: string }
 
@@ -34,7 +34,7 @@ export class AiClient {
     return this.send('POST', '/ai/connections', input, 30_000)
   }
 
-  update(id: string, patch: { label?: string; model?: string; apiKey?: string }): Promise<AiResult<{ connection: AiConnection; state: AiState }>> {
+  update(id: string, patch: { label?: string; model?: string; modelName?: string; apiKey?: string }): Promise<AiResult<{ connection: AiConnection; state: AiState }>> {
     return this.send('PATCH', `/ai/connections/${encodeURIComponent(id)}`, patch)
   }
 
@@ -48,8 +48,9 @@ export class AiClient {
     return r.ok ? { ok: true, state: r } : r
   }
 
-  models(id: string): Promise<AiResult<{ models: string[] }>> {
-    return this.send('GET', `/ai/connections/${encodeURIComponent(id)}/models`, undefined, 15_000)
+  /** an agent answers with each model's name too; asking an agent can mean starting it, so this may take a minute */
+  models(id: string): Promise<AiResult<{ models: string[]; modelOptions?: ModelOption[] }>> {
+    return this.send('GET', `/ai/connections/${encodeURIComponent(id)}/models`, undefined, 70_000)
   }
 
   async test(id: string): Promise<ConnectionTest> {

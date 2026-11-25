@@ -180,7 +180,7 @@ trip a wire (`addSpending` now applies tripwires for this month's purchases).
   drawer under 1280px, Glass Box) while keeping the phone layout on narrow screens.
 - **Plug in your own AI (`server/ai/`, `src/core/ai/`, `src/ui/components/ai/`):** **Your AI** sheet and Ask Bun
   model chip. Starts on **Built-in engine**; users can connect API keys (DeepSeek, Qwen, Kimi, GLM, OpenAI, Claude,
-  Gemini, OpenRouter, custom OpenAI-compatible), local models (Ollama, LM Studio), or CLI agents over ACP (Claude Code,
+  Gemini, Grok, OpenRouter, custom OpenAI-compatible), local models (Ollama, LM Studio), or CLI agents over ACP (Claude Code,
   Codex, Qwen Code, Gemini CLI, OpenCode, Kimi Code, custom ACP command). Connections live on the user's computer in
   `~/.fundbun/connections.json` (mode `0600`); keys never reach the web page (`hasKey` only).
 - **Plans:** Free plan = bring your own AI (or built-in engine); Pro plan (FundBun supplies the model) is planned, with

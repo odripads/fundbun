@@ -1,6 +1,6 @@
 import { Bot, Check, ChevronLeft, CircleAlert, Cpu, KeyRound, Laptop, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import type { AiConnection, AiPreset, ConnectionTest, DetectedAgent } from '../../../core/ai/types'
+import type { AiConnection, AiPreset, ConnectionTest, DetectedAgent, ModelOption } from '../../../core/ai/types'
 import { Badge, Button, Callout, Sheet, Spinner, TextField, cx } from '../ds'
 import { useAi } from './aiStore'
 import styles from './Ai.module.css'
@@ -9,10 +9,15 @@ export const REPO_URL = 'https://github.com/odripads/fundbun'
 const CUSTOM_AGENT = 'custom-agent'
 
 type View = { name: 'list' } | { name: 'pick' } | { name: 'key'; preset: AiPreset } | { name: 'agent'; agent: DetectedAgent } | { name: 'command' }
+/** a connection's models: asked for, still coming, or it could not say */
+type ModelList = ModelOption[] | 'loading' | 'failed'
 
 /** What a connection is, in a few words under its name. */
 export function describeConnection(c: AiConnection): string {
-  if (c.kind === 'agent') return 'An agent on this computer, with your own sign-in'
+  if (c.kind === 'agent') {
+    const model = c.modelName || c.model
+    return model ? `${model} · agent on this computer, your own sign-in` : 'An agent on this computer, with your own sign-in'
+  }
   if (c.local) return `${c.model ?? 'No model picked'} · runs on this computer`
   return `${c.model ?? 'No model picked'} · your own key`
 }
@@ -20,8 +25,23 @@ export function describeConnection(c: AiConnection): string {
 export function testLine(t: ConnectionTest): { tone: 'ok' | 'warn' | 'bad'; text: string } {
   if (!t.ok) return { tone: 'bad', text: t.error ?? 'It did not answer.' }
   const secs = (t.ms / 1000).toFixed(1)
+  if (t.kind === 'agent') {
+    const found = t.modelCount ? `, ${t.modelCount} model${t.modelCount === 1 ? '' : 's'} found` : ''
+    return { tone: 'ok', text: `Connected in ${secs} s (ask-first mode verified${found}).` }
+  }
   if (t.tools === false) return { tone: 'warn', text: `Answered in ${secs} s, but did not use a tool when asked. Bun needs a model that can call tools to read your numbers.` }
   return { tone: 'ok', text: `Answered in ${secs} s and can use FundBun's tools.` }
+}
+
+/** The Model list: what the connection offers, and the model in use first when it is no longer offered. */
+export function modelChoices(c: AiConnection, offered: readonly ModelOption[]): ModelOption[] {
+  if (!c.model || offered.some((o) => o.id === c.model)) return [...offered]
+  return [{ id: c.model, name: c.modelName || c.model }, ...offered]
+}
+
+/** A model as the list shows it: its name, and its id too when they differ. */
+export function optionLabel(o: ModelOption): string {
+  return o.name && o.name !== o.id ? `${o.name} (${o.id})` : o.name || o.id
 }
 
 /**
@@ -34,7 +54,7 @@ export function AiSheet({ open, onClose }: { open: boolean; onClose: () => void 
   const [view, setView] = useState<View>({ name: 'list' })
   const [busy, setBusy] = useState<string | null>(null)
   const [tests, setTests] = useState<Record<string, ConnectionTest>>({})
-  const [models, setModels] = useState<Record<string, string[]>>({})
+  const [models, setModels] = useState<Record<string, ModelList>>({})
   const active = ai.connections.find((c) => c.id === ai.activeId) ?? null
 
   useEffect(() => {
@@ -46,14 +66,19 @@ export function AiSheet({ open, onClose }: { open: boolean; onClose: () => void 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
-  // the model list of the connection in use, fetched once
+  // the model list of the connection in use, fetched once (an agent is asked by starting it: that can take a while)
   useEffect(() => {
-    if (!open || !active || active.kind === 'agent' || models[active.id]) return
-    let alive = true
-    void api.models(active.id).then((list) => alive && setModels((m) => ({ ...m, [active.id]: list })))
-    return () => void (alive = false)
+    const known = active ? models[active.id] : undefined
+    if (!open || !active || (known && known !== 'failed')) return
+    void loadModels(active.id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, active?.id])
+
+  async function loadModels(id: string) {
+    setModels((m) => ({ ...m, [id]: 'loading' }))
+    const list = await api.models(id)
+    setModels((m) => ({ ...m, [id]: list ?? 'failed' }))
+  }
 
   async function run<T>(key: string, job: () => Promise<T>): Promise<T | undefined> {
     setBusy(key)
@@ -66,12 +91,16 @@ export function AiSheet({ open, onClose }: { open: boolean; onClose: () => void 
 
   async function test(id: string) {
     const t = await run(`test:${id}`, () => api.test(id))
-    if (t) setTests((all) => ({ ...all, [id]: t }))
+    if (!t) return
+    setTests((all) => ({ ...all, [id]: t }))
+    // a working agent has just said which models it has
+    if (t.ok && t.kind === 'agent') void loadModels(id)
   }
 
-  async function connected(id: string, isAgent: boolean) {
+  /** Every new connection is tested at once: an agent really starts, so a missing sign-in shows now, not mid-chat. */
+  async function connected(id: string) {
     setView({ name: 'list' })
-    if (!isAgent) await test(id)
+    await test(id)
   }
 
   const title = view.name === 'list' ? 'Your AI' : view.name === 'pick' ? 'Connect an AI' : view.name === 'key' ? view.preset.name : view.name === 'agent' ? view.agent.name : 'Another agent'
@@ -119,27 +148,19 @@ export function AiSheet({ open, onClose }: { open: boolean; onClose: () => void 
                 >
                   {c.id === ai.activeId ? (
                     <div className={styles.detail}>
-                      {c.kind !== 'agent' ? (
-                        <label className={styles.modelRow}>
-                          <span>Model</span>
-                          <select
-                            className={styles.select}
-                            value={c.model ?? ''}
-                            disabled={busy !== null}
-                            onChange={(e) => void run(`model:${c.id}`, () => api.setModel(c.id, e.currentTarget.value))}
-                          >
-                            {[...new Set([c.model ?? '', ...(models[c.id] ?? [])])].filter(Boolean).map((m) => <option key={m} value={m}>{m}</option>)}
-                          </select>
-                        </label>
-                      ) : (
+                      <ModelPicker
+                        connection={c}
+                        list={models[c.id]}
+                        disabled={busy !== null}
+                        onPick={(o) => void run(`model:${c.id}`, () => api.setModel(c.id, o.id, c.kind === 'agent' ? o.name : undefined))}
+                      />
+                      {c.kind === 'agent' ? (
                         <p className={styles.note}>
                           Runs as <code className={styles.mono}>{(c.command ?? []).join(' ') || 'its own command'}</code>, started in FundBun’s own folder. FundBun puts it in its ask-first mode, so it asks you before it runs commands or changes files.
                         </p>
-                      )}
+                      ) : null}
                       <div className={styles.rowActions}>
-                        {c.kind !== 'agent' ? (
-                          <Button variant="secondary" size="sm" loading={busy === `test:${c.id}`} onClick={() => void test(c.id)}>Test</Button>
-                        ) : null}
+                        <Button variant="secondary" size="sm" loading={busy === `test:${c.id}`} onClick={() => void test(c.id)}>Test</Button>
                         <Button variant="ghost" size="sm" iconStart={<Trash2 />} loading={busy === `rm:${c.id}`} onClick={() => void run(`rm:${c.id}`, () => api.remove(c.id))}>
                           Remove
                         </Button>
@@ -167,7 +188,7 @@ export function AiSheet({ open, onClose }: { open: boolean; onClose: () => void 
           preset={view.preset}
           onSubmit={async (input) => {
             const r = await api.add(input)
-            if (r.ok) await connected(r.id, false)
+            if (r.ok) await connected(r.id)
             return r.ok ? null : r.error
           }}
         />
@@ -178,7 +199,7 @@ export function AiSheet({ open, onClose }: { open: boolean; onClose: () => void 
           agent={view.agent}
           onConnect={async () => {
             const r = await api.add({ presetId: view.agent.id })
-            if (r.ok) await connected(r.id, true)
+            if (r.ok) await connected(r.id)
             return r.ok ? null : r.error
           }}
         />
@@ -188,7 +209,7 @@ export function AiSheet({ open, onClose }: { open: boolean; onClose: () => void 
         <CommandForm
           onSubmit={async (label, command) => {
             const r = await api.add({ presetId: CUSTOM_AGENT, label, command })
-            if (r.ok) await connected(r.id, true)
+            if (r.ok) await connected(r.id)
             return r.ok ? null : r.error
           }}
         />
@@ -231,6 +252,36 @@ function Option({ selected, icon, name, sub, warn, busy, onSelect, children }: {
       </button>
       {children}
     </li>
+  )
+}
+
+/**
+ * The Model list of the connection in use. An agent says which models it has only when it starts, so while it is
+ * asked the list waits; an agent that offers no choice keeps its own setting.
+ */
+function ModelPicker({ connection: c, list, disabled, onPick }: { connection: AiConnection; list: ModelList | undefined; disabled: boolean; onPick: (o: ModelOption) => void }) {
+  const agent = c.kind === 'agent'
+  if (agent && (list === undefined || list === 'loading')) {
+    return <p className={styles.loading} role="status"><Spinner size={16} /> Asking {c.label} which models it has…</p>
+  }
+  const choices = modelChoices(c, Array.isArray(list) ? list : [])
+  if (agent && !choices.length) return list === 'failed' ? null : <p className={styles.note}>Uses this agent’s configured model.</p>
+  return (
+    <label className={styles.modelRow}>
+      <span>Model</span>
+      <select
+        className={styles.select}
+        value={c.model ?? ''}
+        disabled={disabled}
+        onChange={(e) => {
+          const picked = choices.find((o) => o.id === e.currentTarget.value)
+          if (picked) onPick(picked)
+        }}
+      >
+        {!c.model ? <option value="" disabled>Pick a model</option> : null}
+        {choices.map((o) => <option key={o.id} value={o.id}>{optionLabel(o)}</option>)}
+      </select>
+    </label>
   )
 }
 

@@ -10,7 +10,7 @@ const selectAnswering = (s: AppSnapshot) => ({ llm: s.derived.llm, engine: s.der
 /** Who answers the next message, in a few words. */
 export function answeringLabel(llm: LlmStatus, engine: 'offline' | 'llm'): string {
   if (engine !== 'llm') return 'Built-in engine'
-  if (llm.kind === 'agent') return llm.provider ?? 'Your agent'
+  if (llm.kind === 'agent') return [llm.provider, llm.model].filter(Boolean).join(' · ') || 'Your agent'
   if (llm.local) return [llm.provider, llm.model].filter(Boolean).join(' · ') || 'Your AI'
   return 'AI model'
 }

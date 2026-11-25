@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { AgentEvent } from '../../src/core/ai/types'
 import { TOOL_SPECS } from '../../src/core/agent/specs'
-import { createAiService } from '../ai/service'
-import { createMemoryStore } from '../ai/store'
+import { createAiService, type AiServiceOptions } from '../ai/service'
+import { MAX_MODEL_ID, createMemoryStore } from '../ai/store'
 import type { AcpTransport, JsonObject } from './acp'
-import { IDLE_MS, createAgentRuntime, fundbunToolOf } from './runtime'
+import { IDLE_MS, PROBE_CACHE_MS, PROBE_TIMEOUT_MS, createAgentRuntime, fundbunToolOf } from './runtime'
 
 interface ScriptedAgent {
   transport: AcpTransport
@@ -50,8 +50,8 @@ function scriptedAgent(onMessage: (msg: JsonObject, api: ScriptedAgent) => void)
   return api
 }
 
-async function setupRuntime(onMessage: (msg: JsonObject, api: ScriptedAgent) => void) {
-  const ai = createAiService({ store: createMemoryStore(), find: () => '/usr/local/bin/npx' })
+async function setupRuntime(onMessage: (msg: JsonObject, api: ScriptedAgent) => void, extra: { ai?: Partial<AiServiceOptions>; now?: () => number } = {}) {
+  const ai = createAiService({ store: createMemoryStore(), find: () => '/usr/local/bin/npx', ...extra.ai })
   const added = await ai.add({ presetId: 'claude-code' })
   if (!added.ok) throw new Error('expected agent connection')
   const agents: ScriptedAgent[] = []
@@ -66,6 +66,7 @@ async function setupRuntime(onMessage: (msg: JsonObject, api: ScriptedAgent) => 
       agents.push(a)
       return a.transport
     },
+    ...(extra.now ? { now: extra.now } : {}),
   })
   return { ai, connectionId: added.value.id, agents, runtime }
 }
@@ -356,5 +357,432 @@ describe('createAgentRuntime', () => {
 
     // Idle timeout closes an idle session
     expect(IDLE_MS).toBe(15 * 60_000)
+  })
+})
+
+/** The model setting claude-agent-acp answers session/new with (its dist, 0.106.0). */
+const CLAUDE_MODELS = {
+  configOptions: [{
+    id: 'model', name: 'Model', category: 'model', type: 'select', currentValue: 'default',
+    options: [{ value: 'default', name: 'Default (recommended)' }, { value: 'opus', name: 'Opus' }, { value: 'sonnet', name: 'Sonnet' }],
+  }],
+}
+const BYPASS_MODES = { currentModeId: 'bypassPermissions', availableModes: [{ id: 'default', name: 'Ask' }, { id: 'bypassPermissions', name: 'Bypass' }] }
+
+/** A scripted agent that offers models and answers each turn at once. */
+function modelAgent(over: { models?: JsonObject; modes?: JsonObject; setMode?: 'ok' | 'fail'; setModel?: 'ok' | 'fail'; switchReply?: JsonObject; switchNote?: JsonObject } = {}) {
+  return (msg: JsonObject, api: ScriptedAgent) => {
+    const { id, method } = msg as { id?: number; method?: string }
+    if (method === 'initialize') return api.send({ id, result: { protocolVersion: 1 } })
+    if (method === 'session/new') return api.send({ id, result: { sessionId: 'sess_m', ...(over.models ?? CLAUDE_MODELS), ...(over.modes ? { modes: over.modes } : {}) } })
+    if (method === 'session/set_mode') return over.setMode === 'fail' ? api.send({ id, error: { code: -32000, message: 'no' } }) : api.send({ id, result: {} })
+    if (method === 'session/set_config_option' || method === 'session/set_model') {
+      if (over.setModel === 'fail') return api.send({ id, error: { code: -32602, message: 'Invalid value' } })
+      if (over.switchNote) api.send({ method: 'session/update', params: { sessionId: 'sess_m', update: over.switchNote } })
+      return api.send({ id, result: over.switchReply ?? {} })
+    }
+    if (method === 'session/prompt') return api.send({ id, result: { stopReason: 'end_turn' } })
+  }
+}
+
+const methodsOf = (a: ScriptedAgent) => a.received.map((m) => m.method).filter(Boolean)
+
+describe('the model an agent session runs on', () => {
+  it('writes down the agent’s own model when none was picked, without ending anything', async () => {
+    const onConnectionChange = vi.fn()
+    const { ai, connectionId, agents, runtime } = await setupRuntime(modelAgent(), { ai: { onConnectionChange } })
+    const events: AgentEvent[] = []
+    await runtime.turn({ connectionId, sessionKey: 'm1', text: 'hi', preamble: '' }, (e) => events.push(e))
+    expect(events.at(-1)).toEqual({ type: 'done', stopReason: 'end_turn' })
+    expect(methodsOf(agents[0])).toEqual(['initialize', 'session/new', 'session/prompt'])
+    expect(ai.get(connectionId)).toMatchObject({ model: 'default', modelName: 'Default (recommended)' })
+    expect(onConnectionChange).not.toHaveBeenCalled()
+    expect(agents[0].kills).toBe(0)
+    runtime.close()
+  })
+
+  it('switches to the picked model before the first prompt, and fills in its name', async () => {
+    const { ai, connectionId, agents, runtime } = await setupRuntime(modelAgent())
+    ai.update(connectionId, { model: 'opus' })
+    const events: AgentEvent[] = []
+    await runtime.turn({ connectionId, sessionKey: 'm2', text: 'hi', preamble: '' }, (e) => events.push(e))
+    expect(events.at(-1)).toEqual({ type: 'done', stopReason: 'end_turn' })
+    expect(methodsOf(agents[0])).toEqual(['initialize', 'session/new', 'session/set_config_option', 'session/prompt'])
+    expect(agents[0].received.find((m) => m.method === 'session/set_config_option')?.params).toEqual({ sessionId: 'sess_m', configId: 'model', value: 'opus' })
+    expect(ai.get(connectionId)).toMatchObject({ model: 'opus', modelName: 'Opus' })
+    runtime.close()
+  })
+
+  it('uses session/set_model with an agent that reports the older models shape', async () => {
+    const legacy = { models: { currentModelId: 'gemini-2.5-pro', availableModels: [{ modelId: 'gemini-2.5-pro', name: 'Pro' }, { modelId: 'gemini-2.5-flash', name: 'Flash' }] } }
+    const { ai, connectionId, agents, runtime } = await setupRuntime(modelAgent({ models: legacy }))
+    ai.update(connectionId, { model: 'gemini-2.5-flash', modelName: 'Flash' })
+    await runtime.turn({ connectionId, sessionKey: 'm3', text: 'hi', preamble: '' }, () => undefined)
+    expect(agents[0].received.find((m) => m.method === 'session/set_model')?.params).toEqual({ sessionId: 'sess_m', modelId: 'gemini-2.5-flash' })
+    expect(methodsOf(agents[0])).toContain('session/prompt')
+    runtime.close()
+  })
+
+  it('fails closed when the agent refuses the picked model: no prompt, process stopped, a clear error', async () => {
+    const { ai, connectionId, agents, runtime } = await setupRuntime(modelAgent({ setModel: 'fail' }))
+    ai.update(connectionId, { model: 'sonnet', modelName: 'Sonnet' })
+    const events: AgentEvent[] = []
+    await runtime.turn({ connectionId, sessionKey: 'm4', text: 'hi', preamble: '' }, (e) => events.push(e))
+    const last = events.at(-1)
+    expect(last).toMatchObject({ type: 'error', code: 'agent_model_unavailable' })
+    const message = last?.type === 'error' ? last.message : ''
+    expect(message).toContain('"sonnet"')
+    expect(message).toContain('Pick another model in Your AI')
+    expect(methodsOf(agents[0])).not.toContain('session/prompt')
+    expect(agents[0].kills).toBe(1)
+    expect(ai.get(connectionId)?.lastError).toContain('could not switch')
+    // the stored choice is kept: FundBun never quietly falls back to another model
+    expect(ai.get(connectionId)?.model).toBe('sonnet')
+  })
+
+  it('fails closed on a model the agent no longer offers, without asking the agent to switch', async () => {
+    const { ai, connectionId, agents, runtime } = await setupRuntime(modelAgent())
+    ai.update(connectionId, { model: 'claude-retired' })
+    const events: AgentEvent[] = []
+    await runtime.turn({ connectionId, sessionKey: 'm5', text: 'hi', preamble: '' }, (e) => events.push(e))
+    expect(events.at(-1)).toMatchObject({ type: 'error', code: 'agent_model_unavailable' })
+    expect(methodsOf(agents[0])).toEqual(['initialize', 'session/new'])
+  })
+
+  it('a new model picked in Your AI ends the running session, so the next message starts on it', async () => {
+    let rt: { closeByConnection(id: string): void } | null = null
+    const { ai, connectionId, agents, runtime } = await setupRuntime(modelAgent(), { ai: { onConnectionChange: (id) => rt?.closeByConnection(id) } })
+    rt = runtime
+    await runtime.turn({ connectionId, sessionKey: 'chat', text: 'first', preamble: '' }, () => undefined)
+    expect(agents[0].kills).toBe(0)
+    ai.update(connectionId, { model: 'opus', modelName: 'Opus' })
+    expect(agents[0].kills).toBe(1)
+    await runtime.turn({ connectionId, sessionKey: 'chat', text: 'second', preamble: 'RULES' }, () => undefined)
+    expect(agents).toHaveLength(2)
+    expect(agents[1].received.find((m) => m.method === 'session/set_config_option')?.params).toMatchObject({ value: 'opus' })
+    // the same model again changes nothing
+    ai.update(connectionId, { model: 'opus' })
+    expect(agents[1].kills).toBe(0)
+    runtime.close()
+  })
+})
+
+describe('probe: a live test of an agent', () => {
+  it('starts it, puts it in ask-first mode, reads its models, and stops it', async () => {
+    const { ai, connectionId, agents, runtime } = await setupRuntime(modelAgent({ modes: BYPASS_MODES }))
+    const r = await runtime.probe(connectionId)
+    expect(r).toEqual({
+      ok: true,
+      ms: expect.any(Number),
+      currentModel: 'default',
+      currentModelName: 'Default (recommended)',
+      options: [{ id: 'default', name: 'Default (recommended)' }, { id: 'opus', name: 'Opus' }, { id: 'sonnet', name: 'Sonnet' }],
+    })
+    expect(methodsOf(agents[0])).toEqual(['initialize', 'session/new', 'session/set_mode'])
+    // a test gets no FundBun tools: nothing it does can reach the money
+    expect((agents[0].received.find((m) => m.method === 'session/new')?.params as JsonObject).mcpServers).toEqual([])
+    expect(agents[0].kills).toBe(1)
+    expect(ai.get(connectionId)?.okAt).toBeTruthy()
+    expect(ai.get(connectionId)?.lastError).toBeUndefined()
+    // a test alone never picks a model: AiService decides what to write down
+    expect(ai.get(connectionId)?.model).toBeUndefined()
+  })
+
+  it('reuses a recent test, and starts the agent again when asked to or when the test is old', async () => {
+    let t = 1_000
+    const { connectionId, agents, runtime } = await setupRuntime(modelAgent(), { now: () => t })
+    const first = await runtime.probe(connectionId)
+    expect(await runtime.probe(connectionId, { useCache: true })).toBe(first)
+    expect(agents).toHaveLength(1)
+    t += PROBE_CACHE_MS + 1
+    await runtime.probe(connectionId, { useCache: true })
+    expect(agents).toHaveLength(2)
+    await runtime.probe(connectionId, { useCache: false })
+    expect(agents).toHaveLength(3)
+    await runtime.probe(connectionId)
+    expect(agents).toHaveLength(4)
+  })
+
+  it('shares one running test between callers that ask at the same time', async () => {
+    const { connectionId, agents, runtime } = await setupRuntime(modelAgent())
+    const [a, b, c] = await Promise.all([runtime.probe(connectionId), runtime.probe(connectionId, { useCache: true }), runtime.probe(connectionId, { useCache: false })])
+    expect(agents).toHaveLength(1)
+    expect(b).toBe(a)
+    expect(c).toBe(a)
+  })
+
+  it('fails closed when the agent cannot be put in ask-first mode, and keeps nothing', async () => {
+    const { ai, connectionId, agents, runtime } = await setupRuntime(modelAgent({ modes: BYPASS_MODES, setMode: 'fail' }))
+    const r = await runtime.probe(connectionId)
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.error).toContain('act without asking')
+    expect(agents[0].kills).toBe(1)
+    expect(ai.get(connectionId)?.lastError).toContain('act without asking')
+    await runtime.probe(connectionId, { useCache: true })
+    expect(agents).toHaveLength(2)
+  })
+
+  it('stops an agent that does not answer in time', async () => {
+    const { ai, connectionId, agents, runtime } = await setupRuntime(() => undefined)
+    vi.useFakeTimers()
+    const pending = runtime.probe(connectionId)
+    await vi.advanceTimersByTimeAsync(PROBE_TIMEOUT_MS)
+    const r = await pending
+    expect(r).toMatchObject({ ok: false, error: expect.stringContaining('did not answer in time') })
+    expect(agents[0].kills).toBe(1)
+    expect(ai.get(connectionId)?.lastError).toContain('did not answer in time')
+  })
+
+  it('reports an agent that cannot be started without starting anything', async () => {
+    const { connectionId, agents, runtime } = await setupRuntime(modelAgent(), { ai: { find: () => null } })
+    const r = await runtime.probe(connectionId)
+    expect(r).toEqual({ ok: false, ms: 0, error: 'Claude Code needs Node.js (the "npx" command was not found).' })
+    expect(agents).toHaveLength(0)
+  })
+
+  it('a shutdown stops a test that is still running', async () => {
+    const { connectionId, agents, runtime } = await setupRuntime(() => undefined)
+    const pending = runtime.probe(connectionId)
+    await vi.waitFor(() => expect(agents).toHaveLength(1))
+    runtime.close()
+    expect((await pending).ok).toBe(false)
+    expect(agents[0].kills).toBeGreaterThanOrEqual(1)
+  })
+})
+
+describe('closeByConnection', () => {
+  it('ends the sessions of that connection only, and forgets its test', async () => {
+    const { ai, connectionId, agents, runtime } = await setupRuntime(modelAgent())
+    const other = await ai.add({ presetId: 'codex' })
+    if (!other.ok) throw new Error('expected a second agent')
+    await runtime.turn({ connectionId, sessionKey: 'a', text: 'hi', preamble: '' }, () => undefined)
+    await runtime.turn({ connectionId: other.value.id, sessionKey: 'b', text: 'hi', preamble: '' }, () => undefined)
+    await runtime.probe(connectionId)
+    expect(agents).toHaveLength(3)
+
+    runtime.closeByConnection(connectionId)
+    expect(agents[0].kills).toBe(1)
+    expect(agents[1].kills).toBe(0)
+
+    // the next message starts the agent afresh, and the next model list asks it again
+    await runtime.turn({ connectionId, sessionKey: 'a', text: 'again', preamble: '' }, () => undefined)
+    expect(agents).toHaveLength(4)
+    await runtime.probe(connectionId, { useCache: true })
+    expect(agents).toHaveLength(5)
+    runtime.close()
+  })
+
+  it('stops a test that was running when the connection changed, and tests it again as it is now', async () => {
+    let release!: () => void
+    const gate = new Promise<void>((r) => (release = r))
+    const base = modelAgent()
+    const { ai, connectionId, agents, runtime } = await setupRuntime((msg, api) => {
+      if (msg.method === 'initialize') return void gate.then(() => base(msg, api))
+      base(msg, api)
+    })
+    const markOk = vi.spyOn(ai, 'markOk')
+    const markError = vi.spyOn(ai, 'markError')
+    const pending = runtime.probe(connectionId)
+    await vi.waitFor(() => expect(agents).toHaveLength(1))
+    runtime.closeByConnection(connectionId)
+    // its agent is stopped at once, not left running in the background
+    expect(agents[0].kills).toBe(1)
+    await vi.waitFor(() => expect(agents).toHaveLength(2))
+    // the stopped test leaves no mark on the connection
+    expect(markError).not.toHaveBeenCalled()
+    release()
+    expect(await pending).toMatchObject({ ok: true, currentModel: 'default' })
+    expect(markOk).toHaveBeenCalledTimes(1)
+    // one test at a time: the fresh one is the one remembered
+    await runtime.probe(connectionId, { useCache: true })
+    expect(agents).toHaveLength(2)
+  })
+
+  it('a test of a connection that is removed meanwhile ends with its agent, and starts nothing more', async () => {
+    let rt: { closeByConnection(id: string): void } | null = null
+    const { ai, connectionId, agents, runtime } = await setupRuntime(() => undefined, { ai: { onConnectionChange: (id) => rt?.closeByConnection(id) } })
+    rt = runtime
+    const markError = vi.spyOn(ai, 'markError')
+    const pending = runtime.probe(connectionId)
+    await vi.waitFor(() => expect(agents).toHaveLength(1))
+    expect(ai.remove(connectionId)).toBe(true)
+    expect(agents[0].kills).toBe(1)
+    expect(await pending).toEqual({ ok: false, ms: 0, error: 'That connection no longer exists.' })
+    expect(agents).toHaveLength(1)
+    expect(markError).not.toHaveBeenCalled()
+  })
+
+  it('stops an answer that is still coming with a clear error, so it is not taken for a whole answer', async () => {
+    let held = false
+    const base = modelAgent()
+    const { connectionId, agents, runtime } = await setupRuntime((msg, api) => {
+      if (msg.method === 'session/prompt') {
+        held = true
+        return api.send({ method: 'session/update', params: { update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'Half an ans' } } } })
+      }
+      base(msg, api)
+    })
+    const events: AgentEvent[] = []
+    const turn = runtime.turn({ connectionId, sessionKey: 'busy', text: 'hi', preamble: '' }, (e) => events.push(e))
+    await vi.waitFor(() => expect(held).toBe(true))
+    runtime.closeByConnection(connectionId)
+    await turn
+    expect(agents[0].kills).toBe(1)
+    expect(events.filter((e) => e.type === 'error')).toEqual([
+      { type: 'error', code: 'agent_changed', message: 'Claude Code was changed in Your AI, so this answer stopped. Send your message again.' },
+    ])
+    expect(events.some((e) => e.type === 'done')).toBe(false)
+  })
+})
+
+/** A scripted agent that holds back its answer to one method until released. */
+function holdBack(method: string, base: (msg: JsonObject, api: ScriptedAgent) => void) {
+  const held: (() => void)[] = []
+  return {
+    handler: (msg: JsonObject, api: ScriptedAgent) => {
+      if (msg.method === method) return void held.push(() => base(msg, api))
+      base(msg, api)
+    },
+    held,
+    release: () => held.splice(0).forEach((go) => go()),
+  }
+}
+
+describe('a model picked while the agent is starting', () => {
+  async function wired(handler: (msg: JsonObject, api: ScriptedAgent) => void) {
+    let rt: { closeByConnection(id: string): void } | null = null
+    const setup = await setupRuntime(handler, { ai: { onConnectionChange: (id) => rt?.closeByConnection(id) } })
+    rt = setup.runtime
+    return setup
+  }
+
+  it('is the model the session runs on, and the agent’s own model never writes over it', async () => {
+    const gate = holdBack('session/new', modelAgent())
+    const { ai, connectionId, agents, runtime } = await wired(gate.handler)
+    const events: AgentEvent[] = []
+    const turn = runtime.turn({ connectionId, sessionKey: 'pick', text: 'hi', preamble: '' }, (e) => events.push(e))
+    await vi.waitFor(() => expect(gate.held).toHaveLength(1))
+    ai.update(connectionId, { model: 'opus', modelName: 'Opus' })
+    gate.release()
+    await turn
+    expect(events.at(-1)).toEqual({ type: 'done', stopReason: 'end_turn' })
+    expect(agents).toHaveLength(1)
+    expect(agents[0].received.find((m) => m.method === 'session/set_config_option')?.params).toEqual({ sessionId: 'sess_m', configId: 'model', value: 'opus' })
+    expect(ai.get(connectionId)).toMatchObject({ model: 'opus', modelName: 'Opus' })
+  })
+
+  it('replaces a model picked earlier', async () => {
+    const gate = holdBack('session/new', modelAgent())
+    const { ai, connectionId, agents, runtime } = await wired(gate.handler)
+    ai.update(connectionId, { model: 'sonnet', modelName: 'Sonnet' })
+    const turn = runtime.turn({ connectionId, sessionKey: 'pick2', text: 'hi', preamble: '' }, () => undefined)
+    await vi.waitFor(() => expect(gate.held).toHaveLength(1))
+    ai.update(connectionId, { model: 'opus', modelName: 'Opus' })
+    gate.release()
+    await turn
+    const switches = agents.flatMap((a) => a.received.filter((m) => m.method === 'session/set_config_option').map((m) => (m.params as JsonObject).value))
+    expect(switches).toEqual(['opus'])
+    expect(ai.get(connectionId)?.model).toBe('opus')
+  })
+
+  it('starts the agent once more when the pick comes after the switch, so the session never runs on the old one', async () => {
+    const gate = holdBack('session/set_config_option', modelAgent())
+    const { ai, connectionId, agents, runtime } = await wired(gate.handler)
+    ai.update(connectionId, { model: 'sonnet', modelName: 'Sonnet' })
+    const events: AgentEvent[] = []
+    const turn = runtime.turn({ connectionId, sessionKey: 'late', text: 'hi', preamble: '' }, (e) => events.push(e))
+    await vi.waitFor(() => expect(gate.held).toHaveLength(1))
+    ai.update(connectionId, { model: 'opus', modelName: 'Opus' })
+    gate.release()
+    await vi.waitFor(() => expect(agents).toHaveLength(2))
+    await vi.waitFor(() => expect(gate.held).toHaveLength(1))
+    gate.release()
+    await turn
+    expect(agents[0].kills).toBe(1)
+    expect(methodsOf(agents[0])).not.toContain('session/prompt')
+    expect(agents[1].received.find((m) => m.method === 'session/set_config_option')?.params).toMatchObject({ value: 'opus' })
+    expect(methodsOf(agents[1])).toContain('session/prompt')
+    expect(events.at(-1)).toEqual({ type: 'done', stopReason: 'end_turn' })
+    // the next message reuses that session: it runs on the model Your AI shows
+    await runtime.turn({ connectionId, sessionKey: 'late', text: 'again', preamble: '' }, () => undefined)
+    expect(agents).toHaveLength(2)
+    runtime.close()
+  })
+
+  it('a connection removed while its agent starts gets no session', async () => {
+    const gate = holdBack('session/new', modelAgent())
+    const { ai, connectionId, agents, runtime } = await wired(gate.handler)
+    const events: AgentEvent[] = []
+    const turn = runtime.turn({ connectionId, sessionKey: 'gone', text: 'hi', preamble: '' }, (e) => events.push(e))
+    await vi.waitFor(() => expect(gate.held).toHaveLength(1))
+    ai.remove(connectionId)
+    gate.release()
+    await turn
+    expect(methodsOf(agents[0])).not.toContain('session/prompt')
+    expect(agents[0].kills).toBe(1)
+    expect(events.at(-1)).toMatchObject({ type: 'error', code: 'agent_missing' })
+  })
+})
+
+describe('the ask-first check comes after the model switch', () => {
+  const ASK_MODES = { currentModeId: 'default', availableModes: [{ id: 'default', name: 'Ask' }, { id: 'bypassPermissions', name: 'Bypass' }] }
+
+  it('puts the session back in ask-first mode when the switch changed it (config options answer)', async () => {
+    const switchReply = { configOptions: [{ id: 'mode', category: 'mode', currentValue: 'bypassPermissions' }, { id: 'model', category: 'model', currentValue: 'opus' }] }
+    const { ai, connectionId, agents, runtime } = await setupRuntime(modelAgent({ modes: ASK_MODES, switchReply }))
+    ai.update(connectionId, { model: 'opus' })
+    const events: AgentEvent[] = []
+    await runtime.turn({ connectionId, sessionKey: 'mode1', text: 'hi', preamble: '' }, (e) => events.push(e))
+    expect(methodsOf(agents[0])).toEqual(['initialize', 'session/new', 'session/set_config_option', 'session/set_mode', 'session/prompt'])
+    expect(agents[0].received.find((m) => m.method === 'session/set_mode')?.params).toEqual({ sessionId: 'sess_m', modeId: 'default' })
+    expect(events.at(-1)).toEqual({ type: 'done', stopReason: 'end_turn' })
+    runtime.close()
+  })
+
+  it('reads a current_mode_update too, and fails closed when the mode cannot be put back', async () => {
+    const switchNote = { sessionUpdate: 'current_mode_update', currentModeId: 'bypassPermissions' }
+    const { ai, connectionId, agents, runtime } = await setupRuntime(modelAgent({ modes: ASK_MODES, switchNote, setMode: 'fail' }))
+    ai.update(connectionId, { model: 'opus' })
+    const events: AgentEvent[] = []
+    await runtime.turn({ connectionId, sessionKey: 'mode2', text: 'hi', preamble: '' }, (e) => events.push(e))
+    expect(events.at(-1)).toMatchObject({ type: 'error', code: 'agent_unsafe_mode' })
+    expect(methodsOf(agents[0])).not.toContain('session/prompt')
+    expect(agents[0].kills).toBe(1)
+  })
+
+  it('sends no extra mode change when the switch left the mode alone', async () => {
+    const { ai, connectionId, agents, runtime } = await setupRuntime(modelAgent({ modes: ASK_MODES }))
+    ai.update(connectionId, { model: 'opus' })
+    await runtime.turn({ connectionId, sessionKey: 'mode3', text: 'hi', preamble: '' }, () => undefined)
+    expect(methodsOf(agents[0])).toEqual(['initialize', 'session/new', 'session/set_config_option', 'session/prompt'])
+    runtime.close()
+  })
+})
+
+describe('long model ids', () => {
+  it('an id at the length FundBun stores is kept whole and used again in the next session', async () => {
+    const long = `gateway/${'x'.repeat(MAX_MODEL_ID - 8)}`
+    const models = { configOptions: [{ id: 'model', category: 'model', currentValue: long, options: [{ value: long, name: 'Gateway' }, { value: 'opus', name: 'Opus' }] }] }
+    const { ai, connectionId, agents, runtime } = await setupRuntime(modelAgent({ models }))
+    await runtime.turn({ connectionId, sessionKey: 'l1', text: 'hi', preamble: '' }, () => undefined)
+    expect(ai.get(connectionId)).toMatchObject({ model: long, modelName: 'Gateway' })
+    const events: AgentEvent[] = []
+    await runtime.turn({ connectionId, sessionKey: 'l2', text: 'hi', preamble: '' }, (e) => events.push(e))
+    expect(events.at(-1)).toEqual({ type: 'done', stopReason: 'end_turn' })
+    expect(methodsOf(agents[1])).not.toContain('session/set_config_option')
+    runtime.close()
+  })
+
+  it('an id too long to store is never written down cut short', async () => {
+    const tooLong = `gateway/${'y'.repeat(MAX_MODEL_ID)}`
+    const models = { configOptions: [{ id: 'model', category: 'model', currentValue: tooLong, options: [{ value: tooLong }, { value: 'opus', name: 'Opus' }] }] }
+    const { ai, connectionId, runtime } = await setupRuntime(modelAgent({ models }))
+    const events: AgentEvent[] = []
+    await runtime.turn({ connectionId, sessionKey: 'l3', text: 'hi', preamble: '' }, (e) => events.push(e))
+    expect(events.at(-1)).toEqual({ type: 'done', stopReason: 'end_turn' })
+    expect(ai.get(connectionId)?.model).toBeUndefined()
+    await runtime.turn({ connectionId, sessionKey: 'l4', text: 'hi', preamble: '' }, (e) => events.push(e))
+    expect(events.at(-1)).toEqual({ type: 'done', stopReason: 'end_turn' })
+    runtime.close()
   })
 })
