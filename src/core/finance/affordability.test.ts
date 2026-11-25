@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { freshBank } from '../controller/state'
 import type { FinanceContext } from '../types'
 import { arifLike, checking, daily, makeBill, makeCtx, MEI_DREAMS, meiLike, monthly, spend, yuan } from './__fixtures__'
 import { checkAffordability } from './affordability'
@@ -56,6 +57,27 @@ describe('checkAffordability', () => {
     const r = checkAffordability(ctx(500), yuan(800))
     expect(r.verdict).toBe('skip')
     expect(r.reasons[0]).toBe("Your checking balance (¥500) doesn't cover ¥800.")
+  })
+
+  it('no bank connected and no balance entered: checking (¥0) is not known, so it is never a reason (live test, 25 Nov)', () => {
+    // "Set up my own" with nothing entered: freshBank, no personaId, starting balance 0
+    const c = ctx(0)
+    c.bank = { ...freshBank(c.bank.today, 'CNY', 0), transactions: c.bank.transactions }
+    const r = checkAffordability(c, yuan(800), 'headphones')
+    expect(r.verdict).toBe('go')
+    expect(r.reasons.join(' ')).not.toMatch(/checking/i)
+    expect(r.reasons.join(' ')).not.toContain('¥0')
+  })
+
+  it('no bank but a starting balance the user entered still limits, and a connected bank at ¥0 still limits', () => {
+    const entered = ctx(500)
+    expect(entered.bank.personaId).toBeUndefined()
+    expect(checkAffordability(entered, yuan(800)).verdict).toBe('skip')
+    const banked = ctx(0)
+    banked.bank = { ...banked.bank, personaId: 'mei' }
+    const r = checkAffordability(banked, yuan(800))
+    expect(r.verdict).toBe('skip')
+    expect(r.reasons[0]).toBe("Your checking balance (¥0) doesn't cover ¥800.")
   })
 
   it('an already-over month is a gentle skip for any purchase', () => {

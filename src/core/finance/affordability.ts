@@ -2,6 +2,7 @@ import { CATEGORIES } from '../categories'
 import type { AffordabilityResult, CategoryId, FinanceContext, Minor } from '../types'
 import { copyFmt, delayPhrase, delayShort, moneyFmt } from './copy'
 import { dreamEquivalents, fallbackMonthlyRate, goalDelayDays, goalProgress, hoursOfWork, primaryGoal } from './dreams'
+import { hasBank } from './expected'
 import { PACE_FROM_DAY, PACE_OVER } from './mirror'
 import { summarizeMonth, unpaidBillsDue } from './summary'
 
@@ -44,7 +45,8 @@ export function checkAffordability(ctx: FinanceContext, amount: Minor, label = '
   const catAfter = (row?.spent ?? 0) + price
   const breachesCategory = catLimit !== undefined && catAfter > catLimit
   const checking = ctx.bank.accounts.find((a) => a.type === 'checking')
-  const cantPay = !!checking && price > checking.balance
+  // with no bank connected the balance is not known (a fresh account starts at 0): only a real or entered balance limits
+  const cantPay = Boolean(checking && (hasBank(ctx.bank) || checking.balance > 0) && price > checking.balance)
   const alreadyOver = s.spent > target
   const takesOver = !alreadyOver && s.spent + price > target
   const fitsToday = price <= s.safeToSpendToday

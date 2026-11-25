@@ -227,24 +227,44 @@ export function finish(host: AgentHost, turn: Turn, userText: string, raw: strin
   // a formatted answer keeps its line breaks and indentation (code); a chat line is tidied to single spaces
   text = (rich ? text.replace(/[ \t]+$/gm, '') : text.replace(/[ \t]+/g, ' ')).trim()
   if (!text) text = offlineSummary(host, turn, reads)
-  const report = checkGrounding(text, [turn.sources, userText], currencyOf(state), { moneyOnly: general })
+  const grounding = (reply: string) => checkGrounding(reply, [turn.sources, userText], currencyOf(state), { moneyOnly: general })
+  const report = grounding(text)
   trace(turn, 'grounding', report.ok ? `Grounded: ${report.checked} numbers checked` : `Ungrounded numbers: ${report.ungrounded.join(', ')}`, report)
-  if (!report.ok) text = repairGrounding(host, turn, text, report, reads)
+  if (!report.ok) text = repairGrounding(host, turn, text, report, reads, (reply) => grounding(reply).ok)
   text = guardClaims(host, turn, text)
   const intent = reads[0] ? TOOL_INTENT[reads[0].tool] ?? 'unknown' : 'unknown'
   return { text, intent, suggestions: general ? [] : suggestionsFor(intent), grounding: report, ...(own.via ? { via: own.via } : {}), ...(rich ? { rich: true } : {}) }
 }
 
-function repairGrounding(host: AgentHost, turn: Turn, text: string, report: GroundingReport, reads: ReadResult[]): string {
+function repairGrounding(host: AgentHost, turn: Turn, text: string, report: GroundingReport, reads: ReadResult[], isGrounded: (reply: string) => boolean): string {
   host.audit('system', 'grounding_violation', 'The model\'s reply contained numbers that no tool returned; corrected before showing it', {
     ungrounded: report.ungrounded, checked: report.checked, engine: 'llm', turnId: turn.id,
   })
-  const kept = text.split(/(?<=[.!?。！？])\s+/).filter((s) => !report.ungrounded.some((u) => s.includes(u)))
-  const stripped = kept.join(' ').trim()
-  const fixed = stripped.length >= 20 ? stripped : offlineSummary(host, turn, reads)
+  const stripped = withoutUngrounded(text, report.ungrounded)
+  // fail closed: what is left is checked again (a number kept inside a code block of a money answer still counts)
+  const fixed = stripped.replace(/\s+/g, '').length >= 20 && isGrounded(stripped) ? stripped : offlineSummary(host, turn, reads)
   addNotice(turn, 'info', 'Unverified number removed', `I removed ${report.ungrounded.join(', ')} from my answer because none of your data backs it up.`, 'grounding')
-  trace(turn, 'grounding', stripped.length >= 20 ? 'Ungrounded sentences removed' : 'Reply replaced with the on-device answer', { removed: report.ungrounded })
+  trace(turn, 'grounding', fixed === stripped ? 'Ungrounded sentences removed' : 'Reply replaced with the on-device answer', { removed: report.ungrounded })
   return fixed
+}
+
+/**
+ * The reply minus every sentence that holds an ungrounded number. Closed fenced code blocks are kept whole (the
+ * caller checks the result again), and prose is cut line by line, so line breaks, headings, lists and indentation
+ * survive (a sentence ends at . ! ? and a space). An unclosed fence is prose: it cannot shield what follows it.
+ */
+export function withoutUngrounded(text: string, ungrounded: readonly string[]): string {
+  const bad = (sentence: string) => ungrounded.some((u) => sentence.includes(u))
+  const prose = (chunk: string) => chunk.split('\n').map((line) => {
+    // the indentation and any list marker or heading mark stay with whatever is left of the line
+    const lead = /^\s*(?:(?:[-*+]|\d+[.)]|#{1,6})\s+)?/.exec(line)?.[0] ?? ''
+    const parts = line.slice(lead.length).split(/(?<=[.!?。！？])[ \t]+/)
+    if (!parts.some(bad)) return line
+    const kept = parts.filter((part) => !bad(part)).join(' ').trim()
+    return kept ? `${lead}${kept}` : null
+  }).filter((line): line is string => line !== null).join('\n')
+  const out = text.split(/(```[\s\S]*?```)/).map((chunk, i) => (i % 2 ? chunk : prose(chunk))).join('')
+  return out.replace(/\n{3,}/g, '\n\n').trim()
 }
 
 /** The model must never claim a pending action happened. */

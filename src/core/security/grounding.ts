@@ -91,9 +91,12 @@ export function checkGrounding(reply: string, sources: unknown[], currency: Curr
   return { ok: ungrounded.length === 0, checked: tokens.length, ungrounded }
 }
 
-/** Code blocks and inline code are not statements about anyone's money. */
+/**
+ * Code blocks and inline code are not statements about anyone's money. Only a CLOSED fence counts: an opening ```
+ * with no end must not hide the rest of a reply from the check.
+ */
 function withoutCode(text: string): string {
-  return text.replace(/```[\s\S]*?(?:```|$)/g, ' ').replace(/`[^`\n]*`/g, ' ')
+  return text.replace(/```[\s\S]*?```/g, ' ').replace(/`[^`\n]*`/g, ' ')
 }
 
 function isCheckable(t: NumberToken): boolean {

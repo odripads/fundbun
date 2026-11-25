@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { fakeHost, llmText, llmTool, scriptedLlm } from '../../../tests/helpers/fake-host'
-import { ON_DEVICE_TIMEOUT_MS, OWN_MODEL_TIMEOUT_MS } from './llm-engine'
+import { ON_DEVICE_TIMEOUT_MS, OWN_MODEL_TIMEOUT_MS, withoutUngrounded } from './llm-engine'
 import { buildAgentPreamble, buildSystemPrompt, type SystemPromptInput } from './prompts'
 import { createAgentEngine } from './runtime'
 
@@ -59,6 +59,62 @@ describe('open mode (bring your own AI)', () => {
     const msg = await engine.respond('Write me a poem about stars')
     expect(msg.grounding).toMatchObject({ ok: false, ungrounded: ['¥31,415.92'] })
     expect(msg.text).not.toContain('31,415')
+  })
+
+  it('removes only the sentence with an unverified ¥88.00 and keeps the code block and line breaks (live test, 25 Nov)', async () => {
+    const reply = [
+      'Here is a short function:',
+      '',
+      '```python',
+      'def split_bill(total, people):',
+      '    return round(total / people, 2)',
+      '```',
+      '',
+      'For example, a ¥352 dinner for 4 people comes to ¥88.00 each. It rounds to cents.',
+      '',
+      'If you need exact cents with no rounding drift, tell me.',
+    ].join('\n')
+    const host = fakeHost({ persona: 'mei' })
+    host.setLlm(scriptedLlm([llmText(reply)]).client)
+    host.llmInfo = () => ({ local: true, label: 'DeepSeek', onDevice: false })
+    const msg = await createAgentEngine(host).respond('Write a short 3-line Python function to split a dinner bill evenly.')
+    expect(msg.grounding?.ok).toBe(false)
+    expect(msg.grounding?.ungrounded).toContain('¥88.00')
+    expect(msg.text).toBe([
+      'Here is a short function:',
+      '',
+      '```python',
+      'def split_bill(total, people):',
+      '    return round(total / people, 2)',
+      '```',
+      '',
+      'It rounds to cents.',
+      '',
+      'If you need exact cents with no rounding drift, tell me.',
+    ].join('\n'))
+    expect(msg.rich).toBe(true)
+    expect(msg.cards?.some((c) => c.type === 'notice' && c.title === 'Unverified number removed')).toBe(true)
+  })
+
+  it('fails closed: an unclosed fence does not hide an invented figure, and a money answer with one inside code falls back', async () => {
+    const general = fakeHost({ persona: 'mei' })
+    general.setLlm(scriptedLlm([llmText('Sure, here it is:\n\n```\nYou spent ¥31,415.92 on coffee this year. Keep going!')]).client)
+    general.llmInfo = () => ({ local: true, label: 'DeepSeek', onDevice: false })
+    const a = await createAgentEngine(general).respond('Write me a poem about stars')
+    expect(a.grounding).toMatchObject({ ok: false, ungrounded: ['¥31,415.92'] })
+    expect(a.text).not.toContain('31,415')
+
+    const money = fakeHost({ persona: 'mei' })
+    money.setLlm(scriptedLlm([llmTool('get_overview', {}), llmText('Your month is over budget, and here is the math in detail:\n\n```\ncoffee = 31415.92\n```\n\nKeep an eye on it.')]).client)
+    money.llmInfo = () => ({ local: true, label: 'DeepSeek', onDevice: false })
+    const b = await createAgentEngine(money).respond('How am I doing this month?')
+    expect(b.grounding?.ok).toBe(false)
+    expect(b.text).not.toContain('31415.92')
+  })
+
+  it('withoutUngrounded keeps headings, list markers and indentation, and collapses the gaps a removed line leaves', () => {
+    const text = '## Plan\n\n- Save ¥500 a week. Cook at home.\n  - Nested idea.\n\n\n¥88 only.\n\n```\nx = "¥88"\n```'
+    expect(withoutUngrounded(text, ['¥500', '¥88'])).toBe('## Plan\n\n- Cook at home.\n  - Nested idea.\n\n```\nx = "¥88"\n```')
   })
 
   it('keeps non-open money replies plain (rich not set) and uses longer timeouts for local/on-device models', async () => {

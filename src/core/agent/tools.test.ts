@@ -22,6 +22,37 @@ describe('T0 read tools', () => {
     expect(o.untrusted).toBeUndefined()
   })
 
+  it('get_overview: a demo bank shows checking and bankConnected: true', () => {
+    const d = data(executeTool(call('get_overview'), fakeHost()))
+    expect(d.bankConnected).toBe(true)
+    expect(typeof d.checkingBalance).toBe('number')
+    expect(d.checkingName).toBeTruthy()
+  })
+
+  it('get_overview: no bank and no balance entered leaves checking out, so no model sees checkingBalance: 0', () => {
+    const own = fakeHost()
+    own.edit((s) => {
+      delete s.bank.personaId
+      for (const a of s.bank.accounts) if (a.type === 'checking') a.balance = 0
+    })
+    const d = data(executeTool(call('get_overview'), own))
+    expect(d.bankConnected).toBe(false)
+    expect(d).not.toHaveProperty('checkingBalance')
+    expect(d).not.toHaveProperty('checkingName')
+    expect(d).not.toHaveProperty('checkingMasked')
+    expect(typeof d.spent).toBe('number')
+  })
+
+  it('get_overview: no bank but a positive starting balance keeps checking', () => {
+    const own = fakeHost()
+    own.edit((s) => {
+      delete s.bank.personaId
+      for (const a of s.bank.accounts) if (a.type === 'checking') a.balance = 500_000
+    })
+    const d = data(executeTool(call('get_overview'), own))
+    expect(d).toMatchObject({ bankConnected: false, checkingBalance: 500_000 })
+  })
+
   it('get_spending_breakdown: sorted categories, focus row for a category', () => {
     const o = executeTool(call('get_spending_breakdown', { category: 'delivery' }), host)
     const d = data(o)

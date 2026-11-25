@@ -14,7 +14,7 @@ import {
   summarizeMonth,
   xrayBill,
 } from '../finance'
-import { syncExpectedBills } from '../finance/expected'
+import { hasBank, syncExpectedBills } from '../finance/expected'
 import { FIXED_CATEGORIES, isSpending, spendValue } from '../finance/ledger'
 import { uid } from '../ids'
 import type { SandboxBank } from '../sandbox/bank'
@@ -154,10 +154,11 @@ function balanceData(state: AppState): Record<string, unknown> {
   const pots = state.bank.accounts
     .filter((a) => a.type === 'pot')
     .map((a) => ({ goalId: a.goalId, name: state.dreams.find((d) => d.id === a.goalId)?.name ?? a.name, balance: a.balance }))
+  // no bank and no balance entered: the 0 is "not known", so no model gets to say "your checking shows ¥0"
+  const known = hasBank(state.bank) || (checking?.balance ?? 0) > 0
   return compact({
-    checkingBalance: checking?.balance,
-    checkingName: checking?.name,
-    checkingMasked: checking?.maskedNumber,
+    ...(known ? { checkingBalance: checking?.balance, checkingName: checking?.name, checkingMasked: checking?.maskedNumber } : {}),
+    bankConnected: hasBank(state.bank),
     pots,
     potsTotal: pots.reduce((sum, p) => sum + p.balance, 0),
   })
