@@ -11,6 +11,8 @@ import type { ImapClient } from './email/imap'
 import { createEmailService, type EmailService } from './email/service'
 import { createEmailStore } from './email/store'
 import { loadEnvFile } from './env'
+import { createPluginService, type PluginService } from './plugins/service'
+import { createPluginFileStore } from './plugins/store'
 import { createStaticHandler } from './static'
 
 /**
@@ -44,6 +46,7 @@ export interface LocalServer {
   ai: AiService
   agents: AgentRuntime
   email: EmailService
+  plugins: PluginService
   close(): Promise<void>
 }
 
@@ -62,9 +65,14 @@ export async function startLocal(opts: LocalOptions = {}): Promise<LocalServer> 
   })
   // the mail password is kept the same way as the AI keys, in <home>/email.json
   const email = createEmailService({ store: createEmailStore(home), codec, ...(opts.imap ? { imap: opts.imap } : {}) })
+  const plugins = createPluginService({
+    store: createPluginFileStore(home),
+    onCreatorModeChange: () => runtime?.close(),
+  })
   let port = opts.port ?? LOCAL_PORT
   const agents = createAgentRuntime({
     ai,
+    plugins,
     workspace: defaultWorkspace(home),
     bridgeUrl: () => `http://127.0.0.1:${port}/api/agent/mcp`,
     bridgeScript: opts.bridgeScript ?? fileURLToPath(new URL('./agents/mcp-bridge.mjs', import.meta.url)),
@@ -83,6 +91,7 @@ export async function startLocal(opts: LocalOptions = {}): Promise<LocalServer> 
     ai,
     agents,
     email,
+    plugins,
     staticHandler: opts.distDir ? createStaticHandler({ root: opts.distDir }) : null,
     ...(opts.log ? { log: opts.log } : {}),
   })
@@ -100,6 +109,7 @@ export async function startLocal(opts: LocalOptions = {}): Promise<LocalServer> 
     ai,
     agents,
     email,
+    plugins,
     close: () =>
       new Promise<void>((done) => {
         agents.close()

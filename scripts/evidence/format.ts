@@ -94,5 +94,9 @@ export function cardLine(card: ChatCard, state: AppState): string {
       return `clarify — “${clip(card.question, 80)}” options: ${card.options.map((o) => o.label).join(' | ')}`
     case 'notice':
       return `notice (${card.level}) — ${clip(card.title, 60)}: ${clip(card.text, 120)}`
+    case 'plugin_draft':
+      return `plugin_draft (${card.mode}) — ${card.pluginId}, slot ${card.slot}`
+    case 'plugin_action':
+      return `plugin_action — ${card.action} ${card.pluginId}`
   }
 }

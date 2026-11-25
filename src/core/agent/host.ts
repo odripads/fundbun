@@ -18,6 +18,7 @@ import type {
 import type { SandboxBank } from '../sandbox/bank'
 import type { AiClient } from '../ai/client'
 import type { LiveReply } from '../ai/types'
+import type { PluginsClient } from '../plugins/client'
 import type { LlmClient } from './llm'
 
 export interface AgentLink {
@@ -72,6 +73,8 @@ export interface AgentHost {
   llmInfo?(): { local: boolean; label: string; onDevice: boolean } | null
   /** publish (or clear) the reply as it is being written */
   live?(reply: LiveReply | null): void
+  /** optional Desktop Creator Mode client (null on hosted web builds) */
+  plugins?: PluginsClient | null
   /** call after transactions were added: evaluates tripwires, stores events, audits; returns new events */
   afterTransactions(txns: Transaction[]): TripwireEvent[]
 }

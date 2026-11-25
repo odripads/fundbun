@@ -1,8 +1,10 @@
 import { checkGrounding } from '../security/grounding'
 import { UNTRUSTED_REMINDER, sanitizeUntrusted, wrapUntrusted } from '../security/injection'
 import { redactDeep } from '../security/redact'
+import { creatorToolDefinitions, isCreatorTool } from '../plugins/tools'
 import type { AppState, ChatMessage, GroundingReport, ToolName } from '../types'
 import { newCall, runGated, type GateResult } from './actions'
+import { runCreatorTool } from './creator-tools'
 import { TOOL_INTENT, readFacts } from './facts'
 import type { AgentHost } from './host'
 import type { LlmClient, LlmContentBlock, LlmMessage, LlmResponse } from './llm'
@@ -94,9 +96,10 @@ export function buildHistory(chat: ChatMessage[]): LlmMessage[] {
   return out
 }
 
-function systemPrompt(state: AppState, open: boolean): string {
+function systemPrompt(state: AppState, open: boolean, creatorMode: boolean): string {
   return buildSystemPrompt({
     open,
+    creatorMode,
     name: state.profile?.name ?? '',
     currency: currencyOf(state),
     today: state.bank.today,
@@ -111,13 +114,14 @@ async function toolLoop(host: AgentHost, turn: Turn, client: LlmClient, reads: R
   const state = host.state()
   const names = namesOf(state)
   const own = host.llmInfo?.()?.local === true
+  const creatorOn = host.plugins ? await host.plugins.syncEnabled() : false
   const timeoutMs = timeoutFor(host)
-  const redacted = redactDeep({ system: systemPrompt(state, own), messages: buildHistory(state.chat) }, names)
+  const redacted = redactDeep({ system: systemPrompt(state, own, creatorOn), messages: buildHistory(state.chat) }, names)
   const system = redacted.value.system
   const messages: LlmMessage[] = redacted.value.messages
   if (!messages.length) throw new Error('Nothing to send')
   trace(turn, 'redaction', 'Context minimised and redacted before leaving the device', { counts: redacted.counts, messages: messages.length })
-  const tools = llmToolDefinitions()
+  const tools = creatorOn ? [...llmToolDefinitions(), ...creatorToolDefinitions()] : llmToolDefinitions()
   for (let round = 1; round <= MAX_ROUNDS; round++) {
     host.audit('agent', 'llm_request', `LLM request (round ${round})`, {
       round, turnId: turn.id, messages: messages.length, tools: tools.length, promptVersion: PROMPT_VERSION, redactions: round === 1 ? redacted.counts : {},
@@ -129,7 +133,17 @@ async function toolLoop(host: AgentHost, turn: Turn, client: LlmClient, reads: R
     recordResponse(host, turn, round, res, uses.length)
     if (!uses.length) return said
     messages.push({ role: 'assistant', content: res.content })
-    messages.push({ role: 'user', content: uses.map((u) => toolResult(host, turn, u, said, reads)) })
+    const results: LlmContentBlock[] = []
+    for (const u of uses) {
+      if (isCreatorTool(u.name)) {
+        const args = u.input && typeof u.input === 'object' && !Array.isArray(u.input) ? u.input : {}
+        const r = await runCreatorTool(host, turn, u.name, args)
+        results.push({ type: 'tool_result', tool_use_id: u.id, content: r.content, ...(r.is_error ? { is_error: true } : {}) })
+      } else {
+        results.push(toolResult(host, turn, u, said, reads))
+      }
+    }
+    messages.push({ role: 'user', content: results })
     if (round === MAX_ROUNDS) {
       trace(turn, 'llm', 'Tool-round limit reached: stopping the model', { maxRounds: MAX_ROUNDS })
       return said

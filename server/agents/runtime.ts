@@ -3,9 +3,11 @@ import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import type { AgentEvent } from '../../src/core/ai/types'
 import { llmToolDefinitions } from '../../src/core/agent/specs'
+import { creatorToolDefinitions } from '../../src/core/plugins/tools'
 import { childEnv } from '../ai/paths'
 import type { AiService } from '../ai/service'
 import { MAX_MODEL_ID } from '../ai/store'
+import type { PluginService } from '../plugins/service'
 import { AcpError, connectAcp, processTransport, type AcpConnection, type AcpTransport, type JsonObject } from './acp'
 
 /**
@@ -59,6 +61,8 @@ export type ProbeResult =
 export interface AgentRuntimeOptions {
   /** the connections; update() is used quietly, to remember the model an agent reported */
   ai: Pick<AiService, 'get' | 'agentCommand' | 'markOk' | 'markError' | 'update'>
+  /** optional Desktop Creator Mode plugin service: adds plugin_* tools only when enabled */
+  plugins?: Pick<PluginService, 'isEnabled'>
   /** folder the agents run in: an empty workspace of their own, never the user's home */
   workspace: string
   /** where the bridge reaches this server, e.g. http://127.0.0.1:8787/api/agent/mcp */
@@ -304,7 +308,9 @@ export function createAgentRuntime(opts: AgentRuntimeOptions): AgentRuntime {
   const byToken = new Map<string, Session>()
   /** Tokens valid for `tools/list` while `openSession` (`session/new`) is still starting the agent's MCP bridge. */
   const startingTokens = new Set<string>()
-  const toolNames = new Set(llmToolDefinitions().map((t) => t.name))
+  const baseToolSpecs = llmToolDefinitions()
+  const activeSpecs = () => (opts.plugins?.isEnabled() ? [...baseToolSpecs, ...creatorToolDefinitions()] : baseToolSpecs)
+  const activeToolNames = () => new Set(activeSpecs().map((t) => t.name))
   const startTransport = opts.transport ?? ((command, args, cwd) => processTransport(command, args, { cwd, env: childEnv() }))
   const clock = opts.now ?? (() => Date.now())
   /** the last successful test of each connection, and the tests still running (one at a time per connection) */
@@ -354,7 +360,7 @@ export function createAgentRuntime(opts: AgentRuntimeOptions): AgentRuntime {
         // the id and kind the adapter gave when the call was first announced are the ones that count
         const name = known?.name || text(u.name, 80)
         const kindOf = known?.kind || text(u.kind, 20) || 'other'
-        const entry = { title: text(u.title, 200) || known?.title || 'Tool', kind: kindOf, name, fundbun: known?.fundbun ?? Boolean(fundbunToolOf(name, kindOf, toolNames)) }
+        const entry = { title: text(u.title, 200) || known?.title || 'Tool', kind: kindOf, name, fundbun: known?.fundbun ?? Boolean(fundbunToolOf(name, kindOf, activeToolNames())) }
         if (s.seen.size > 500) s.seen.clear()
         s.seen.set(callId, entry)
         // FundBun's own tools are reported by the app when it runs them: only the agent's other tools are listed here
@@ -371,7 +377,7 @@ export function createAgentRuntime(opts: AgentRuntimeOptions): AgentRuntime {
       const announced = s.seen.get(text(toolCall.toolCallId, 120))
       // FundBun's tools need no second prompt here: the policy gate in the app decides, and asks for the PIN when it
       // must. Recognised only by the id the adapter announced the call with; allowed for this one call, never "always".
-      const mine = announced ? announced.fundbun : Boolean(fundbunToolOf(toolCall.name, toolCall.kind, toolNames))
+      const mine = announced ? announced.fundbun : Boolean(fundbunToolOf(toolCall.name, toolCall.kind, activeToolNames()))
       if (mine && allowOnce) return { outcome: { outcome: 'selected', optionId: allowOnce.id } }
       if (!s.emit || !options.length) return { outcome: { outcome: 'cancelled' } }
       const requestId = id('perm')
@@ -642,7 +648,7 @@ export function createAgentRuntime(opts: AgentRuntimeOptions): AgentRuntime {
     },
     async bridge(token, payload) {
       const s = byToken.get(token)
-      const listTools = () => ({ tools: llmToolDefinitions().map((t) => ({ name: t.name, description: t.description, inputSchema: t.input_schema })) })
+      const listTools = () => ({ tools: activeSpecs().map((t) => ({ name: t.name, description: t.description, inputSchema: t.input_schema })) })
       if (!s) {
         if (payload.method === 'tools/list' && startingTokens.has(token)) return listTools()
         throw new AcpError('Unknown session', 401)
@@ -650,7 +656,7 @@ export function createAgentRuntime(opts: AgentRuntimeOptions): AgentRuntime {
       if (payload.method === 'tools/list') return listTools()
       if (payload.method !== 'tools/call') throw new AcpError('Unknown method', 400)
       const name = text(payload.name, 64)
-      if (!toolNames.has(name)) return { content: JSON.stringify({ status: 'denied', reason: 'FundBun has no such tool.' }), isError: true }
+      if (!activeToolNames().has(name)) return { content: JSON.stringify({ status: 'denied', reason: 'FundBun has no such tool.' }), isError: true }
       // a tool call outside a turn has nobody to approve it
       if (!s.emit) return { content: JSON.stringify({ status: 'failed', error: 'FundBun is not waiting for this agent right now.' }), isError: true }
       const callId = id('call')

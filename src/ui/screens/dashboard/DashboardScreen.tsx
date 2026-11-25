@@ -7,6 +7,7 @@ import { LogOutDialog } from '../../components/account/LogOut'
 import { useDeskActions } from '../../components/desk/deskActions'
 import { AddDreamSheet } from '../../components/dreams'
 import { Button, Callout, IconButton, Sheet } from '../../components/ds'
+import { PluginWidgets } from '../../components/plugins/PluginWidgets'
 import { SandboxPanel } from '../../components/sandbox'
 import { useSnapshot } from '../../state'
 import { CheckInCard } from '../home/CheckInCard'
@@ -223,6 +224,7 @@ export function DashboardScreen() {
             </div>
           )
         })}
+        {customizing ? null : <PluginWidgets place="dashboard" />}
       </div>
 
       {desk ? null : <QuickAdd open={addingHere} onClose={() => setAddingHere(false)} />}

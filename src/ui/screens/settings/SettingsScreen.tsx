@@ -12,6 +12,7 @@ import { SandboxPanel } from '../../components/sandbox'
 import { useRoute } from '../../router'
 import { shallowEqual, useApp, useSnapshot } from '../../state'
 import { AiSection } from './AiSection'
+import { CreatorSection } from './CreatorSection'
 import { DataSourcesSection } from './DataSourcesSection'
 import { KillSwitch } from './KillSwitch'
 import { APP_LICENCE, APP_VERSION, LICENCES, REPO_URL, repoLabel, teamLine } from './logic'
@@ -75,6 +76,7 @@ export function SettingsScreen() {
       </nav>
       <ProfileSection />
       <AiSection />
+      <CreatorSection />
       <DataSourcesSection />
       <PermissionsSection />
       <TripwiresSection />

@@ -6,6 +6,8 @@ import { exportableState } from './controller/api-user'
 import type { AppApi, Result } from './app-api'
 import type { AgentEngineFactory } from './agent/host'
 import { LlmClient } from './agent/llm'
+import { PluginsClient } from './plugins/client'
+import { createPluginApi } from './controller/api-plugins'
 import { AiClient } from './ai/client'
 import type { AgentSession } from './controller/host'
 import { uid } from './ids'
@@ -57,6 +59,8 @@ export interface CreateAppOptions {
    * silently corrupting them (default false; createTestApp turns it on).
    */
   freezeState?: boolean
+  /** Desktop Creator Mode client (default: one on llmBaseUrl); tests pass one wired to a real plugin server */
+  plugins?: PluginsClient | null
 }
 
 /** AppApi plus controller utilities for tests, scenarios and the evidence runner. */
@@ -65,6 +69,8 @@ export interface FundBunApp extends AppApi {
   flush(): Promise<void>
   /** the user's own AI connections on this computer (null when the app runs without any server) */
   readonly ai: AiClient | null
+  /** Desktop Creator Mode plugins on this computer (null without a server; the hosted site answers "unavailable") */
+  readonly plugins: PluginsClient | null
 }
 
 interface Boot {
@@ -107,6 +113,7 @@ export function createFundBunApp(opts: CreateAppOptions = {}): FundBunApp {
   const llmBaseUrl = opts.llmBaseUrl === undefined ? '/api' : opts.llmBaseUrl
   const llmClient = llmBaseUrl === null ? null : new LlmClient(llmBaseUrl)
   const aiClient = llmBaseUrl === null ? null : new AiClient(llmBaseUrl)
+  const pluginsClient = opts.plugins !== undefined ? opts.plugins : llmBaseUrl === null ? null : new PluginsClient(llmBaseUrl)
   // one agent conversation at a time: New chat (and a reload) start a fresh one; Stop aborts the reply in flight
   let sessionKey = uid('chat')
   let sessionFresh = true
@@ -146,9 +153,9 @@ export function createFundBunApp(opts: CreateAppOptions = {}): FundBunApp {
   })
   if (boot.persist) persistence.save(boot.state)
 
-  const host = createHost({ store, now, llmClient, aiClient, session })
+  const host = createHost({ store, now, llmClient, aiClient, plugins: pluginsClient, session })
   const engines = createEngineHolder(opts.engineFactory ?? createAgentEngine, host)
-  const core: Core = { store, persistence, engines, host, llmClient, aiClient, clock, now, lock, newAgentSession, stopReply }
+  const core: Core = { store, persistence, engines, host, llmClient, aiClient, plugins: pluginsClient, clock, now, lock, newAgentSession, stopReply }
   const agentApi = createAgentApi(core)
   /** re-probe the gateway whenever LLM use may have become possible (new profile, consent, unlock) */
   const recheckLlm = () => {
@@ -156,6 +163,7 @@ export function createFundBunApp(opts: CreateAppOptions = {}): FundBunApp {
   }
   const userApi = createUserApi(core, recheckLlm)
   const vaultApi = createVaultApi(core, recheckLlm)
+  const pluginApi = createPluginApi(core)
   // one clock: a real-data user's calendar catches up with the device date (persona sandboxes keep theirs)
   syncClock(core)
   expirePending(core)
@@ -278,9 +286,11 @@ export function createFundBunApp(opts: CreateAppOptions = {}): FundBunApp {
     ...agentApi,
     ...userApi,
     ...vaultApi,
+    ...pluginApi,
     syncClock: () => syncClock(core),
     flush: async () => void (await persistence.flush()),
     ai: aiClient,
+    plugins: pluginsClient,
   }
 }
 

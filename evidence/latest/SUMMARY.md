@@ -94,7 +94,7 @@ FinTechathon 2026 · International AI Track · Topic A (personal-finance agent).
 
 ```text
 node            v26.13.0 (darwin-arm64)
-git commit      092642ae1a6c (+ uncommitted changes)
+git commit      c188c781248d (+ uncommitted changes)
 seed            20261020 (sandbox generator + evidence ids)
 sandbox date    2026-10-22 (personas mei / arif)
 clock           2026-10-22T10:00:00+08:00 fixed, +1 s per step

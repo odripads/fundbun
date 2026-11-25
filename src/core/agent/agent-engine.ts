@@ -1,6 +1,8 @@
 import type { AgentEvent, LiveReply } from '../ai/types'
+import { CREATOR_TOOL_LABELS, isCreatorTool } from '../plugins/tools'
 import { wrapUntrusted } from '../security/injection'
 import { redactDeep } from '../security/redact'
+import { runCreatorTool } from './creator-tools'
 import type { AgentHost, AgentLink } from './host'
 import { fallback, finish, namesOf, toolResult, type LlmReply, type ReadResult } from './llm-engine'
 import { toneOf } from './offline-engine'
@@ -33,8 +35,10 @@ export async function respondAgent(host: AgentHost, turn: Turn, text: string, li
   })
   trace(turn, 'llm', `Asked ${link.label} (an agent on this computer)`, { agent: link.label, freshSession: link.fresh })
 
+  const creatorOn = link.fresh && host.plugins ? await host.plugins.syncEnabled() : false
   const preamble = link.fresh
     ? buildAgentPreamble({
+        creatorMode: creatorOn,
         name: redactDeep(state.profile?.name ?? '', names).value,
         currency: currencyOf(state),
         today: state.bank.today,
@@ -74,13 +78,16 @@ export async function respondAgent(host: AgentHost, turn: Turn, text: string, li
         return push(true)
       case 'fundbun_tool': {
         steps.delete('status')
-        const label = isToolName(ev.name) ? TOOL_SPECS[ev.name].label : ev.name
+        const creatorName = isCreatorTool(ev.name) ? ev.name : null
+        const label = creatorName ? CREATOR_TOOL_LABELS[creatorName] : isToolName(ev.name) ? TOOL_SPECS[ev.name].label : ev.name
         steps.set(ev.callId, { id: ev.callId, title: label, status: 'running', mine: true })
         push(true)
         // the same gate as every other tool call; a runaway agent is cut off rather than served forever
         const result = ++calls > MAX_FUNDBUN_CALLS
           ? { content: JSON.stringify({ status: 'denied', reason: 'Too many tool calls in one answer.' }), is_error: true }
-          : gated(host, turn, ev, reads)
+          : creatorName
+            ? await runCreatorTool(host, turn, creatorName, ev.args)
+            : gated(host, turn, ev, reads)
         steps.set(ev.callId, { id: ev.callId, title: label, status: result.is_error ? 'failed' : 'done', mine: true })
         push(true)
         await link.client.toolResult(ev.callId, result.content, result.is_error === true)

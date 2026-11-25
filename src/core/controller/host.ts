@@ -1,6 +1,7 @@
 import type { AgentHost } from '../agent/host'
 import type { LlmClient } from '../agent/llm'
 import type { AiClient } from '../ai/client'
+import type { PluginsClient } from '../plugins/client'
 import { formatAiLabel } from '../ai/labels'
 import type { FinanceContext } from '../types'
 import { appendAudit } from './audit'
@@ -15,6 +16,8 @@ export interface HostDeps {
   llmClient: LlmClient | null
   /** the local server's client for the user's own AI connections (null with llmClient) */
   aiClient?: AiClient | null
+  /** Desktop Creator Mode plugins (null on the hosted site and in tests) */
+  plugins?: PluginsClient | null
   /** this conversation's name for an agent, and the Stop signal of the reply in flight */
   session?: AgentSession
 }
@@ -39,7 +42,7 @@ export interface AgentSession {
 export const LLM_COOLDOWN_MS = 60_000
 export const LLM_COOLDOWN_MAX_MS = 10 * 60_000
 
-export function createHost({ store, now, llmClient, aiClient, session }: HostDeps): AgentHost {
+export function createHost({ store, now, llmClient, aiClient, plugins = null, session }: HostDeps): AgentHost {
   let failuresInARow = 0
   let retryTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -57,6 +60,7 @@ export function createHost({ store, now, llmClient, aiClient, session }: HostDep
   }
 
   return {
+    plugins,
     llmOk() {
       failuresInARow = 0
     },

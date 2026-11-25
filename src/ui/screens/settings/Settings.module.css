@@ -1360,3 +1360,11 @@ a.factButton {
   font-size: var(--fs-sm);
 }
 
+
+/* Creator Mode starters: a wrapping row of buttons */
+.starterRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin-top: var(--s-2);
+}

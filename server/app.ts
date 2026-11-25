@@ -2,6 +2,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import type { LlmHealth, LlmResponse } from '../src/core/agent/llm'
 import { llmToolDefinitions } from '../src/core/agent/specs'
 import { redactDeep } from '../src/core/security/redact'
+import { isCreatorTool } from '../src/core/plugins/tools'
 import type { AgentRuntime } from './agents/runtime'
 import { handleAgent } from './agents/routes'
 import { handleAi } from './ai/routes'
@@ -9,6 +10,8 @@ import { isLocalHost, type AiService } from './ai/service'
 import { emailSourcesMeta, fetchEmailMessages } from './email'
 import { handleEmail, isEmailAccountPath } from './email/routes'
 import type { EmailService } from './email/service'
+import { handlePlugins } from './plugins/routes'
+import type { PluginService } from './plugins/service'
 import { ProviderError, type LlmProvider, type ProviderRequest } from './providers/types'
 import { createRateLimiter, type RateLimiter } from './ratelimit'
 import { LIMITS, parseLlmRequest } from './schema'
@@ -50,6 +53,8 @@ export interface GatewayOptions {
   ai?: AiService
   /** Local server only: agents on this computer (Claude Code, Codex, …) driven over ACP */
   agents?: AgentRuntime
+  /** Local server only: Desktop Creator Mode (sandboxed UI + compute plugins under ~/.fundbun/plugins) */
+  plugins?: PluginService
   /**
    * Local server only: the user's own mailbox, read only over IMAP. When set, /api/email/account and
    * /api/email/check are served, and only to this computer; the public sandbox email routes work either way.
@@ -132,6 +137,19 @@ async function route(ctx: RouteContext, req: IncomingMessage, res: ServerRespons
     if (!agents) return sendJson(res, 404, { error: 'not_found', message: 'Agents are not available here.' })
     return handleAgent(agents, req, res, pathname, tools)
   }
+  if (pathname.startsWith('/api/plugins/')) {
+    const { plugins } = ctx.opts
+    // hosted gateway has no local plugin engine
+    if (!plugins) return sendJson(res, 404, { error: 'not_found', message: 'Creator Mode needs the FundBun desktop app.' })
+    if (!isLocalRequest(req) || !isSameOrigin(req, ctx.opts)) {
+      return sendJson(res, 403, { error: 'forbidden_origin', message: 'Only this computer may use this route.' })
+    }
+    return handlePlugins(plugins, req, res, pathname, {
+      sendJson: (r: ServerResponse, status: number, body: unknown) => sendJson(r, status, body),
+      readJson: readJsonBody,
+      methodNotAllowed,
+    })
+  }
   if (isEmailAccountPath(pathname)) {
     const { email } = ctx.opts
     // the hosted gateway never takes anyone's mail password
@@ -212,7 +230,8 @@ async function handleLlm(ctx: RouteContext, req: IncomingMessage, res: ServerRes
   if (json === undefined) return sendJson(res, 400, { error: 'invalid_json', message: 'Body is not valid JSON.' })
   const parsed = parseLlmRequest(json)
   if (!parsed.ok) return sendJson(res, 400, { error: 'invalid_request', message: 'The request does not match the LLM request schema.', issues: parsed.issues })
-  const blocked = parsed.value.tools.find((t) => !ctx.allowedTools.has(t.name))
+  const creatorOn = ctx.opts.plugins?.isEnabled() === true
+  const blocked = parsed.value.tools.find((t) => !ctx.allowedTools.has(t.name) && !(creatorOn && isCreatorTool(t.name)))
   if (blocked) return sendJson(res, 400, { error: 'tool_not_allowed', message: `Tool "${blocked.name}" may not be offered to the model.` })
 
   const redacted = redactSafely(ctx.redact, parsed.value)

@@ -1,0 +1,166 @@
+/* Desktop Creator Mode: installed widgets, the chat's live preview card, and the frame they run in.
+ * Colours and spacing come from the design tokens only. */
+
+.frame {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color-scheme: normal;
+  transition: height 160ms ease;
+}
+
+.widget {
+  display: grid;
+  gap: var(--s-3);
+  min-width: 0;
+  padding: var(--s-4);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg, 18px);
+  background: var(--surface);
+}
+
+.widgetHead {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 0;
+}
+
+.widgetIcon {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--r-sm);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.widgetIcon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.widgetTitle {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font-size: var(--fs-md);
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.widgetTag {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+
+/* ── chat cards ── */
+
+.draft {
+  display: grid;
+  gap: var(--s-3);
+  min-width: 0;
+  padding: var(--s-4);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+.draft[data-status='discarded'] {
+  opacity: 0.7;
+}
+
+.draftHead {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-width: 0;
+}
+
+.draftTitles {
+  display: grid;
+  min-width: 0;
+}
+
+.draftName {
+  font-weight: 650;
+}
+
+.draftSub {
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+}
+
+.draftDesc {
+  margin: 0;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+.previewBox {
+  position: relative;
+  padding: var(--s-4) var(--s-3) var(--s-3);
+  border: 1px dashed var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg-sunken);
+}
+
+.previewTag {
+  position: absolute;
+  top: -9px;
+  left: var(--s-3);
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: var(--fs-xs);
+  font-weight: 650;
+  line-height: 18px;
+}
+
+.code {
+  max-height: 260px;
+  margin: 0;
+  padding: var(--s-3);
+  overflow: auto;
+  border-radius: var(--r-sm);
+  background: var(--bg-sunken);
+  color: var(--text-2);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  white-space: pre;
+}
+
+.draftActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--s-2);
+}
+
+.doneLine {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: auto;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.doneLine svg {
+  width: 16px;
+  height: 16px;
+  color: var(--under-text);
+}

@@ -40,6 +40,7 @@ type UserApi = Omit<
   | 'sendMessage' | 'xrayBill' | 'approveAction' | 'rejectAction' | 'undoAction' | 'runSuggestedAction' | 'clearChat'
   | 'answerPermission' | 'stopReply'
   | 'checkLlm' | 'isLocked' | 'unlock' | 'enableVault' | 'disableVault' | 'syncClock'
+  | 'setCreatorMode' | 'installPlugin' | 'installStarterPlugin' | 'changePlugin'
 >
 
 /** Longest handoff summary kept in the audit log. */

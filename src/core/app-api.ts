@@ -237,6 +237,16 @@ export interface AppApi {
    */
   requestHumanHandoff(summary?: string, opts?: HandoffOptions): Result
 
+  // ── desktop creator mode (widgets an AI drafts; the desktop app only) ──
+  /** turning Creator Mode on needs the PIN, because it lets an AI draft widgets; turning it off never does */
+  setCreatorMode(enabled: boolean, pin?: string): Promise<Result>
+  /** install a widget Bun drafted, after the user saw its live preview in the chat */
+  installPlugin(draftId: string): Promise<Result>
+  /** install one of the built-in starter widgets */
+  installStarterPlugin(starterId: string): Promise<Result>
+  /** remove a widget, or switch it off or back on */
+  changePlugin(id: string, action: 'uninstall' | 'disable' | 'enable'): Promise<Result>
+
   // ── dreams ──
   addDream(input: DreamInput): DreamItem
   updateDream(id: string, patch: Partial<DreamInput>): Result

@@ -835,6 +835,26 @@ export type ChatCard =
   | { type: 'plan'; planId: string }
   | { type: 'clarify'; question: string; options: { label: string; value: string }[] }
   | { type: 'notice'; level: 'info' | 'warn' | 'block'; title: string; text: string }
+  | {
+      type: 'plugin_draft'
+      draftId: string
+      mode: 'create' | 'update'
+      pluginId: string
+      name: string
+      description: string
+      slot: 'dashboard' | 'home' | 'both'
+      wide: boolean
+      icon: 'sparkles' | 'coffee' | 'calendar' | 'gauge' | 'wallet' | 'chart' | 'flame' | 'target'
+      previewUrl: string
+      code: string
+      css: string
+    }
+  | {
+      type: 'plugin_action'
+      pluginId: string
+      name: string
+      action: 'uninstall' | 'disable' | 'enable'
+    }
 
 // ───────────────────────────── task plans (multi-step, DAG) ─────────────────────────────
 

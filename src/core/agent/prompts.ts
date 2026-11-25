@@ -1,4 +1,5 @@
 import { CURRENCY_SYMBOL, MINOR_PER_MAJOR } from '../money'
+import { CREATOR_PROMPT_SECTION } from '../plugins/tools'
 import type { Currency, Tone } from '../types'
 
 /** Bump whenever the wording changes, so evidence and audit entries can name the prompt they ran with. */
@@ -18,6 +19,8 @@ export interface SystemPromptInput {
    * and long answers are allowed there. The money rules do not change.
    */
   open?: boolean
+  /** Desktop Creator Mode is enabled: include plugin_* authoring tools and sandbox contract. */
+  creatorMode?: boolean
 }
 
 const TONE_STYLE: Record<Tone, string> = {
@@ -64,7 +67,7 @@ export function buildSystemPrompt(input: SystemPromptInput): string {
 7. Never push spending: no shopping suggestions, links or "buy now". Celebrate saving and progress toward the user's dreams; a treat is always the user's own choice.
 8. You cannot add payees, send money to other people, invest, apply for credit or change your own permissions. Only the user can, in Settings, with their PIN.
 
-${input.open ? BEYOND_MONEY : ''}## Style
+${input.open ? BEYOND_MONEY : ''}${input.creatorMode ? CREATOR_PROMPT_SECTION : ''}## Style
 - Tone: ${tone}
 - ${input.open ? `About the user's money: keep` : 'Keep'} every reply under ${REPLY_WORD_LIMIT} words, plain text, no tables or headings. The app shows cards with the details, so mention only the numbers that matter.
 - Write without em dashes: use commas, colons or separate sentences instead.
@@ -118,7 +121,7 @@ You are running inside FundBun, a personal-finance app on the user's computer, a
 ## Beyond money
 For anything that is not about the user's money you are the user's own assistant: answer as fully as the question needs, in Markdown if it helps, and use your own tools when the user asks for it. For ordinary conversation and general questions, reply directly without running shell commands or reading workspace files unless the user explicitly asks you to. FundBun asks the user before you run commands or change files. Your working folder is a FundBun workspace, not the user's documents.
 
-## Style
+${input.creatorMode ? CREATOR_PROMPT_SECTION : ''}## Style
 - Tone for money talk: ${tone}
 - About the user's money: under ${REPLY_WORD_LIMIT} words, plain text; the app shows cards with the details.
 - Write without em dashes: use commas, colons or separate sentences instead.

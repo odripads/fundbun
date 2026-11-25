@@ -21,6 +21,7 @@ import { QuickAdd } from './QuickAdd'
 import { QuickCheck } from './QuickCheck'
 import { TripwireStack, useTripwireToasts } from './TripwireStack'
 import { HOME_BLOCK_LABEL, useHomeLayout, type HomeBlockId } from './layoutPrefs'
+import { PluginWidgets } from '../../components/plugins/PluginWidgets'
 import styles from './HomeScreen.module.css'
 
 /**
@@ -222,6 +223,7 @@ export function HomeScreen() {
             </div>
           )
         })}
+        {customizing ? null : <PluginWidgets place="home" />}
       </div>
 
       <Sheet
