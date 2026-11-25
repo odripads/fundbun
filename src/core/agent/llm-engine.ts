@@ -4,6 +4,7 @@ import { redactDeep } from '../security/redact'
 import { creatorToolDefinitions, isCreatorTool } from '../plugins/tools'
 import type { AppState, ChatMessage, GroundingReport, ToolName } from '../types'
 import { newCall, runGated, type GateResult } from './actions'
+import { attachmentBlocks, attachmentNote } from './attachments'
 import { runCreatorTool } from './creator-tools'
 import { TOOL_INTENT, readFacts } from './facts'
 import type { AgentHost } from './host'
@@ -83,15 +84,18 @@ function userAuthored(state: AppState): string[] {
 export function buildHistory(chat: ChatMessage[]): LlmMessage[] {
   const recent = chat.filter((m) => (m.role === 'user' || m.role === 'assistant') && m.text.trim()).slice(-HISTORY_MESSAGES)
   const out: LlmMessage[] = []
-  for (const m of recent) {
+  const lastUser = recent.map((m) => m.role).lastIndexOf('user')
+  recent.forEach((m, i) => {
     const role = m.role as 'user' | 'assistant'
     let body = m.text.slice(0, MAX_MESSAGE_CHARS)
     // a long user message is a paste (bill, statement): data, not instructions
     if (role === 'user' && m.text.length > 400) body = wrapUntrusted('pasted-text', m.text)
+    // files: the newest message's are sent in full (wrapped as data), older ones only by name
+    if (role === 'user' && m.attachments?.length) body = `${body}\n\n${i === lastUser ? attachmentBlocks(m.attachments) : attachmentNote(m.attachments)}`
     const prev = out[out.length - 1]
     if (prev && prev.role === role && typeof prev.content === 'string') prev.content = `${prev.content}\n${body}`
     else out.push({ role, content: body })
-  }
+  })
   while (out.length && out[0].role !== 'user') out.shift()
   return out
 }

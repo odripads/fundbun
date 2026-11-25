@@ -1,6 +1,6 @@
 import { pastedBillLine } from '../agent/support'
 import type { AppApi, LlmStatus, Result } from '../app-api'
-import type { ChatMessage, SuggestedAction } from '../types'
+import type { ChatAttachment, ChatMessage, SuggestedAction } from '../types'
 import { STATIC_BUILD_REASON } from './constants'
 import { LOCKED_MSG, NOT_SET_UP_MSG, syncClock, type Core } from './core'
 import { WELCOME_SUGGESTIONS, assistantMessage, turnErrorMessage, unavailablePending, userMessage } from './messages'
@@ -37,11 +37,11 @@ export function createAgentApi(core: Core): AgentApi {
     return msg
   }
 
-  async function turn(text: string, source: 'chat' | 'xray'): Promise<ChatMessage> {
+  async function turn(text: string, source: 'chat' | 'xray', attachments?: ChatAttachment[]): Promise<ChatMessage> {
     const ts = core.now()
     if (core.lock.locked) return assistantMessage(LOCKED_MSG, ts)
     if (!store.get().profile) return assistantMessage(NOT_SET_UP_MSG, ts)
-    if (typeof text !== 'string' || !text.trim()) {
+    if (typeof text !== 'string' || (!text.trim() && !attachments?.length)) {
       return assistantMessage('What would you like to know?', ts, { suggestions: WELCOME_SUGGESTIONS })
     }
     syncClock(core)
@@ -50,7 +50,7 @@ export function createAgentApi(core: Core): AgentApi {
     try {
       const engine = engines.get()
       safely('engine.expire', () => engine.expire(), undefined)
-      return await engine.respond(text, { source })
+      return await engine.respond(text, attachments?.length ? { source, attachments } : { source })
     } catch (e) {
       return recordFailure(text, chatStart, e, source)
     } finally {
@@ -85,7 +85,7 @@ export function createAgentApi(core: Core): AgentApi {
   }
 
   return {
-    sendMessage: (text) => turn(text, 'chat'),
+    sendMessage: (text, opts) => turn(text, 'chat', opts?.attachments),
     xrayBill: (text) => turn(text, 'xray'),
     async approveAction(pendingId, pin): Promise<Result> {
       if (core.lock.locked) return fail(LOCKED_MSG)

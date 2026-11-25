@@ -904,11 +904,23 @@ export interface TraceStep {
   ts: ISODateTime
 }
 
+/** A file the user attached to a chat message: its text, read on the device (the file itself is never kept). */
+export interface ChatAttachment {
+  name: string
+  /** pdf, image, xlsx, docx, csv, text */
+  kind: string
+  text: string
+  /** the text was cut to fit */
+  truncated?: boolean
+}
+
 export interface ChatMessage {
   id: string
   role: ChatRole
   text: string
   ts: ISODateTime
+  /** files the user attached (user messages only) */
+  attachments?: ChatAttachment[]
   cards?: ChatCard[]
   /** glass-box trace of how this reply was produced */
   trace?: TraceStep[]

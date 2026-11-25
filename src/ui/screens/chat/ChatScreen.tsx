@@ -1,7 +1,7 @@
 import { ArrowDown, Ellipsis } from 'lucide-react'
 import { useCallback, useMemo, useRef, useState } from 'react'
 import type { AppSnapshot } from '../../../core/app-api'
-import type { ChatMessage } from '../../../core/types'
+import type { ChatAttachment, ChatMessage } from '../../../core/types'
 import { IconButton, cx, useToastClearance } from '../../components/ds'
 import { AgentStatusPill, ScreenTopBar } from '../../components/layout'
 import { navigate } from '../../router'
@@ -60,12 +60,12 @@ export function ChatScreen({ variant = 'page' }: ChatScreenProps = {}) {
   const latestAssistant = useMemo(() => [...messages].reverse().find((m) => m.role === 'assistant')?.id ?? null, [messages])
   const { endRef, atBottom, unread, scrollToEnd } = useChatScroll(ids, lastUser, conversation)
 
-  const send = useCallback(async (text: string) => {
+  const send = useCallback(async (text: string, attachments?: ChatAttachment[]) => {
     const value = text.trim()
-    if (!value || sending.current || app.getSnapshot().derived.busy) return
+    if ((!value && !attachments?.length) || sending.current || app.getSnapshot().derived.busy) return
     sending.current = true
     try {
-      await app.sendMessage(value)
+      await (attachments?.length ? app.sendMessage(value, { attachments }) : app.sendMessage(value))
     } finally {
       sending.current = false
     }
@@ -142,7 +142,7 @@ export function ChatScreen({ variant = 'page' }: ChatScreenProps = {}) {
         </button>
       ) : null}
 
-      <Composer onSend={(t) => void send(t)} busy={busy} engine={engine} onHeight={setComposerH} />
+      <Composer onSend={(t, files) => void send(t, files)} busy={busy} engine={engine} onHeight={setComposerH} />
       <ChatMenu open={overlay} onOpen={setOverlay} />
     </>
   )

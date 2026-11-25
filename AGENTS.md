@@ -202,6 +202,15 @@ trip a wire (`addSpending` now applies tripwires for this month's purchases).
   `open-mode`, `Markdown`, and `DeskShell`. Do not merge `desktop` into `main`, deploy, or publish a release without
   Odri's explicit say-so.
 
+**What changed on 25 Nov 2026, later (Creator Mode and chat attachments, branch `desktop`):**
+- **Desktop Creator Mode (`server/plugins/`, `src/core/plugins/`, `src/core/agent/creator-tools.ts`,
+  `src/ui/components/plugins/`):** Settings > Creator Mode (on with the PIN). Then Bun can draft Dashboard or Home
+  widgets in the chat: a live preview card with Install / Discard and See code. Widgets run in a sandboxed iframe
+  with no network and get a read-only, PII-free snapshot. Three starters ship. Files in `~/.fundbun/plugins/<id>/`.
+- **Attach files or a folder in the chat (`src/ui/screens/chat/attach.ts`, `src/core/agent/attachments.ts`):**
+  paperclip and folder buttons in the chat box. Read on the device, sent to the user's own AI as untrusted data;
+  the built-in engine says files need your own AI.
+
 ## 8. Rules for you
 - Run `npm test` after every change; don't leave the app broken. Small commits with clear messages.
 - **Agent-directing linter (`scripts/lint-agents.ts`, enforced by `tests/lint-agents.test.ts`):** Inspired by `dmmulroy/anti-slop` and `Factory-AI/eslint-plugin`, FundBun runs 13 zero-dependency AST and boundary checks on every test run (`no-chained-type-assertions`, `no-as-any`, `no-object-parameters`, `no-reflect-apply-or-get`, `no-reduce-accumulator-copy`, `no-shape-in-symbol-names`, `no-module-mocking`, `no-ts-suppression`, `fundbun/layer-boundaries`, `no-dangerous-html-or-eval`, `no-log-before-throw`, `no-empty-catch`, and `fundbun/no-forbidden-ui-copy`). Never work around failures with type assertions, module mocks, or `@ts-ignore`; follow the `Fix:` printed by the linter.

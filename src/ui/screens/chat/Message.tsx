@@ -1,4 +1,4 @@
-import { CornerDownRight, ShieldCheck } from 'lucide-react'
+import { CornerDownRight, FileText, ShieldCheck } from 'lucide-react'
 import { memo, type CSSProperties } from 'react'
 import type { ChatMessage, Currency } from '../../../core/types'
 import type { AppSnapshot } from '../../../core/app-api'
@@ -71,6 +71,16 @@ export const AssistantMessage = memo(function AssistantMessage({ message: m, lay
 export const UserMessage = memo(function UserMessage({ message: m, fresh }: { message: ChatMessage; fresh: boolean }) {
   return (
     <li id={`msg-${m.id}`} className={cx(styles.msg, styles.user, fresh && styles.fresh)}>
+      {m.attachments?.length ? (
+        <ul className={styles.userFiles} aria-label="Attached files">
+          {m.attachments.map((f, i) => (
+            <li key={`${i}-${f.name}`} className={styles.userFile} title={f.truncated ? `${f.name} (only the start was sent)` : f.name}>
+              <FileText aria-hidden="true" />
+              <span>{f.name}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
       <p className={styles.userBubble}>
         <span className="sr-only">You said: </span>
         {m.text}

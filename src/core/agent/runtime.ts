@@ -21,13 +21,14 @@ import { actionReply, awaitingStepUp, joinSentences, nluContext, respondOffline,
 import { buildPreview } from './previews'
 import { TOOL_SPECS, isToolName } from './specs'
 import { currencyOf, money, pastedBillLine, profileFacts } from './support'
-import { addCard, addNotice, addSource, startTurn, trace, type Turn } from './turn'
+import { addCard, addNotice, addSource, startTurn, taint, trace, type Turn } from './turn'
+import { cleanAttachments, recentAttachments } from './attachments'
 import { composeReply, line } from './voice'
 
 /** Creates the FundBun agent runtime (offline Bun Engine + LLM tool loop, policy-gated). */
 export const createAgentEngine: AgentEngineFactory = (host) => {
   const engine: AgentEngine = {
-    respond: (text, opts) => respond(host, text, opts?.source ?? 'chat'),
+    respond: (text, opts) => respond(host, text, opts?.source ?? 'chat', opts?.attachments),
     propose: async (action, proposedBy) => propose(host, action, proposedBy),
     approve: async (pendingId, pin) => approve(host, pendingId, pin),
     reject: (pendingId) => void rejectPending(host, pendingId),
@@ -40,33 +41,44 @@ export const createAgentEngine: AgentEngineFactory = (host) => {
 
 // ───────────────────────────── turns ─────────────────────────────
 
-async function respond(host: AgentHost, text: string, source: 'chat' | 'xray'): Promise<ChatMessage> {
+async function respond(host: AgentHost, text: string, source: 'chat' | 'xray', attached?: unknown): Promise<ChatMessage> {
   const turn = startTurn(host, source)
-  const raw = String(text ?? '').slice(0, 8000)
+  const files = source === 'chat' ? cleanAttachments(attached) : []
+  const raw = String(text ?? '').slice(0, 8000).trim() || (files.length ? (files.length === 1 ? 'Have a look at this file.' : 'Have a look at these files.') : '')
   // a PIN typed into chat is masked before anything is stored, understood or sent to a model
   const pin = source === 'chat' ? maskPinInChat(raw, Boolean(awaitingStepUp(host.state()))) : { text: raw, request: raw, masked: false }
   const input = pin.text
   // a pasted bill is untrusted data: the chat keeps a one-line note, never the bill text itself
   const shown = source === 'xray' ? pastedBillLine(String(text ?? '')) : input
   host.mutate((draft) => {
-    draft.chat.push({ id: uid('msg'), role: 'user', text: shown, ts: turn.ts })
+    draft.chat.push({ id: uid('msg'), role: 'user', text: shown, ts: turn.ts, ...(files.length ? { attachments: files } : {}) })
   })
   turn.lang = replyLang(input, host.state())
+  // a file is data from outside, and stays in the model's context for a while: those turns are untrusted
+  if (files.length) trace(turn, 'tool_result', `${files.length} file(s) attached, read on this device`, { files: files.map((f) => ({ name: f.name, kind: f.kind, chars: f.text.length })) })
+  if (source === 'chat' && recentAttachments(host.state().chat)) taint(turn, 'attached file')
   if (pin.masked) {
     turn.pinMasked = true
     pinHygiene(host, turn)
     if (!/[\p{L}\p{N}]/u.test(pin.request.replace(/\[PIN\]/g, ''))) return finishTurn(host, turn, pinOnlyReply(host, turn), input)
   }
   const request = pin.request
-  const useModel = source === 'chat' && !pin.masked && !needsDeterministicPath(host, request)
+  const useModel = source === 'chat' && !pin.masked && (files.length > 0 || !needsDeterministicPath(host, request))
   const agent = useModel ? host.agent?.() ?? null : null
   const client = useModel && !agent ? host.llm() : null
   let reply: Reply & { grounding?: GroundingReport; via?: string; rich?: boolean }
-  if (agent) reply = await respondAgent(host, turn, request, agent)
+  if (agent) reply = await respondAgent(host, turn, request, agent, files)
   else if (client) reply = await respondLlm(host, turn, request, client)
+  else if (files.length) reply = filesNeedAnAi(turn)
   else reply = respondOffline(host, turn, request)
   if (pin.masked) reply = { ...reply, text: joinSentences([line('pinWarning', turn.lang), reply.text], turn.lang ?? 'en') }
   return finishTurn(host, turn, reply, input)
+}
+
+/** The built-in engine does not read files: say so, and where they can go instead. */
+function filesNeedAnAi(turn: Turn): Reply {
+  addNotice(turn, 'info', 'Files need your own AI', 'The built-in engine answers money questions with rules. To ask about a file, connect your AI in Settings, Your AI. To add spending from a receipt or a statement, use Receipt or file.')
+  return { text: 'I can only read files when your own AI is connected. Your file stays on this computer either way.', intent: 'files_need_ai' }
 }
 
 /** "my pin is 2580", "PIN: 2580", "密码是2580", "pin saya 2580" — the digits are the PIN whatever their value. */

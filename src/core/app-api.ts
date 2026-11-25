@@ -7,6 +7,7 @@ import type {
   Bill,
   BillFinding,
   CategoryId,
+  ChatAttachment,
   ChatMessage,
   Consent,
   Currency,
@@ -218,7 +219,8 @@ export interface AppApi {
 
   // ── agent ──
   /** run one agent turn (offline engine or LLM). Resolves with the assistant message. */
-  sendMessage(text: string): Promise<ChatMessage>
+  /** `attachments`: files the user attached, read on the device; they are sent to the user's own AI as data */
+  sendMessage(text: string, opts?: { attachments?: ChatAttachment[] }): Promise<ChatMessage>
   /** approve a pending action; `pin` required when decision is step_up */
   approveAction(pendingId: string, pin?: string): Promise<Result>
   rejectAction(pendingId: string): void

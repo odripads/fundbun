@@ -241,3 +241,42 @@
   max-width: 100%;
   min-width: 0;
 }
+
+/* files the user attached, above their bubble */
+.userFiles {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+  max-width: min(88%, 520px);
+  margin: 0 0 6px auto;
+  padding: 0;
+  list-style: none;
+}
+
+.userFile {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 240px;
+  padding: 5px 10px;
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+.userFile svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--accent-text);
+}
+
+.userFile span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

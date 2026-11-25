@@ -5,6 +5,7 @@ import type {
   AuditType,
   BillFinding,
   ChatCard,
+  ChatAttachment,
   ChatMessage,
   FinanceContext,
   ISODateTime,
@@ -98,7 +99,7 @@ export interface ToolOutcome {
 /** The agent runtime as the controller sees it. Implemented by src/core/agent/runtime.ts. */
 export interface AgentEngine {
   /** run one user turn; appends the user + assistant messages to state.chat and returns the assistant message */
-  respond(text: string, opts?: { source?: 'chat' | 'xray' }): Promise<ChatMessage>
+  respond(text: string, opts?: { source?: 'chat' | 'xray'; attachments?: ChatAttachment[] }): Promise<ChatMessage>
   /** route a UI SuggestedAction through the same policy gate (proposedBy 'user' when the user tapped a button) */
   propose(action: SuggestedAction, proposedBy: ToolCall['proposedBy']): Promise<PendingAction>
   /** approve a pending action (PIN required for step_up); re-verifies bindingHash and policy before executing */

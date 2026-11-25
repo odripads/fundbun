@@ -3,6 +3,8 @@ import { CREATOR_TOOL_LABELS, isCreatorTool } from '../plugins/tools'
 import { wrapUntrusted } from '../security/injection'
 import { redactDeep } from '../security/redact'
 import { runCreatorTool } from './creator-tools'
+import type { ChatAttachment } from '../types'
+import { attachmentBlocks } from './attachments'
 import type { AgentHost, AgentLink } from './host'
 import { fallback, finish, namesOf, toolResult, type LlmReply, type ReadResult } from './llm-engine'
 import { toneOf } from './offline-engine'
@@ -21,13 +23,15 @@ const MAX_FUNDBUN_CALLS = 24
 const MAX_REPLY_CHARS = 24_000
 const LIVE_EVERY_MS = 60
 
-export async function respondAgent(host: AgentHost, turn: Turn, text: string, link: AgentLink): Promise<LlmReply> {
+export async function respondAgent(host: AgentHost, turn: Turn, text: string, link: AgentLink, files: readonly ChatAttachment[] = []): Promise<LlmReply> {
   turn.engine = 'llm'
   const reads: ReadResult[] = []
   const state = host.state()
   const names = namesOf(state)
   // a long message is a paste (a bill, a statement): data, not instructions — as for an API model
-  const body = text.length > 400 ? wrapUntrusted('pasted-text', text) : text
+  const asked = text.length > 400 ? wrapUntrusted('pasted-text', text) : text
+  // attached files go along as data, each one wrapped: the agent reads them, it never takes orders from them
+  const body = files.length ? `${asked}\n\n${attachmentBlocks(files)}` : asked
   const redacted = redactDeep({ text: body }, names)
   trace(turn, 'redaction', 'Message redacted before it goes to the agent', { counts: redacted.counts })
   host.audit('agent', 'llm_request', `Agent request (${link.label})`, {
