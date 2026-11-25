@@ -13,7 +13,9 @@ you should see; if you see something else, stop and fix that before going on.
 4. The public links (`fundbun.vercel.app`, `odripads.github.io/fundbun`) do not open reliably in China. Plan to
    demo from the laptop screen.
 5. **If you rebuilt `FundBun.app` (`npm run desktop:build`):** open `FundBun.app` once before going on stage and click
-   **Always Allow** on the macOS Keychain prompt (re-signing changes the app's signature).
+   **Always Allow** on the macOS Keychain prompt (ad-hoc re-signing changes the app's signature). To keep
+   **Always Allow** working across rebuilds, create a locally trusted `FundBun Local Dev` Code Signing
+   certificate in Keychain Access (or set `FUNDBUN_MAC_SIGN_IDENTITY`); `npm run desktop:build` uses it automatically.
 
 ## Morning of the demo
 

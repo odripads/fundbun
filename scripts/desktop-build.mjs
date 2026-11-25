@@ -75,10 +75,40 @@ if (process.argv.includes('--package')) {
   else packageLinux(out)
 }
 
+const LOCAL_MAC_CERT = 'FundBun Local Dev'
+
+/**
+ * Picks the macOS signing identity:
+ * 1. Explicit FUNDBUN_MAC_SIGN_IDENTITY env var (e.g. Apple Developer ID or a custom cert name/hash).
+ * 2. A locally trusted self-signed "FundBun Local Dev" code-signing certificate in the login Keychain so macOS
+ *    Keychain "Always Allow" persists across rebuilds instead of breaking on a new ad-hoc CDHash every build.
+ * 3. Ad-hoc ('-') fallback for CI and machines without a code-signing certificate.
+ */
+function resolveMacSignIdentity() {
+  const explicit = process.env.FUNDBUN_MAC_SIGN_IDENTITY?.trim()
+  if (explicit) return { identity: explicit, label: explicit }
+  try {
+    const out = execFileSync('security', ['find-identity', '-v', '-p', 'codesigning'], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    })
+    for (const line of out.split('\n')) {
+      const m = /^\s*\d+\)\s+([0-9A-Fa-f]{40})\s+"([^"]+)"/.exec(line)
+      if (m && m[2] === LOCAL_MAC_CERT) return { identity: m[1], label: `${LOCAL_MAC_CERT} (${m[1].slice(0, 8)})` }
+    }
+  } catch {
+    // security CLI unavailable or keychain locked: fall back to ad-hoc signing
+  }
+  return { identity: '-', label: 'ad-hoc (-)' }
+}
+
 function packageMac(out) {
   const bundle = join(out, 'FundBun.app')
-  // Apple silicon runs only signed code: an ad-hoc signature (no Apple Developer ID; Gatekeeper will still ask)
-  run('codesign', ['--force', '--deep', '--sign', '-', bundle])
+  // Apple silicon runs only signed code. A persistent signing identity keeps macOS Keychain "Always Allow"
+  // working across rebuilds; ad-hoc ('-') is the fallback when no certificate is installed.
+  const { identity, label } = resolveMacSignIdentity()
+  console.log(`[desktop] signing FundBun.app with ${label}`)
+  run('codesign', ['--force', '--deep', '--sign', identity, bundle])
   const stage = join(releaseDir, 'dmg')
   mkdirSync(stage, { recursive: true })
   cpSync(bundle, join(stage, 'FundBun.app'), { recursive: true, verbatimSymlinks: true })
