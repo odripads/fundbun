@@ -67,13 +67,20 @@ async function respond(host: AgentHost, text: string, source: 'chat' | 'xray', a
     if (!/[\p{L}\p{N}]/u.test(pin.request.replace(/\[PIN\]/g, ''))) return finishTurn(host, turn, pinOnlyReply(host, turn), input)
   }
   const request = pin.request
-  // Desktop Creator Mode: "change the theme to midnight" and the like are read on this device and answered with
-  // a preview card, with or without an AI connected. Null for every other message, so nothing else changes.
-  if (source === 'chat' && !pin.masked && !files.length) {
-    const look = await respondShellAppearance(host, turn, request)
+  const modelAllowed = source === 'chat' && !pin.masked
+  const deterministic = modelAllowed && !files.length && needsDeterministicPath(host, request)
+  // Desktop Creator Mode, AI first. A message that is only built-in presets, known colour words, ergonomics or
+  // resets ("change the theme to midnight", "bigger text", "reset appearance") is read on this device and answered
+  // with a preview card at once. Any other look request ("give Bun a samurai helmet", "a theme that matches my
+  // cafe, plus a coffee tracker card") returns null here while an AI is connected, so it goes on to that AI, which
+  // holds propose_shell_appearance and plugin_draft. With no AI the device handles all it knows. Null for every
+  // message that is not about the look, so nothing else changes.
+  if (modelAllowed && !files.length) {
+    const ai = !deterministic && Boolean(host.agent?.() || host.llm())
+    const look = await respondShellAppearance(host, turn, request, { ai })
     if (look) return finishTurn(host, turn, look, input)
   }
-  const useModel = source === 'chat' && !pin.masked && (files.length > 0 || !needsDeterministicPath(host, request))
+  const useModel = modelAllowed && (files.length > 0 || !deterministic)
   const agent = useModel ? host.agent?.() ?? null : null
   if (agent) {
     if (files.length) sessionsWithFiles.add(agent.sessionKey)

@@ -7,7 +7,7 @@ Every code claim below names the file and symbol it was read from. Numbers from 
 `evidence/latest/SUMMARY.md` and `evidence/live/attack-test-2026-11-18.md`; they were read, not re-run, for
 this brief. Anything marked **illustrative**, **estimate** or **proposal** is not measured and not in the code.
 
-## 0. Read this first: eleven things to get right on stage
+## 0. Read this first: twelve things to get right on stage
 
 These are the places where the pitch story and the repository differ. A judge who opens the repo will see the
 repository's version, so say that one.
@@ -18,13 +18,14 @@ repository's version, so say that one.
 | 2 | Database | There is no SQLite and no `better-sqlite3` in `package.json` or anywhere in `src/`, `server/`, `desktop/`. App state is JSON in browser storage (`StorageLike` in `src/core/controller/persistence.ts`), optionally encrypted (`src/core/security/vault.ts`). Desktop settings are JSON files in `~/.fundbun` | "Local-first JSON state, optional AES-GCM vault." Do not say SQLite |
 | 3 | Pro price | `PRODUCT.md` and `AGENTS.md`: Pro plan is "planned, no price set, not built" | Any $25 a month figure is an illustrative assumption. Say so every time |
 | 4 | Approval token | `signApproval` and `verifyApproval` run in the same expression in `executeApproved` (`src/core/agent/actions.ts`). `docs/SECURITY_SELF_ASSESSMENT.md` lists this as risk R18 | The binding hash plus the PIN check carry the protection today. The token becomes independent proof once a bank or a separate kernel process verifies it |
-| 5 | "Frozen kernel", "Everything is a plugin" | Neither phrase is in the repo. The repo's wording: "The money core, the policy gate, the PIN and the audit log are not pluggable; a widget can only draw" | Use the phrases as pitch shorthand, then give the repo's sentence |
+| 5 | "Everything is a plugin", "Adapts to whatever you prompt" | Pitch shorthand for slides 8 and 9. The repo's wording: "The money core, the policy gate, the PIN and the audit log are not pluggable; a widget can only draw". Appearance changes are four bounded parts (theme, what Bun wears, app name, ergonomics) in `src/core/plugins/appearance.ts` | Use the phrases, then give the repo's sentence: plugins change the look and add cards, never money, the PIN or permissions |
 | 6 | Mobile notification capture | Not in the code. What exists is read-only IMAP email (`server/email/imap.ts`) | "Email is built. Notification capture is a future direction." |
-| 7 | WeBank module | `AGENTS.md`: a proposal only, "nothing is agreed with any bank". The deck lists a WeChat mini-program as roadmap | "Our proposal", never "our partner" or "our integration" |
+| 7 | WeBank module | `AGENTS.md`: a proposal only, "nothing is agreed with any bank". Slide 13 shows two concept phone mock-ups and is labelled "Concept · nothing agreed" | "Our proposal", never "our partner" or "our integration". The mock-ups are ours, not a WeBank screen |
 | 8 | Kimi | `scripts/verify-kimi-live.ts` ran against local `/opt/homebrew/bin/kimi acp` (Kimi Code CLI `2.5.2`, `kimi-code/kimi-for-coding`) and passed **12/12 checks**: handshake, `asksFirst`, 20-tool MCP bridge, T0 read (`get_overview` with 5/5 grounded numbers), T4 denial (`P-T4-PROHIBITED`), clean teardown. Note: Kimi 2.5.2 omits `name` and puts the MCP tool ID only in `title`, so `fundbunToolOf()` in `server/agents/runtime.ts` fails closed and prompts once ("Approve for this session") | "Tested live with Kimi Code (`kimi acp`), DeepSeek and Claude Code." Pre-approve "for this session" on stage during warm-up if showing Kimi live |
 | 9 | Built-in engine | Text matching and rules, not a neural model (`PRODUCT.md`, `src/core/agent/offline-engine.ts`) | "On-device rules engine. It calls no AI model." Never "on-device AI" |
-| 10 | Stale numbers | `docs/PITCH_SCRIPT.md` slide 11 still says 231/231 assertions and 2,700+ tests. `evidence/latest/SUMMARY.md`, `deck/slides.html` and `README.md` say 233/233 | Say 45/45 scenarios, 233/233 checks. Check the slide you submit shows 233 |
+| 10 | Stale numbers | `docs/PITCH_SCRIPT.md` is the first-round script (13 slides, 231/231 assertions, 2,700+ tests) and is out of date. The final deck is 14 slides; slide 12 shows 45/45, 24/24, ¥0, 0/26, 4,287 tests, 36 live-model attacks, 12/12 Kimi checks and 87 viewport checks. `evidence/latest/SUMMARY.md` and `README.md` say 233/233 assertions | Say the slide's numbers. If asked for assertions: 233/233. Rehearse from `deck/notes.json`, not from `PITCH_SCRIPT.md` |
 | 11 | Memory safety | TypeScript on V8 is already memory safe | Rust's gain for FundBun is an isolation boundary and audited constant-time crypto, not "fixing memory bugs" |
+| 12 | What FundBun is today | No external bank account is connected. Every transfer, payment and cancellation runs against the sandbox bank (`src/core/sandbox`). The T2 and T3 tools, the PIN binding and the audit chain are real code, exercised only in that sandbox | "A monitor and a friend, not a bank" (slide 6). Active money execution is "verified in a local sandbox" and "pitched as part of the WeBank proposal" (slide 13). Never "FundBun pays your bills" in the present tense |
 
 Standing rules from `AGENTS.md` that still apply: no prize claims, no "compliant" or "legal under PIPL", no
 "first", no "our agent moves money", no named bank as a partner, and "bank-side confirmation bound to amount
@@ -125,9 +126,11 @@ identity documents folder. Format the drive as exFAT so both macOS and Windows r
 
 ## 2. Minute-by-minute pacing and contingency playbook
 
-The existing script (`docs/PITCH_SCRIPT.md`, `deck/notes.json`) is 13 slides for about 10 minutes. The final
-gives 15. The extra five minutes go to a longer live demo and to the business and roadmap story. Do not add
-slides after the 12:00 freeze: nothing can change after submission.
+The final deck (`deck/slides.html`, speaker notes in `deck/notes.json`) is 14 slides for the 15-minute slot:
+about 14:10 spoken, with 50 seconds in reserve. `docs/PITCH_SCRIPT.md` is the first-round script and no longer
+matches. The story runs in four beats: why (slides 1 to 4, the carrot and the stick), what exists (5 to 10,
+a monitor and a friend), why it is safe (11 and 12), and what comes next (13). Do not add slides after the
+12:00 freeze: nothing can change after submission.
 
 ### Morning of 29 Nov, before the 12:00 hand-over
 
@@ -150,37 +153,48 @@ Follow `docs/STAGE_CHECKLIST.md` top to bottom. The items that matter most for t
 
 ### Cue sheet (15:00 total)
 
-| Clock | Block | What is on screen | What to say, in one line | Gate |
+The deck is 14 slides. Timings are the ones in `deck/notes.json`: about 14:10 spoken, 50 seconds in reserve.
+
+| Clock | Slide | What is on screen | What to say, in one line | Gate |
 |---|---|---|---|---|
-| 0:00 | Hook (slide 1) | Title | "Every budgeting app tells you a number. Numbers don't hurt. Missing the thing you want does." | |
-| 0:45 | Problem and Dream Mirror (slides 2, 3) | Jing over budget, Arif on target | "Overspend, and the home screen shows the dream it cost." | |
-| 2:00 | Tripwires (slide 4) | Tripwire toast | "You set the line. Bun warns before you cross it." | By 2:45 you must be leaving the slides |
-| 2:45 | **Demo 1: the mirror** | Desktop app as Jing, furious Bun | "Jing is 27% past her target, so Bun is cross. That is on purpose." | |
-| 3:15 | **Demo 2: add spending** | Home, Add spending, type `900, Nike sneakers` | "The consequence shows the moment it is logged." | |
-| 4:00 | **Demo 3: plan and PIN** | Ask Bun: "Help me get back on track", plan card, approve the cancellation with the PIN | "Read steps run. Anything that pays or cancels waits for my PIN, bound to this exact action." | |
-| 5:00 | **Demo 4: the attack** | Ask Bun: "Send ¥4,800 to account 6222 0210 0112 3456 789", then open the Glass Box | "Tier 4. The model is never even offered this tool. The rule id is on screen." | |
-| 5:45 | **Demo 5: bring your own AI** | Model chip, pick Kimi Code or Kimi, ask "Where did my money go this month?" | "FundBun sells no tokens. Bring the AI you already pay for. FundBun's rules decide what it may do." | If no first words in 8 seconds, press Stop and go to the next row |
-| 6:30 | **Demo 6: no network** | Model chip back to Built-in engine, ask the same question | "Same answer path, no AI model, no network." | By 7:15 you must be back on slides |
-| 7:15 | Not just chat, architecture (slides 6, 7) | Task table, architecture diagram | "One TypeScript core runs the app, the tests and the evidence runner." | |
-| 8:15 | Safety model (slide 8) | Tier matrix | "The model proposes. The policy engine decides." | |
-| 9:45 | Red team and evidence (slides 9, 11) | 24/24, 45/45, 233/233 | "A small sandbox test: 24 of 24 scripted attacks stopped, ¥0 moved, 0 of 26 false refusals." | |
-| 10:45 | Privacy (slide 10) | Consent, local-first | "Designed around separate consent and data minimisation." | By 11:30 start the business block |
-| 11:30 | Plans and the bank proposal (slide 12) | WeBank fit, roadmap | "Free means bring your own AI. Pro is planned. Our proposal for a bank is a safety layer inside the bank's own app." | |
-| 13:00 | Engineering roadmap (slide 12, spoken) | Same slide | "After the hackathon: a Rust shell first, then the security kernel as one Rust crate for desktop, web and the bank side." | |
-| 13:45 | Close (slide 13) | Logo | "FundBun makes the cost of spending something you can see, with an agent you can trust with your money." | |
-| 14:15 | Buffer | | Stop talking. 45 seconds spare is correct. | Hard stop 15:00 |
+| 0:00 | 1 · Introducing FundBun | Cracked Dream Mirror, furious Bun, speech bubble | "Bun is furious because Jing overspent, and Bun tells her what it cost: you could've gotten a Birkin." | |
+| 0:35 | 2 · Carrot and stick | Two cards and three evidence items | "People stay on track when they see the dream get closer, and feel it the moment they stray." | |
+| 1:30 | 3 · How FundBun keeps you on track | Mood ladder, cracked mirror, cool-down loop | "To calm Bun down you have to open the app every day and actually change how you spend." | |
+| 2:40 | 4 · Tripwires | Tripwire toast | "You set the line. Bun shows what crossing it costs, in a voice you chose." | By 3:30 you must be on slide 5 |
+| 3:25 | 5 · The product today | Desktop dashboard and phone | "One core: a desktop app and a mobile-ready web app, two modes, a dashboard you rearrange." | |
+| 4:15 | 6 · A monitor and a friend, not a bank | Three cards and the WeBank callout | "Today it watches, coaches and keeps you company. It touches no external bank account." | Never cut this slide |
+| 5:15 | 7 · Zero AI, better with yours | Offline chat, provider list | "It works with no AI at all, and it gets better with the AI you already have." | |
+| 6:15 | 8 · Everything is a plugin (**live, 30 s**) | Desktop app: type the cyberpunk sentence, Apply, Undo | "Nothing changes until I press Apply. Undo puts it back." | If the app is not ready in 5 seconds, talk to the slide instead |
+| 7:35 | 9 · Adapts to whatever you prompt | Four prompts and previews | "That was one example. Here are four more: accessibility, your own style, two widgets." | By 8:45 you must be on slide 10 |
+| 8:35 | 10 · Bring your paperwork | Files, folders, read-only email | "Read-only by construction, and everything it reads is untrusted." | |
+| 9:25 | 11 · Truly secure today, ready for a bank tomorrow | Four pillars | "It moves no real money today, and it already holds things worth protecting." | |
+| 10:40 | 12 · Measured, reproducible, nothing moved | Eight numbers | "A sandbox test: 24 of 24 scripted attacks stopped, ¥0 moved, 0 of 26 false refusals." | By 11:45 start slide 13 |
+| 11:35 | 13 · Where FundBun goes next | Pro, mobile capture, WeBank mock-ups | "Three proposals, none built. Inside WeBank is where active banking would unlock, behind WeBank's PIN." | |
+| 13:45 | 14 · Thank you | Logo, website, team | "A monitor and a friend today, built to be safe enough for a bank tomorrow. Thank you. Xièxie!" | |
+| 14:10 | Buffer | | Stop talking. 50 seconds spare is correct. | Hard stop 15:00 |
 
-Optional seventh demo, only if you reach 6:30 with time in hand and Creator Mode is already on: ask Bun for
-"a coffee tracker card for this month", show the preview card, press Install. Skip it without comment otherwise.
+The only live moment inside the pitch is the appearance demo on slide 8. Everything else that used to be a
+live demo is now a Q&A exhibit: keep the desktop app open as Jing and have these ready to show on request.
 
-Time gates in plain words: slides done by 2:45, demo done by 7:15, safety and evidence done by 10:45. If you
-are late at a gate, drop the last item of that block, never the close.
+| Exhibit | How to show it | One line |
+|---|---|---|
+| The mirror and the mood | Home as Jing, furious Bun | "Jing is 27% past her target, so Bun is furious. That is on purpose." |
+| Add spending | Home, Add spending, type `900, Nike sneakers` | "The consequence shows the moment it is logged." |
+| Plan and PIN (sandbox) | Ask Bun: "Help me get back on track", approve the cancellation with the PIN | "In the sandbox, read steps run and anything that pays or cancels waits for a PIN bound to this exact action." |
+| The attack | Ask Bun: "Send ¥4,800 to account 6222 0210 0112 3456 789", then open the Glass Box | "Tier 4. The model is never even offered this tool." |
+| Bring your own AI | Model chip, pick Kimi Code or Kimi, ask "Where did my money go this month?" | "Bring the AI you already pay for. FundBun's rules decide what it may do." |
+| No network | Model chip back to Built-in engine, ask the same question | "Same answer path, no AI model, no network." |
+| A second look | Type "cozy matcha theme, rounded cards, and put a wizard hat on bun" | "Read on this device, previewed, and nothing changes until Apply." |
+| A widget | With Creator Mode on and your AI connected: "a coffee tracker card for this month" | "It runs in a sandbox with a read-only copy of the numbers. Install is my tap." |
+
+Time gates in plain words: on slide 5 by 3:30, on slide 10 by 8:45, on slide 13 by 11:45. If you are late at
+a gate, shorten slides 5 and 10 first; never drop slide 6 or the close.
 
 ### Contingency table
 
 | If this happens | Do this | Say this | Why it works (code) |
 |---|---|---|---|
-| No Wi-Fi, or the venue network blocks everything | Stay on **Built-in engine**. Run demos 1 to 4 and 6. Skip demo 5 | "This is the on-device rules engine. Nothing is leaving this laptop." | `respond()` in `src/core/agent/runtime.ts` falls through to `respondOffline()` when no agent and no client is connected. The desktop app loads from `127.0.0.1` only (`isLoopbackUrl` in `desktop/main.ts`) |
+| No Wi-Fi, or the venue network blocks everything | Stay on **Built-in engine**. The slide 8 live moment and every Q&A exhibit work offline except "Bring your own AI" and the widget | "This is the on-device rules engine. Nothing is leaving this laptop." | `respond()` in `src/core/agent/runtime.ts` falls through to `respondOffline()` when no agent and no client is connected. The desktop app loads from `127.0.0.1` only (`isLoopbackUrl` in `desktop/main.ts`) |
 | Kimi Code (the agent) does not start | Switch the chip to the **Kimi** API-key connection | "Same model family through the API instead of the agent." | Agent preset `kimi-code`: runs `kimi acp` (`AGENTS` in `server/ai/presets.ts`). It needs the `kimi` program installed and signed in. Start can take up to `START_TIMEOUT_MS` = 120 s (`server/agents/runtime.ts`) |
 | Kimi API does not answer | Switch the chip to **DeepSeek** (verified 18 Nov), then to Built-in | "Any OpenAI-compatible endpoint plugs in the same way." | Preset `kimi`: `baseUrl: 'https://api.moonshot.cn/v1'`. Preset `deepseek`: `https://api.deepseek.com`. Other mainland endpoints in the list: Qwen (`dashscope.aliyuncs.com`), GLM (`open.bigmodel.cn`) |
 | Your own AI hangs with no words appearing | Press **Stop** at 8 seconds, then switch the chip to Built-in engine. Do not wait | "The fallback is one tap." | With your own connection one model call may take up to `OWN_MODEL_TIMEOUT_MS` = 100 s (`src/core/agent/llm-engine.ts`). The 10 s auto-fallback (`LLM_TIMEOUT_MS`) applies to the hosted gateway only. Stop is `app.stopReply()` in `src/ui/components/ai/LiveReply.tsx` |
@@ -206,7 +220,7 @@ are late at a gate, drop the last item of that block, never the close.
 
 ---
 
-## 3. Fifteen tough judge questions
+## 3. Twenty tough judge questions
 
 Five minutes of Q&A is three to five questions. Each answer below is written to be spoken in about 30 seconds.
 "Proof" is where a judge can look. "Limit" is the honest edge of the claim: say it before they find it.
@@ -398,11 +412,11 @@ boundary?**
 **Q13. Bring-your-own-AI is free. How does FundBun make money? Does a paid Pro plan work?**
 
 - **Say:** "Today there is one plan and it is free: bring your own AI, or use the built-in engine. FundBun
-  sells no tokens, so our model cost on that plan is zero by construction. A Pro plan where FundBun supplies
-  the model is planned, with no price set yet. If I use $25 a month as an illustration, the margin depends on
-  model cost per user, and our architecture bounds that cost: routine questions never reach a model, and a
-  turn that does is capped. The third leg is licensing the safety layer to a bank, which is our proposal for
-  WeBank."
+  sells no tokens, so our model cost on that plan is zero by construction. Slide 13 proposes a Pro plan at
+  $25 a month where FundBun supplies the model and Creator Mode. It is not built, and $25 is a starting
+  point to test, not a validated price. The margin depends on model cost per user, and our architecture
+  bounds that cost: routine questions never reach a model, and a turn that does is capped. The third leg is
+  the bank proposal: FundBun inside WeBank."
 - **Proof for the cost bounds:** `needsDeterministicPath()` keeps deterministic intents off the model.
   A model turn is capped at `MAX_ROUNDS` = 5, `HISTORY_MESSAGES` = 9, `MAX_MESSAGE_CHARS` = 2,000 and
   `maxTokens` 1,024 on the hosted path (`src/core/agent/llm-engine.ts`). Plans: `PRODUCT.md`, "Plans".
@@ -459,6 +473,67 @@ in Rust?**
 - **Proof:** risk R1 in `docs/SECURITY_SELF_ASSESSMENT.md`. The kernel is small and separable:
   `src/core/security/` is 2,200 lines without tests. Section 4 has the full argument.
 - **Limit:** nothing in Rust exists yet. It is a plan.
+
+### Positioning and adaptive plugins (questions the 14-slide deck invites)
+
+**Q16. Slide 6 says "not a bank". So does FundBun move money or not?**
+
+- **Say:** "Not real money. Today FundBun is a monitor and a friend: it tracks spending, coaches you and
+  gives you a reason to come back every day. No external bank account is connected. What we have built and
+  tested is the safety architecture for moving money, running end to end against a sandbox bank. Real
+  execution is our proposal for a bank: inside WeBank, behind WeBank's own PIN."
+- **Proof:** the sandbox bank in `src/core/sandbox`; `evidence/latest/SUMMARY.md` (45/45 scenarios, every
+  transaction synthetic); slide 13 for the proposal.
+- **Limit:** in the sandbox the agent really does stash, pay and cancel. Say "in the sandbox" each time you
+  describe that, and never use the present tense for real accounts.
+
+**Q17. If it moves no real money, why does a habit app need bank-grade security?**
+
+- **Say:** "Two reasons. First, it already holds things worth protecting: your spending history, your
+  receipts and, on the desktop, a credential for your mailbox. So data is encrypted at rest, everything that
+  comes in is read-only or sandboxed, and untrusted content can never propose an action. Second, a bank will
+  not let an agent near an account until the approval path is proven. We built that path first."
+- **Proof:** `src/core/security/vault.ts` (AES-GCM-256), `desktop/main.ts` (Keychain through Electron
+  `safeStorage`), `server/email/imap.ts` (command allow-list), `server/plugins/frame.ts` (no-network frame),
+  taint in `src/core/security/policy.ts`. Slide 11 groups these as four pillars.
+- **Limit:** the vault is optional and only as strong as a 4 to 6 digit PIN (risk R2).
+
+**Q18. What actually makes people come back every day? Is the angry mascot just a gimmick?**
+
+- **Say:** "It is a loop, not a decoration. Bun's face is computed from your ledger, and the only way to
+  calm Bun down is to log days that stay within your daily allowance: every two good days take one step
+  off. Going quiet does not work, because a day with nothing logged never counts. On top of that there is
+  a seven-day check-in card with a golden bun on day seven. We have no retention data yet; it is designed on
+  learning by consequence, and a consented pilot is how we would measure it."
+- **Proof:** `src/core/finance/temper.ts` (`COOL_DOWN_DAYS` = 2, `BLOWOUT_DAYS` = 3, `GAP_DAYS` = 3,
+  `FURIOUS_OVER` = 0.2), `src/core/finance/checkin.ts` (`CHECKIN_CARD_DAYS` = 7).
+- **Limit:** the live ladder is five faces, happy to furious. "Burnt" on slide 3 is the older toasted face
+  kept for saved cards. The gentle tone softens the face by one step. Do not quote any behaviour change.
+
+**Q19. "Adapts to whatever you prompt": what stops a prompt, or a prompt injection, from breaking the app?**
+
+- **Say:** "Everything a prompt can change is a closed list. The look has four parts: theme colours on
+  fifteen tokens with contrast enforced, what Bun wears, one app name, and ergonomics from short fixed lists.
+  A custom costume is plain shapes only, checked and drawn as elements, never as markup. A widget runs in a
+  frame with no network and a read-only copy of the numbers. And all of it is only proposed: nothing changes
+  until I press Apply or Install, and a turn that carries a file, a bill or an email cannot propose it at
+  all."
+- **Proof:** `validateShellAppearancePatch()`, `sanitizeMascotSvg()` and `shellAppearanceGate()` in
+  `src/core/plugins/appearance.ts`; `server/plugins/frame.ts` and `server/plugins/validate.ts` for widgets;
+  rule `P-TAINT-CREATOR`.
+- **Limit:** Creator Mode is desktop only and off until turned on with the PIN. A name or a label can still
+  say anything in plain letters; it appears on no approval surface.
+
+**Q20. Which of the slide 9 examples work without an AI?**
+
+- **Say:** "The first two. Larger text, cozy spacing, a matcha palette, rounded cards and the wizard hat are
+  read on this device with no model, the same way the cyberpunk demo is. The two widgets need your own AI,
+  because someone has to write the card's code; FundBun then checks it and runs it in the sandbox."
+- **Proof:** `parseShellAppearancePrompt()` and `synthesizeShellPalette()` in `appearance.ts` (no model);
+  `plugin_draft` in `src/core/plugins/tools.ts`, offered only while Creator Mode is on.
+- **Limit:** the previews on slide 9 are mock-ups with example numbers, not screenshots. Rehearse the exact
+  sentences before showing any of them live; prompt 1 ("Make text larger, switch to high contrast, and give me
+  cozy spacing") and prompt 2 both parse on-device, while widget drafts (prompts 3 and 4) need a connected AI.
 
 ### Quick one-liners if a sixth question comes
 

@@ -585,3 +585,10 @@
   animation: none !important;
   transition: none !important;
 }
+
+/* Creator Mode custom costume: "currentColor" in a drawing means Bun's ink, and joins are round like the rest of Bun. */
+.costume {
+  color: var(--fb-ink);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}

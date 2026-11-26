@@ -1,11 +1,13 @@
 /**
  * "Creator Mode" in Settings (desktop app only): lets Bun draft dashboard widgets from a chat message. Turning it
  * on needs the PIN; every widget runs sandboxed with a read-only copy of the numbers and can be removed in one tap.
- * It also lists the shell appearance that is active (theme, what Bun wears, the app name) with one Reset control.
+ * It also lists every shell adaptation that is active (theme or custom palette, what Bun wears, the app name, text
+ * size, typeface, corners, spacing) with one Reset control.
  */
 import { Palette, Power, Puzzle, RotateCcw, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { describeShellAppearance, isDefaultShellAppearance } from '../../../core/plugins/appearance'
+import { BunMascot } from '../../components/brand/BunMascot'
 import { resetShellAppearance, useShellAppearance } from '../../components/plugins/shellAppearance'
 import { PluginIcon } from '../../components/plugins/icons'
 import { refreshPlugins, usePluginsState } from '../../components/plugins/pluginStore'
@@ -144,13 +146,15 @@ export function CreatorSection() {
               <span className={styles.consentSub}>
                 {customLook
                   ? 'These changes are on. They only restyle the app: your money, PIN and permissions are untouched.'
-                  : 'FundBun wears its own look. Ask Bun, for example "change the theme to midnight", "put a kamen rider helmet on Bun" or "rename FundBun to #ilovemoney". You see a preview and press Apply.'}
+                  : 'FundBun wears its own look. Ask Bun for anything, for example "change the theme to midnight", "make it matcha", "bigger text", "put a kamen rider helmet on Bun" or "rename FundBun to #ilovemoney". With your AI connected it can also design a palette or draw Bun a costume from your description. You see a preview and press Apply.'}
               </span>
             </span>
             <Badge variant={customLook ? 'accent' : 'neutral'} size="sm">{customLook ? 'Custom' : 'Default'}</Badge>
           </div>
           {lookLines.map((l) => (
             <div key={l.kind} className={styles.consentRow} data-shell-row={l.kind}>
+              {/* what Bun wears right now, custom costume included, drawn at a size it can be read at */}
+              {l.kind === 'mascot' ? <BunMascot size={40} animated={false} /> : null}
               <span className={styles.consentText}>
                 <span className={styles.consentSub}>{l.label}</span>
                 <span className={styles.consentTitle}>{l.value}</span>

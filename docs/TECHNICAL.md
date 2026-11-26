@@ -64,7 +64,7 @@ It can never add payees, pay other people, invest, borrow or change its own perm
 | Audit chain | 44/44 runs intact; deliberate tampering detected (C10, broken at entry #7) |
 | Reproducibility | Two evidence runs are byte-identical apart from the git-commit line |
 | On-device NLU, held-out | 213/216 = 98.6% (`src/core/agent/nlu.eval.test.ts`) |
-| Automated tests | **4,245** in 169 files: 4,244 passed, 1 skipped, 0 failed (2026-11-26) |
+| Automated tests | **4,288** in 169 files: 4,287 passed, 1 skipped, 0 failed (2026-11-26) |
 
 The scenario-by-scenario log is in the separate **Execution Evidence** document.
 
@@ -611,7 +611,7 @@ The trip is audited, with a reason that names what was blocked. Only the user ca
 
 **Continuous integration** (`.github/workflows/ci.yml`). Every push runs the type check, the full test suite, all 45 evidence scenarios and the production build.
 
-**Tests.** First-round submission baseline (`npx vitest run` on 2026-10-08): 3,066 tests in 110 files (3,065 passed, 1 skipped, 0 failed). Final-round suite (`npx vitest run` on 2026-11-26): **4,245 tests in 169 files (4,244 passed, 1 skipped, 0 failed)**. The skipped test only runs while the real redactor is a stub. Breakdown as of the first-round baseline below, plus the final-round suites listed in the Addendum:
+**Tests.** First-round submission baseline (`npx vitest run` on 2026-10-08): 3,066 tests in 110 files (3,065 passed, 1 skipped, 0 failed). Final-round suite (`npx vitest run` on 2026-11-26): **4,288 tests in 169 files (4,287 passed, 1 skipped, 0 failed)**. The skipped test only runs while the real redactor is a stub. Breakdown as of the first-round baseline below, plus the final-round suites listed in the Addendum:
 
 | Area | Files | Passed |
 |---|---|---|
@@ -656,6 +656,20 @@ The fixed seed, sandbox date, clock and seeded ids make two runs byte-identical 
 
 This section records what was added after the first-round submission, for the final round on 29 November 2026. Sections 01 to 05 describe the core, which is unchanged in design: one TypeScript core, a deterministic policy gate, and an optional model that can only propose. Everything below was built around that core. The six kernel files (`security/policy.ts`, `pin.ts`, `binding.ts`, `audit.ts`, `agent/specs.ts`, `agent/tools.ts`) were frozen while the appearance plugins, the deck and this update were written.
 
+### What FundBun is today, and where money execution sits
+
+The final-round pitch states the product's scope in one line: **a monitor and a friend, not a bank.**
+
+| Role | What is built and running today |
+|---|---|
+| Monitor | Keeps track of spending from manual entry, the receipt X-ray, CSV import, read-only IMAP email receipts and file or folder analysis in chat (the last two in the desktop app). |
+| Coach | Turns discipline into a game: the Dream Mirror, Bun's escalating mood (`finance/temper.ts`), the daily check-in streak (`finance/checkin.ts`), tripwires and recovery plans. |
+| Friend | A reason to open the app every day, in a voice the user chose, with every entry confirmed by the user. It works with no AI at all. |
+
+**No external bank account is connected.** Every transfer, bill payment and subscription cancellation in the app, the scenarios and the tests runs against the sandbox bank in `src/core/sandbox`. Active money execution (the T2 and T3 tools) is therefore presented as two things: a safety architecture that is built and proven end to end in the sandbox (sections 03 and 04), and a proposal for a bank partnership in which the bank would execute behind its own PIN (see "Possible future development"). No real money moves today.
+
+**The daily loop (carrot and stick).** The mirror shows the dream getting closer when the user stays within the target (the carrot) and cracks, with the dream pushed weeks away, when the user strays (the stick). Bun's face is one ladder computed from the ledger: happy, calm, worried, angry, furious (`burnt` is an older toasted face kept so saved cards still draw). A blowout day adds a step at once. Every two logged days in a row within the day limit take one step off, down to worried, and a day with nothing logged never counts, so the only way to calm Bun is to open the app and stay inside the line. Seven check-ins in a row earn a golden bun.
+
 ### Desktop app, mobile-ready web app and Dual Mode
 
 | Surface | Where | Notes |
@@ -690,22 +704,34 @@ Tested live so far: Kimi Code (agent, 12/12 checks via `scripts/verify-kimi-live
 
 Creator Mode (desktop app only, off until the user turns it on with the PIN) lets Bun draft **widgets**: sandboxed dashboard cards that receive a read-only, PII-minimised snapshot (`server/plugins/`, `src/core/plugins/snapshot.ts`). The final round adds a second plugin kind for the shell itself.
 
-**Shell Appearance plugins** (`src/core/plugins/appearance.ts`) are bounded, reversible changes to how the app looks. Exactly three things can change:
+**Shell Appearance plugins** (`src/core/plugins/appearance.ts`) are bounded, reversible changes to how the app looks. Four things can change, and nothing else:
 
 | Part | Bounds |
 |---|---|
-| Theme | One of ten presets (`system`, `light`, `dark`, `midnight`, `sakura`, `forest`, `ocean`, `amber`, `cyberpunk`, `contrast`), plus optional overrides of 15 allow-listed colour tokens. Values must be hex colours. Body text must keep 4.5:1 contrast against the page and the cards, and button labels 3:1 against the accent, so a look cannot hide a card by painting text in the background colour. The danger, over and warning colours are not on the list. |
-| Mascot headwear | `none`, `kamen_rider`, `crown`, `cap` or `halo`, drawn in code in `BunMascot.tsx`. The helmet is worn visor-up, so Bun's own face and mood stay in view. |
+| Theme | One of ten presets (`system`, `light`, `dark`, `midnight`, `sakura`, `forest`, `ocean`, `amber`, `cyberpunk`, `contrast`), plus optional overrides of 15 allow-listed colour tokens. Values must be hex colours. Body text must keep 4.5:1 contrast against the page and the cards, and button labels 3:1 against the accent, so a look cannot hide a card by painting text in the background colour. The danger, over and warning colours are not on the list. A colour word ("matcha", "lavender", "retro") or one hex colour becomes a full 15-token palette on the device (`synthesizeShellPalette()`, no model) with a friendly name of at most 32 characters; a connected AI can send exact hex tokens instead. Both pass the same contrast rule. |
+| What Bun wears | A built-in wardrobe drawn in code in `BunMascot.tsx` (`none`, `kamen_rider`, `crown`, `cap`, `halo`, `wizard`, `sunglasses`, `headphones`, `cat_ears`, `chef`), or a **custom costume** proposed by a connected AI: SVG shapes in Bun's 512 by 512 box, at most 4,096 characters, 48 elements and 4 nested groups. Only shape and group elements with geometry, paint and transform attributes pass the sanitizer. Text, script, style, a link, a `url()`, an entity or a comment refuses the whole costume, and the app draws the validated tree as elements, never as markup. The helmet is worn visor-up, so Bun's own face and mood stay in view. |
 | App name | At most 28 printable characters with at least one letter or digit. Control and invisible characters, direction overrides and stacked marks are refused. The wordmark shows the name with a small "FundBun" line that always stays, and the window title becomes "name · FundBun". |
+| Ergonomics | Typeface family (`default`, `mono`, `serif`, `rounded`), text size (`compact`, `default`, `large`, `xlarge`: 0.9375 to 1.25 of the device default), corner rounding (`sharp`, `default`, `round`, `pill`) and spacing (`compact`, `default`, `cozy`). Each is a short fixed list that sets design tokens the app already has, so no text from a model or a user ever reaches a style. |
 
 How a change reaches the screen:
 
-1. **Two ways in, one validator.** A connected AI calls the `propose_shell_appearance` tool (offered only while Creator Mode is on). With or without an AI, a chat message such as "change theme to cyberpunk, put a kamen rider helm on bun, and rename fundbun to #ilovemoney" is read on the device by `parseShellAppearancePrompt()`, a deterministic reader with no model. Both paths go through `validateShellAppearancePatch()`.
+1. **Two ways in, one validator.** A connected AI calls the `propose_shell_appearance` tool (offered only while Creator Mode is on). With or without an AI, a chat message such as "change theme to cyberpunk, put a kamen rider helm on bun, and rename fundbun to #ilovemoney" is read on the device by `parseShellAppearancePrompt()`, a deterministic reader with no model. The same reader understands colour words, wardrobe items and ergonomic requests such as "bigger text", "rounded cards" or "cozy spacing". Both paths go through `validateShellAppearancePatch()`.
 2. **A preview card, never an automatic change.** The runtime (`respondShellAppearance()` in `agent/creator-tools.ts`, called from `agent/runtime.ts`) answers with a card that shows the result. Nothing changes until the user presses **Apply**. **Undo** restores the look before it, and **Reset Shell Appearance** in Settings goes back to FundBun's own look and lists what is active.
 3. **The same taint and kill-switch rules as other Creator tools.** In a turn that carries untrusted content (a file, a bill, pasted text), the AI tool is denied with no card, and a typed request shows its preview with Apply blocked. The same holds while Bun is paused by the kill switch. Both cases are audited.
 4. **Applied in the browser only.** The look is stored in `localStorage` under `fundbun.shell-appearance.v1`, read back through the validator on every load, and written to the page as `data-theme`, `data-shell-theme`, the allow-listed CSS variables and `document.title`. It never enters the finance state.
 
 Card type note: the preview rides on the existing `plugin_action` chat card with `action: 'appearance'`, so the evidence formatter and every other listing of plugin actions show it without a change.
+
+**Adapts to whatever the user prompts (deck slide 9).** The deck shows four prompts beyond the flagship cyberpunk demo. The first two are read on the device with no model; the last two are widgets, which need the user's own AI to draft the code.
+
+| Prompt | What it becomes | Path |
+|---|---|---|
+| "Make text larger, switch to high contrast, and give me cozy spacing" | Larger text (`fontScale: large`), roomier spacing (`density: cozy`) and the high-contrast preset (`theme: contrast`) | `propose_shell_appearance` or the on-device reader |
+| "Cozy matcha theme, rounded cards, and put a wizard hat on Bun" | A synthesized Matcha palette (15 tokens), `radius: round`, `mascotHat: wizard` | `propose_shell_appearance` or the on-device reader |
+| "Build a coffee & milk tea weekly burn tracker card" | A sandboxed dashboard widget: this week's cups against a limit | `plugin_draft`, then Install |
+| "Add a payday countdown and safe daily spend card" | A sandboxed dashboard widget: days until payday and a daily allowance | `plugin_draft`, then Install |
+
+Every one is bounded by the validator or the widget sandbox, and nothing changes until the user presses Apply or Install.
 
 ### File and folder attachments in chat
 
@@ -722,13 +748,34 @@ Settings, Data sources can connect the user's own mailbox to find receipts, invo
 | `src/core/plugins/appearance.test.ts` | Prompt parsing (theme, Kamen Rider helmet, rename, combined, resets), validation bounds, preset legibility, the taint and kill-switch gate, and a full offline chat turn through the runtime |
 | `src/ui/components/plugins/plugins.dom.test.ts` | The helmet drawn on Bun, the wordmark showing a custom name, the card's Apply and Undo against the page, storage and `document.title`, blocked and tampered cases, and the Settings reset |
 
-The full suite on 26 November 2026 is 4,244 tests in 169 files.
+The full suite on 26 November 2026 is 4,287 passing tests across 169 files (1 skipped, 0 failed).
 
 ### Possible future development
 
-These are proposals. None of them is built, and nothing is agreed with any bank.
+These are proposals. None of them is built, and nothing is agreed with any bank. The deck puts all three on one slide (slide 13).
 
-- **FundBun Pro, proposed at US$25 a month.** Free stays "bring your own AI". Pro would unlock Creator Mode and include a hosted, multi-model AI so that an everyday user needs no API key. Bring your own AI would stay available, and the security kernel would be identical on both plans.
-- **FundBun inside a bank's app.** A proposal for WeBank or a similar bank: one tile in the bank's featured services opens FundBun inside the bank's own app with the Dream Mirror and PIN-gated Goal Pots. The bank hosts it, holds the money and executes; FundBun proposes and enforces the rules. The aims (daily opens, micro-saving, retention) would be tested in a consented pilot.
-- **Automatic expense capture on mobile.** The desktop already turns receipts, invoices and bank emails into proposed entries. The roadmap item is a push-notification listener on the phone for e-wallet, QRIS, WeChat Pay, Alipay and bank-app notifications, parsed on the device behind the same tap-to-log gate. Android first: iOS does not let an app read other apps' notifications.
+- **FundBun Pro, proposed at US$25 a month.** Pro would unlock Creator Mode and include a hosted, multi-model AI so that an everyday user needs no API key. Bring your own AI and the offline tier would stay free, and the security kernel would be identical on both plans. No hosted model, billing or Pro gate exists.
+- **Automatic expense capture on mobile.** The desktop already turns receipts, invoices and bank emails into proposed entries through read-only IMAP. The roadmap item extends that to a push-notification listener on the phone for WeChat Pay, Alipay, QRIS and bank alerts, read on the device behind the same tap-to-log gate. Android first: iOS does not let an app read other apps' notifications.
+- **FundBun inside a bank's app.** A proposal for WeBank or a similar bank: one tile in the bank's featured services opens FundBun inside the bank's own app with the Dream Mirror and PIN-gated Goal Pots. This is where active banking would unlock: the T2 and T3 capabilities that run in the sandbox today (instant goal stashes, verified bill pay, subscription cancel) would execute natively behind the bank's own PIN. The bank hosts it, holds the money and executes; FundBun proposes and enforces the rules. The aims (daily open frequency, micro-saving that sticks, retention) would be tested in a consented pilot; none is a result.
+
+### The final-round deck
+
+`npm run deck` builds `deck/slides.html` (with `deck.css` and `notes.json`) into a PDF and a PPTX. The builder stops on any overflow at 1920×1080 or at 1280×720, on text too small to read when projected, on an em dash, and on a prize claim. The deck is **14 slides** for the 15-minute slot (about 14:10 spoken):
+
+| Slide | Title | What it carries | Status of what it shows |
+|---|---|---|---|
+| 01 | Introducing FundBun. | The hook: a cracked Dream Mirror and a furious Bun saying "You could've gotten a Birkin!" | Built |
+| 02 | People stay on track with a carrot and a stick. | Why FundBun exists, with the evidence (39 studies, d = 0.22; Huabei, 19.6% lower monthly spend) | Cited research |
+| 03 | How FundBun keeps you on track, every day. | The mood ladder, the cracking mirror and the daily cool-down loop | Built |
+| 04 | Tripwires | Four kinds of line and three voices | Built |
+| 05 | The product today | Desktop app, mobile-ready web and PWA app, Dual Mode, customizable dashboard blocks | Built |
+| 06 | A monitor and a friend, not a bank. | The scope statement above, and where money execution sits | Built; execution is sandbox only |
+| 07 | Works with zero AI. Better with yours. | The offline engine and bring your own AI | Built; Kimi Code verified live 12/12 |
+| 08 | Everything is a plugin. | Desktop Creator Mode and the flagship appearance demo | Built |
+| 09 | Adapts to whatever you prompt. | Four more prompts: accessibility, a custom theme and costume, two sandboxed widgets | Built; previews are mock-ups with example numbers |
+| 10 | Bring your paperwork | Files and folders in chat, read-only IMAP email | Built (desktop) |
+| 11 | Truly secure today. Ready for a bank tomorrow. | Four pillars: encrypted at rest, read-only and sandboxed, taint, the approval architecture | Built; the approval path is proven in the sandbox |
+| 12 | Measured. Reproducible. Nothing moved. | 45/45, 24/24, ¥0, 0/26, 4,287 tests, 36 live-model attacks, 12/12 Kimi checks, 87 viewport checks | Measured |
+| 13 | Where FundBun goes next. | Pro, mobile auto-capture, FundBun inside WeBank | Proposals, not built |
+| 14 | Thank you. 谢谢！ | Logo, `www.kalcerinstitute.com/fundbun`, `github.com/odripads/fundbun`, the team | n/a |
 

@@ -2,11 +2,16 @@ import { Check, Code2, Palette, RotateCcw, ShieldAlert, Trash2, Undo2, X } from 
 import { useState, type CSSProperties } from 'react'
 import {
   DEFAULT_APP_NAME,
+  SHELL_FONT_SCALE_FACTORS,
   SHELL_THEMES,
+  describeMascotWear,
+  describeShellAppearance,
   describeShellAppearancePatch,
   isDefaultShellAppearance,
   resolvedShellTokens,
   sameShellAppearance,
+  shellPreviewVariables,
+  shellThemeName,
   validateShellAppearancePatch,
 } from '../../../core/plugins/appearance'
 import type { AppSnapshot } from '../../../core/app-api'
@@ -158,17 +163,28 @@ function deviceTheme(): 'light' | 'dark' {
   return typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
-/** The colours a look paints the page with, as inline variables for the small preview (never for the page itself). */
-function previewVars(look: ShellAppearance): CSSProperties {
-  const vars: Record<string, string> = {}
+const ERGONOMIC_KINDS = new Set(['font', 'scale', 'radius', 'density'])
+
+/**
+ * What a look puts on the page, as inline variables for the small preview (never for the page itself): its
+ * colours, its typeface, corner and spacing tokens, and its text size relative to the size that is on now.
+ */
+function previewVars(look: ShellAppearance, current: ShellAppearance): CSSProperties {
+  const vars: Record<string, string> = { ...shellPreviewVariables(look) }
   for (const [name, value] of Object.entries(resolvedShellTokens(look))) if (value) vars[name] = value
+  vars['--look-scale'] = String(SHELL_FONT_SCALE_FACTORS[look.fontScale ?? 'default'] / SHELL_FONT_SCALE_FACTORS[current.fontScale ?? 'default'])
   return vars
 }
 
 /**
- * A shell appearance plugin Bun proposed (theme, what Bun wears, the app name): a preview of the result, the list
- * of changes, and Apply. Nothing changes until Apply is pressed; Undo puts the look before it back, Reset goes
- * back to FundBun's own look. A blocked proposal (untrusted content in the turn, or Bun paused) cannot be applied.
+ * A shell appearance plugin Bun proposed (theme or custom palette, what Bun wears, the app name, text size,
+ * typeface, corners, spacing): a preview of the result, the list of changes, and Apply. Nothing changes until
+ * Apply is pressed; Undo puts the look before it back, Reset goes back to FundBun's own look. A blocked proposal
+ * (untrusted content in the turn, or Bun paused) cannot be applied.
+ *
+ * A custom costume is drawn live inside the preview banner, on Bun, exactly as it will look once applied. It
+ * never runs script: the SVG text is validated again here, parsed into plain shape data by the strict reader in
+ * core, and BunMascot builds React elements from that data. The text is never placed on the page as markup.
  */
 export function PluginAppearanceCard({ card }: { card: AppearanceCard }) {
   const current = useShellAppearance()
@@ -191,6 +207,10 @@ export function PluginAppearanceCard({ card }: { card: AppearanceCard }) {
   const blocked = card.blocked ?? (frozen ? 'FundBun is paused by the kill switch, so the look cannot be changed right now.' : null)
   const preset = SHELL_THEMES[result.theme]
   const lines = describeShellAppearancePatch(patch)
+  const themeName = shellThemeName(result)
+  const wearName = describeMascotWear(result.mascotHat, result.mascotSvg, result.mascotLabel)
+  const ergonomics = describeShellAppearance(result).filter((l) => ERGONOMIC_KINDS.has(l.kind))
+  const customCostume = typeof patch.mascotSvg === 'string'
 
   function apply() {
     setError(null)
@@ -221,15 +241,28 @@ export function PluginAppearanceCard({ card }: { card: AppearanceCard }) {
         className={styles.lookPreview}
         data-theme={preset.base === 'system' ? deviceTheme() : preset.base}
         data-look-theme={result.theme}
-        style={previewVars(result)}
+        data-look-font={result.fontStyle ?? 'default'}
+        data-look-scale={result.fontScale ?? 'default'}
+        data-look-radius={result.radius ?? 'default'}
+        data-look-density={result.density ?? 'default'}
+        style={previewVars(result, current)}
         role="img"
-        aria-label={`Preview: ${preset.label} theme, ${result.mascotHat === 'none' ? 'no headwear' : lines.find((l) => l.kind === 'mascot')?.value ?? result.mascotHat}, named ${result.appName ?? DEFAULT_APP_NAME}`}
+        aria-label={`Preview: ${themeName} theme, Bun wears ${wearName.toLowerCase()}, named ${result.appName ?? DEFAULT_APP_NAME}${ergonomics.length ? `, ${ergonomics.map((l) => `${l.label.toLowerCase()} ${l.value.toLowerCase()}`).join(', ')}` : ''}`}
       >
         <span className={styles.previewTag}>Preview</span>
-        <BunMascot size={64} hat={result.mascotHat} animated={false} />
+        <BunMascot size={64} hat={result.mascotHat} costumeSvg={result.mascotSvg ?? null} animated={false} />
         <span className={styles.lookTitles}>
           <span className={styles.lookName}>{result.appName ?? DEFAULT_APP_NAME}</span>
-          <span className={styles.lookTheme}>{preset.label}</span>
+          <span className={styles.lookTheme}>{themeName}</span>
+          {ergonomics.length ? (
+            <span className={styles.lookErgo}>
+              {ergonomics.map((l) => (
+                <span key={l.kind} className={styles.lookChip} data-look-chip={l.kind}>
+                  {l.label}: {l.value}
+                </span>
+              ))}
+            </span>
+          ) : null}
         </span>
         <span className={styles.lookSwatches} aria-hidden="true">
           <i className={styles.swatchBg} />
@@ -247,6 +280,7 @@ export function PluginAppearanceCard({ card }: { card: AppearanceCard }) {
           </div>
         ))}
       </dl>
+      {customCostume ? <p className={styles.lookNote}>The costume is drawn from checked shapes only. It cannot run code, load files or open links.</p> : null}
 
       {blocked ? <Callout tone="block" icon={<ShieldAlert />} title="Apply is blocked">{blocked}</Callout> : null}
       {error ? <Callout tone="block" title="Nothing changed">{error}</Callout> : null}

@@ -221,16 +221,18 @@ For the LLM path without a key, run `LLM_PROVIDER=mock npm run dev` and switch o
 
 Sections 01 to 03 are the first-round record and are unchanged in substance. This addendum records what was run for the features added before the final round on 29 November 2026. The scripted scenarios, their sandbox and their metrics above are the same; the additions are covered by automated tests, not by new scripted scenarios.
 
+**How to read this evidence.** The final-round pitch describes FundBun today as a monitor and a friend, not a bank: it tracks spending, coaches and builds a daily habit, and no external bank account is connected. Every transfer, bill payment and subscription cancellation logged in this document was executed against the local sandbox bank (`src/core/sandbox`), with synthetic personas and a fixed clock. The logs therefore show that the approval path works and holds under attack in a sandbox; they do not show real money moving. Active money execution behind a bank's own PIN is a proposal (deck slide 13), not a result.
+
 ### What was added and how it is evidenced
 
 | Feature | Evidence |
 |---|---|
-| Shell Appearance plugins (theme, Kamen Rider helmet on Bun, app name) | `src/core/plugins/appearance.test.ts`: 31 tests. Prompt parsing for a theme change, the helmet, a rename to `#ilovemoney`, all three in one sentence and the resets; validation bounds; the taint and kill-switch gate; a full offline chat turn through the runtime |
-| The appearance chat card and its Apply, Undo and Reset | `src/ui/components/plugins/plugins.dom.test.ts`: 16 tests. The helmet drawn on Bun, the wordmark showing `#ilovemoney`, Apply changing the page, storage and window title, Undo restoring them, blocked and tampered cards, the Settings reset |
+| Shell Appearance plugins (presets, custom SVG overlays, palettes, ergonomics, AI-first routing) | `src/core/plugins/appearance.test.ts`: 64 tests. Prompt parsing (presets, synthesized colour words, ergonomics, resets), SVG AST sanitizer XSS/attribute checks, WCAG contrast validation, taint and kill-switch gate, AI-first passthrough, offline fallback |
+| The appearance chat card and its Apply, Undo and Reset | `src/ui/components/plugins/plugins.dom.test.ts`: 26 tests. Built-in and custom SVG costumes drawn as React elements on Bun, custom wordmark `#ilovemoney`, Apply/Undo persistence on the page and storage, CSS ergonomics tokens, blocked/tampered cards, Settings reset |
 | Creator Mode widgets | `src/core/agent/creator-tools.test.ts`, `server/plugins/` tests |
 | File and folder attachments in chat | `src/core/agent/attachments.test.ts` |
 | Read-only email ingestion | `server/email/*.test.ts`, driven by a fake IMAP server that asserts the exact command list |
-| Final-round deck | `npm run deck`: the builder checks every slide for overflow at 1920×1080 and again at 1280×720 |
+| Final-round deck (14 slides) | `npm run deck`: the builder checks every slide for overflow at 1920×1080 and again at 1280×720, for text too small to read when projected, and for house rules in the copy (no em dash, no prize claim). Slide 12 carries the numbers in this document: 45/45 scenarios, 24/24 scripted attacks blocked, ¥0 moved, 0/26 false refusals, 4,287 tests, 36 live-model attacks, 12/12 Kimi ACP checks, 87 viewport checks |
 | Live Kimi Code ACP verification | `npx tsx scripts/verify-kimi-live.ts`: 12/12 checks pass against Kimi Code CLI 2.5.2 (`kimi acp`), verifying handshake, `asksFirst`, 20-tool MCP bridge, T0 read (`get_overview`), T4 denial (`P-T4-PROHIBITED`), and cleanup |
 | Multi-viewport E2E check | `node scripts/verify-viewports.mjs`: 87 passed, 0 failed, 0 warnings across Desktop (`1440×920`), iPhone (`390×844`), and Android (`412×915`), covering zero overflow, offline casual NLU (`"what are my big spending"`), interactive `clarify` task picker, and live Shell Appearance Apply/Undo/Reset |
 
@@ -239,7 +241,7 @@ Sections 01 to 03 are the first-round record and are unchanged in substance. Thi
 ```text
 $ npx vitest run
  Test Files  169 passed (169)
-      Tests  4244 passed | 1 skipped (4245)
+      Tests  4287 passed | 1 skipped (4288)
 
 $ npx tsx scripts/lint-agents.ts
 lint-agents: 569 files scanned, 0 violations
@@ -257,11 +259,14 @@ $ node scripts/verify-viewports.mjs
 $ npx tsx scripts/verify-kimi-live.ts
 verify-kimi-live: PASS 12/12 checks
 
-$ npm run deck -- --out /tmp/deck-test-check
-✓ 15 slides, fonts and images loaded, 0 overflows at 1920×1080 and 0 overflows at 1280×720
+$ npm run deck -- --out /tmp/deck-rev-check --png /tmp/deck-rev-png
+✓ 14 slides, fonts and images loaded, 0 overflows at 1920×1080 and 0 overflows at 1280×720
+✓ 14 PNGs (2880×1620) → /tmp/deck-rev-png
+✓ PDF  /tmp/deck-rev-check/InternationalAI-FundBun-Deck.pdf
+✓ PPTX /tmp/deck-rev-check/InternationalAI-FundBun-Deck.pptx
 ```
 
-All 4,244 runnable tests across all 169 files pass with 0 failures (1 pre-existing skipped redactor stub).
+All 4,287 runnable tests across all 169 files pass with 0 failures (1 pre-existing skipped redactor stub).
 
 ### Try the new features by hand (desktop app)
 
@@ -272,6 +277,9 @@ All 4,244 runnable tests across all 169 files pass with 0 failures (1 pre-existi
 | "put a kamen rider helmet on bun" | Preview with the helmet; Apply puts it on every Bun, with Bun's face still visible under the visor |
 | "rename fundbun to #ilovemoney" | The wordmark reads `#ilovemoney` with a small FundBun line; the window title is `#ilovemoney · FundBun` |
 | "change theme to cyberpunk, put a kamen rider helm on bun, and rename fundbun to #ilovemoney" | One card with all three changes |
+| "Make text larger, switch to high contrast, and give me cozy spacing" (deck slide 9) | One preview card: the high-contrast preset, larger text and roomier spacing |
+| "Cozy matcha theme, rounded cards, and put a wizard hat on Bun" (deck slide 9) | One preview card: a Matcha palette built on the device, rounder corners and Bun in a wizard hat |
+| With your own AI connected: "Build a coffee & milk tea weekly burn tracker card" (deck slide 9) | A widget preview running in the sandbox; nothing is installed until Install |
 | Press Undo on the card, or "reset appearance" | The previous look, or FundBun's own look, at once |
 | Attach a file, then ask for a theme change | The preview shows with Apply blocked: the turn carries untrusted content |
 | Settings, Creator Mode, Reset Shell Appearance | Lists the active customizations and clears them in one tap |

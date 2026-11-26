@@ -865,8 +865,55 @@ export interface PluginLifecycleCard {
 /** Theme presets the shell can wear. `system` follows the device (FundBun's own look). */
 export type ShellThemeId = 'system' | 'light' | 'dark' | 'midnight' | 'sakura' | 'forest' | 'ocean' | 'amber' | 'cyberpunk' | 'contrast'
 
-/** What Bun can wear on its head. */
-export type MascotHat = 'none' | 'kamen_rider' | 'crown' | 'cap' | 'halo'
+/** What Bun can wear from the built-in wardrobe (drawn in the app, works offline). */
+export type MascotHat = 'none' | 'kamen_rider' | 'crown' | 'cap' | 'halo' | 'wizard' | 'sunglasses' | 'headphones' | 'cat_ears' | 'chef'
+
+/** The only SVG elements a custom costume may be drawn with (shapes and groups: nothing that loads, links or runs). */
+export type MascotSvgNodeType = 'g' | 'path' | 'circle' | 'ellipse' | 'rect' | 'polygon' | 'polyline' | 'line'
+
+/** The only attributes those elements may carry: geometry, paint and transform. */
+export type MascotSvgAttr =
+  | 'd'
+  | 'cx'
+  | 'cy'
+  | 'r'
+  | 'rx'
+  | 'ry'
+  | 'x'
+  | 'y'
+  | 'width'
+  | 'height'
+  | 'points'
+  | 'x1'
+  | 'y1'
+  | 'x2'
+  | 'y2'
+  | 'fill'
+  | 'stroke'
+  | 'strokeWidth'
+  | 'strokeLinecap'
+  | 'strokeLinejoin'
+  | 'strokeDasharray'
+  | 'opacity'
+  | 'fillOpacity'
+  | 'strokeOpacity'
+  | 'transform'
+
+/** One validated element of a custom costume. The app draws these as React elements, never as markup. */
+export interface MascotSvgNode {
+  type: MascotSvgNodeType
+  attrs: Partial<Record<MascotSvgAttr, string>>
+  children: MascotSvgNode[]
+}
+
+/** Typeface family of the shell. */
+export type ShellFontStyle = 'default' | 'mono' | 'serif' | 'rounded'
+/** Text size of the shell (readability). */
+export type ShellFontScale = 'compact' | 'default' | 'large' | 'xlarge'
+/** Corner rounding of cards, buttons and fields. */
+export type ShellRadius = 'sharp' | 'default' | 'round' | 'pill'
+/** How much room the layout leaves between things. */
+export type ShellDensity = 'compact' | 'default' | 'cozy'
 
 /** The only design tokens a shell appearance plugin may override (colours, hex values only). */
 export type ShellTokenName =
@@ -896,17 +943,41 @@ export interface ShellAppearancePatch {
   reset?: boolean
   theme?: ShellThemeId
   tokens?: ShellTokenOverrides
+  /** a friendly name for a custom palette (sent with `tokens`); null drops the name */
+  themeLabel?: string | null
   mascotHat?: MascotHat
+  /**
+   * A custom costume drawn in Bun's 512 by 512 box, as sanitized SVG shapes; null takes it off. Sent alone it
+   * replaces the built-in headwear; sent with `mascotHat` Bun wears both.
+   */
+  mascotSvg?: string | null
+  /** what the custom costume is called ("Samurai helmet"); only with `mascotSvg` */
+  mascotLabel?: string
   /** the name on the wordmark and window title; null puts "FundBun" back */
   appName?: string | null
+  fontStyle?: ShellFontStyle
+  fontScale?: ShellFontScale
+  radius?: ShellRadius
+  density?: ShellDensity
 }
 
-/** The shell's current look (kept in this browser's storage, never in the finance state). */
+/**
+ * The shell's current look (kept in this browser's storage, never in the finance state). The optional fields are
+ * only present when they differ from FundBun's own look, so the default look is exactly the four fields below.
+ */
 export interface ShellAppearance {
   theme: ShellThemeId
   tokens: ShellTokenOverrides
   mascotHat: MascotHat
   appName: string | null
+  themeLabel?: string | null
+  /** canonical, sanitized SVG of the custom costume */
+  mascotSvg?: string
+  mascotLabel?: string
+  fontStyle?: ShellFontStyle
+  fontScale?: ShellFontScale
+  radius?: ShellRadius
+  density?: ShellDensity
 }
 
 /**

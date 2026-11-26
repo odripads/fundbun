@@ -187,6 +187,8 @@
   border-radius: var(--r-md);
   background: var(--bg);
   color: var(--text);
+  /* the proposed typeface: the preview sets --font-ui on itself, so it must be read here and not inherited */
+  font-family: var(--font-ui);
 }
 
 .lookTitles {
@@ -199,7 +201,7 @@
 .lookName {
   overflow: hidden;
   font-family: var(--font-display);
-  font-size: var(--fs-lg, 1.25rem);
+  font-size: calc(var(--fs-lg, 1.125rem) * var(--look-scale, 1));
   font-weight: 700;
   letter-spacing: -0.02em;
   text-overflow: ellipsis;
@@ -208,8 +210,33 @@
 
 .lookTheme {
   color: var(--text-2);
-  font-size: var(--fs-sm);
+  font-size: calc(var(--fs-sm) * var(--look-scale, 1));
   font-weight: 600;
+}
+
+/* text size, typeface, corners and spacing the look asks for, drawn with the proposed corners and spacing */
+.lookErgo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-1);
+  margin-top: var(--s-1);
+}
+
+.lookChip {
+  padding: 1px var(--s-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: calc(var(--fs-xs) * var(--look-scale, 1));
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.lookNote {
+  margin: 0;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
 }
 
 .lookSwatches {

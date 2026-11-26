@@ -1,22 +1,27 @@
 /**
- * The shell's look in this browser: theme, what Bun wears and the app name (Desktop Creator Mode).
+ * The shell's look in this browser: theme, what Bun wears, the app name and the ergonomics (Desktop Creator Mode).
  *
  * One small store, kept in localStorage so a reload keeps the look, and read back through the same validator a
- * patch goes through (storage is untrusted). Applying a look only touches four things on the page: the
- * `data-theme` and `data-shell-theme` attributes of <html>, the allow-listed colour variables on it, and
- * `document.title`. Nothing here reads or writes the finance state.
+ * patch goes through (storage is untrusted). Applying a look only touches these things on <html>: the
+ * `data-theme` and `data-shell-*` attributes, the allow-listed colour variables, the typeface, corner and spacing
+ * tokens that already exist in tokens.css (so the whole app follows through the cascade), the root font size,
+ * and `document.title`. Reset removes every one of them. Nothing here reads or writes the finance state.
  */
 import { useLayoutEffect, useSyncExternalStore } from 'react'
 import {
   DEFAULT_APP_NAME,
   DEFAULT_SHELL_APPEARANCE,
+  SHELL_ERGONOMIC_VARS,
   SHELL_THEMES,
   SHELL_TOKEN_NAMES,
   applyShellAppearancePatch,
   isDefaultShellAppearance,
+  legibilityIssues,
   resolvedShellTokens,
+  resolvedShellVariables,
   sameShellAppearance,
   sanitizeShellAppearance,
+  shellRootFontSize,
   validateShellAppearancePatch,
   type ShellAppearance,
   type ShellAppearancePatch,
@@ -106,8 +111,28 @@ export function applyShellAppearanceToDocument(look: ShellAppearance, doc: Docum
     if (value) root.style.setProperty(name, value)
     else root.style.removeProperty(name)
   }
-  if (look.mascotHat === 'none') root.removeAttribute('data-shell-hat')
-  else root.setAttribute('data-shell-hat', look.mascotHat)
+  setOrRemove(root, 'data-shell-hat', look.mascotSvg ? 'custom' : look.mascotHat === 'none' ? null : look.mascotHat)
+
+  // ergonomics: existing design tokens are overridden on the root, so every screen follows without its own rule
+  const vars = resolvedShellVariables(look)
+  for (const name of SHELL_ERGONOMIC_VARS) {
+    const value = vars[name]
+    if (value) root.style.setProperty(name, value)
+    else root.style.removeProperty(name)
+  }
+  setOrRemove(root, 'data-shell-font', look.fontStyle && look.fontStyle !== 'default' ? look.fontStyle : null)
+  setOrRemove(root, 'data-shell-radius', look.radius && look.radius !== 'default' ? look.radius : null)
+  setOrRemove(root, 'data-shell-density', look.density && look.density !== 'default' ? look.density : null)
+  // text size: every type size in the app is in rem, so the root font size scales them all together
+  const rootSize = shellRootFontSize(look)
+  if (rootSize) {
+    root.style.setProperty('font-size', rootSize)
+    root.setAttribute('data-shell-scale', look.fontScale ?? 'default')
+  } else if (root.hasAttribute('data-shell-scale')) {
+    root.style.removeProperty('font-size')
+    root.removeAttribute('data-shell-scale')
+  }
+
   if (look.appName) {
     doc.title = shellDocumentTitle(look)
     root.setAttribute('data-shell-name', '')
@@ -115,6 +140,11 @@ export function applyShellAppearanceToDocument(look: ShellAppearance, doc: Docum
     doc.title = DEFAULT_APP_NAME
     root.removeAttribute('data-shell-name')
   }
+}
+
+function setOrRemove(el: Element, name: string, value: string | null): void {
+  if (value === null) el.removeAttribute(name)
+  else el.setAttribute(name, value)
 }
 
 /** The window title for a look: the chosen name, with FundBun still named after it. */
@@ -142,6 +172,9 @@ export function applyShellAppearancePatchNow(patch: ShellAppearancePatch): Shell
   if (!checked.ok) return { ok: false, issues: checked.issues }
   const previous = getShellAppearance()
   const next = applyShellAppearancePatch(previous, checked.patch)
+  // the patch was checked on its own: colours laid over the theme that is on right now must stay readable too
+  const unreadable = legibilityIssues(next.theme, next.tokens)
+  if (unreadable.length) return { ok: false, issues: unreadable }
   commit(next)
   return { ok: true, previous, next }
 }

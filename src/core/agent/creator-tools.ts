@@ -2,6 +2,7 @@ import { uid } from '../ids'
 import {
   SHELL_APPEARANCE_PLUGIN_ID,
   describeShellAppearancePatch,
+  isExactShellAppearanceReading,
   readShellAppearancePrompt,
   shellAppearanceGate,
   validateShellAppearancePatch,
@@ -213,7 +214,7 @@ export async function runCreatorTool(
   }
 
   if (name === 'propose_shell_appearance') {
-    trace(turn, 'tool_call', 'llm → propose_shell_appearance', { tool: name, fields: Object.keys(args).slice(0, 8) })
+    trace(turn, 'tool_call', 'llm → propose_shell_appearance', { tool: name, fields: Object.keys(args).slice(0, 12) })
     const checked = validateShellAppearancePatch(args)
     if (!checked.ok) {
       trace(turn, 'tool_result', 'propose_shell_appearance failed validation', { ok: false, issues: checked.issues })
@@ -303,21 +304,50 @@ export interface ShellAppearanceReply {
   suggestions: string[]
 }
 
+/** Things a model can make that the device cannot, offered when a look request needed one and none is connected. */
+const AI_HINT_TITLE = 'Needs a connected AI'
+const MADE_TO_ORDER_HINT =
+  'I used the parts I can read on this device. Something made to order (a new widget, a custom costume, a palette from a description) needs a connected AI: connect yours in Settings, Your AI.'
+const OFFLINE_IDEAS = ['Make it matcha', 'Give Bun a wizard hat', 'Bigger text']
+
 /**
  * The offline and direct path: a chat message such as "change the theme to midnight, put a kamen rider helmet on
  * Bun and rename FundBun to #ilovemoney" is read on this device with no model and answered with a preview card.
+ *
+ * AI first: while an AI is connected (`ai`), only a message that is entirely built-in presets, known colour words,
+ * ergonomics or resets is answered here. Anything with a word left over, a creative ask ("design", "custom",
+ * "a tracker card") or a part outside the built-ins returns null, so the turn goes to the connected AI, which
+ * holds both propose_shell_appearance (custom palette, custom costume, ergonomics, name) and plugin_draft.
+ * With no AI connected everything the reader knows is handled here, and the rest gets a pointer to connect one.
  *
  * Returns null (so the usual engines answer) when the message is not about the look, or when this is not the
  * desktop app. With Creator Mode off it says so and stages nothing. A turn that carries untrusted content, or a
  * paused Bun, still shows the preview but with Apply blocked, under the same rules as the other Creator tools.
  */
-export async function respondShellAppearance(host: AgentHost, turn: Turn, text: string): Promise<ShellAppearanceReply | null> {
+export async function respondShellAppearance(host: AgentHost, turn: Turn, text: string, opts: { ai?: boolean } = {}): Promise<ShellAppearanceReply | null> {
   const reading = readShellAppearancePrompt(text)
   if (!reading) return null
   const client = host.plugins
   if (!client) return null
   const st = await client.state(1500)
   if (!st.local) return null
+
+  const connected = Boolean(host.agent?.() || host.llm())
+  // `ai` is whether an AI answers this turn: the caller turns it off for turns the on-device engine must take
+  const ai = opts.ai ?? connected
+  if (ai && st.enabled && !isExactShellAppearanceReading(reading)) {
+    trace(turn, 'intent', 'Look request goes to your AI: it asks for more than a built-in preset', {
+      act: 'shell_appearance',
+      engine: 'llm',
+      unresolved: reading.unresolved.slice(0, 12),
+      creative: reading.creative,
+      needsAi: reading.needsAi,
+    })
+    return null
+  }
+  // an AI is connected but this turn is the on-device engine's, and nothing here is readable without a model:
+  // leave the message to that engine instead of telling the user to connect an AI they already have
+  if (connected && !reading.patch && !reading.issues.length) return null
 
   trace(turn, 'intent', 'Shell appearance request, read on this device (no model)', {
     act: 'shell_appearance',
@@ -326,12 +356,19 @@ export async function respondShellAppearance(host: AgentHost, turn: Turn, text: 
     issues: reading.issues,
   })
   if (!st.enabled) {
-    addNotice(turn, 'info', 'Creator Mode is off', 'Changing the theme, what Bun wears or the app name is part of Creator Mode. Turn it on in Settings (it asks for your PIN), then ask again.')
+    addNotice(turn, 'info', 'Creator Mode is off', 'Changing the theme, what Bun wears, the text size or the app name is part of Creator Mode. Turn it on in Settings (it asks for your PIN), then ask again.')
     trace(turn, 'policy', 'DENY · propose_shell_appearance', { tool: 'propose_shell_appearance', decision: 'deny', ruleIds: ['P-CREATOR-OFF'], tainted: turn.tainted })
     return { text: 'I can restyle the app once Creator Mode is on. Nothing changed.', intent: 'shell_appearance', suggestions: [] }
   }
   for (const issue of reading.issues) addNotice(turn, 'warn', 'Outside the limits', issue, `look:${issue}`)
-  if (!reading.patch) return { text: 'I could not use that as it is, so nothing changed.', intent: 'shell_appearance', suggestions: ['Change the theme to midnight', 'Reset appearance'] }
+  // with no AI connected, say what one could do instead of leaving the request half answered
+  const hints = connected ? [] : reading.aiHints.length ? reading.aiHints : reading.creative ? [MADE_TO_ORDER_HINT] : []
+  for (const hint of hints) addNotice(turn, 'info', AI_HINT_TITLE, hint, `look-ai:${hint}`)
+  if (!reading.patch) {
+    return hints.length
+      ? { text: 'That one needs a connected AI, so nothing changed. Here is what I can do on this device.', intent: 'shell_appearance', suggestions: OFFLINE_IDEAS }
+      : { text: 'I could not use that as it is, so nothing changed.', intent: 'shell_appearance', suggestions: ['Change the theme to midnight', 'Reset appearance'] }
+  }
 
   // a typed request passes through the same validator as a model's tool call
   const checked = validateShellAppearancePatch(reading.patch)

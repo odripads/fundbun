@@ -12,7 +12,9 @@
  *    the slide title + key points as the image's alt text.
  * Layout checks run before export, twice: on the 1920×1080 canvas and again scaled to a 1280×720 projector
  * (the room's likely resolution). Anything poking outside its slide, clipped text, text too small to read at
- * 1280×720, or a font that failed to load stops the build.
+ * 1280×720, or a font that failed to load stops the build. So does copy that breaks a house rule: an em dash,
+ * "under target" or "under budget" for the good state, or a prize claim (the team is a finalist).
+ * The final round deck is 14 slides; notes.json carries one entry per slide, in order.
  */
 import { createServer, type Server } from 'node:http'
 import { mkdirSync, readFileSync, rmSync, statSync, existsSync } from 'node:fs'
@@ -109,12 +111,15 @@ try {
         slides.forEach((s, i) => {
           const box = s.getBoundingClientRect()
           for (const el of s.querySelectorAll<HTMLElement>('*')) {
-            if (el.closest('.glow, .peek, svg, .phone .sb') || el.matches('.crop img')) continue
+            // an inline drawing (a Bun, a crack) is checked by its own box; what is drawn inside it is not
+            const drawing = el.closest('svg')
+            if ((drawing && drawing !== el) || el.closest('.glow, .peek, .sprite, .phone .sb') || el.matches('.crop img')) continue
             const r = el.getBoundingClientRect()
             if (!r.width || !r.height) continue
             // inside a mock-up screen, content is clipped by the screen on purpose (a card that peeks in)
             const outside = r.left < box.left - pad || r.right > box.right + pad || r.top < box.top - pad || r.bottom > box.bottom + pad
-            if (outside && !el.closest('.mock .scr')) out.push(`${label} slide ${i + 1}: <${el.tagName.toLowerCase()} class="${el.className}"> leaves the slide`)
+            if (outside && !el.closest('.mock .scr')) out.push(`${label} slide ${i + 1}: <${el.tagName.toLowerCase()} class="${el.getAttribute('class') ?? ''}"> leaves the slide`)
+            if (drawing) continue
             const cs = getComputedStyle(el)
             if (el.scrollWidth > el.clientWidth + 1 && cs.overflow !== 'visible' && !el.matches('.crop, .glass, .scr'))
               out.push(`${label} slide ${i + 1}: <${el.tagName.toLowerCase()} class="${el.className}"> clips its content horizontally`)
@@ -125,7 +130,7 @@ try {
           }
           // text blocks that run into the footer
           const foot = s.querySelector('.foot')?.getBoundingClientRect()
-          if (foot) for (const el of s.querySelectorAll<HTMLElement>('p, h2, h3, .cap, .chips, .stats, .grid, .rows, .fit, .road, .card, .phone, .cmd, .note, .items, .mock'))
+          if (foot) for (const el of s.querySelectorAll<HTMLElement>('p, h2, h3, .cap, .chips, .stats, .grid, .rows, .fit, .road, .card, .phone, .cmd, .note, .items, .mock, .call, .why, .loop, .ev'))
             if (!el.closest('.foot, .mock .scr') && el.getBoundingClientRect().bottom > foot.top - 8 * zoom) out.push(`${label} slide ${i + 1}: <${el.tagName.toLowerCase()} class="${el.className}"> runs into the footer`)
         })
         return out
@@ -135,6 +140,7 @@ try {
 
   const report = await page.evaluate(() => {
     const out: string[] = []
+    const PRIZE = /\b(winner|winning team|champion|first prize|grand prize|1st place|first place|runner[- ]up|gold medal)\b/i
     const fonts = [...document.fonts].filter((f) => f.status === 'loaded').map((f) => `${f.family} ${f.style}`)
     for (const need of ['Fraunces Variable normal', 'DM Sans Variable normal']) if (!fonts.includes(need)) out.push(`font not loaded: ${need}`)
     for (const img of document.images) if (!img.naturalWidth) out.push(`image failed: ${img.getAttribute('src')}`)
@@ -152,6 +158,8 @@ try {
       const text = clone.textContent ?? ''
       if (text.includes(String.fromCharCode(0x2014))) out.push(`slide ${i + 1}: contains an em dash`)
       if (/\bunder\s+(target|budget)\b/i.test(text)) out.push(`slide ${i + 1}: says "under target" or "under budget"`)
+      // the team is a finalist: no slide may claim a prize or a placing
+      if (PRIZE.test(text)) out.push(`slide ${i + 1}: claims a prize or a placing`)
     })
     return { out, count: slides.length, titles: slides.map((s) => s.dataset.title ?? ''), words }
   })
@@ -168,7 +176,10 @@ try {
   if (report.count !== notesFile.slides.length) problems.push(`slides.html has ${report.count} slides, notes.json ${notesFile.slides.length}`)
   notesFile.slides.forEach((n, i) => {
     if (n.id !== `s${String(i + 1).padStart(2, '0')}`) problems.push(`notes.json entry ${i + 1} has id ${n.id}`)
-    if (`${n.title} ${n.alt} ${n.notes}`.includes(String.fromCharCode(0x2014))) problems.push(`notes.json ${n.id}: contains an em dash`)
+    const said = `${n.title} ${n.alt} ${n.notes}`
+    if (said.includes(String.fromCharCode(0x2014))) problems.push(`notes.json ${n.id}: contains an em dash`)
+    if (/\bunder\s+(target|budget)\b/i.test(said)) problems.push(`notes.json ${n.id}: says "under target" or "under budget"`)
+    if (/\b(winner|winning team|champion|first prize|grand prize|1st place|first place|runner[- ]up|gold medal)\b/i.test(said)) problems.push(`notes.json ${n.id}: claims a prize or a placing`)
   })
   if (problems.length) {
     console.error(problems.map((p) => `  ✗ ${p}`).join('\n'))
@@ -205,7 +216,7 @@ try {
   if (only === 'all' || only === 'pptx') {
     const pptx = new PptxGenJS()
     pptx.layout = 'LAYOUT_WIDE' // 13.333 × 7.5 in, 16:9
-    pptx.title = 'FundBun: You could’ve gotten a Birkin.'
+    pptx.title = 'Introducing FundBun.'
     pptx.subject = '2026 FinTechathon Finalist · International AI Track · Topic A Personal Finance Assistant · final round'
     pptx.author = 'Odri Prince Sembiring · Nadine Griselda'
     pptx.company = 'Team FundBun · Universitas Gadjah Mada · Universitas Airlangga'

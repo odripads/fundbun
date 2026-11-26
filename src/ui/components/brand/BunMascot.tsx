@@ -1,5 +1,6 @@
-import { useId, useLayoutEffect, useRef, type CSSProperties, type RefObject } from 'react'
-import type { BunMood, MascotHat } from '../../../core/types'
+import { useId, useLayoutEffect, useRef, type CSSProperties, type ReactNode, type RefObject, type SVGProps } from 'react'
+import { mascotSvgNodes } from '../../../core/plugins/appearance'
+import type { BunMood, MascotHat, MascotSvgNode } from '../../../core/types'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
 import { cx } from '../ds/cx'
 import { useShellAppearance } from '../plugins/shellAppearance'
@@ -52,6 +53,12 @@ export interface BunMascotProps {
    * nothing by default. Pass a value to force it, as the chat card's preview does.
    */
   hat?: MascotHat
+  /**
+   * A custom costume as sanitized SVG shapes (Creator Mode). Left out together with `hat`, Bun wears the stored
+   * one. It is parsed by the strict reader in core and drawn as React elements: the text itself never reaches
+   * the page as markup, so it cannot run script, load a file or follow a link.
+   */
+  costumeSvg?: string | null
 }
 
 interface SvgIds {
@@ -62,6 +69,7 @@ interface SvgIds {
   halo: string
   hatEye: string
   hatHex: string
+  frame: string
 }
 
 /** useId output can contain characters that break url(#…) references in some engines, so keep it to [\w-]. */
@@ -75,6 +83,7 @@ function useSvgIds(): SvgIds {
     halo: `${base}-halo`,
     hatEye: `${base}-hat-eye`,
     hatHex: `${base}-hat-hex`,
+    frame: `${base}-frame`,
   }
 }
 
@@ -101,9 +110,15 @@ function useMoodChange(mood: string, enabled: boolean, body: RefObject<SVGGEleme
   }, [mood, enabled, body, face])
 }
 
-export function BunMascot({ mood = 'calm', size = 96, animated = true, className, title, detail = 'auto', hat }: BunMascotProps) {
-  const chosenHat = useShellAppearance().mascotHat
-  const wearing: MascotHat = hat ?? chosenHat
+export function BunMascot({ mood = 'calm', size = 96, animated = true, className, title, detail = 'auto', hat, costumeSvg }: BunMascotProps) {
+  const chosen = useShellAppearance()
+  // either prop forces the whole outfit (the chat card's preview); with neither, Bun wears the stored look
+  const forced = hat !== undefined || costumeSvg !== undefined
+  const wearing: MascotHat = forced ? (hat ?? 'none') : chosen.mascotHat
+  const costume = mascotSvgNodes(forced ? costumeSvg : chosen.mascotSvg)
+  const dressed = costume.length > 0
+  // plain steam would rise through headwear; sunglasses leave the top of the head free
+  const headCovered = dressed || (wearing !== 'none' && wearing !== 'sunglasses')
   const px = Number.isFinite(size) && size > 0 ? size : 96
   const cut: Cut = detail === 'auto' ? cutForSize(px) : detail
   const moodKey = isBunMood(mood) ? mood : DEFAULT_MOOD
@@ -128,16 +143,16 @@ export function BunMascot({ mood = 'calm', size = 96, animated = true, className
       data-toasted={parts.toasted || undefined}
       data-flush={parts.flush || undefined}
       data-animated={moving || undefined}
-      data-hat={wearing === 'none' ? undefined : wearing}
+      data-hat={dressed ? 'custom' : wearing === 'none' ? undefined : wearing}
       role={title ? 'img' : undefined}
       aria-label={title || undefined}
       aria-hidden={title ? undefined : true}
       focusable="false"
     >
       {title ? <title>{title}</title> : null}
-      <Defs ids={ids} hat={wearing} />
+      <Defs ids={ids} hat={wearing} dressed={dressed} />
       {/* plain steam would rise through the headwear; mood vapour (smoke, fumes, zzz) still shows */}
-      {wearing !== 'none' && parts.vapour === 'steam' ? null : <Vapour cut={cut} kind={parts.vapour} />}
+      {headCovered && parts.vapour === 'steam' ? null : <Vapour cut={cut} kind={parts.vapour} />}
       <g className={parts.shake ? styles.shake : undefined}>
         <g className={styles.bob}>
           <g ref={bodyRef} className={styles.squish}>
@@ -148,6 +163,7 @@ export function BunMascot({ mood = 'calm', size = 96, animated = true, className
             {wearing === 'kamen_rider' ? <RiderScarf cut={cut} ids={ids} /> : null}
             <Pocket cut={cut} ids={ids} />
             <Hat cut={cut} ids={ids} hat={wearing} />
+            {dressed ? <CustomCostume cut={cut} ids={ids} nodes={costume} /> : null}
             <Accessory cut={cut} kind={parts.accessory} />
           </g>
         </g>
@@ -160,7 +176,7 @@ function Stops({ stops, prefix }: { stops: readonly (readonly [number, string, n
   return stops.map(([offset], i) => <stop key={offset} offset={offset} className={styles[`${prefix}${i}`]} />)
 }
 
-function Defs({ ids, hat }: { ids: SvgIds; hat: MascotHat }) {
+function Defs({ ids, hat, dressed }: { ids: SvgIds; hat: MascotHat; dressed: boolean }) {
   return (
     <defs>
       <path id={ids.body} d={BODY_PATH} />
@@ -188,6 +204,11 @@ function Defs({ ids, hat }: { ids: SvgIds; hat: MascotHat }) {
             <path d={HEX_TILE} fill={HAT.eyeCell} fillOpacity={0.55} />
           </pattern>
         </>
+      ) : null}
+      {dressed ? (
+        <clipPath id={ids.frame}>
+          <rect x={0} y={0} width={VIEW} height={VIEW} />
+        </clipPath>
       ) : null}
     </defs>
   )
@@ -428,6 +449,17 @@ const HAT = {
   goldDeep: '#b97f09',
   capBlue: '#2f7fd6',
   capDeep: '#1f5aa0',
+  wizard: '#5b3fb5',
+  wizardDeep: '#43298f',
+  wizardShine: '#8f78e0',
+  lens: '#1b1f2a',
+  lensShine: '#9fb4d6',
+  phone: '#ee6a4d',
+  phoneDeep: '#b1351d',
+  phoneBand: '#3a2a1f',
+  cat: '#f2bd3d',
+  catInner: '#f7a6b5',
+  white: '#ffffff',
 } as const
 
 /** A honeycomb tile (28 by 49): the facets of the helmet's compound eyes. */
@@ -462,7 +494,98 @@ function Hat({ cut, ids, hat }: { cut: Cut; ids: SvgIds; hat: MascotHat }) {
   if (hat === 'none') return null
   return (
     <g transform={hatSpace(cut)} data-hat-part={hat} stroke={HAT.ink} strokeWidth={8}>
-      {hat === 'kamen_rider' ? <RiderHelmet ids={ids} /> : hat === 'crown' ? <Crown /> : hat === 'cap' ? <Cap /> : <Halo />}
+      {hatArt(hat, ids)}
+    </g>
+  )
+}
+
+function hatArt(hat: Exclude<MascotHat, 'none'>, ids: SvgIds): ReactNode {
+  switch (hat) {
+    case 'kamen_rider':
+      return <RiderHelmet ids={ids} />
+    case 'crown':
+      return <Crown />
+    case 'cap':
+      return <Cap />
+    case 'halo':
+      return <Halo />
+    case 'wizard':
+      return <WizardHat />
+    case 'sunglasses':
+      return <Sunglasses />
+    case 'headphones':
+      return <Headphones />
+    case 'cat_ears':
+      return <CatEars />
+    case 'chef':
+      return <ChefHat />
+  }
+}
+
+// ───────────────────────────── custom costume (drawn from validated data, never from markup) ─────────────────────────────
+
+type Paint = Pick<SVGProps<SVGElement>, 'fill' | 'stroke' | 'strokeWidth' | 'strokeLinecap' | 'strokeLinejoin' | 'strokeDasharray' | 'opacity' | 'fillOpacity' | 'strokeOpacity' | 'transform'>
+
+/** The paint and transform props of one node. The values were validated by the reader; the two enums are narrowed again for React's types. */
+function paintOf(a: MascotSvgNode['attrs']): Paint {
+  const cap = a.strokeLinecap
+  const join = a.strokeLinejoin
+  return {
+    fill: a.fill,
+    stroke: a.stroke,
+    strokeWidth: a.strokeWidth,
+    strokeLinecap: cap === 'butt' || cap === 'round' || cap === 'square' ? cap : undefined,
+    strokeLinejoin: join === 'miter' || join === 'round' || join === 'bevel' ? join : undefined,
+    strokeDasharray: a.strokeDasharray,
+    opacity: a.opacity,
+    fillOpacity: a.fillOpacity,
+    strokeOpacity: a.strokeOpacity,
+    transform: a.transform,
+  }
+}
+
+/**
+ * One element of a custom costume. Each case builds a fixed SVG element from named, validated attributes: there
+ * is no way for a node to become another kind of element, or to carry an attribute that is not written here.
+ */
+function CostumeNode({ node }: { node: MascotSvgNode }) {
+  const a = node.attrs
+  const paint = paintOf(a)
+  switch (node.type) {
+    case 'g':
+      return (
+        <g {...paint}>
+          {node.children.map((child, i) => (
+            <CostumeNode key={i} node={child} />
+          ))}
+        </g>
+      )
+    case 'path':
+      return <path d={a.d} {...paint} />
+    case 'circle':
+      return <circle cx={a.cx} cy={a.cy} r={a.r} {...paint} />
+    case 'ellipse':
+      return <ellipse cx={a.cx} cy={a.cy} rx={a.rx} ry={a.ry} {...paint} />
+    case 'rect':
+      return <rect x={a.x} y={a.y} width={a.width} height={a.height} rx={a.rx} ry={a.ry} {...paint} />
+    case 'polygon':
+      return <polygon points={a.points} {...paint} />
+    case 'polyline':
+      return <polyline points={a.points} {...paint} />
+    case 'line':
+      return <line x1={a.x1} y1={a.y1} x2={a.x2} y2={a.y2} {...paint} />
+  }
+}
+
+/** The custom costume, clipped to Bun's own 512 by 512 box so a drawing can never paint over the app around it. */
+function CustomCostume({ cut, ids, nodes }: { cut: Cut; ids: SvgIds; nodes: readonly MascotSvgNode[] }) {
+  return (
+    <g clipPath={`url(#${ids.frame})`} data-hat-part="custom" className={styles.costume}>
+      <g transform={hatSpace(cut)}>
+        {nodes.map((node, i) => (
+          <CostumeNode key={i} node={node} />
+        ))}
+      </g>
     </g>
   )
 }
@@ -525,5 +648,87 @@ function Halo() {
       <ellipse cx={256} cy={44} rx={96} ry={24} fill="none" strokeWidth={26} />
       <ellipse cx={256} cy={44} rx={96} ry={24} fill="none" stroke={HAT.gold} strokeWidth={14} />
     </>
+  )
+}
+
+/** A tall pointed hat with a floppy tip, a gold band and a star. */
+function WizardHat() {
+  return (
+    <g transform="rotate(-4 256 120)">
+      <path d="M150 150C190 96 232 40 318 8C300 56 330 104 362 150Z" fill={HAT.wizard} strokeWidth={10} />
+      <path d="M196 132C226 92 252 62 290 36" fill="none" stroke={HAT.wizardShine} strokeWidth={8} opacity={0.7} />
+      <path d="M112 152C150 128 362 128 400 152C372 178 140 178 112 152Z" fill={HAT.wizardDeep} strokeWidth={10} />
+      <path d="M170 138C220 126 292 126 344 138" fill="none" stroke={HAT.gold} strokeWidth={10} />
+      <path d="M262 62L269 78L286 80L273 91L277 108L262 99L247 108L251 91L238 80L255 78Z" fill={HAT.gold} strokeWidth={5} />
+    </g>
+  )
+}
+
+/** Dark lenses over the eyes, a bridge and two arms. Bun's mouth (and so its mood) stays in view. */
+function Sunglasses() {
+  const lens = (
+    <>
+      <path d="M130 174H222C228 174 231 179 230 185L225 214C222 229 210 238 196 238H158C144 238 133 229 130 214L125 185C124 179 126 174 130 174Z" fill={HAT.lens} strokeWidth={9} />
+      <path d="M146 190H176M150 204H164" fill="none" stroke={HAT.lensShine} strokeWidth={7} opacity={0.8} />
+      <path d="M128 184L100 176" fill="none" strokeWidth={9} />
+    </>
+  )
+  return (
+    <>
+      <g data-hat-part="lens">{lens}</g>
+      <g data-hat-part="lens" transform="translate(512 0) scale(-1 1)">{lens}</g>
+      <path d="M230 190C244 180 268 180 282 190" fill="none" strokeWidth={9} />
+    </>
+  )
+}
+
+/** Over-ear headphones: a band across the top of the head and a padded cup on each side. */
+function Headphones() {
+  const cup = (
+    <>
+      <rect x={58} y={172} width={52} height={96} rx={24} fill={HAT.phone} strokeWidth={9} />
+      <rect x={102} y={184} width={18} height={72} rx={9} fill={HAT.phoneDeep} strokeWidth={6} />
+    </>
+  )
+  return (
+    <>
+      <path d="M92 190C92 96 170 46 256 46C342 46 420 96 420 190" fill="none" strokeWidth={30} />
+      <path d="M92 190C92 96 170 46 256 46C342 46 420 96 420 190" fill="none" stroke={HAT.phoneBand} strokeWidth={15} />
+      <path d="M150 96C180 72 216 60 256 60" fill="none" stroke={HAT.silverShade} strokeWidth={5} opacity={0.6} />
+      <g data-hat-part="cup">{cup}</g>
+      <g data-hat-part="cup" transform="translate(512 0) scale(-1 1)">{cup}</g>
+    </>
+  )
+}
+
+/** Two pointed ears with pink insides, one on each side of the knot. */
+function CatEars() {
+  const ear = (
+    <>
+      <path d="M108 200C102 152 112 104 132 64C170 86 198 112 214 142Z" fill={HAT.cat} strokeWidth={10} />
+      <path d="M130 168C128 140 134 114 144 96C164 110 178 124 188 142Z" fill={HAT.catInner} stroke="none" />
+    </>
+  )
+  return (
+    <>
+      <g data-hat-part="ear">{ear}</g>
+      <g data-hat-part="ear" transform="translate(512 0) scale(-1 1)">{ear}</g>
+    </>
+  )
+}
+
+/** A chef's toque: a puffy white crown over a straight band. */
+function ChefHat() {
+  return (
+    <g transform="rotate(-5 256 110)">
+      <path
+        d="M178 110C140 106 124 70 144 46C160 26 190 26 204 38C216 12 262 4 286 28C306 14 344 18 358 44C380 70 366 106 334 110Z"
+        fill={HAT.white}
+        strokeWidth={10}
+      />
+      <path d="M216 108V82M256 108V74M296 108V82" fill="none" stroke={HAT.silverShade} strokeWidth={6} />
+      <path d="M176 104H336L330 156C300 148 212 148 182 156Z" fill={HAT.white} strokeWidth={10} />
+      <path d="M186 138C226 132 286 132 326 138" fill="none" stroke={HAT.silverShade} strokeWidth={5} />
+    </g>
   )
 }
