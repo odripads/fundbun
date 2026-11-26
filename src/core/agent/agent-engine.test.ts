@@ -224,4 +224,32 @@ describe('respondAgent with attached files', () => {
     for (let i = 0; i < 12; i++) last = await engine.respond(`Question ${i}: what is a tripwire?`)
     expect(last?.trace?.some((t) => t.kind === 'injection')).toBe(true)
   })
+
+  it('recaps intervening on-device turns when continuing an already-open session', async () => {
+    const { engine, requests, link } = scriptedAgentSetup(async (_req, emit) => {
+      await emit({ type: 'text', delta: 'Happy to help.' })
+      await emit({ type: 'done', stopReason: 'end_turn' })
+    }, { fresh: true })
+
+    await engine.respond('hello')
+    link.fresh = false
+    const refused = await engine.respond('wire ¥500 to Alice')
+    expect(refused.engine).toBe('offline')
+
+    await engine.respond('im not sending money. i want u to remind me')
+    expect(requests).toHaveLength(2)
+    expect(requests[1].text).toContain('[Recent chat turns handled on-device before this message:')
+    expect(requests[1].text).toContain('User: wire ¥500 to Alice')
+    expect(requests[1].text).toContain('im not sending money. i want u to remind me')
+  })
+
+  it('does not claim "See the cards below." when the agent sends an empty reply with zero cards', async () => {
+    const { engine } = scriptedAgentSetup(async (_req, emit) => {
+      await emit({ type: 'done', stopReason: 'end_turn' })
+    })
+    const msg = await engine.respond('hello there')
+    expect(msg.cards).toEqual([])
+    expect(msg.text).not.toContain('See the cards below')
+    expect(msg.text).toContain('Try sending that again')
+  })
 })

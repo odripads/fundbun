@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { PIN, fakeHost } from '../../../tests/helpers/fake-host'
+import type { AgentTurnRequest, AiClient } from '../ai/client'
+import type { AgentEvent } from '../ai/types'
 import { checkGrounding } from '../security/grounding'
 import type { ChatMessage } from '../types'
 import { guardIntent } from './offline-engine'
@@ -312,5 +314,32 @@ describe('maskPinInChat (F13)', () => {
     expect(JSON.stringify(host.state().chat)).not.toContain('2580')
     expect(msg.text).toMatch(/never type your PIN in chat/)
     expect(msg.cards?.some((c) => c.type === 'notice' && c.level === 'warn')).toBe(true)
+  })
+
+  it('routes two-word "trip wire" prompt to the connected agent instead of refusing as a wire transfer', async () => {
+    const { host, engine } = setup()
+    let seen = ''
+    host.agent = () => ({
+      connectionId: 'ai_agent_1',
+      label: 'Kimi Code',
+      sessionKey: 'sess_1',
+      fresh: true,
+      signal: new AbortController().signal,
+      client: {
+        async turn(req: AgentTurnRequest, onEvent: (event: AgentEvent) => void | Promise<void>) {
+          seen = req.text
+          await onEvent({ type: 'text', delta: 'I can set a ¥2,000 tripwire for your spending.' })
+          await onEvent({ type: 'done', stopReason: 'end_turn' })
+        },
+        async toolResult() {
+          return { ok: true }
+        },
+      } as unknown as AiClient,
+    })
+
+    const msg = await engine.respond('ugh i waste like 10k yuan for boba tea this week. can set a trip wire if i spent more than 2k')
+    expect(seen).toContain('trip wire')
+    expect(msg.engine).toBe('llm')
+    expect(msg.text).not.toContain('Sending money to other people')
   })
 })

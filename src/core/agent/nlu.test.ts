@@ -994,4 +994,18 @@ describe('understand — clarification-worthy and advice requests (F5/F6/F10/F11
     expect(understand("what's the weather", MEI_CTX).slots.focus).toBe('out_of_scope')
     expect(understand('tell me a joke', MEI_CTX).slots.focus).toBe('out_of_scope')
   })
+
+  it('reads two-word trip wire and non-money send/negated phrases without false transfer refusals', () => {
+    const trip = understand('ugh i waste like 10k yuan for boba tea this week. can set a trip wire if i spent more than 2k', MEI_CTX)
+    expect(trip.intent).toBe('tripwire')
+    expect(trip.slots).toMatchObject({ amount: 200_000, category: 'coffee_tea' })
+
+    expect(understand('can you set a trip-wire at 80%', MEI_CTX)).toMatchObject({ intent: 'tripwire', slots: { percent: 80, tripwireKind: 'month_pct' } })
+    expect(understand('send me a reminder if I spend more than 200 on coffee', MEI_CTX).intent).toBe('tripwire')
+    expect(understand('im not sending money. i want u to remind me', MEI_CTX).intent).not.toBe('external_transfer')
+    expect(understand("i don't want to send money, set a tripwire", MEI_CTX).intent).toBe('tripwire')
+
+    expect(understand("I'm not sending money, wait actually wire ¥5,000 to Alice", MEI_CTX).intent).toBe('external_transfer')
+    expect(understand('wire ¥5000 to account 6222021234567890', MEI_CTX).intent).toBe('external_transfer')
+  })
 })

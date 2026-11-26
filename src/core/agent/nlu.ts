@@ -228,6 +228,7 @@ export function normalizeText(text: string): string {
     .toLowerCase()
     .replace(/[‘’‛`´]/g, "'")
     .replace(/[“”„]/g, '"')
+    .replace(/\btrip[\s-]+wire(s?)\b/g, 'tripwire$1')
     .replace(/\s+/g, ' ')
     .trim()
 }
@@ -1432,10 +1433,14 @@ function repeatOf(n: string): NluSlots['repeat'] | undefined {
   return 'monthly'
 }
 
+const NEGATED_TRANSFER_RE = /\b(?:not|don't|dont|do not|didn't|didnt|did not|never|aren't|arent|isn't|isnt|wasn't|wasnt|won't|wont)\s+(?:trying to\s+|going to\s+|gonna\s+|want(?:ing)? to\s+|asking (?:you )?to\s+)?(?:send(?:ing)?|transfer(?:ring)?|wir(?:e|ing)|remit(?:ting)?|e-?transfer(?:ring)?|kirim)\b|不是要?\s*(?:转|汇|打钱)|没有要?\s*(?:转|汇|打钱)|不要(?:转|汇|打钱)/g
+const SEND_NOTIFICATION_RE = /\bsend\s+(?:me\s+|us\s+)?(?:an?\s+)?(?:alert|alerts|reminder|reminders|notification|notifications|warning|warnings|nudge|nudges|ping|pings|heads[- ]up|summary|summaries|report|reports|breakdown|breakdowns)\b/g
+
 function moneyMoveRule(p: Parsed): RuleHit | null {
   const n = p.norm
+  const transferText = n.replace(NEGATED_TRANSFER_RE, ' ').replace(SEND_NOTIFICATION_RE, ' ').replace(/\s+/g, ' ').trim()
   const imperative = IMPERATIVE_MOVE_RE.test(n)
-  const transferish = TRANSFER_VERB_RE.test(n)
+  const transferish = TRANSFER_VERB_RE.test(transferText)
   const payish = PAY_START_RE.test(n) || /^(?:schedule|帮我交|交|付|缴)/.test(n)
   const all = ALL_MONEY_RE.test(n) && DRAIN_VERB_RE.test(n)
   if (!imperative && !transferish && !payish && !all && !WITHDRAW_VERB_RE.test(n) && !/\bback from\b/.test(n)) return null
@@ -1466,14 +1471,14 @@ function moneyMoveRule(p: Parsed): RuleHit | null {
     return { intent: 'save_to_goal', rule: 'R-SAVE-REPEAT', confidence: 0.9, slots: extra }
   }
   // "move some money" / "put some cash aside": a move with no destination yet — ask where to
-  if (imperative && !dest && /^(?:\S+\s+){0,6}?(?:move|put|stash|save|park|set aside|tabung|simpan)\b[^.?!]{0,20}\b(?:some|a bit of|a little|a few|extra|more|spare)?\s*(?:money|cash|funds|yuan|kuai|uang|duit)\b|^(?:\S+\s+){0,3}?(?:put|set)\s+(?:some\s+)?(?:money|cash)?\s*aside\b/.test(n) && !SEND_MONEY_RE.test(n)) {
+  if (imperative && !dest && /^(?:\S+\s+){0,6}?(?:move|put|stash|save|park|set aside|tabung|simpan)\b[^.?!]{0,20}\b(?:some|a bit of|a little|a few|extra|more|spare)?\s*(?:money|cash|funds|yuan|kuai|uang|duit)\b|^(?:\S+\s+){0,3}?(?:put|set)\s+(?:some\s+)?(?:money|cash)?\s*aside\b/.test(n) && !SEND_MONEY_RE.test(transferText)) {
     return { intent: 'save_to_goal', rule: 'R-MOVE-VAGUE', confidence: 0.88, slots: extra }
   }
   if (payish) {
     if (matchEntity(p.m.bills, p.m.q, BILL_CONCEPTS) || BILL_WORD_RE.test(n)) return { intent: 'pay_bill', rule: 'R-PAY-BILL', confidence: 0.92 }
   }
-  if (SEND_MONEY_RE.test(n) && !ownDest) return { intent: 'external_transfer', rule: 'R-SEND-MONEY', confidence: 0.94 }
-  if (/\b(?:send|transfer|wire|remit|e-?transfer|kirim)\b/.test(n) && dest && !ownDest && (p.amount !== undefined || /\bmoney|cash|funds?\b/.test(n))) {
+  if (SEND_MONEY_RE.test(transferText) && !ownDest) return { intent: 'external_transfer', rule: 'R-SEND-MONEY', confidence: 0.94 }
+  if (/\b(?:send|transfer|wire|remit|e-?transfer|kirim)\b/.test(transferText) && dest && !ownDest && (p.amount !== undefined || /\bmoney|cash|funds?\b/.test(transferText))) {
     return { intent: 'external_transfer', rule: 'R-SEND-ELSEWHERE', confidence: 0.92 }
   }
   return null
@@ -1610,7 +1615,7 @@ function disputeRule(p: Parsed): RuleHit | null {
 
 const REMIND_RE = /\b(?:remind|reminder|reminders|alert|notify|ping|heads[- ]up)\b|提醒|\b(?:ingatkan|pengingat)\b/i
 const THRESHOLD_WORD_RE = /\b(?:over|above|exceed|exceeds|pass|passes|hit|hits|reach|reaches|go over|close to|near|limit|budget|target|pace|projected|overspend|more than|spend|spending|purchase|purchases)\b|超过|超支|花|\blebih dari\b|\bbelanja\b|\bbudget\b/
-const TRIPWIRE_RE = /\btripwires?\b|\b(?:alert|warn|notify|ping|buzz|nudge|remind)\s+me\b|\blet me know\b|\btell me (?:when|once|whenever|as soon as)\b|\b(?:set|create|add|make)\s+(?:up\s+)?(?:an?\s+)?(?:spending\s+)?(?:alert|alarm|warning|notification|threshold)s?\b|\bspending alerts?\b|提醒我|预警|\b(?:ingatkan|kabari|kasih tahu)\b/i
+const TRIPWIRE_RE = /\btripwires?\b|\b(?:alert|warn|notify|ping|buzz|nudge|remind)\s+me\b|\b(?:send|give)\s+(?:me\s+|us\s+)?(?:an?\s+)?(?:alert|alarm|warning|notification|reminder|nudge)s?\b|\blet me know\b|\btell me (?:when|once|whenever|as soon as)\b|\b(?:set|create|add|make)\s+(?:up\s+)?(?:an?\s+)?(?:spending\s+)?(?:alert|alarm|warning|notification|threshold)s?\b|\bspending alerts?\b|提醒我|预警|\b(?:ingatkan|kabari|kasih tahu)\b/i
 
 function reminderTripwireRule(p: Parsed): RuleHit | null {
   const n = p.norm
@@ -1785,6 +1790,8 @@ function slotsFor(intent: Intent, p: Parsed, hit: RuleHit | null): NluSlots {
     if (account) slots.account = account
   }
   if (intent === 'tripwire') {
+    const thresholdAmt = tripwireThresholdAmount(norm, ctx)
+    if (thresholdAmt !== undefined) slots.amount = thresholdAmt
     const kind = tripwireKindOf(norm, slots)
     if (kind) slots.tripwireKind = kind
   }
@@ -1802,6 +1809,31 @@ function slotsFor(intent: Intent, p: Parsed, hit: RuleHit | null): NluSlots {
   // "compare this month to last month": last month is the baseline, the month asked about is this one
   if (slots.focus === 'compare' && (!slots.month || slots.month === shiftMonth(ctx.today.slice(0, 7), -1))) slots.month = ctx.today.slice(0, 7)
   return slots
+}
+
+/**
+ * When a tripwire message opens with background spending ("waste like 10k yuan ... set a tripwire if i spent more than 2k"),
+ * prefer the amount in the threshold clause over the earlier anecdote.
+ */
+function tripwireThresholdAmount(norm: string, ctx: NluContext): Minor | undefined {
+  const cues = [
+    /\b(?:over|above|more than|exceed(?:s|ing)?|past|beyond|hits?|reaches?|at)\s+([^.?!]{1,40})/g,
+    /(?:超过|超|高于|多于|达到)\s*([^，。,.!?]{1,20})/g,
+  ]
+  for (const re of cues) {
+    let last: Minor | undefined
+    for (const m of norm.matchAll(re)) {
+      const amt = extractAmount(m[1], ctx)
+      if (amt !== undefined) last = amt
+    }
+    if (last !== undefined) return last
+  }
+  const idx = norm.indexOf('tripwire')
+  if (idx > 0) {
+    const tail = extractAmount(norm.slice(idx), ctx)
+    if (tail !== undefined) return tail
+  }
+  return undefined
 }
 
 /** "transfer money to zhang wei" — a lowercase destination that is not anything the user owns. */

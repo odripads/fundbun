@@ -118,8 +118,9 @@ const obj = (v: unknown): JsonObject => (v && typeof v === 'object' && !Array.is
 const id = (prefix: string) => `${prefix}_${randomBytes(8).toString('hex')}`
 const list = (v: unknown, max: number): unknown[] => (Array.isArray(v) ? v.slice(0, max) : [])
 
-/** The text of an ACP content block ({type:'text', text}); other kinds are named, not shown. */
+/** The text of an ACP content block ({type:'text', text} or an array of blocks); other kinds are omitted. */
 function blockText(content: unknown): string {
+  if (Array.isArray(content)) return content.map((item) => blockText(item)).join('')
   const c = obj(content)
   if (c.type === 'text' && typeof c.text === 'string') return c.text
   return ''

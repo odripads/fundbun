@@ -8,7 +8,7 @@ import { attachmentBlocks } from './attachments'
 import type { AgentHost, AgentLink } from './host'
 import { fallback, finish, namesOf, toolResult, type LlmReply, type ReadResult } from './llm-engine'
 import { toneOf } from './offline-engine'
-import { PROMPT_VERSION, buildAgentPreamble } from './prompts'
+import { PROMPT_VERSION, buildAgentPreamble, sanitizeField } from './prompts'
 import { TOOL_SPECS, isToolName } from './specs'
 import { currencyOf } from './support'
 import { addNotice, trace, type Turn } from './turn'
@@ -31,7 +31,14 @@ export async function respondAgent(host: AgentHost, turn: Turn, text: string, li
   // a long message is a paste (a bill, a statement): data, not instructions — as for an API model
   const asked = text.length > 400 ? wrapUntrusted('pasted-text', text) : text
   // attached files go along as data, each one wrapped: the agent reads them, it never takes orders from them
-  const body = files.length ? `${asked}\n\n${attachmentBlocks(files)}` : asked
+  const rawBody = files.length ? `${asked}\n\n${attachmentBlocks(files)}` : asked
+  // turns handled on-device while this ACP session was already open (refusals, preset shortcuts, UI cards) never
+  // reached the agent: pass a sanitized recap so follow-ups keep their context
+  const missed = !link.fresh ? missedOnDeviceMessages(host, text) : []
+  const recap = missed.length
+    ? `[Recent chat turns handled on-device before this message:\n${missed.map((m) => `${m.role === 'user' ? 'User' : 'Bun'}: ${m.text}`).join('\n')}\n]\n\n`
+    : ''
+  const body = `${recap}${rawBody}`
   const redacted = redactDeep({ text: body }, names)
   trace(turn, 'redaction', 'Message redacted before it goes to the agent', { counts: redacted.counts })
   host.audit('agent', 'llm_request', `Agent request (${link.label})`, {
@@ -144,4 +151,23 @@ function earlierMessages(host: AgentHost, current: string): { role: 'user' | 'as
   // the user's message for this turn is already in the chat: leave it out
   const upTo = chat.length && chat[chat.length - 1].role === 'user' && chat[chat.length - 1].text === current ? chat.length - 1 : chat.length
   return chat.slice(Math.max(0, upTo - 6), upTo).map((m) => ({ role: m.role as 'user' | 'assistant', text: m.text.slice(0, 400) }))
+}
+
+/** Intervening user/assistant turns handled on-device since the agent's last reply in this chat. */
+function missedOnDeviceMessages(host: AgentHost, current: string): { role: 'user' | 'assistant'; text: string }[] {
+  const chat = host.state().chat.filter((m) => (m.role === 'user' || m.role === 'assistant') && m.text.trim())
+  const upTo = chat.length && chat[chat.length - 1].role === 'user' && chat[chat.length - 1].text === current ? chat.length - 1 : chat.length
+  const slice = chat.slice(0, upTo)
+  let lastLlm = -1
+  for (let i = slice.length - 1; i >= 0; i--) {
+    if (slice[i].role === 'assistant' && slice[i].engine === 'llm') {
+      lastLlm = i
+      break
+    }
+  }
+  const missed = lastLlm >= 0 ? slice.slice(lastLlm + 1) : slice.slice(Math.max(0, slice.length - 6))
+  return missed
+    .slice(-6)
+    .map((m) => ({ role: m.role as 'user' | 'assistant', text: sanitizeField(m.text, 400) }))
+    .filter((m) => m.text.length > 0)
 }

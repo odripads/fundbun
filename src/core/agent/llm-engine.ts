@@ -244,7 +244,10 @@ export function finish(host: AgentHost, turn: Turn, userText: string, raw: strin
   let text = raw.replace(TAG_RE, '').replace(UNTRUSTED_REMINDER, '')
   // a formatted answer keeps its line breaks and indentation (code); a chat line is tidied to single spaces
   text = (rich ? text.replace(/[ \t]+$/gm, '') : text.replace(/[ \t]+/g, ' ')).trim()
-  if (!text) text = offlineSummary(host, turn, reads)
+  if (!text) {
+    trace(turn, 'llm', 'Model returned an empty reply', {})
+    text = offlineSummary(host, turn, reads)
+  }
   const grounding = (reply: string) => checkGrounding(reply, [turn.sources, userText], currencyOf(state), { moneyOnly: general })
   const report = grounding(text)
   trace(turn, 'grounding', report.ok ? `Grounded: ${report.checked} numbers checked` : `Ungrounded numbers: ${report.ungrounded.join(', ')}`, report)
@@ -292,14 +295,18 @@ function guardClaims(host: AgentHost, turn: Turn, text: string): string {
   return `${text} Nothing happens until you approve it on the card.`
 }
 
-/** A number-safe reply built from this turn's tool results (closest intent), or a neutral line. */
+/** A number-safe reply built from this turn's tool results (closest intent), or an honest empty-reply prompt. */
 function offlineSummary(host: AgentHost, turn: Turn, reads: ReadResult[]): string {
   const state = host.state()
   const first = reads[0]
   const intent = first ? TOOL_INTENT[first.tool] : undefined
   if (first && intent) return composeReply(intent, readFacts(first.tool, first.data, state), toneOf(state))
   if (turn.proposals.length) return 'I’ve prepared that for you. Check the card below; nothing happens until you approve it.'
-  return 'Here’s what I found. See the cards below.'
+  if (turn.cards.length) return 'Here’s what I found. See the cards below.'
+  const lang = turn.lang ?? 'en'
+  if (lang === 'zh') return '模型这次没有返回完整回复。请再发一次，或告诉我你想查询的内容或想设置的提醒。'
+  if (lang === 'id') return 'Model tidak mengembalikan jawaban lengkap barusan. Coba kirim lagi, atau beri tahu pengingat atau ringkasan yang kamu mau.'
+  return 'I didn’t get a full reply back from the model just now. Try sending that again, or tell me what you’d like me to check or set up.'
 }
 
 export function fallback(host: AgentHost, turn: Turn, text: string, e: unknown, reads: ReadResult[]): LlmReply {
