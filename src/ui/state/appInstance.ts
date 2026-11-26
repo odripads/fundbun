@@ -65,7 +65,9 @@ export function applyBootParams(app: FundBunApp, loc: Location | undefined = glo
   if (persona === 'mei' || persona === 'arif') app.loadDemo(persona)
   try {
     const hash = loc.hash || (demo ? '#/home' : '#/onboarding')
-    globalThis.history?.replaceState(null, '', `${loc.pathname}${hash}`)
+    // on static builds (?demo= / ?reset=), keep ?play=1 so browser refresh stays in the app instead of hitting bare-root redirects
+    const keepQuery = isStaticBuild() ? '?play=1' : ''
+    globalThis.history?.replaceState(null, '', `${loc.pathname}${keepQuery}${hash}`)
   } catch {
     // history can be unavailable in sandboxed frames — harmless
   }

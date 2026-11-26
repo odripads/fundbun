@@ -28,8 +28,42 @@ export function CreatorSection() {
   const lookLines = describeShellAppearance(look)
   const customLook = !isDefaultShellAppearance(look)
 
-  // the hosted site has no plugin engine: the section is not shown at all
-  if (!st.local) return null
+  // the hosted site has no desktop plugin daemon: hide Creator Mode unless a web visitor restyled the shell
+  if (!st.local && !customLook) return null
+
+  if (!st.local) {
+    return (
+      <section id="set-creator" aria-labelledby="set-creator-h" className={styles.section}>
+        <SectionHeader id="set-creator-h" eyebrow="Appearance" title="Shell appearance" />
+        <Card padding="none">
+          <div className={styles.consentRow} data-shell-appearance="custom">
+            <span className={styles.rowIcon} aria-hidden="true"><Palette /></span>
+            <span className={styles.consentText}>
+              <span className={styles.consentTitle}>Shell appearance</span>
+              <span className={styles.consentSub}>
+                These changes are on. They only restyle the app: your money, PIN and permissions are untouched.
+              </span>
+            </span>
+            <Badge variant="accent" size="sm">Custom</Badge>
+          </div>
+          {lookLines.map((l) => (
+            <div key={l.kind} className={styles.consentRow} data-shell-row={l.kind}>
+              {l.kind === 'mascot' ? <BunMascot size={40} animated={false} /> : null}
+              <span className={styles.consentText}>
+                <span className={styles.consentSub}>{l.label}</span>
+                <span className={styles.consentTitle}>{l.value}</span>
+              </span>
+            </div>
+          ))}
+          <div className={styles.toggleRow}>
+            <Button size="sm" variant="secondary" iconStart={<RotateCcw />} onClick={() => resetShellAppearance()}>
+              Reset Shell Appearance
+            </Button>
+          </div>
+        </Card>
+      </section>
+    )
+  }
 
   const after = async (r: { ok: boolean; error?: string }) => {
     setBusy(null)

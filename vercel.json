@@ -4,6 +4,17 @@
   "installCommand": "npm install",
   "buildCommand": "npm run build:vercel",
   "outputDirectory": "dist",
+  "redirects": [
+    {
+      "source": "/",
+      "missing": [
+        { "type": "query", "key": "demo" },
+        { "type": "query", "key": "play" }
+      ],
+      "destination": "https://www.kalcerinstitute.com/fundbun",
+      "permanent": false
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",

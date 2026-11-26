@@ -243,6 +243,7 @@ describe('vercel.json (the Vercel deployment)', () => {
     framework: null
     buildCommand: string
     outputDirectory: string
+    redirects?: { source: string; missing?: { type: string; key: string }[]; destination: string; permanent: boolean }[]
     headers: { source: string; headers: { key: string; value: string }[] }[]
   }
   const headersFor = (source: string) => Object.fromEntries((vercel.headers.find((h) => h.source === source)?.headers ?? []).map((h) => [h.key, h.value]))
@@ -251,6 +252,19 @@ describe('vercel.json (the Vercel deployment)', () => {
     expect(vercel.framework).toBeNull()
     expect(vercel.buildCommand).toBe('npm run build:vercel')
     expect(vercel.outputDirectory).toBe('dist')
+  })
+
+  it('redirects bare / to www.kalcerinstitute.com/fundbun while letting ?demo= and ?play= open the app', () => {
+    const rootRedirect = vercel.redirects?.find((r) => r.source === '/')
+    expect(rootRedirect).toMatchObject({
+      source: '/',
+      destination: 'https://www.kalcerinstitute.com/fundbun',
+      permanent: false,
+      missing: [
+        { type: 'query', key: 'demo' },
+        { type: 'query', key: 'play' },
+      ],
+    })
   })
 
   it('sends the same CSP as the <meta> tag, plus frame-ancestors (headers only)', () => {

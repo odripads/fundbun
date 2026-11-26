@@ -314,28 +314,54 @@ const OFFLINE_IDEAS = ['Make it matcha', 'Give Bun a wizard hat', 'Bigger text']
  * The offline and direct path: a chat message such as "change the theme to midnight, put a kamen rider helmet on
  * Bun and rename FundBun to #ilovemoney" is read on this device with no model and answered with a preview card.
  *
- * AI first: while an AI is connected (`ai`), only a message that is entirely built-in presets, known colour words,
- * ergonomics or resets is answered here. Anything with a word left over, a creative ask ("design", "custom",
- * "a tracker card") or a part outside the built-ins returns null, so the turn goes to the connected AI, which
- * holds both propose_shell_appearance (custom palette, custom costume, ergonomics, name) and plugin_draft.
- * With no AI connected everything the reader knows is handled here, and the rest gets a pointer to connect one.
+ * AI first: while on desktop with Creator Mode on and an AI connected (`ai`), only a message that is entirely
+ * built-in presets, known colour words, ergonomics or resets is answered here. Anything with a word left over,
+ * a creative ask ("design", "custom", "a tracker card") or a part outside the built-ins returns null, so the
+ * turn goes to the connected AI, which holds both propose_shell_appearance and plugin_draft.
  *
- * Returns null (so the usual engines answer) when the message is not about the look, or when this is not the
- * desktop app. With Creator Mode off it says so and stages nothing. A turn that carries untrusted content, or a
- * paused Bun, still shows the preview but with Apply blocked, under the same rules as the other Creator tools.
+ * On the hosted web demo (`!client` or `!st.local`), offline Shell Appearance restyling (themes, synthesized
+ * palettes, built-in hats, ergonomics, app name, resets) still works on-device behind the same Apply/Undo preview
+ * card and taint/kill-switch gate, while requests needing a desktop AI return null for the normal engine.
  */
 export async function respondShellAppearance(host: AgentHost, turn: Turn, text: string, opts: { ai?: boolean } = {}): Promise<ShellAppearanceReply | null> {
   const reading = readShellAppearancePrompt(text)
   if (!reading) return null
   const client = host.plugins
-  if (!client) return null
-  const st = await client.state(1500)
-  if (!st.local) return null
+  const st = client ? await client.state(1500) : null
+  const isDesktop = Boolean(st?.local)
 
+  if (!isDesktop) {
+    if (!reading.patch) return null
+    const checked = validateShellAppearancePatch(reading.patch)
+    if (!checked.ok) return null
+    trace(turn, 'intent', 'Shell appearance request, read on this device (web preview)', {
+      act: 'shell_appearance',
+      engine: 'offline',
+      fields: Object.keys(checked.patch),
+      issues: reading.issues,
+    })
+    for (const issue of reading.issues) addNotice(turn, 'warn', 'Outside the limits', issue, `look:${issue}`)
+    const gate = shellAppearanceGate({ tainted: turn.tainted, frozen: host.state().mandate.frozen })
+    if (!gate.allowed) {
+      trace(turn, 'policy', 'DENY · propose_shell_appearance', { tool: 'propose_shell_appearance', decision: 'deny', reasons: [gate.reason], ruleIds: [gate.ruleId], tainted: turn.tainted })
+      host.audit('policy', 'policy_decision', `DENY propose_shell_appearance (${gate.ruleId})`, { tool: 'propose_shell_appearance', decision: 'deny', ruleIds: [gate.ruleId], tainted: turn.tainted })
+      addNotice(turn, 'block', 'Look change blocked', gate.reason)
+      stageShellAppearance(host, turn, checked.patch, 'user', gate.reason)
+      return { text: 'Here is what that would look like, but I cannot apply it right now.', intent: 'shell_appearance', suggestions: [] }
+    }
+    stageShellAppearance(host, turn, checked.patch, 'user')
+    return {
+      text: 'Here is a preview. Nothing changes until you press Apply, and you can undo it at once.',
+      intent: 'shell_appearance',
+      suggestions: checked.patch.reset ? [] : ['Reset appearance'],
+    }
+  }
+
+  const creatorOn = Boolean(st?.enabled)
   const connected = Boolean(host.agent?.() || host.llm())
   // `ai` is whether an AI answers this turn: the caller turns it off for turns the on-device engine must take
   const ai = opts.ai ?? connected
-  if (ai && st.enabled && !isExactShellAppearanceReading(reading)) {
+  if (ai && creatorOn && !isExactShellAppearanceReading(reading)) {
     trace(turn, 'intent', 'Look request goes to your AI: it asks for more than a built-in preset', {
       act: 'shell_appearance',
       engine: 'llm',
@@ -355,7 +381,7 @@ export async function respondShellAppearance(host: AgentHost, turn: Turn, text: 
     fields: reading.patch ? Object.keys(reading.patch) : [],
     issues: reading.issues,
   })
-  if (!st.enabled) {
+  if (!creatorOn) {
     addNotice(turn, 'info', 'Creator Mode is off', 'Changing the theme, what Bun wears, the text size or the app name is part of Creator Mode. Turn it on in Settings (it asks for your PIN), then ask again.')
     trace(turn, 'policy', 'DENY · propose_shell_appearance', { tool: 'propose_shell_appearance', decision: 'deny', ruleIds: ['P-CREATOR-OFF'], tainted: turn.tainted })
     return { text: 'I can restyle the app once Creator Mode is on. Nothing changed.', intent: 'shell_appearance', suggestions: [] }

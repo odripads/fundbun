@@ -510,4 +510,22 @@ describe('adaptive shell: built-in wardrobe, custom costumes and ergonomics', ()
     expect(storedLook()).toBeNull()
     expect(container.querySelector('[data-shell-appearance]')?.getAttribute('data-shell-appearance')).toBe('default')
   })
+
+  it('hides Creator Mode on web by default, and offers Reset Shell Appearance once restyled', async () => {
+    const app = demo()
+    const status: EngineStatus = { ready: true, app }
+    const def = await render(h(AppProvider, { status, children: h(CreatorSection) }))
+    await flush()
+    expect(def.container.textContent).toBe('')
+    await cleanup()
+
+    applyShellAppearancePatchNow({ theme: 'cyberpunk', mascotHat: 'wizard', appName: '#ilovemoney' })
+    const custom = await render(h(AppProvider, { status, children: h(CreatorSection) }))
+    await flush()
+    expect(custom.container.querySelector('[data-shell-appearance]')?.getAttribute('data-shell-appearance')).toBe('custom')
+    expect(custom.container.querySelector('[data-shell-row="theme"]')?.textContent).toContain('Cyberpunk')
+    await click(byText(custom.container, 'Reset Shell Appearance', 'button'))
+    expect(storedLook()).toBeNull()
+    expect(custom.container.textContent).toBe('')
+  })
 })

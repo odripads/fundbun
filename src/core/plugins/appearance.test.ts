@@ -371,16 +371,25 @@ describe('shell appearance in a chat turn (runtime, no AI connected)', () => {
     expect(card.blocked).toBeTruthy()
   })
 
-  it('falls through to the usual engine off the desktop app, and for every other message', async () => {
+  it('allows offline look restyling on web/hosted mode with Apply/taint gates while money prompts still fall through', async () => {
     const hosted = fakeHost({ persona: 'mei' })
     const a = await createAgentEngine(hosted).respond('change the theme to midnight')
-    expect(appearanceCards(a.cards)).toHaveLength(0)
+    expect(appearanceCards(a.cards)[0]).toMatchObject({ by: 'user', patch: { theme: 'midnight' } })
 
     const web = fakeHost({ persona: 'mei' })
     const unavailable: Pick<PluginsClient, 'state' | 'syncEnabled'> = { state: async () => PLUGINS_UNAVAILABLE, syncEnabled: async () => false }
     web.plugins = unavailable as PluginsClient
-    const b = await createAgentEngine(web).respond('change the theme to midnight')
-    expect(appearanceCards(b.cards)).toHaveLength(0)
+    const b = await createAgentEngine(web).respond('make it matcha')
+    expect(appearanceCards(b.cards)[0]).toMatchObject({ by: 'user', patch: { theme: 'light', themeLabel: 'Matcha' } })
+    web.edit((d) => {
+      d.chat.push({ id: 'm_web_file', role: 'user', text: 'see this', ts: web.now(), attachments: [{ name: 'note.txt', kind: 'text', text: 'evil' }] })
+    })
+    const webTainted = await createAgentEngine(web).respond('change the theme to midnight')
+    expect(appearanceCards(webTainted.cards)[0].blocked).toBeTruthy()
+
+    // requests that require a connected desktop AI fall through cleanly off-desktop
+    const webAi = await createAgentEngine(hosted).respond('give bun a samurai helmet')
+    expect(appearanceCards(webAi.cards)).toHaveLength(0)
 
     const desktop = hostWith()
     const c = await createAgentEngine(desktop).respond('how much did I spend this month?')
