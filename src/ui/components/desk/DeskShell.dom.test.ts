@@ -1,11 +1,14 @@
 // @vitest-environment jsdom
 import { act, createElement as h } from 'react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createTestApp, memoryStorage, type FundBunApp } from '../../../core/app'
+import { DEMO_PIN, createTestApp, memoryStorage, type FundBunApp } from '../../../core/app'
+import { PluginsClient } from '../../../core/plugins/client'
+import type { PluginsState } from '../../../core/plugins/types'
 import { App, firstScreenChunks, preloadScreens, SCREENS } from '../../App'
 import { resetDashLayout } from '../../screens/home/layoutPrefs'
 import type { EngineStatus } from '../../state'
 import { byLabel, byText, cleanup, click, flush, render } from '../ds/testing'
+import { resetPluginsStore } from '../plugins/pluginStore'
 import { PANEL_OPEN_KEY, VIEW_STORAGE_KEY, setViewPreference } from './useDeskMode'
 
 function demo(id: 'mei' | 'arif'): FundBunApp {
@@ -51,6 +54,7 @@ afterEach(async () => {
   delete (window as { matchMedia?: unknown }).matchMedia
   localStorage.clear()
   resetDashLayout()
+  resetPluginsStore()
   window.history.replaceState(null, '', '#')
 })
 
@@ -345,5 +349,85 @@ describe('desk dashboard mode toggle & customize blocks', () => {
     await click(byText(main, 'Done', 'button'))
     await flush()
     expect([...main.querySelectorAll('[data-card]')].map((c) => c.getAttribute('data-card'))).toEqual(CARDS)
+  })
+})
+
+function localPluginsClient(initialEnabled = false): { client: PluginsClient; state: PluginsState } {
+  const state: PluginsState = { local: true, enabled: initialEnabled, plugins: [], starters: [] }
+  const jsonResponse = (body: unknown) =>
+    Promise.resolve(new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+  const fetchImpl: typeof fetch = (input, init) => {
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+    if (url.endsWith('/plugins/state')) return jsonResponse(state)
+    if (url.endsWith('/plugins/mode') && init?.method === 'POST') {
+      const parsed = JSON.parse(String(init.body ?? '{}')) as { enabled?: unknown }
+      state.enabled = parsed.enabled === true
+      return jsonResponse({ ok: true, state })
+    }
+    return Promise.resolve(new Response(JSON.stringify({ message: 'Unexpected route' }), { status: 404, headers: { 'Content-Type': 'application/json' } }))
+  }
+  return { client: new PluginsClient('/api', fetchImpl), state }
+}
+
+describe('desk sidebar quick controls', () => {
+  it('toggles Goal & Mirror and Daily tracking directly from the sidebar box', async () => {
+    const app = demo('mei')
+    const { container } = await renderAt('#/home', app)
+    const box = container.querySelector('[data-slot="sidebar-controls"]')!
+    const main = container.querySelector('main')!
+    expect(box).not.toBeNull()
+    expect(main.querySelector('[data-card="hero"]')).not.toBeNull()
+
+    await click(byText(box, 'Daily tracking', '[role="radio"]'))
+    await flush()
+    expect(app.getSnapshot().state.profile?.mode).toBe('tracking')
+    expect(main.querySelector('[data-card="hero"]')).toBeNull()
+
+    await click(byText(box, 'Goal & Mirror', '[role="radio"]'))
+    await flush()
+    expect(app.getSnapshot().state.profile?.mode).toBe('target')
+    expect(main.querySelector('[data-card="hero"]')).not.toBeNull()
+  })
+
+  it('opens the Change AI model sheet from the sidebar box', async () => {
+    const { container } = await renderAt('#/home', demo('mei'))
+    const box = container.querySelector('[data-slot="sidebar-controls"]')!
+    await click(byText(box, /Change AI model/i, 'button'))
+    await flush()
+    const sheet = document.querySelector('[role="dialog"]')!
+    expect(sheet).not.toBeNull()
+    expect(sheet.textContent).toContain('Your AI')
+  })
+
+  it('turns Creator Mode on with the PIN sheet and off in one click from the sidebar box', async () => {
+    const { client, state } = localPluginsClient(false)
+    const app = createTestApp({ storage: memoryStorage(), plugins: client })
+    app.loadDemo('mei')
+    const { container } = await renderAt('#/home', app)
+    await flush(30)
+
+    const box = container.querySelector('[data-slot="sidebar-controls"]')!
+    const toggle = byLabel(box, 'Creator Mode')!
+    expect(toggle).not.toBeNull()
+    expect(toggle.getAttribute('aria-checked')).toBe('false')
+
+    await click(toggle)
+    await flush()
+    const pinSheet = document.querySelector('[role="dialog"]')!
+    expect(pinSheet.textContent).toContain('Turn on Creator Mode')
+
+    for (const digit of DEMO_PIN) {
+      await click(byText(pinSheet, digit, 'button'))
+    }
+    await click(byLabel(pinSheet, 'Confirm PIN'))
+    await flush(40)
+
+    expect(state.enabled).toBe(true)
+    expect(byLabel(box, 'Creator Mode')!.getAttribute('aria-checked')).toBe('true')
+
+    await click(byLabel(box, 'Creator Mode'))
+    await flush(40)
+    expect(state.enabled).toBe(false)
+    expect(byLabel(box, 'Creator Mode')!.getAttribute('aria-checked')).toBe('false')
   })
 })

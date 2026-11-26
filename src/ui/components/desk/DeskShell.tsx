@@ -17,6 +17,7 @@ import { ShellActions } from '../layout/ShellActions'
 import { SteamBackdrop } from '../layout/SteamBackdrop'
 import { DeskActionsContext, type DeskActions } from './deskActions'
 import { DESK_NAV, chatTabName, longDate } from './deskModel'
+import { SidebarControls } from './SidebarControls'
 import { readPanelOpen, readPanelTab, setViewPreference, usePanelDocked, writePanelOpen, writePanelTab, type DeskPanelTab } from './useDeskMode'
 import styles from './DeskShell.module.css'
 
@@ -220,6 +221,8 @@ export function DeskShell({ route, title, parent, pageKey, column = false, await
               </div>
 
               <div className={styles.sideSpacer} />
+
+              <SidebarControls />
 
               <div className={styles.sideFooter} data-slot="sidebar-footer">
                 {sidebarFooter ?? (

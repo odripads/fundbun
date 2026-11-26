@@ -94,7 +94,8 @@
     justify-content: center;
   }
 
-  .sideFooter {
+  .sideFooter,
+  .sideControls {
     display: none;
   }
 
@@ -270,6 +271,165 @@
 
 .sideFooter:empty {
   display: none;
+}
+
+.sideControls {
+  display: grid;
+  gap: var(--s-2);
+  margin: 0 var(--s-1);
+  padding: var(--s-2);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--surface) 78%, transparent);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.sideModeGroup {
+  display: grid;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--r-sm);
+  background: var(--bg-sunken);
+}
+
+.sideModeBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  width: 100%;
+  min-height: 28px;
+  padding: 4px var(--s-2);
+  border: 0;
+  border-radius: calc(var(--r-sm) - 2px);
+  background: transparent;
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: start;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-2) var(--ease-out),
+    color var(--dur-2) var(--ease-out);
+}
+
+.sideModeBtn svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+}
+
+.sideModeBtn:hover {
+  color: var(--text);
+}
+
+.sideModeBtnActive {
+  background: var(--accent-soft);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 38%, transparent);
+  font-weight: 700;
+}
+
+.sideModeBtnActive svg {
+  color: var(--accent-text);
+}
+
+.sideModeBtn:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+.sideModelBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  width: 100%;
+  min-height: 40px;
+  padding: 5px var(--s-2);
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text);
+  text-align: start;
+  cursor: pointer;
+  transition: background-color var(--dur-2) var(--ease-out);
+}
+
+.sideModelBtn:hover {
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+}
+
+.sideModelBtn:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+.sideModelIcon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  color: var(--text-2);
+}
+
+.sideModelIcon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.sideModelText {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 1px;
+}
+
+.sideModelTitle {
+  font-size: var(--fs-xs);
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+.sideModelSub {
+  overflow: hidden;
+  color: var(--text-3);
+  font-size: 11px;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sideModelChevron {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  color: var(--text-3);
+}
+
+.sideCreatorRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-2) 2px;
+  border-top: 1px solid var(--border);
+}
+
+.sideCreatorLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 0;
+  color: var(--text);
+  font-size: var(--fs-xs);
+  font-weight: 650;
+}
+
+.sideCreatorLabel svg {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  color: var(--text-2);
 }
 
 /* the placeholder for the slot: which engine answers, in the app's own words */
