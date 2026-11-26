@@ -8,8 +8,10 @@ You are helping **Odri** (Odri Prince Sembiring, UGM, Indonesia) finish and pres
 **2026 Shenzhen International FinTechathon** (Shenzhen University × WeBank, 8th edition), International
 Track, Topic A (personal-finance AI agent). FundBun is a **Top 10 Finalist**: never claim it won anything.
 
-This file replaces the memory Odri's previous assistant had. Claude is not available in mainland China,
-so you (OpenCode: `logic` agent = DeepSeek, `ui` agent = Kimi) are the coding helper during the final.
+This file replaces the memory Odri's previous assistant had. Claude and Antigravity are not reliable in
+mainland China, so T3 Code runs on **Kimi Code** (`acpRegistry_kimi_code`) during the final:
+- **Orchestrator** (planner, reviewer, strategy): **K3.1 Pro** (`kimi-code/k3.1-pro`, `thinking: "high"`).
+- **Worker** (delegated coding/build/test tasks via `delegate_task`): **K2.7 Code Highspeed** (`kimi-code/kimi-for-coding-highspeed`, `mode: "yolo"`), or **K3.1 Pro Highspeed** (`kimi-code/k3.1-pro-highspeed`) when an urgent complex task needs extra intelligence at high speed.
 
 ## 1. The team
 - **Odri**: team leader, the only person attending and competing in Shenzhen. Talk to Odri directly,
