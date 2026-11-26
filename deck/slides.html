@@ -2,12 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>FundBun pitch deck</title>
+<title>FundBun final round deck</title>
 <meta name="viewport" content="width=1920">
 <link rel="stylesheet" href="deck.css">
 </head>
 <body>
-<!-- icons: lucide (same set the app uses), inlined as symbols -->
+<!-- 2026 FinTechathon final round, 29 Nov 2026: 15 slides for a 15-minute pitch and 5 minutes of questions.
+     Icons: lucide (the same set the app uses), inlined as symbols. -->
 <svg class="sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
   <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></symbol>
   <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></symbol>
@@ -53,9 +54,28 @@
   <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
   <symbol id="i-route" viewBox="0 0 24 24"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></symbol>
   <symbol id="i-file-code" viewBox="0 0 24 24"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 12.5 8 15l2 2.5"/><path d="m14 12.5 2 2.5-2 2.5"/></symbol>
+  <symbol id="i-monitor" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></symbol>
+  <symbol id="i-layout-grid" viewBox="0 0 24 24"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></symbol>
+  <symbol id="i-palette" viewBox="0 0 24 24"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></symbol>
+  <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></symbol>
+  <symbol id="i-qr" viewBox="0 0 24 24"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></symbol>
+  <symbol id="i-flame" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></symbol>
+  <symbol id="i-cpu" viewBox="0 0 24 24"><rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/></symbol>
+  <symbol id="i-plug" viewBox="0 0 24 24"><path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/></symbol>
+  <symbol id="i-paperclip" viewBox="0 0 24 24"><path d="m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551"/></symbol>
+  <symbol id="i-pie" viewBox="0 0 24 24"><path d="M21 12c.552 0 1.005-.449.95-.998a10 10 0 0 0-8.953-8.951c-.55-.055-.998.398-.998.95v8a1 1 0 0 0 1 1z"/><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></symbol>
+  <symbol id="i-log-out" viewBox="0 0 24 24"><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></symbol>
 </svg>
 
-<!-- ═════════════ 01 · Title ═════════════ -->
+<!-- ============ 01 · Title ============ -->
 <section class="slide dark" id="s01" data-title="You could’ve gotten a Birkin.">
   <style>
     #s01 .glow { position: absolute; left: 1010px; top: -140px; width: 1100px; height: 1100px; border-radius: 50%;
@@ -78,20 +98,20 @@
   <div class="glow"></div>
   <div class="lockup"><img src="../docs/assets/brand/fundbun-mark-dark.svg" alt=""><span class="word">Fund<span>Bun</span></span></div>
   <h1 class="display">You could’ve<br>gotten a <i>Birkin.</i></h1>
-  <p class="sub">An AI money buddy that shows you the dream you could’ve had — and helps you get it back.</p>
+  <p class="sub">An AI money buddy that shows you the dream you could’ve had, and helps you get it back.</p>
   <div class="mirror over">
     <div class="glass"><div class="glint"></div><div class="floor"></div><img class="dream" src="../src/ui/assets/items/bag.svg" alt=""></div>
     <img class="peek" src="assets/bun-burnt-dark.svg" alt="">
     <div class="mirror-label">Birkin 25 <s>·</s> ¥98,000</div>
   </div>
   <div class="meta">
-    <div><span class="k">FinTechathon 2026 · International Track</span><span class="v">AI Track · Topic A — Personal Finance Assistant</span></div>
+    <div><span class="k">2026 FinTechathon Finalist · International AI Track</span><span class="v">Final round · 29 Nov 2026 · Shenzhen</span><span class="u">Topic A: Personal Finance Assistant</span></div>
     <div><span class="k">Team lead</span><span class="v">Odri Prince Sembiring</span><span class="u">Universitas Gadjah Mada</span></div>
-    <div><span class="k">Team</span><span class="v">Nadine Griselda</span><span class="u">Universitas Airlangga</span></div>
+    <div><span class="k">Teammate</span><span class="v">Nadine Griselda</span><span class="u">Universitas Airlangga</span></div>
   </div>
 </section>
 
-<!-- ═════════════ 02 · Problem ═════════════ -->
+<!-- ============ 02 · Problem ============ -->
 <section class="slide" id="s02" data-title="Overspending is invisible until it’s too late.">
   <style>
     #s02 .mascot { position: absolute; right: 120px; top: 78px; width: 150px; }
@@ -106,16 +126,16 @@
   <h2 class="title">Overspending is invisible<br>until it’s too late.</h2>
   <img class="mascot" src="assets/bun-worried.svg" alt="">
   <div class="cols">
-    <div class="c1"><span class="num">¥2,580</span><p class="lbl">over target — just a number</p><p class="sub">Budgets speak in numbers. Numbers don’t hurt.</p></div>
+    <div class="c1"><span class="num">¥2,580</span><p class="lbl">over budget: just a number</p><p class="sub">Budgets speak in numbers. Numbers don’t hurt.</p></div>
     <div class="c2"><span class="num">39</span><p class="lbl">studies: we neglect what a purchase displaces</p><p class="sub">Opportunity cost rarely comes to mind.</p></div>
     <div class="c3"><span class="num">−19.6%</span><p class="lbl">monthly spending with a warning at the moment of paying</p><p class="sub">Alipay’s Huabei bill assistant.</p></div>
   </div>
   <footer class="foot"><span class="brand"><img src="../docs/assets/brand/fundbun-mark-sm.svg" alt=""><span class="wm">Fund<em>Bun</em></span></span>
     <span class="src">Frederick, Novemsky, Wang, Dhar &amp; Nowlis 2009, <i>J. Consumer Research</i> 36(4) · Maguire, Persson &amp; Tinghög 2023, <i>J. Economic Science Association</i> 9 (39&nbsp;studies, N&nbsp;=&nbsp;14,005, d&nbsp;=&nbsp;0.22) · Tsinghua PBCSF study of Alipay’s Huabei bill assistant, reported by Cailian Press, 25 Aug 2023</span>
-    <span class="pg"><b>02</b> / 13</span></footer>
+    <span class="pg"><b>02</b> / 15</span></footer>
 </section>
 
-<!-- ═════════════ 03 · Dream Mirror ═════════════ -->
+<!-- ============ 03 · Dream Mirror ============ -->
 <section class="slide" id="s03" data-title="The Dream Mirror">
   <style>
     #s03 .title { max-width: 820px; }
@@ -133,22 +153,22 @@
   </style>
   <div class="kicker"><b>03</b>The idea<span class="rb"><i style="--c: var(--rim)"></i>Innovation &amp; interaction · 30%</span></div>
   <h2 class="title">Overspend, and you see the dream it cost.</h2>
-  <p class="lede">Stay under, and you see how much closer you are — any treat is your call, never a push.</p>
+  <p class="lede">Spend less than your target, and you see how much closer you are. Any treat is your call, never a push.</p>
   <div class="stats">
     <div class="stat"><span class="num" style="color: var(--over-text)">+5 wks</span><p>Jing’s Birkin, pushed further away</p></div>
     <div class="stat"><span class="num" style="color: var(--under-text)">¥668</span><p>Arif, closer to his MacBook Air</p></div>
   </div>
   <div class="own"><span class="tile"><svg class="ico"><use href="#i-sparkles"/></svg></span><p>Your own dream items, your own photos, your own words.</p></div>
-  <div class="phone-label l1"><i></i>Jing · over target</div>
-  <div class="phone-label l2"><i></i>Arif · under target</div>
+  <div class="phone-label l1"><i></i>Jing · over budget</div>
+  <div class="phone-label l2"><i></i>Arif · on target</div>
   <div class="phone p1" data-src="../docs/assets/screens/home-mei.png"></div>
   <div class="phone p2" data-src="../docs/assets/screens/home-arif.png"></div>
   <footer class="foot"><span class="brand"><img src="../docs/assets/brand/fundbun-mark-sm.svg" alt=""><span class="wm">Fund<em>Bun</em></span></span>
     <span class="src">Dream pictures are preset illustrations or the user’s own photos, kept on the device.</span>
-    <span class="pg"><b>03</b> / 13</span></footer>
+    <span class="pg"><b>03</b> / 15</span></footer>
 </section>
 
-<!-- ═════════════ 04 · Tripwires ═════════════ -->
+<!-- ============ 04 · Tripwires ============ -->
 <section class="slide" id="s04" data-title="Tripwires">
   <style>
     #s04 .title { max-width: 1180px; }
@@ -168,7 +188,7 @@
       background-position: calc(-26px * 600 / 728) calc(-1188px * 600 / 728);
       box-shadow: 0 0 0 1px rgba(58, 42, 31, 0.1), 0 24px 60px -18px rgba(36, 24, 15, 0.35), 0 8px 18px -8px rgba(36, 24, 15, 0.18); }
   </style>
-  <div class="kicker"><b>04</b>Tripwires — the crux<span class="rb"><i style="--c: var(--rim)"></i>Innovation &amp; interaction · 30%</span></div>
+  <div class="kicker"><b>04</b>Tripwires: the crux<span class="rb"><i style="--c: var(--rim)"></i>Innovation &amp; interaction · 30%</span></div>
   <h2 class="title">Cross a line you set, and Bun shows what it costs.</h2>
   <div class="lab" style="top: 392px">You set the tripwires</div>
   <div class="grid">
@@ -177,47 +197,48 @@
     <div><span class="tile"><svg class="ico"><use href="#i-shopping-bag"/></svg></span>Any purchase over ¥X</div>
     <div><span class="tile"><svg class="ico"><use href="#i-trending-up"/></svg></span>Projected overspend</div>
   </div>
-  <div class="lab" style="top: 690px">Bun’s tone — your choice</div>
+  <div class="lab" style="top: 690px">Bun’s tone: your choice</div>
   <div class="seg"><span class="on"><svg class="ico"><use href="#i-check"/></svg>Gentle <small>default</small></span><span>Cheeky <small>opt-in</small></span><span>Just numbers</span></div>
   <p class="note">Shame backfires, so the blunt voice is opt-in.</p>
   <div class="phone" data-src="../docs/assets/screens/tripwire-toast.png"></div>
   <div class="zoom" role="img" aria-label="Tripwire: Whoa, ¥1,299 at JD.com. That ¥1,299 = 1.3% of your Birkin 25."></div>
   <footer class="foot"><span class="brand"><img src="../docs/assets/brand/fundbun-mark-sm.svg" alt=""><span class="wm">Fund<em>Bun</em></span></span>
     <span class="src">Shame drives financial withdrawal: Gladstone et al. 2021, <i>Organizational Behavior and Human Decision Processes</i> (6&nbsp;studies, N&nbsp;=&nbsp;9,110).</span>
-    <span class="pg"><b>04</b> / 13</span></footer>
+    <span class="pg"><b>04</b> / 15</span></footer>
 </section>
 
-<!-- ═════════════ 05 · Live product tour ═════════════ -->
-<section class="slide" id="s05" data-title="Live demo: Jing’s October, end to end.">
+<!-- ============ 05 · The product today ============ -->
+<section class="slide" id="s05" data-title="One core. A desktop app and a phone app.">
   <style>
-    #s05 .phone { --s: 252px; top: 262px; }
-    #s05 .cap { position: absolute; top: 884px; width: 300px; display: flex; gap: 14px; align-items: flex-start; }
-    #s05 .cap b { display: grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: 50%; background: var(--rim);
-      font: 700 19px/1 var(--font-ui); color: var(--soy); }
-    #s05 .cap p { font: 650 23px/1.2 var(--font-ui); color: var(--text); }
-    #s05 .cap small { display: block; margin-top: 5px; font: 400 19px/1.3 var(--font-ui); color: var(--text-2); }
-    #s05 .arr { position: absolute; top: 530px; width: 44px; height: 44px; color: var(--crust); }
-    #s05 .arr .ico { width: 44px; height: 44px; stroke-width: 2.2; }
+    #s05 .items { left: 120px; top: 324px; width: 690px; }
+    #s05 .win { position: absolute; left: 870px; top: 306px; width: 780px; border-radius: 18px; overflow: hidden; background: #2a1d14;
+      box-shadow: 0 0 0 1.5px rgba(91, 70, 54, 0.55), 0 36px 60px -28px rgba(36, 24, 15, 0.42), 0 70px 120px -50px rgba(143, 98, 50, 0.38); }
+    #s05 .win .bar { display: flex; align-items: center; gap: 9px; height: 38px; padding: 0 16px; }
+    #s05 .win .bar i { width: 12px; height: 12px; border-radius: 50%; background: #ee6a4d; }
+    #s05 .win .bar i + i { background: #f2bd3d; }
+    #s05 .win .bar i + i + i { background: #4fb08a; }
+    #s05 .win .bar span { margin-left: 12px; font: 600 15px/1 var(--font-ui); color: #d8c3ad; }
+    #s05 .win img { display: block; width: 100%; height: auto; }
+    #s05 .phone { --s: 214px; left: 1576px; top: 432px; }
+    #s05 .lab2 { position: absolute; top: 864px; font: 650 17px/1 var(--font-ui); letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3); white-space: nowrap; }
   </style>
-  <div class="kicker"><b>05</b>Product tour<span class="rb"><i style="--c: var(--jade)"></i>Task completion · 40%</span></div>
-  <h2 class="title">Live demo: Jing’s October, end to end.</h2>
-  <div class="phone" style="left: 120px" data-src="../docs/assets/screens/home-mei.png"></div>
-  <div class="phone" style="left: 590px" data-src="../docs/assets/screens/should-i-buy.png"></div>
-  <div class="phone" style="left: 1060px" data-src="../docs/assets/screens/chat-plan.png"></div>
-  <div class="phone" style="left: 1530px" data-src="../docs/assets/screens/bills-xray-injection.png"></div>
-  <span class="arr" style="left: 468px"><svg class="ico"><use href="#i-chevron-right"/></svg></span>
-  <span class="arr" style="left: 938px"><svg class="ico"><use href="#i-chevron-right"/></svg></span>
-  <span class="arr" style="left: 1408px"><svg class="ico"><use href="#i-chevron-right"/></svg></span>
-  <div class="cap" style="left: 120px"><b>1</b><p>Home mirror<small>the cost, made visible</small></p></div>
-  <div class="cap" style="left: 590px"><b>2</b><p>Should I buy it?<small>¥1,299 sneakers: skip</small></p></div>
-  <div class="cap" style="left: 1060px"><b>3</b><p>Ask Bun<small>7-step plan, PIN to cancel</small></p></div>
-  <div class="cap" style="left: 1530px"><b>4</b><p>Bills X-ray<small>injection blocked</small></p></div>
+  <div class="kicker"><b>05</b>The product today<span class="rb"><i style="--c: var(--jade)"></i>Task completion · 40%</span></div>
+  <h2 class="title">One core. A desktop app and a phone app.</h2>
+  <div class="items">
+    <div class="item"><span class="tile"><svg class="ico"><use href="#i-monitor"/></svg></span><span><h3>Desktop app for Mac</h3><p>An Electron shell and a local server on 127.0.0.1. AI keys are encrypted with the macOS Keychain.</p></span></div>
+    <div class="item"><span class="tile jade"><svg class="ico"><use href="#i-smartphone"/></svg></span><span><h3>Mobile-ready web app</h3><p>The same core in the browser, with a PWA manifest for the Home Screen.</p></span></div>
+    <div class="item"><span class="tile sky"><svg class="ico"><use href="#i-sliders-horizontal"/></svg></span><span><h3>Dual Mode</h3><p>Daily tracking for a simple count, or Goal &amp; Mirror for the full Dream Mirror.</p></span></div>
+    <div class="item"><span class="tile chili"><svg class="ico"><use href="#i-layout-grid"/></svg></span><span><h3>Your layout</h3><p>Move, resize or hide every dashboard card, the Daily check-in included.</p></span></div>
+  </div>
+  <div class="win"><div class="bar"><i></i><i></i><i></i><span>FundBun · desktop</span></div><img src="../docs/assets/screens/desk-dashboard-jing-1440.png" alt=""></div>
+  <div class="phone" data-src="../docs/assets/screens/home-mei.png"></div>
+  <div class="lab2" style="left: 870px">Desktop: dashboard, chat and glass box</div>
   <footer class="foot"><span class="brand"><img src="../docs/assets/brand/fundbun-mark-sm.svg" alt=""><span class="wm">Fund<em>Bun</em></span></span>
-    <span class="src">Try it live: <b>odripads.github.io/fundbun/?demo=jing</b> (over target) or ?demo=arif (under target) · demo PIN 2580 · backup: the 5-minute demo video at <b>youtu.be/Se5TD4KQ35A</b></span>
-    <span class="pg"><b>05</b> / 13</span></footer>
+    <span class="src">desktop/main.ts (Electron safeStorage, window sandboxed with no Node access) · server/local.ts · the phone layout and the desk layout share src/core, the tests and the evidence runner.</span>
+    <span class="pg"><b>05</b> / 15</span></footer>
 </section>
 
-<!-- ═════════════ 06 · AI as a financial participant ═════════════ -->
+<!-- ============ 06 · AI as a financial participant ============ -->
 <section class="slide" id="s06" data-title="Not just chat: Bun plans, then acts.">
   <style>
     #s06 .rows { position: absolute; left: 120px; top: 302px; width: 640px; display: flex; flex-direction: column; gap: 30px; }
@@ -289,222 +310,407 @@
   </div>
   <footer class="foot"><span class="brand"><img src="../docs/assets/brand/fundbun-mark-sm.svg" alt=""><span class="wm">Fund<em>Bun</em></span></span>
     <span class="src">Scenario A11 (“Help me get back on track this month”): read steps auto-run, the T3 cancellation waits for the PIN. Clarify, correct, interrupt: scenarios B9–B11.</span>
-    <span class="pg"><b>06</b> / 13</span></footer>
+    <span class="pg"><b>06</b> / 15</span></footer>
 </section>
 
-<!-- ═════════════ 07 · Architecture ═════════════ -->
-<section class="slide" id="s07" data-title="Local-first. LLM-optional.">
+<!-- ============ 07 · Zero-AI and bring-your-own-AI ============ -->
+<section class="slide" id="s07" data-title="Works with zero AI. Better with yours.">
   <style>
-    #s07 .title { max-width: 560px; }
-    #s07 .pts { position: absolute; left: 120px; top: 404px; width: 540px; display: flex; flex-direction: column; gap: 34px; }
-    #s07 .pts div { display: flex; gap: 22px; align-items: flex-start; }
-    #s07 .pts p { font: 500 25px/1.38 var(--font-ui); color: var(--text); padding-top: 12px; text-wrap: balance; }
-    #s07 .crop { left: 700px; top: 150px; width: 1150px; height: calc(1150px * 1620 / 2400); }
-    #s07 .crop img { margin-top: calc(1150px * -180 / 2400); }
+    #s07 .card { top: 326px; height: 548px; padding: 34px 38px; }
+    #s07 .c1 { left: 120px; width: 800px; }
+    #s07 .c2 { left: 980px; width: 820px; }
+    #s07 .card h3 { margin: 14px 0 0; font: 640 36px/1.1 var(--font-display); font-variation-settings: var(--fv); }
+    #s07 .card .sub { margin-top: 8px; font-size: 22px; line-height: 1.35; color: var(--text-2); }
+    #s07 .chat { margin-top: 22px; display: flex; flex-direction: column; gap: 12px; }
+    #s07 .me { align-self: flex-end; max-width: 520px; padding: 12px 20px; border-radius: 22px 22px 6px 22px; background: var(--soy); font: 500 21px/1.3 var(--font-ui); color: #f8ebdd; }
+    #s07 .bun { align-self: flex-start; max-width: 640px; padding: 12px 20px; border-radius: 22px 22px 22px 6px; background: var(--cream-100); border: 1px solid var(--line); font: 500 21px/1.3 var(--font-ui); color: var(--text); }
+    #s07 .pick { display: flex; flex-wrap: wrap; gap: 9px; }
+    #s07 .pick span { display: inline-flex; align-items: center; height: 42px; padding: 0 16px; border-radius: 999px; background: var(--surface); box-shadow: inset 0 0 0 1.5px rgba(227, 162, 26, 0.6); font: 650 17px/1 var(--font-ui); color: var(--text); white-space: nowrap; }
+    #s07 .provs { margin-top: 22px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px 14px; }
+    #s07 .prov { display: flex; align-items: center; gap: 14px; height: 62px; padding: 0 18px; border-radius: 16px; border: 1.5px solid var(--line-strong); background: var(--surface); }
+    #s07 .prov .ico { width: 24px; height: 24px; color: var(--gold-text); }
+    #s07 .prov b { font: 650 22px/1 var(--font-ui); color: var(--text); white-space: nowrap; }
+    #s07 .prov small { margin-left: auto; font: 500 16px/1 var(--font-mono); color: var(--text-3); white-space: nowrap; }
+    #s07 .same { margin-top: 24px; display: flex; gap: 12px; }
+    #s07 .same .chip { height: 46px; padding: 0 16px; font-size: 17px; }
+    #s07 .same .chip .ico { width: 20px; height: 20px; color: var(--under-text); }
   </style>
-  <div class="kicker"><b>07</b>Architecture<span class="rb"><i style="--c: var(--chili)"></i>Security &amp; compliance · 30%</span></div>
-  <h2 class="title">Local-first. LLM-optional.</h2>
-  <div class="pts">
-    <div><span class="tile jade"><svg class="ico"><use href="#i-smartphone"/></svg></span><p>Your data stays on your device.</p></div>
-    <div><span class="tile"><svg class="ico"><use href="#i-file-code"/></svg></span><p>One TypeScript core runs the app, the tests and the evidence.</p></div>
-    <div><span class="tile sky"><svg class="ico"><use href="#i-sparkles"/></svg></span><p>With separate consent, an optional LLM sees only redacted context. It can only propose.</p></div>
+  <div class="kicker"><b>07</b>Zero-AI and bring-your-own-AI<span class="rb"><i style="--c: var(--rim)"></i>Innovation &amp; interaction · 30%</span></div>
+  <h2 class="title">Works with zero AI. Better with yours.</h2>
+  <div class="card c1">
+    <span class="tag jade">Built in · offline</span>
+    <h3>An on-device engine, no model</h3>
+    <div class="chat">
+      <span class="me">where did all my money go??</span>
+      <span class="bun">Shopping, dining and delivery took the most this month.</span>
+      <span class="me">tell me a joke</span>
+      <span class="bun">That one is outside what I can do offline. Pick a task:</span>
+      <div class="pick"><span>Biggest spendings</span><span>Today’s safe-to-spend</span><span>Month overview</span><span>Category breakdown</span><span>Savings pots</span><span>Log an expense</span></div>
+    </div>
   </div>
-  <div class="crop"><img src="../docs/assets/diagrams/architecture.png" alt=""></div>
+  <div class="card c2">
+    <span class="tag">Optional · your own AI</span>
+    <h3>Connect the AI you already have</h3>
+    <div class="provs">
+      <div class="prov"><svg class="ico"><use href="#i-plug"/></svg><b>Kimi Code</b><small>ACP agent</small></div>
+      <div class="prov"><svg class="ico"><use href="#i-cpu"/></svg><b>Moonshot</b><small>api.moonshot.cn/v1</small></div>
+      <div class="prov"><svg class="ico"><use href="#i-cpu"/></svg><b>DeepSeek</b><small>API key</small></div>
+      <div class="prov"><svg class="ico"><use href="#i-cpu"/></svg><b>Qwen</b><small>API key</small></div>
+      <div class="prov"><svg class="ico"><use href="#i-monitor"/></svg><b>Ollama</b><small>on this computer</small></div>
+      <div class="prov"><svg class="ico"><use href="#i-cpu"/></svg><b>OpenAI</b><small>API key</small></div>
+      <div class="prov"><svg class="ico"><use href="#i-cpu"/></svg><b>Anthropic</b><small>API key</small></div>
+      <div class="prov"><svg class="ico"><use href="#i-cpu"/></svg><b>Gemini</b><small>API key</small></div>
+    </div>
+    <div class="same">
+      <span class="chip"><svg class="ico"><use href="#i-check"/></svg>Same policy gate</span>
+      <span class="chip"><svg class="ico"><use href="#i-check"/></svg>Keys stay local</span>
+      <span class="chip"><svg class="ico"><use href="#i-check"/></svg>Falls back offline</span>
+    </div>
+  </div>
   <footer class="foot"><span class="brand"><img src="../docs/assets/brand/fundbun-mark-sm.svg" alt=""><span class="wm">Fund<em>Bun</em></span></span>
-    <span class="src">Full diagram: docs/assets/diagrams/architecture.svg · detail in docs/TECHNICAL.md</span>
-    <span class="pg"><b>07</b> / 13</span></footer>
+    <span class="src">Offline: rules plus a small on-device classifier (agent/nlu.ts), casual phrasing in English, Chinese and Indonesian, and a task picker when a prompt is out of scope. Providers: server/ai/presets.ts. Verified live: Kimi Code (kimi acp, 12/12 checks), DeepSeek and Claude Code; the others connect through the same OpenAI-compatible or ACP path.</span>
+    <span class="pg"><b>07</b> / 15</span></footer>
 </section>
 
-<!-- ═════════════ 08 · Safety model ═════════════ -->
-<section class="slide" id="s08" data-title="The model proposes. The policy engine decides.">
+<!-- ============ 08 · Everything is a plugin ============ -->
+<section class="slide" id="s08" data-title="Everything is a plugin.">
   <style>
-    #s08 .crop { left: 92px; top: 336px; width: 1140px; height: calc(1140px * 1275 / 2400); }
-    #s08 .crop img { margin-top: calc(1140px * -170 / 2400); }
-    #s08 .safe { position: absolute; left: 1290px; top: 344px; width: 520px; display: flex; flex-direction: column; gap: 36px; }
-    #s08 .safe div { display: flex; gap: 20px; align-items: center; }
-    #s08 .safe h3 { margin: 0; font: 640 28px/1.1 var(--font-display); font-variation-settings: var(--fv); }
-    #s08 .safe p { margin-top: 5px; font-size: 20px; line-height: 1.3; color: var(--text-2); }
+    #s08 .items { left: 120px; top: 324px; width: 720px; }
+    #s08 .card { left: 910px; top: 306px; width: 890px; height: 580px; padding: 30px 34px; }
+    #s08 .me { margin-left: auto; width: fit-content; max-width: 640px; padding: 14px 22px; border-radius: 24px 24px 6px 24px; background: var(--soy); font: 500 22px/1.32 var(--font-ui); color: #f8ebdd; }
+    #s08 .look { margin-top: 20px; padding: 22px 24px; border-radius: 22px; border: 1.5px solid var(--line-strong); background: var(--cream); }
+    #s08 .lh { display: flex; align-items: center; gap: 14px; }
+    #s08 .lh .tile { width: 46px; height: 46px; border-radius: 14px; }
+    #s08 .lh .tile .ico { width: 24px; height: 24px; }
+    #s08 .lh b { display: block; font: 650 23px/1.1 var(--font-ui); color: var(--text); }
+    #s08 .lh small { display: block; margin-top: 4px; font: 500 16px/1 var(--font-ui); color: var(--text-3); }
+    #s08 .pv { position: relative; margin-top: 18px; display: flex; align-items: center; gap: 20px; height: 150px; padding: 0 26px; border-radius: 18px; background: #0a0612;
+      border: 1.5px solid rgba(240, 171, 252, 0.34); }
+    #s08 .pv .helmbun { width: 124px; height: 124px; flex: none; overflow: visible; }
+    #s08 .pv .nm { font: 700 42px/1 var(--font-display); font-variation-settings: var(--fv); letter-spacing: -0.02em; color: #fdf4ff; white-space: nowrap; }
+    #s08 .pv .k { display: block; margin-top: 8px; font: 650 14px/1 var(--font-ui); letter-spacing: 0.16em; text-transform: uppercase; color: #b39ccc; }
+    #s08 .pv .sw { margin-left: auto; display: flex; gap: 7px; }
+    #s08 .pv .sw i { width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid rgba(240, 171, 252, 0.4); }
+    #s08 .pv .pt { position: absolute; left: 20px; top: -13px; height: 26px; padding: 0 12px; border-radius: 999px; background: #ff2bd6; font: 700 14px/26px var(--font-ui); color: #12001a; }
+    #s08 .ch { margin-top: 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    #s08 .ch div { padding: 10px 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); }
+    #s08 .ch small { display: block; font: 500 15px/1 var(--font-ui); color: var(--text-3); }
+    #s08 .ch b { display: block; margin-top: 6px; font: 650 19px/1.1 var(--font-ui); color: var(--text); white-space: nowrap; }
+    #s08 .btns { margin-top: 18px; display: flex; justify-content: flex-end; align-items: center; gap: 12px; }
+    #s08 .btns .hint { margin-right: auto; font: 500 17px/1.3 var(--font-ui); color: var(--text-3); }
+    #s08 .btn { display: inline-flex; align-items: center; gap: 8px; height: 50px; padding: 0 24px; border-radius: 999px; font: 650 20px/1 var(--font-ui); white-space: nowrap; }
+    #s08 .btn.ghost { border: 1.5px solid var(--line-strong); color: var(--text); background: var(--surface); }
+    #s08 .btn.go { background: var(--rim); color: var(--soy); }
+    #s08 .btn .ico { width: 20px; height: 20px; }
   </style>
-  <div class="kicker"><b>08</b>Safety model<span class="rb"><i style="--c: var(--chili)"></i>Security &amp; compliance · 30%</span></div>
-  <h2 class="title">The model proposes.<br>The policy engine decides.</h2>
+  <div class="kicker"><b>08</b>Desktop Creator Mode<span class="rb"><i style="--c: var(--rim)"></i>Innovation &amp; interaction · 30%</span></div>
+  <h2 class="title">Everything is a plugin.</h2>
+  <div class="items">
+    <div class="item"><span class="tile"><svg class="ico"><use href="#i-layout-grid"/></svg></span><span><h3>Widgets</h3><p>Ask for a card. Bun drafts it, it runs in a sandbox with a read-only copy of your numbers, and you press Install.</p></span></div>
+    <div class="item"><span class="tile chili"><svg class="ico"><use href="#i-palette"/></svg></span><span><h3>Shell appearance</h3><p>The theme, what Bun wears, the app’s name. One schema, with Apply, Undo and Reset.</p></span></div>
+    <div class="item"><span class="tile sky"><svg class="ico"><use href="#i-message-square-warning"/></svg></span><span><h3>Taint protection</h3><p>A turn that carries a file, a bill or pasted text cannot change plugins or the look.</p></span></div>
+    <div class="item"><span class="tile jade"><svg class="ico"><use href="#i-lock"/></svg></span><span><h3>Behind your PIN</h3><p>Creator Mode is off until you turn it on. No plugin can touch money, the PIN or permissions.</p></span></div>
+  </div>
+  <div class="card">
+    <div class="me">change theme to cyberpunk, put a kamen rider helm on bun, and rename fundbun to #ilovemoney</div>
+    <div class="look">
+      <div class="lh"><span class="tile chili"><svg class="ico"><use href="#i-palette"/></svg></span><span><b>A new look for the app</b><small>Shell appearance · read from your message on this device</small></span></div>
+      <div class="pv"><span class="pt">Preview</span><svg class="helmbun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" aria-hidden="true" stroke-linecap="round" stroke-linejoin="round"><defs><path id="hb-body" d="M226 136C128 148 54 224 48 324C42 412 84 460 154 466C214 471 298 471 358 466C428 460 470 412 464 324C458 224 384 148 290 136C288 124 284 110 276 98C272 92 270 86 272 78C258 84 246 94 238 106C232 116 228 126 226 136Z"/><clipPath id="hb-clip"><use href="#hb-body"/></clipPath><radialGradient id="hb-core" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#7A5330"/><stop offset="0.6" stop-color="#3A2A1F"/><stop offset="1" stop-color="#3A2A1F"/></radialGradient><radialGradient id="hb-glow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#E3A21A" stop-opacity="0"/><stop offset="0.74" stop-color="#E3A21A" stop-opacity="0"/><stop offset="1" stop-color="#E3A21A" stop-opacity="0.8"/></radialGradient></defs><g fill="none" stroke="#B9874B" stroke-width="14"></g><use href="#hb-body" fill="none" stroke="#F6E7CC" stroke-width="30"/><use href="#hb-body" fill="#F6E7CC"/><g clip-path="url(#hb-clip)"><ellipse cx="256" cy="536" rx="300" ry="136" fill="#EFD7AD"/><g fill="none" stroke="#FFFAF2" stroke-width="16" opacity="0.85"><path d="M90 270C92 232 112 198 146 174"/></g></g><g fill="none" stroke="#B9874B" stroke-width="9"><path d="M270 86C262 98 254 112 252 132"/></g><g fill="none" stroke="#B9874B" stroke-width="9"><path d="M252 146C250 156 252 166 250 176"/><path d="M240 144C226 152 216 162 212 176"/><path d="M230 142C196 150 162 162 140 184"/><path d="M266 144C280 152 292 162 298 176"/><path d="M280 142C316 150 350 162 372 184"/></g><use href="#hb-body" fill="none" stroke="#3A2A1F" stroke-width="14"/><ellipse cx="180" cy="198" rx="16" ry="20" fill="#24180F"/><circle cx="185.1" cy="190.8" r="5.8" fill="#FFFAF2"/><ellipse cx="332" cy="198" rx="16" ry="20" fill="#24180F"/><circle cx="337.1" cy="190.8" r="5.8" fill="#FFFAF2"/><g fill="#EE6A4D" opacity="0.45"><ellipse cx="134" cy="230" rx="24" ry="13"/><ellipse cx="378" cy="230" rx="24" ry="13"/></g><g fill="none" stroke="#24180F" stroke-width="9"><path d="M245 211Q256 220 267 211"/></g><g clip-path="url(#hb-clip)"><path d="M40 236C120 270 392 270 472 236L476 268C392 304 120 304 36 268Z" fill="#e02d3c" stroke="#24180f" stroke-width="8"/><path d="M60 262C140 290 372 290 452 262" fill="none" stroke="#a81e2b" stroke-width="6" opacity="0.7"/></g><path d="M410 262C440 240 470 246 500 228C494 252 498 270 508 284C478 292 452 282 432 290Z" fill="#e02d3c" stroke="#24180f" stroke-width="8"/><path d="M404 268C420 290 438 306 462 318C450 330 444 344 446 358C420 346 398 322 386 292Z" fill="#c92434" stroke="#24180f" stroke-width="8"/><ellipse cx="406" cy="270" rx="17" ry="15" fill="#e02d3c" stroke="#24180f" stroke-width="8"/><path d="M256 268C272.3 256.8 341.7 277.6 342.3 293.8C363.4 294.9 391.8 344.4 378 356C394.3 367.8 365.4 418.2 342.3 418.2C340.9 433.7 272.1 454.2 256 444C239.7 455.2 170.3 434.4 169.7 418.2C148.3 417.2 119.8 367.6 134 356C117.7 344.2 146.6 293.8 169.7 293.8C171.3 278.5 239.9 258.1 256 268Z" fill="#FFF4E3" stroke="#3A2A1F" stroke-width="8"/><ellipse cx="256" cy="356" rx="102" ry="72" fill="url(#hb-core)"/><ellipse cx="256" cy="356" rx="102" ry="72" fill="url(#hb-glow)"/><ellipse cx="256" cy="356" rx="102" ry="72" fill="none" stroke="#E3A21A" stroke-width="8"/><g fill="none" stroke="#3A2A1F" stroke-width="39"><path d="M214 310L256 346L298 310M256 346V408M216 358H296M216 396H296"/></g><g fill="none" stroke="#F2BD3D" stroke-width="26"><path d="M214 310L256 346L298 310M256 346V408M216 358H296M216 396H296"/></g><defs><pattern id="hb-hx" width="28" height="49" patternUnits="userSpaceOnUse" patternTransform="scale(0.5)"><path d="M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h-2v6.35L0 12.69v2.3zm0 18.5L12.98 41v8h-2v-6.85L0 35.81v-2.3zM15 0v7.5L27.99 15H28v-2.31h-.01L17 6.35V0h-2zm0 49v-8l12.99-7.5H28v2.31h-.01L17 42.15V49h-2z" fill="#7a0d1f" fill-opacity="0.55"/></pattern><radialGradient id="hb-ey" cx="0.38" cy="0.32" r="0.8"><stop offset="0" stop-color="#ff7a85"/><stop offset="0.55" stop-color="#e3243b"/><stop offset="1" stop-color="#a31026"/></radialGradient></defs><path d="M226 86C202 66 182 40 164 8C198 22 232 42 254 62Z" fill="#eef1f5" stroke="#24180f" stroke-width="8"/><path d="M286 86C310 66 330 40 348 8C314 22 280 42 258 62Z" fill="#eef1f5" stroke="#24180f" stroke-width="8"/><path d="M98 186C92 96 160 40 256 40C352 40 420 96 414 186C380 170 330 160 256 160C182 160 132 170 98 186Z" fill="#1f7a55" stroke="#24180f" stroke-width="12"/><path d="M130 120C148 82 190 60 240 56" fill="none" stroke="#5fc79b" stroke-width="10" opacity="0.7"/><path d="M98 180C84 200 80 226 90 250C104 246 116 236 122 222C116 206 112 192 112 178Z" fill="#eef1f5" stroke="#24180f" stroke-width="8"/><path d="M414 180C428 200 432 226 422 250C408 246 396 236 390 222C396 206 400 192 400 178Z" fill="#eef1f5" stroke="#24180f" stroke-width="8"/><path d="M244 64L268 64L274 160L238 160Z" fill="#eef1f5" stroke="#24180f" stroke-width="8"/><g><path d="M228 150C196 158 150 156 126 140C120 108 146 80 186 78C214 78 232 98 232 126C232 136 231 144 228 150Z" fill="url(#hb-ey)" stroke="#24180f" stroke-width="8"/><path d="M228 150C196 158 150 156 126 140C120 108 146 80 186 78C214 78 232 98 232 126C232 136 231 144 228 150Z" fill="url(#hb-hx)"/><ellipse cx="160" cy="102" rx="14" ry="8" fill="#fff" opacity="0.75" transform="rotate(-24 160 102)"/></g><g transform="translate(512 0) scale(-1 1)"><path d="M228 150C196 158 150 156 126 140C120 108 146 80 186 78C214 78 232 98 232 126C232 136 231 144 228 150Z" fill="url(#hb-ey)" stroke="#24180f" stroke-width="8"/><path d="M228 150C196 158 150 156 126 140C120 108 146 80 186 78C214 78 232 98 232 126C232 136 231 144 228 150Z" fill="url(#hb-hx)"/><ellipse cx="160" cy="102" rx="14" ry="8" fill="#fff" opacity="0.75" transform="rotate(-24 160 102)"/></g><circle cx="256" cy="76" r="11" fill="#ff4d5e" stroke="#24180f" stroke-width="7"/></svg><span><span class="nm">#ilovemoney</span><span class="k">FundBun</span></span>
+        <span class="sw"><i style="background: #06030c"></i><i style="background: #150d24"></i><i style="background: #ff2bd6"></i><i style="background: #fdf4ff"></i></span></div>
+      <div class="ch"><div><small>Theme</small><b>Cyberpunk</b></div><div><small>Bun wears</small><b>Kamen Rider helmet</b></div><div><small>App name</small><b>#ilovemoney</b></div></div>
+      <div class="btns"><span class="hint">Nothing changes until you press Apply.</span><span class="btn ghost"><svg class="ico"><use href="#i-undo-2"/></svg>Undo</span><span class="btn go">Apply</span></div>
+    </div>
+  </div>
+  <footer class="foot"><span class="brand"><img src="../docs/assets/brand/fundbun-mark-sm.svg" alt=""><span class="wm">Fund<em>Bun</em></span></span>
+    <span class="src">src/core/plugins/appearance.ts: one validator for typed prompts, AI tool calls and stored state. Only 15 colour tokens, hex values, 4.5:1 text contrast; names up to 28 printable characters. Right: a mock-up of the real chat card.</span>
+    <span class="pg"><b>08</b> / 15</span></footer>
+</section>
+
+<!-- ============ 09 · Files, folders and email ============ -->
+<section class="slide" id="s09" data-title="Bring your paperwork: files, folders, email.">
+  <style>
+    #s09 .card { top: 326px; width: 810px; height: 560px; padding: 34px 38px; }
+    #s09 .c1 { left: 120px; }
+    #s09 .c2 { left: 990px; }
+    #s09 .hd { display: flex; align-items: center; gap: 18px; margin-top: 16px; }
+    #s09 .hd h3 { margin: 0; font: 640 36px/1.1 var(--font-display); font-variation-settings: var(--fv); }
+    #s09 .ticks { margin-top: 26px; }
+    #s09 .kinds { margin-top: 26px; display: flex; flex-wrap: wrap; gap: 10px; }
+    #s09 .kinds .chip { height: 44px; padding: 0 16px; font-size: 18px; }
+  </style>
+  <div class="kicker"><b>09</b>Multimodal input<span class="rb"><i style="--c: var(--jade)"></i>Task completion · 40%</span></div>
+  <h2 class="title">Bring your paperwork: files, folders, email.</h2>
+  <div class="card c1">
+    <span class="tag jade">Live today · Desktop</span>
+    <div class="hd"><span class="tile"><svg class="ico"><use href="#i-paperclip"/></svg></span><h3>Files and folders in chat</h3></div>
+    <ul class="ticks">
+      <li><svg class="ico"><use href="#i-check"/></svg><span>Attach files or a whole folder, up to 20 at once</span></li>
+      <li><svg class="ico"><use href="#i-check"/></svg><span>The text is read on this computer; the file is never kept</span></li>
+      <li><svg class="ico"><use href="#i-check"/></svg><span>Your connected AI answers questions about them</span></li>
+      <li><svg class="ico"><use href="#i-check"/></svg><span>Every attachment is untrusted, so it taints the turn</span></li>
+    </ul>
+    <div class="kinds"><span class="chip">PDF</span><span class="chip">Images</span><span class="chip">Excel</span><span class="chip">Word</span><span class="chip">CSV</span><span class="chip"><svg class="ico"><use href="#i-folder"/></svg>Folder</span></div>
+  </div>
+  <div class="card c2">
+    <span class="tag jade">Live today · Desktop</span>
+    <div class="hd"><span class="tile sky"><svg class="ico"><use href="#i-mail"/></svg></span><h3>Read-only email ingestion</h3></div>
+    <ul class="ticks">
+      <li><svg class="ico"><use href="#i-check"/></svg><span>IMAP over TLS: it can only open the inbox read-only, search and peek</span></li>
+      <li><svg class="ico"><use href="#i-check"/></svg><span>No code path can send, move, flag or delete mail</span></li>
+      <li><svg class="ico"><use href="#i-check"/></svg><span>Receipts, invoices and bank alerts from senders you trust</span></li>
+      <li><svg class="ico"><use href="#i-check"/></svg><span>Each purchase it finds waits for your tap before it is logged</span></li>
+    </ul>
+    <div class="kinds"><span class="chip">EXAMINE</span><span class="chip">SEARCH</span><span class="chip">FETCH BODY.PEEK</span></div>
+  </div>
+  <footer class="foot"><span class="brand"><img src="../docs/assets/brand/fundbun-mark-sm.svg" alt=""><span class="wm">Fund<em>Bun</em></span></span>
+    <span class="src">src/core/agent/attachments.ts (caps, control characters dropped, taint window) · server/email/imap.ts (read-only by construction; the suite drives it with a fake IMAP server) · the mail password is encrypted at rest and never reaches the page.</span>
+    <span class="pg"><b>09</b> / 15</span></footer>
+</section>
+
+<!-- ============ 10 · Security kernel ============ -->
+<section class="slide" id="s10" data-title="The model proposes. A frozen kernel decides.">
+  <style>
+    #s10 .crop { left: 92px; top: 336px; width: 1100px; height: calc(1100px * 1275 / 2400); }
+    #s10 .crop img { margin-top: calc(1100px * -170 / 2400); }
+    #s10 .items { left: 1250px; top: 318px; width: 560px; gap: 22px; }
+    #s10 .item h3 { font-size: 27px; }
+    #s10 .item p { font-size: 19px; }
+  </style>
+  <div class="kicker"><b>10</b>Security kernel · T0–T4<span class="rb"><i style="--c: var(--chili)"></i>Security &amp; compliance · 30%</span></div>
+  <h2 class="title">The model proposes.<br>A frozen kernel decides.</h2>
   <div class="crop"><img src="../docs/assets/diagrams/permission-tiers.png" alt=""></div>
-  <div class="safe">
-    <div><span class="tile"><svg class="ico"><use href="#i-gauge"/></svg></span><span><h3>Caps</h3><p>¥500 an action · ¥1,000 a day<br>¥5,000 a month</p></span></div>
-    <div><span class="tile chili"><svg class="ico"><use href="#i-fingerprint-pattern"/></svg></span><span><h3>PIN-bound</h3><p>to the exact amount and payee</p></span></div>
-    <div><span class="tile jade"><svg class="ico"><use href="#i-undo-2"/></svg></span><span><h3>30-second undo</h3><p>on reversible changes</p></span></div>
-    <div><span class="tile soy"><svg class="ico"><use href="#i-zap-off"/></svg></span><span><h3>Circuit breaker</h3><p>3 blocked attacks in 10 minutes freeze Bun</p></span></div>
-    <div><span class="tile sky"><svg class="ico"><use href="#i-snowflake"/></svg></span><span><h3>Kill switch</h3><p>one tap, and Bun is read-only</p></span></div>
+  <div class="items">
+    <div class="item"><span class="tile chili"><svg class="ico"><use href="#i-fingerprint-pattern"/></svg></span><span><h3>Hash-bound PIN approval</h3><p>The PIN approves one exact action: tool, amount, payee. Change a field and it is void.</p></span></div>
+    <div class="item"><span class="tile sky"><svg class="ico"><use href="#i-message-square-warning"/></svg></span><span><h3>Taint propagation</h3><p>Bills, files, email and pasted text mark the turn untrusted. Risky steps then need your tap, or are blocked.</p></span></div>
+    <div class="item"><span class="tile soy"><svg class="ico"><use href="#i-link"/></svg></span><span><h3>Hash-chained audit trail</h3><p>Every decision joins a chain. An edit breaks it, and the app shows where.</p></span></div>
+    <div class="item"><span class="tile"><svg class="ico"><use href="#i-gauge"/></svg></span><span><h3>Caps and a kill switch</h3><p>¥500 an action, ¥1,000 a day, ¥5,000 a month. One tap makes Bun read-only.</p></span></div>
+    <div class="item"><span class="tile jade"><svg class="ico"><use href="#i-ban"/></svg></span><span><h3>T4 is never offered</h3><p>No new payees, outside transfers, investing, credit, or changing its own limits.</p></span></div>
   </div>
   <footer class="foot"><span class="brand"><img src="../docs/assets/brand/fundbun-mark-sm.svg" alt=""><span class="wm">Fund<em>Bun</em></span></span>
-    <span class="src">Tiers come from each tool’s spec (agent/specs.ts); decisions from 16 ordered policy rules (security/policy.ts), first deny wins. *Autopilot moves own money alone only in an untainted turn, within every cap.</span>
-    <span class="pg"><b>08</b> / 13</span></footer>
+    <span class="src">The kernel is six files: security/policy.ts, pin.ts, binding.ts, audit.ts and agent/specs.ts, tools.ts. They are frozen for the final: Creator Mode, attachments and email were added around them, and every new tool passes the same gate.</span>
+    <span class="pg"><b>10</b> / 15</span></footer>
 </section>
 
-<!-- ═════════════ 09 · Red team ═════════════ -->
-<section class="slide" id="s09" data-title="Red team: four attack classes, nothing moved.">
+<!-- ============ 11 · Evidence and red team ============ -->
+<section class="slide" id="s11" data-title="Measured. Reproducible. Nothing moved.">
   <style>
-    #s09 .title { max-width: 1180px; }
-    #s09 .stats { position: absolute; left: 120px; top: 404px; display: flex; gap: 96px; }
-    #s09 .num { display: block; font-size: 128px; line-height: 0.9; font-weight: 640; letter-spacing: -0.035em; color: var(--text); }
-    #s09 .stats p { margin-top: 18px; font: 600 24px/1.3 var(--font-ui); color: var(--text-2); }
-    #s09 .ok { color: var(--under-text); }
-    #s09 .chips { position: absolute; left: 120px; top: 674px; width: 1200px; display: flex; flex-wrap: wrap; gap: 14px; }
-    #s09 .chips .ico { color: var(--over-text); }
-    #s09 .note { position: absolute; left: 120px; top: 792px; width: 1000px; font-size: 27px; line-height: 1.4; color: var(--text); text-wrap: balance; }
-    #s09 .phone { --s: 352px; left: 1423px; top: 128px; }
+    #s11 .stats { position: absolute; left: 120px; top: 362px; width: 1180px; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 196px); gap: 0 48px; }
+    #s11 .num { display: block; font-size: 100px; line-height: 0.95; font-weight: 640; letter-spacing: -0.03em; font-variant-numeric: lining-nums; }
+    #s11 .stats p { margin-top: 12px; font: 600 23px/1.3 var(--font-ui); color: var(--text-2); }
+    #s11 .ok { color: var(--under-text); }
+    #s11 .cmd { position: absolute; left: 120px; top: 800px; display: flex; align-items: center; gap: 22px; }
+    #s11 .cmd code { display: inline-flex; align-items: center; gap: 14px; height: 60px; padding: 0 26px; border-radius: 16px; background: var(--soy); font: 600 24px/1 var(--font-mono); color: #f8ebdd; }
+    #s11 .cmd code span { color: var(--yuan); }
+    #s11 .cmd p { font: 500 23px/1.3 var(--font-ui); color: var(--text-2); }
+    #s11 .note { position: absolute; left: 120px; top: 888px; width: 1180px; font-size: 23px; line-height: 1.4; color: var(--text); }
+    #s11 .phone { --s: 352px; left: 1423px; top: 128px; }
   </style>
-  <div class="kicker"><b>09</b>Red team<span class="rb"><i style="--c: var(--chili)"></i>Security &amp; compliance · 30%</span></div>
-  <h2 class="title">Four attack classes.<br>Nothing moved.</h2>
+  <div class="kicker"><b>11</b>Evidence and red team<span class="rb"><i style="--c: var(--chili)"></i>Security &amp; compliance · 30%</span></div>
+  <h2 class="title">Measured. Reproducible.<br>Nothing moved.</h2>
   <div class="stats">
-    <div><span class="num ok">24/24</span><p>attacks blocked</p></div>
+    <div><span class="num ok">45/45</span><p>scripted scenarios pass</p></div>
+    <div><span class="num ok">24/24</span><p>scripted attacks blocked</p></div>
     <div><span class="num">¥0</span><p>moved, in every attack</p></div>
     <div><span class="num">0/26</span><p>false refusals of real requests</p></div>
+    <div><span class="num">4,244</span><p>automated tests passing (169 files)</p></div>
+    <div><span class="num">36</span><p>more attacks with a real model on: ¥0 moved</p></div>
   </div>
-  <div class="chips">
-    <span class="chip"><svg class="ico"><use href="#i-arrow-right-left"/></svg>Induced transfer</span>
-    <span class="chip"><svg class="ico"><use href="#i-database-zap"/></svg>Data extraction</span>
-    <span class="chip"><svg class="ico"><use href="#i-key-round"/></svg>Privilege escalation</span>
-    <span class="chip"><svg class="ico"><use href="#i-message-square-warning"/></svg>Prompt injection</span>
-  </div>
+  <div class="cmd"><code><span>$</span>npm run evidence</code><p>Judges can rerun all of it.</p></div>
   <p class="note">Jing’s electricity bill hides an order to wire ¥4,800 to a stranger. Bun flags it. Nothing moves.</p>
   <div class="phone" data-src="../docs/assets/screens/bills-xray-injection.png"></div>
   <footer class="foot"><span class="brand"><img src="../docs/assets/brand/fundbun-mark-sm.svg" alt=""><span class="wm">Fund<em>Bun</em></span></span>
-    <span class="src">evidence/latest/SUMMARY.md: attack block rate over scenarios C1–C14; false-refusal rate over legitimate A/B requests.</span>
-    <span class="pg"><b>09</b> / 13</span></footer>
+    <span class="src">evidence/latest/SUMMARY.md (seed 20261020, fixed sandbox clock) · live test of 18 Nov 2026 with a real model switched on: 24 attacks were stopped by the rule layer before the model was asked, 12 reached the model and were refused (evidence/live/).</span>
+    <span class="pg"><b>11</b> / 15</span></footer>
 </section>
 
-<!-- ═════════════ 10 · Privacy & compliance ═════════════ -->
-<section class="slide" id="s10" data-title="Privacy and compliance, by design.">
+<!-- ============ 12 · Future: FundBun Pro ============ -->
+<section class="slide" id="s12" data-title="FundBun Pro: $25 a month.">
   <style>
-    #s10 .title { max-width: 1180px; }
-    #s10 .grid { position: absolute; left: 120px; top: 392px; width: 1180px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px 56px; }
-    #s10 .grid div { display: flex; gap: 20px; align-items: center; }
-    #s10 .grid h3 { margin: 0; font: 640 29px/1.15 var(--font-display); font-variation-settings: var(--fv); }
-    #s10 .grid p { margin-top: 5px; font-size: 21px; line-height: 1.3; color: var(--text-2); }
-    #s10 .phone { --s: 352px; left: 1423px; top: 128px; }
+    #s12 .card { top: 318px; height: 520px; padding: 36px 40px; }
+    #s12 .free { left: 120px; width: 700px; }
+    #s12 .pro { left: 880px; width: 920px; border: 2.5px solid var(--rim); box-shadow: 0 0 0 8px rgba(227, 162, 26, 0.14), var(--shadow-2); }
+    #s12 .nm { margin: 16px 0 0; font: 640 34px/1.1 var(--font-display); font-variation-settings: var(--fv); }
+    #s12 .price { display: flex; align-items: baseline; gap: 12px; margin-top: 6px; }
+    #s12 .price .num { font-size: 92px; line-height: 1; font-weight: 640; letter-spacing: -0.03em; }
+    #s12 .price small { font: 500 24px/1 var(--font-ui); color: var(--text-2); }
+    #s12 .ticks { margin-top: 20px; }
+    #s12 .pro .ticks { columns: 1; }
+    #s12 .note { position: absolute; left: 120px; top: 872px; width: 1680px; font: 600 27px/1.35 var(--font-ui); color: var(--text); }
   </style>
-  <div class="kicker"><b>10</b>Privacy &amp; compliance<span class="rb"><i style="--c: var(--chili)"></i>Security &amp; compliance · 30%</span></div>
-  <h2 class="title">Privacy and compliance,<br>by design.</h2>
-  <div class="grid">
-    <div><span class="tile jade"><svg class="ico"><use href="#i-square-check"/></svg></span><span><h3>Separate consent</h3><p>PIPL Art. 29 · nothing pre-ticked</p></span></div>
-    <div><span class="tile"><svg class="ico"><use href="#i-vault"/></svg></span><span><h3>Local-first</h3><p>plus an optional AES-GCM vault</p></span></div>
-    <div><span class="tile sky"><svg class="ico"><use href="#i-eye-off"/></svg></span><span><h3>PII redacted</h3><p>before any LLM call</p></span></div>
-    <div><span class="tile"><svg class="ico"><use href="#i-sparkles"/></svg></span><span><h3>AI content labelled</h3><p>on every reply</p></span></div>
-    <div><span class="tile chili"><svg class="ico"><use href="#i-scale"/></svg></span><span><h3>No inducement to consume</h3><p>you set the tone and tripwires</p></span></div>
-    <div><span class="tile jade"><svg class="ico"><use href="#i-download"/></svg></span><span><h3>Export or delete</h3><p>everything, in one tap</p></span></div>
-    <div><span class="tile soy"><svg class="ico"><use href="#i-link"/></svg></span><span><h3>Hash-chained audit log</h3><p>tamper-evident</p></span></div>
+  <div class="kicker"><b>12</b>Possible future development · Monetization<span class="rb"><i style="--c: var(--text-3)"></i>Planned, not built</span></div>
+  <h2 class="title">FundBun Pro: $25 a month.</h2>
+  <div class="card free">
+    <span class="tag soy">Free · today</span>
+    <p class="nm">FundBun</p>
+    <div class="price"><span class="num">$0</span><small>bring your own AI</small></div>
+    <ul class="ticks">
+      <li><svg class="ico"><use href="#i-check"/></svg><span>The full finance app, desktop and web</span></li>
+      <li><svg class="ico"><use href="#i-check"/></svg><span>The zero-AI offline engine</span></li>
+      <li><svg class="ico"><use href="#i-check"/></svg><span>Connect Kimi, DeepSeek, Qwen, Ollama and more</span></li>
+      <li><svg class="ico"><use href="#i-check"/></svg><span>The same security kernel</span></li>
+    </ul>
   </div>
-  <div class="phone" data-src="../docs/assets/screens/activity-audit.png"></div>
+  <div class="card pro">
+    <span class="tag">Pro · proposed</span>
+    <p class="nm">FundBun Pro</p>
+    <div class="price"><span class="num">$25</span><small>a month</small></div>
+    <ul class="ticks">
+      <li><svg class="ico"><use href="#i-check"/></svg><span>Creator Mode: widgets and shell appearance plugins</span></li>
+      <li><svg class="ico"><use href="#i-check"/></svg><span>Hosted multi-model AI built in and included in the price</span></li>
+      <li><svg class="ico"><use href="#i-check"/></svg><span>No API key, nothing to connect: it works on first open</span></li>
+      <li><svg class="ico"><use href="#i-check"/></svg><span>Bring your own AI stays available</span></li>
+    </ul>
+  </div>
+  <p class="note">Everyday users get an AI that simply works. Power users keep control. The kernel is identical for both.</p>
   <footer class="foot"><span class="brand"><img src="../docs/assets/brand/fundbun-mark-sm.svg" alt=""><span class="wm">Fund<em>Bun</em></span></span>
-    <span class="src">PIPL Art. 28–29 (sensitive personal information, separate consent) · CAC Algorithmic Recommendation Provisions (2022) Art. 8, 17 · CAC AI-content labelling measures (2025)</span>
-    <span class="pg"><b>10</b> / 13</span></footer>
+    <span class="src">A proposal, not a shipped plan: no hosted model, billing or Pro gate exists yet. Hosted AI would pass the same gateway as today: redacted context, propose-only, policy-gated.</span>
+    <span class="pg"><b>12</b> / 15</span></footer>
 </section>
 
-<!-- ═════════════ 11 · Evidence ═════════════ -->
-<section class="slide" id="s11" data-title="Measured, reproducible, one command.">
+<!-- ============ 13 · Future: FundBun inside WeBank ============ -->
+<section class="slide" id="s13" data-title="A proposal: FundBun inside WeBank.">
   <style>
-    #s11 .stats { position: absolute; left: 120px; top: 312px; width: 800px; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, 196px); gap: 0 56px; }
-    #s11 .num { display: block; font-size: 92px; line-height: 0.95; font-weight: 640; letter-spacing: -0.03em; font-variant-numeric: lining-nums; }
-    #s11 .num.word2 { font-size: 64px; line-height: 1.33; letter-spacing: -0.02em; }
-    #s11 .stats p { margin-top: 10px; font: 600 22px/1.3 var(--font-ui); color: var(--text-2); }
-    #s11 .ok { color: var(--under-text); }
-    #s11 .shot { position: absolute; left: 980px; top: 312px; width: 820px; height: calc(820px * 1800 / 2480); overflow: hidden; border-radius: 22px; border: 1px solid var(--line); box-shadow: var(--shadow-2); }
-    #s11 .shot img { display: block; width: calc(820px * 2880 / 2480); margin-left: calc(820px * -200 / 2480); }
-    #s11 .cmd { position: absolute; left: 980px; top: 930px; display: flex; align-items: center; gap: 22px; }
-    #s11 .cmd code { display: inline-flex; align-items: center; gap: 14px; height: 60px; padding: 0 26px; border-radius: 16px; background: var(--soy);
-      font: 600 24px/1 var(--font-mono); color: #f8ebdd; }
-    #s11 .cmd code span { color: var(--yuan); }
-    #s11 .cmd p { font: 500 23px/1.3 var(--font-ui); color: var(--text-2); }
+    #s13 .m1 { left: 120px; top: 262px; }
+    #s13 .m2 { left: 580px; top: 262px; }
+    #s13 .tap { position: absolute; left: 487px; top: 588px; display: grid; place-items: center; width: 82px; height: 48px; border-radius: 999px; background: #5cc531; font: 700 17px/1 var(--font-ui); letter-spacing: 0.04em; color: #0d2a02; }
+    #s13 .tap::after { content: ''; position: absolute; right: -9px; top: 14px; border: 10px solid transparent; border-left-color: #5cc531; border-right: 0; }
+    #s13 .cap1 { position: absolute; top: 226px; font: 650 16px/1 var(--font-ui); letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3); white-space: nowrap; }
+    #s13 .lede { position: absolute; left: 1010px; top: 300px; width: 790px; font-size: 27px; }
+    #s13 .items { left: 1010px; top: 452px; width: 790px; gap: 26px; }
   </style>
-  <div class="kicker"><b>11</b>Evidence<span class="rb"><i style="--c: var(--jade)"></i>Task completion · 40%</span></div>
-  <h2 class="title">Measured, reproducible, one command.</h2>
-  <div class="stats">
-    <div><span class="num ok">45/45</span><p>scripted scenarios pass</p></div>
-    <div><span class="num">233/233</span><p>assertions</p></div>
-    <div><span class="num">3,065</span><p>automated tests, all passing</p></div>
-    <div><span class="num ok">44/44</span><p>audit chains intact · tampering detected</p></div>
-    <div><span class="num">1.35</span><p>user turns per task</p></div>
-    <div><span class="num word2">Identical</span><p>reruns, byte for byte</p></div>
+  <div class="kicker"><b>13</b>Possible future development · Bank partnership<span class="rb"><i style="--c: var(--text-3)"></i>Concept · nothing is agreed with any bank</span></div>
+  <h2 class="title">A proposal: FundBun inside WeBank.</h2>
+  <span class="cap1" style="left: 120px">1 · WeBank home, concept</span>
+  <span class="cap1" style="left: 580px">2 · FundBun opens inside it</span>
+
+  <div class="mock m1"><div class="scr wb">
+    <div class="m-sb"><b>17:05</b><span><svg class="ico"><use href="#i-signal"/></svg><svg class="ico"><use href="#i-wifi"/></svg><svg class="ico"><use href="#i-battery-full"/></svg></span></div>
+    <div class="wb-top"><span class="wb-logo">We<b>Bank</b></span><span class="wb-pill"><svg class="ico"><use href="#i-star"/></svg>Points</span><span class="wb-out"><svg class="ico"><use href="#i-log-out"/></svg></span></div>
+    <div class="wb-hi"><span class="av"><svg class="ico"><use href="#i-user"/></svg></span><b>Hi, Jing!</b><span class="mini"><i class="dot"></i><svg class="ico"><use href="#i-bell"/></svg><em>Notices</em></span><span class="mini"><svg class="ico"><use href="#i-receipt"/></svg><em>Receipts</em></span></div>
+    <div class="wb-tabs"><span>Insight</span><span class="on">Pay</span><span>Growth</span></div>
+    <div class="wb-body">
+      <div class="wb-h"><b>Your accounts</b><u>See all</u></div>
+      <div class="wb-cards">
+        <div class="teal"><span><svg class="ico"><use href="#i-pie"/></svg></span><em>View portfolio</em></div>
+        <div class="orange"><small>WEBANK CURRENT</small><b>6217 0810 8920</b><i class="main">Main</i><small class="bal">Available balance</small><strong>¥ ••••••••<svg class="ico"><use href="#i-eye"/></svg></strong></div>
+        <div class="orange next"></div>
+      </div>
+      <div class="wb-dots"><i class="on"></i><i></i><i></i><i></i><i></i></div>
+      <div class="wb-h"><b>Featured services</b><u>Edit</u></div>
+      <div class="wb-grid">
+        <div class="t c-teal"><span class="sq"><svg class="ico"><use href="#i-send"/></svg></span><em>Transfer</em></div><div class="t c-orange"><span class="sq"><svg class="ico"><use href="#i-qr"/></svg></span><em>Pay code</em></div><div class="t c-blue"><span class="sq"><svg class="ico"><use href="#i-receipt"/></svg></span><em>Bills</em></div><div class="t c-teal"><span class="sq"><svg class="ico"><use href="#i-wallet"/></svg></span><em>E-Wallet</em></div>
+        <div class="t c-teal"><span class="sq"><svg class="ico"><use href="#i-credit-card"/></svg></span><em>Virtual<br>account</em></div><div class="t c-bun"><span class="sq"><img src="../docs/assets/brand/fundbun-mark-sm.svg" alt=""></span><em><b>FundBun</b></em></div><div class="t c-lilac"><span class="sq"><svg class="ico"><use href="#i-shopping-bag"/></svg></span><em>Lifestyle</em></div><div class="t c-white"><span class="sq"><svg class="ico"><use href="#i-layout-grid"/></svg></span><em>See all</em></div>
+      </div>
+      <svg class="ring" viewBox="0 0 120 150" aria-hidden="true"><path d="M70 6C38 2 12 30 8 70C4 108 20 142 52 146C86 150 112 118 114 76C116 40 100 12 66 8C56 7 48 9 40 14"/></svg>
+      <div class="wb-h"><b>Offers for you</b><u>See all</u></div>
+      <div class="wb-promo"><i>6 Nov to 2 Dec</i><b>Save with QR pay</b></div>
+    </div>
+  </div></div>
+
+  <span class="tap">TAP</span>
+
+  <div class="mock m2"><div class="scr fbw">
+    <div class="m-sb"><b>17:05</b><span><svg class="ico"><use href="#i-signal"/></svg><svg class="ico"><use href="#i-wifi"/></svg><svg class="ico"><use href="#i-battery-full"/></svg></span></div>
+    <div class="fb-bar"><span class="back"><svg class="ico"><use href="#i-chevron-right"/></svg>WeBank</span><span class="ttl"><img src="../docs/assets/brand/fundbun-mark-sm.svg" alt=""><span>Fund<em>Bun</em></span></span><span class="caps"><i></i><i></i><i></i><b></b></span></div>
+    <div class="fb-mirror">
+      <div class="arch"><div class="gl"><img src="../src/ui/assets/items/plane.svg" alt=""></div></div>
+      <div class="tx"><small>Dream Mirror · October</small><b>You could’ve gotten a weekend in Chengdu.</b><span>¥2,580 over your ¥9,500 target</span></div>
+    </div>
+    <div class="fb-row"><span class="st"><svg class="ico"><use href="#i-flame"/></svg>2-day streak</span><span class="ck">Check in today</span></div>
+    <div class="fb-h"><b>Goal Pots</b><span><svg class="ico"><use href="#i-lock"/></svg>PIN-gated</span></div>
+    <div class="fb-pot"><img src="../src/ui/assets/items/bag.svg" alt=""><div><b>Birkin 25</b><i class="bar"><i style="width: 24%"></i></i><small>¥23,520 of ¥98,000 · 24%</small></div><svg class="ico"><use href="#i-lock"/></svg></div>
+    <div class="fb-pot"><img src="../src/ui/assets/items/plane.svg" alt=""><div><b>Flight home</b><i class="bar"><i style="width: 40%"></i></i><small>¥1,200 of ¥3,000 · 40%</small></div><svg class="ico"><use href="#i-lock"/></svg></div>
+    <div class="fb-cta">Stash ¥200 in Birkin 25</div>
+    <div class="fb-fine">WeBank confirms with your PIN, bound to this exact amount</div>
+    <div class="fb-tabs"><span class="on">Home</span><span>Insights</span><span>Ask Bun</span><span>Goals</span></div>
+  </div></div>
+
+  <p class="lede">One tile in the bank’s own app opens the <b>Dream Mirror</b> and <b>PIN-gated Goal Pots</b>: gamified saving inside WeBank.</p>
+  <div class="items">
+    <div class="item"><span class="tile"><svg class="ico"><use href="#i-flame"/></svg></span><span><h3>A reason to open the app daily</h3><p>The mirror changes with every purchase, and the check-in keeps a streak.</p></span></div>
+    <div class="item"><span class="tile jade"><svg class="ico"><use href="#i-piggy-bank"/></svg></span><span><h3>Micro-saving that sticks</h3><p>Small stashes into the user’s own pots, each one confirmed by the bank.</p></span></div>
+    <div class="item"><span class="tile sky"><svg class="ico"><use href="#i-shield-check"/></svg></span><span><h3>Retention built on trust</h3><p>The bank hosts, holds the money and executes. FundBun proposes and enforces the rules.</p></span></div>
   </div>
-  <div class="shot crop"><img src="../docs/assets/screens/desktop-chat-plan-glassbox.png" alt=""></div>
-  <div class="cmd"><code><span>$</span>npm run evidence</code><p>Judges can reproduce everything.</p></div>
   <footer class="foot"><span class="brand"><img src="../docs/assets/brand/fundbun-mark-sm.svg" alt=""><span class="wm">Fund<em>Bun</em></span></span>
-    <span class="src">evidence/latest/SUMMARY.md and REPRODUCE.md · seed 20261020, fixed sandbox clock · tests: npx vitest run, 8 Oct 2026 · right: the live Glass Box</span>
-    <span class="pg"><b>11</b> / 13</span></footer>
+    <span class="src">A concept mock-up for discussion, not a WeBank product or screen. The home layout follows a familiar bank super-app pattern (tabs, account cards, a 4 by 2 featured-services grid). Daily opens, stickiness and retention are aims to test in a consented pilot, not results.</span>
+    <span class="pg"><b>13</b> / 15</span></footer>
 </section>
 
-<!-- ═════════════ 12 · Why WeBank, what's next ═════════════ -->
-<section class="slide" id="s12" data-title="Built for Better Banking for All.">
+<!-- ============ 14 · Future: automatic expense capture ============ -->
+<section class="slide" id="s14" data-title="Spending that logs itself.">
   <style>
-    #s12 .lab { position: absolute; font: 650 18px/1 var(--font-ui); letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-3); }
-    #s12 .fit { position: absolute; left: 470px; top: 372px; width: 430px; display: flex; flex-direction: column; gap: 40px; }
-    #s12 .phone { --s: 268px; left: 120px; top: 318px; }
-    #s12 .fit div { display: flex; gap: 22px; align-items: center; }
-    #s12 .fit p { font: 640 29px/1.18 var(--font-display); font-variation-settings: var(--fv); color: var(--text); }
-    #s12 .road { position: absolute; left: 1000px; top: 360px; width: 800px; }
-    #s12 .road::before { content: ''; position: absolute; left: 27px; top: 30px; bottom: 30px; width: 2px; background: var(--crust); }
-    #s12 .step { position: relative; display: flex; gap: 28px; align-items: center; height: 108px; }
-    #s12 .step b { position: relative; display: grid; place-items: center; flex: none; width: 56px; height: 56px; border-radius: 50%;
-      background: var(--cream); border: 2px solid var(--rim); font: 700 22px/1 var(--font-ui); color: var(--gold-text); }
-    #s12 .step .ico { width: 30px; height: 30px; color: var(--text-2); }
-    #s12 .step h3 { margin: 0; font: 640 30px/1.15 var(--font-display); font-variation-settings: var(--fv); }
-    #s12 .step p { margin-top: 4px; font-size: 21px; line-height: 1.3; color: var(--text-2); }
+    #s14 .card { top: 330px; width: 810px; height: 520px; padding: 34px 38px; }
+    #s14 .c1 { left: 120px; }
+    #s14 .c2 { left: 990px; border-style: dashed; border-width: 2px; border-color: var(--line-strong); box-shadow: none; background: rgba(255, 255, 255, 0.6); }
+    #s14 .hd { display: flex; align-items: center; gap: 18px; margin-top: 16px; }
+    #s14 .hd h3 { margin: 0; font: 640 36px/1.1 var(--font-display); font-variation-settings: var(--fv); }
+    #s14 .flow { margin-top: 24px; }
+    #s14 .ticks { margin-top: 24px; }
+    #s14 .kinds { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 10px; }
+    #s14 .kinds .chip { height: 44px; padding: 0 16px; font-size: 18px; }
   </style>
-  <div class="kicker"><b>12</b>Why WeBank — and what’s next</div>
-  <h2 class="title">Built for Better Banking for All.</h2>
-  <div class="lab" style="left: 470px; top: 318px">Why WeBank</div>
-  <div class="phone" data-src="../docs/assets/screens/onboarding-welcome.png"></div>
-  <div class="fit">
-    <div><span class="tile"><svg class="ico"><use href="#i-users"/></svg></span><p>Young users and international students</p></div>
-    <div><span class="tile jade"><svg class="ico"><use href="#i-vault"/></svg></span><p>Local-first privacy</p></div>
-    <div><span class="tile sky"><svg class="ico"><use href="#i-eye"/></svg></span><p>Explainable agent actions</p></div>
+  <div class="kicker"><b>14</b>Possible future development · Automatic expense capture</div>
+  <h2 class="title">Spending that logs itself.</h2>
+  <div class="card c1">
+    <span class="tag jade">Live today · Desktop</span>
+    <div class="hd"><span class="tile sky"><svg class="ico"><use href="#i-mail"/></svg></span><h3>Read-only email ingestion</h3></div>
+    <div class="flow"><span class="st"><svg class="ico"><use href="#i-mail"/></svg><b>Mailbox</b></span><span class="ar"><svg class="ico"><use href="#i-arrow-right"/></svg></span><span class="st"><svg class="ico"><use href="#i-eye"/></svg><b>Read-only IMAP</b></span><span class="ar"><svg class="ico"><use href="#i-arrow-right"/></svg></span><span class="st"><svg class="ico"><use href="#i-hand"/></svg><b>Your tap</b></span><span class="ar"><svg class="ico"><use href="#i-arrow-right"/></svg></span><span class="st"><svg class="ico"><use href="#i-check"/></svg><b>Ledger</b></span></div>
+    <ul class="ticks">
+      <li><svg class="ico"><use href="#i-check"/></svg><span>Receipts, invoices and bank emails become proposed entries</span></li>
+      <li><svg class="ico"><use href="#i-check"/></svg><span>Tried and tested in the desktop app and its test suite</span></li>
+      <li><svg class="ico"><use href="#i-check"/></svg><span>The mailbox is never changed: no send, no delete, no flags</span></li>
+    </ul>
+    <div class="kinds"><span class="chip">Receipts</span><span class="chip">Invoices</span><span class="chip">Bank emails</span></div>
   </div>
-  <div class="lab" style="left: 1000px; top: 318px">Roadmap</div>
-  <div class="road">
-    <div class="step"><b>1</b><span><h3>Bank-side mandate enforcement</h3><p>caps and PIN, via WeBank APIs</p></span></div>
-    <div class="step"><b>2</b><span><h3>WeChat mini-program</h3><p>where people pay</p></span></div>
-    <div class="step"><b>3</b><span><h3>Federated learning (FATE)</h3><p>no raw data pooled</p></span></div>
-    <div class="step"><b>4</b><span><h3>In-region LLMs</h3><p>via the OpenAI-compatible gateway</p></span></div>
-    <div class="step"><b>5</b><span><h3>Consented pilot</h3><p>real users, opt-in</p></span></div>
+  <div class="card c2">
+    <span class="tag soy">Roadmap · Mobile</span>
+    <div class="hd"><span class="tile"><svg class="ico"><use href="#i-bell"/></svg></span><h3>Push notification listener</h3></div>
+    <div class="flow"><span class="st"><svg class="ico"><use href="#i-bell"/></svg><b>Notification</b></span><span class="ar"><svg class="ico"><use href="#i-arrow-right"/></svg></span><span class="st"><svg class="ico"><use href="#i-smartphone"/></svg><b>Parsed on the phone</b></span><span class="ar"><svg class="ico"><use href="#i-arrow-right"/></svg></span><span class="st"><svg class="ico"><use href="#i-hand"/></svg><b>Your tap</b></span><span class="ar"><svg class="ico"><use href="#i-arrow-right"/></svg></span><span class="st"><svg class="ico"><use href="#i-check"/></svg><b>Ledger</b></span></div>
+    <ul class="ticks">
+      <li><svg class="ico"><use href="#i-check"/></svg><span>Captured the moment you pay, with no typing</span></li>
+      <li><svg class="ico"><use href="#i-check"/></svg><span>Read on the device: nothing is sent to a cloud</span></li>
+      <li><svg class="ico"><use href="#i-check"/></svg><span>The same tap-to-log gate as email, so nothing logs itself silently</span></li>
+    </ul>
+    <div class="kinds"><span class="chip">E-wallets</span><span class="chip">QRIS</span><span class="chip">WeChat Pay</span><span class="chip">Alipay</span><span class="chip">Bank apps</span></div>
   </div>
   <footer class="foot"><span class="brand"><img src="../docs/assets/brand/fundbun-mark-sm.svg" alt=""><span class="wm">Fund<em>Bun</em></span></span>
-    <span class="src">WeBank mission: “Better Banking for All” · FATE: open-source federated learning started by WeBank’s AI group, hosted by the Linux Foundation</span>
-    <span class="pg"><b>12</b> / 13</span></footer>
+    <span class="src">Email ingestion ships today in the desktop app (server/email, the log_spending tool at tier T1). The notification listener is a roadmap item and is not built: Android first, where a notification listener works with the user’s permission; iOS does not let an app read other apps’ notifications.</span>
+    <span class="pg"><b>14</b> / 15</span></footer>
 </section>
 
-<!-- ═════════════ 13 · Close ═════════════ -->
-<section class="slide dark" id="s13" data-title="Show me my mirror.">
+<!-- ============ 15 · Close ============ -->
+<section class="slide dark" id="s15" data-title="Show me my mirror.">
   <style>
-    #s13 .glow { position: absolute; left: 1010px; top: -140px; width: 1100px; height: 1100px; border-radius: 50%;
+    #s15 .glow { position: absolute; left: 1010px; top: -140px; width: 1100px; height: 1100px; border-radius: 50%;
       background: radial-gradient(closest-side, rgba(79, 176, 138, 0.13), rgba(227, 162, 26, 0.05) 55%, transparent 100%); }
-    #s13 .lockup { position: absolute; left: 120px; top: 92px; display: flex; align-items: center; gap: 18px; }
-    #s13 .lockup img { width: 80px; height: 80px; }
-    #s13 .lockup .word { font-size: 46px; }
-    #s13 .thanks { position: absolute; left: 120px; top: 300px; font: 650 20px/1 var(--font-ui); letter-spacing: 0.18em; text-transform: uppercase; color: var(--yuan); }
-    #s13 .display { position: absolute; left: 120px; top: 344px; margin: 0; font-size: 152px; line-height: 0.98;
+    #s15 .lockup { position: absolute; left: 120px; top: 92px; display: flex; align-items: center; gap: 18px; }
+    #s15 .lockup img { width: 80px; height: 80px; }
+    #s15 .lockup .word { font-size: 46px; }
+    #s15 .thanks { position: absolute; left: 120px; top: 300px; font: 650 20px/1 var(--font-ui); letter-spacing: 0.18em; text-transform: uppercase; color: var(--yuan); }
+    #s15 .display { position: absolute; left: 120px; top: 344px; margin: 0; font-size: 152px; line-height: 0.98;
       font-weight: 680; letter-spacing: -0.03em; color: #fffaf2; }
-    #s13 .display i { color: var(--yuan); font-weight: 650; }
-    #s13 .links { position: absolute; left: 120px; top: 714px; display: flex; flex-direction: column; gap: 22px; }
-    #s13 .links div { display: flex; align-items: center; gap: 18px; font: 500 29px/1.2 var(--font-ui); color: #f8ebdd; }
-    #s13 .links .ico { width: 30px; height: 30px; color: var(--yuan); }
-    #s13 .links code { font: 600 26px/1 var(--font-mono); color: #f8ebdd; }
-    #s13 .links small { font-size: 25px; color: #a68f79; }
-    #s13 .team { position: absolute; left: 120px; bottom: 76px; font: 500 22px/1.3 var(--font-ui); color: #d8c3ad; }
-    #s13 .team b { color: #f8ebdd; font-weight: 650; }
-    #s13 .mirror { left: 1250px; top: 168px; }
-    #s13 .ring { position: absolute; left: 50%; top: 46%; width: 76%; transform: translate(-50%, -50%) rotate(-90deg); overflow: visible; }
-    #s13 .dream { width: 56%; }
+    #s15 .display i { color: var(--yuan); font-weight: 650; }
+    #s15 .links { position: absolute; left: 120px; top: 714px; display: flex; flex-direction: column; gap: 22px; }
+    #s15 .links div { display: flex; align-items: center; gap: 18px; font: 500 29px/1.2 var(--font-ui); color: #f8ebdd; }
+    #s15 .links .ico { width: 30px; height: 30px; color: var(--yuan); }
+    #s15 .links code { font: 600 26px/1 var(--font-mono); color: #f8ebdd; }
+    #s15 .links small { font-size: 25px; color: #a68f79; }
+    #s15 .team { position: absolute; left: 120px; bottom: 76px; font: 500 22px/1.3 var(--font-ui); color: #d8c3ad; }
+    #s15 .team b { color: #f8ebdd; font-weight: 650; }
+    #s15 .mirror { left: 1250px; top: 168px; }
+    #s15 .ring { position: absolute; left: 50%; top: 46%; width: 76%; transform: translate(-50%, -50%) rotate(-90deg); overflow: visible; }
+    #s15 .dream { width: 56%; }
   </style>
   <div class="glow"></div>
   <div class="lockup"><img src="../docs/assets/brand/fundbun-mark-dark.svg" alt=""><span class="word">Fund<span>Bun</span></span></div>
   <p class="thanks">Thank you</p>
   <h2 class="display">Show me<br>my <i>mirror.</i></h2>
   <div class="links">
-    <div><svg class="ico"><use href="#i-circle-play"/></svg>youtu.be/Se5TD4KQ35A<small>the 5-minute demo</small></div>
+    <div><svg class="ico"><use href="#i-monitor"/></svg>Live on this laptop<small>desktop app · offline engine · demo PIN 2580</small></div>
     <div><svg class="ico"><use href="#i-git-branch"/></svg>github.com/odripads/fundbun</div>
-    <div><svg class="ico"><use href="#i-globe"/></svg>odripads.github.io/fundbun<small>live demo · ?demo=jing or ?demo=arif · PIN 2580</small></div>
+    <div><svg class="ico"><use href="#i-terminal"/></svg><code>npm run evidence</code><small>rerun every number</small></div>
   </div>
-  <div class="team"><b>Odri Prince Sembiring</b> · Universitas Gadjah Mada &nbsp;&nbsp; <b>Nadine Griselda</b> · Universitas Airlangga &nbsp;&nbsp; FinTechathon 2026 · International Track · Topic A</div>
+  <div class="team"><b>Odri Prince Sembiring</b> · Universitas Gadjah Mada &nbsp;&nbsp; <b>Nadine Griselda</b> · Universitas Airlangga &nbsp;&nbsp; 2026 FinTechathon Finalist · International AI Track</div>
   <div class="mirror under">
     <div class="glass"><div class="glint"></div><div class="floor"></div>
       <svg class="ring" viewBox="0 0 200 200"><circle cx="100" cy="100" r="92" stroke="rgba(255,250,242,0.12)" stroke-width="7" fill="none"/><circle cx="100" cy="100" r="92" stroke="#4fb08a" stroke-width="7" fill="none" stroke-linecap="round" stroke-dasharray="138.7 578.1"/></svg>

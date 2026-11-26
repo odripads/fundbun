@@ -23,6 +23,7 @@ import { TOOL_SPECS, isToolName } from './specs'
 import { currencyOf, money, pastedBillLine, profileFacts } from './support'
 import { addCard, addNotice, addSource, startTurn, taint, trace, type Turn } from './turn'
 import { cleanAttachments, recentAttachments } from './attachments'
+import { respondShellAppearance } from './creator-tools'
 import { composeReply, line } from './voice'
 
 /** Creates the FundBun agent runtime (offline Bun Engine + LLM tool loop, policy-gated). */
@@ -66,6 +67,12 @@ async function respond(host: AgentHost, text: string, source: 'chat' | 'xray', a
     if (!/[\p{L}\p{N}]/u.test(pin.request.replace(/\[PIN\]/g, ''))) return finishTurn(host, turn, pinOnlyReply(host, turn), input)
   }
   const request = pin.request
+  // Desktop Creator Mode: "change the theme to midnight" and the like are read on this device and answered with
+  // a preview card, with or without an AI connected. Null for every other message, so nothing else changes.
+  if (source === 'chat' && !pin.masked && !files.length) {
+    const look = await respondShellAppearance(host, turn, request)
+    if (look) return finishTurn(host, turn, look, input)
+  }
   const useModel = source === 'chat' && !pin.masked && (files.length > 0 || !needsDeterministicPath(host, request))
   const agent = useModel ? host.agent?.() ?? null : null
   if (agent) {
@@ -88,13 +95,13 @@ function filesNeedAnAi(turn: Turn): Reply {
   return { text: 'I can only read files when your own AI is connected. Your file stays on this computer either way.', intent: 'files_need_ai' }
 }
 
-/** "my pin is 2580", "PIN: 2580", "密码是2580", "pin saya 2580" — the digits are the PIN whatever their value. */
+/** "my pin is 2580", "PIN: 2580", "密码是2580", "pin saya 2580": the digits are the PIN whatever their value. */
 const PIN_PHRASE_RE = /(?:\b(?:my\s+)?(?:pin(?:\s*(?:code|number))?|passcode|password|kata sandi|sandi)\b(?:\s*(?:saya|ku|aku))?\s*(?:is|was|=|:|：|-|adalah|nya)?\s*|(?:我的)?(?:支付密码|PIN码?|pin码?|密码)\s*(?:是|为|:|：)?\s*)(\d{4,6})(?!\d)/gi
 const BARE_PIN_RE = /^\s*(?:pin\s*[:：]?\s*)?(\d{4,6})\s*[.!。]?\s*$/i
 
 /**
  * Masks a PIN in a chat message. Only by wording ("my pin is …") or, while a PIN step-up is waiting, a bare
- * 4–6 digit message — never by comparing digits with the stored PIN hash: a reply that differed for the right
+ * 4–6 digit message: never by comparing digits with the stored PIN hash: a reply that differed for the right
  * PIN would let anyone with the chat test PINs without ever hitting the keypad's attempt limit.
  */
 export function maskPinInChat(text: string, stepUpWaiting: boolean): { text: string; request: string; masked: boolean } {

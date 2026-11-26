@@ -327,8 +327,8 @@
   padding: 0 var(--s-5) 0 var(--s-6);
   border-bottom: 1px solid var(--border);
   background: color-mix(in srgb, var(--bg) 86%, transparent);
-  backdrop-filter: blur(14px) saturate(1.2);
   -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  backdrop-filter: blur(14px) saturate(1.2);
 }
 
 .back {
@@ -450,8 +450,8 @@
   inset: 0;
   z-index: 39;
   background: color-mix(in srgb, var(--c-soy-900, #24180f) 32%, transparent);
-  backdrop-filter: blur(2px);
   -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
 }
 
 .panel {

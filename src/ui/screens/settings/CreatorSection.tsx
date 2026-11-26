@@ -1,9 +1,12 @@
 /**
  * "Creator Mode" in Settings (desktop app only): lets Bun draft dashboard widgets from a chat message. Turning it
  * on needs the PIN; every widget runs sandboxed with a read-only copy of the numbers and can be removed in one tap.
+ * It also lists the shell appearance that is active (theme, what Bun wears, the app name) with one Reset control.
  */
-import { Power, Puzzle, Trash2 } from 'lucide-react'
+import { Palette, Power, Puzzle, RotateCcw, Trash2 } from 'lucide-react'
 import { useState } from 'react'
+import { describeShellAppearance, isDefaultShellAppearance } from '../../../core/plugins/appearance'
+import { resetShellAppearance, useShellAppearance } from '../../components/plugins/shellAppearance'
 import { PluginIcon } from '../../components/plugins/icons'
 import { refreshPlugins, usePluginsState } from '../../components/plugins/pluginStore'
 import { Badge, Button, Callout, Card, IconButton, SectionHeader, Toggle } from '../../components/ds'
@@ -19,6 +22,9 @@ export function CreatorSection() {
   const [asking, setAsking] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
+  const look = useShellAppearance()
+  const lookLines = describeShellAppearance(look)
+  const customLook = !isDefaultShellAppearance(look)
 
   // the hosted site has no plugin engine: the section is not shown at all
   if (!st.local) return null
@@ -126,6 +132,36 @@ export function CreatorSection() {
               </div>
             </div>
           ) : null}
+        </Card>
+      ) : null}
+
+      {st.enabled || customLook ? (
+        <Card padding="none">
+          <div className={styles.consentRow} data-shell-appearance={customLook ? 'custom' : 'default'}>
+            <span className={styles.rowIcon} aria-hidden="true"><Palette /></span>
+            <span className={styles.consentText}>
+              <span className={styles.consentTitle}>Shell appearance</span>
+              <span className={styles.consentSub}>
+                {customLook
+                  ? 'These changes are on. They only restyle the app: your money, PIN and permissions are untouched.'
+                  : 'FundBun wears its own look. Ask Bun, for example "change the theme to midnight", "put a kamen rider helmet on Bun" or "rename FundBun to #ilovemoney". You see a preview and press Apply.'}
+              </span>
+            </span>
+            <Badge variant={customLook ? 'accent' : 'neutral'} size="sm">{customLook ? 'Custom' : 'Default'}</Badge>
+          </div>
+          {lookLines.map((l) => (
+            <div key={l.kind} className={styles.consentRow} data-shell-row={l.kind}>
+              <span className={styles.consentText}>
+                <span className={styles.consentSub}>{l.label}</span>
+                <span className={styles.consentTitle}>{l.value}</span>
+              </span>
+            </div>
+          ))}
+          <div className={styles.toggleRow}>
+            <Button size="sm" variant="secondary" iconStart={<RotateCcw />} disabled={!customLook} onClick={() => resetShellAppearance()}>
+              Reset Shell Appearance
+            </Button>
+          </div>
         </Card>
       ) : null}
 

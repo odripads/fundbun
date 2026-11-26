@@ -124,8 +124,8 @@
   right: var(--gutter);
   z-index: 4;
   background: color-mix(in srgb, var(--surface) 80%, transparent);
-  backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
 }
 
 /* ───────────── the first view ─────────────
@@ -414,8 +414,8 @@
   background: color-mix(in srgb, var(--surface) 82%, transparent);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent), var(--shadow-1);
   font-size: var(--fs-sm);
-  backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
 }
 
 .plateName {
@@ -768,8 +768,8 @@
   border-radius: var(--r-md);
   background: color-mix(in srgb, var(--surface) 78%, transparent);
   box-shadow: inset 0 0 0 1px var(--border), var(--shadow-1);
-  backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   animation: rise-in 520ms var(--ease-out) both;
   animation-delay: calc(180ms + var(--i, 0) * 70ms);
 }

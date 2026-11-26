@@ -173,3 +173,100 @@
   color: var(--over-text);
   font-size: var(--fs-sm);
 }
+
+/* ── shell appearance card: a small picture of the look, painted with the proposed tokens ── */
+
+.lookPreview {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-width: 0;
+  padding: var(--s-4) var(--s-3) var(--s-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  background: var(--bg);
+  color: var(--text);
+}
+
+.lookTitles {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  margin-right: auto;
+}
+
+.lookName {
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: var(--fs-lg, 1.25rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lookTheme {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.lookSwatches {
+  display: inline-flex;
+  flex: none;
+  gap: 4px;
+}
+
+.lookSwatches i {
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+}
+
+.swatchBg {
+  background: var(--bg-sunken);
+}
+
+.swatchSurface {
+  background: var(--surface);
+}
+
+.swatchAccent {
+  background: var(--accent);
+}
+
+.swatchText {
+  background: var(--text);
+}
+
+.lookChanges {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+
+.lookChange {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+  min-width: 0;
+  font-size: var(--fs-sm);
+}
+
+.lookChange dt {
+  flex: none;
+  color: var(--text-3);
+}
+
+.lookChange dd {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font-weight: 650;
+  text-align: end;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

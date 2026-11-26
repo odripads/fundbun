@@ -6,11 +6,11 @@
 
 | Field | Value |
 |---|---|
-| Team name | FundBun — Odri Prince Sembiring (leader, Universitas Gadjah Mada) · Nadine Griselda (Universitas Airlangga) |
-| Competition track | International AI Track — Topic A: Personal Finance Assistant |
+| Team name | FundBun: Odri Prince Sembiring (leader, Universitas Gadjah Mada) · Nadine Griselda (Universitas Airlangga) |
+| Competition track | International AI Track, Topic A: Personal Finance Assistant |
 | Submission date | 2026-10-20 |
 | Source code | [github.com/odripads/fundbun](https://github.com/odripads/fundbun) |
-| Live demo | [fundbun.vercel.app](https://fundbun.vercel.app/?demo=jing) · mirror [odripads.github.io/fundbun](https://odripads.github.io/fundbun/?demo=jing) — no install, demo PIN 2580 |
+| Live demo | [fundbun.vercel.app](https://fundbun.vercel.app/?demo=jing) · mirror [odripads.github.io/fundbun](https://odripads.github.io/fundbun/?demo=jing): no install, demo PIN 2580 |
 | Demo video | [youtu.be/Se5TD4KQ35A](https://youtu.be/Se5TD4KQ35A) (4:47, English subtitles) |
 
 *How to read this document.* Every number below comes from `evidence/latest/` in the repository ([github.com/odripads/fundbun](https://github.com/odripads/fundbun)), which `npm run evidence` regenerates byte for byte. The same folder is attached as **InternationalAI-FundBun-ExecutionEvidence-Logs.zip**. Topic A is not an on-chain topic, so this evidence consists of sandbox operation logs and the demo video, not transaction hashes.
@@ -91,10 +91,10 @@ Below are 30 representative operations, chosen across all four categories. **Tim
 | 78 | 10:00:01 | A5 · "Check my bills" | `analyze_bills` (T0) | 6 findings: Tencent Video charged twice, iQIYI price hike, electricity +57%, three video services, bills due soon, annual cost | Figure 2 · [A5](../evidence/latest/scenarios/A5.md) |
 | 114 | 10:00:01 | A7 · "Can I afford ¥1,299 sneakers?" | `check_affordability` (T0) | Verdict **skip**: 12.2 hours of work; Birkin 25 delayed 18 more days | [A7](../evidence/latest/scenarios/A7.md) |
 | 132 | 10:00:01 | A8 · "Make me a budget" | `create_budget_plan` (T1, ALLOW in Co-pilot) | Executed: 13 category limits summing exactly to ¥9,500; undo available | [A8](../evidence/latest/scenarios/A8.md) |
-| 173–174 | 10:00:02 | A10 · sandbox purchase at JD.com | Tripwire `single_over ¥300` fires | "Whoa, ¥459 at JD.com — That ¥459 = 0.5% of your Birkin 25"; checking ¥50,189.17 → ¥49,730.17 | [A10](../evidence/latest/scenarios/A10.md) |
+| 173–174 | 10:00:02 | A10 · sandbox purchase at JD.com | Tripwire `single_over ¥300` fires | "Whoa, ¥459 at JD.com. That ¥459 = 0.5% of your Birkin 25"; checking ¥50,189.17 → ¥49,730.17 | [A10](../evidence/latest/scenarios/A10.md) |
 | 211–214 | 10:00:01 | A11 · "Help me get back on track this month" | 7-step TaskPlan DAG | 4 read steps done. Delivery budget capped at ¥840 (was ¥940) and a pace tripwire added, both T1 and auto-applied. "Cancel Youku" waits for tap + PIN (`step_up`) | Figure 3 · [A11](../evidence/latest/scenarios/A11.md) |
 | 260 | 10:00:02 | A12 · bill pasted into X-ray | `xray_bill` + injection scan | ¥486.20 due 2026-10-28, +57% vs history. **Injection detected** (instruction-override, AI-addressed, payment instruction, authority claim, urgency, secrecy); turn tainted; 0 actions | Figure 2 · [A12](../evidence/latest/scenarios/A12.md) |
-| 272 | 10:00:01 | A13 · Arif opens Home | UI reads the Dream Mirror | Status **under**: "¥668 closer to your MacBook Air (46% there)." "Stash ¥330 and your MacBook Air is 50% there — or keep it as breathing room. Your call." | Figure 1 · [A13](../evidence/latest/scenarios/A13.md) |
+| 272 | 10:00:01 | A13 · Arif opens Home | UI reads the Dream Mirror | Status **under**: "¥668 closer to your MacBook Air (46% there)." "Stash ¥330 and your MacBook Air is 50% there, or keep it as breathing room. Your call." | Figure 1 · [A13](../evidence/latest/scenarios/A13.md) |
 | 288–295 | 10:00:02 | A14 · Arif approves "Stash my surplus" | `transfer_to_goal` (T2, confirm) → tap → executed | ¥330 moved: checking ¥9,923.33 → ¥9,593.33; MacBook pot ¥3,700 → ¥4,030; audited | [A14](../evidence/latest/scenarios/A14.md) |
 | 316–323 | 10:00:02 | B1 · "Move ¥300 to my Chengdu fund" → Approve | Policy re-checked at approval; binding hash verified | Executed: checking ¥50,189.17 → ¥49,889.17; Chengdu pot ¥0 → ¥300 | [B1](../evidence/latest/scenarios/B1.md) |
 | 327–332 | 10:00:23 | B1 · Undo | Bank reverses the exact transactions | Reverted inside the 30 s window: checking back to ¥50,189.17, pot back to ¥0; `action_undone` audited | [B1](../evidence/latest/scenarios/B1.md) |
@@ -171,7 +171,7 @@ npm test               # Vitest: unit, scenario (tests/agent.test.ts) and eviden
 npm run typecheck
 ```
 
-**3. Regenerate the evidence.** Expected: `ALL PASS — 45/45 scenarios, 233/233 assertions`, exit code 0. The runner exits 1 if any assertion fails.
+**3. Regenerate the evidence.** Expected: a result line that reports `ALL PASS` with `45/45 scenarios, 233/233 assertions`, and exit code 0. The runner exits 1 if any assertion fails.
 
 ```bash
 npm run evidence                                  # all 45 scenarios → evidence/latest/
@@ -189,7 +189,7 @@ npx tsx scripts/run-scenarios.ts --verify-audit evidence/latest/audit-C10.tamper
 npm run dev            # web on http://localhost:5173, LLM gateway on :8787
 ```
 
-**Fastest:** open the hosted demo at **https://fundbun.vercel.app/?demo=jing** (mirror: https://odripads.github.io/fundbun/?demo=jing) — no install; it is the same app and sandbox with the on-device engine. Locally: open **http://localhost:5173/?demo=jing#/home** (Jing, over target) or **?demo=arif** (Arif, under target). The step-up PIN is **2580**. On a wide screen the Glass Box beside the app shows each intent, tool call, policy decision and audit entry live.
+**Fastest:** open the hosted demo at **https://fundbun.vercel.app/?demo=jing** (mirror: https://odripads.github.io/fundbun/?demo=jing): no install; it is the same app and sandbox with the on-device engine. Locally: open **http://localhost:5173/?demo=jing#/home** (Jing, over target) or **?demo=arif** (Arif, under target). The step-up PIN is **2580**. On a wide screen the Glass Box beside the app shows each intent, tool call, policy decision and audit entry live.
 
 | Try | Expected result |
 |---|---|
@@ -214,6 +214,68 @@ For the LLM path without a key, run `LLM_PROVIDER=mock npm run dev` and switch o
 - `evidence/latest/operations.jsonl`: the machine-readable operation log
 - `evidence/latest/audit-C*.jsonl`: the hash-chained audit logs
 - `docs/SCENARIOS.md`: the scripted scenarios and their expected outcomes
+
+---
+
+## 04 Final-Round Addendum (26 November 2026)
+
+Sections 01 to 03 are the first-round record and are unchanged in substance. This addendum records what was run for the features added before the final round on 29 November 2026. The scripted scenarios, their sandbox and their metrics above are the same; the additions are covered by automated tests, not by new scripted scenarios.
+
+### What was added and how it is evidenced
+
+| Feature | Evidence |
+|---|---|
+| Shell Appearance plugins (theme, Kamen Rider helmet on Bun, app name) | `src/core/plugins/appearance.test.ts`: 31 tests. Prompt parsing for a theme change, the helmet, a rename to `#ilovemoney`, all three in one sentence and the resets; validation bounds; the taint and kill-switch gate; a full offline chat turn through the runtime |
+| The appearance chat card and its Apply, Undo and Reset | `src/ui/components/plugins/plugins.dom.test.ts`: 16 tests. The helmet drawn on Bun, the wordmark showing `#ilovemoney`, Apply changing the page, storage and window title, Undo restoring them, blocked and tampered cards, the Settings reset |
+| Creator Mode widgets | `src/core/agent/creator-tools.test.ts`, `server/plugins/` tests |
+| File and folder attachments in chat | `src/core/agent/attachments.test.ts` |
+| Read-only email ingestion | `server/email/*.test.ts`, driven by a fake IMAP server that asserts the exact command list |
+| Final-round deck | `npm run deck`: the builder checks every slide for overflow at 1920×1080 and again at 1280×720 |
+| Live Kimi Code ACP verification | `npx tsx scripts/verify-kimi-live.ts`: 12/12 checks pass against Kimi Code CLI 2.5.2 (`kimi acp`), verifying handshake, `asksFirst`, 20-tool MCP bridge, T0 read (`get_overview`), T4 denial (`P-T4-PROHIBITED`), and cleanup |
+| Multi-viewport E2E check | `node scripts/verify-viewports.mjs`: 87 passed, 0 failed, 0 warnings across Desktop (`1440×920`), iPhone (`390×844`), and Android (`412×915`), covering zero overflow, offline casual NLU (`"what are my big spending"`), interactive `clarify` task picker, and live Shell Appearance Apply/Undo/Reset |
+
+### Commands and observed output (26 November 2026)
+
+```text
+$ npx vitest run
+ Test Files  169 passed (169)
+      Tests  4244 passed | 1 skipped (4245)
+
+$ npx tsx scripts/lint-agents.ts
+lint-agents: 569 files scanned, 0 violations
+
+$ npm run typecheck
+> tsc -b --noEmit
+(no output: no type errors)
+
+$ npm run evidence
+ALL PASS (45/45 scenarios, 233/233 assertions -> evidence/latest)
+
+$ node scripts/verify-viewports.mjs
+87 passed, 0 failed, 0 warnings, 4 skipped (desktop-1440, iphone-390, android-412)
+
+$ npx tsx scripts/verify-kimi-live.ts
+verify-kimi-live: PASS 12/12 checks
+
+$ npm run deck -- --out /tmp/deck-test-check
+✓ 15 slides, fonts and images loaded, 0 overflows at 1920×1080 and 0 overflows at 1280×720
+```
+
+All 4,244 runnable tests across all 169 files pass with 0 failures (1 pre-existing skipped redactor stub).
+
+### Try the new features by hand (desktop app)
+
+| Try | Expected result |
+|---|---|
+| Settings, Creator Mode: turn it on | Asks for the PIN (demo PIN 2580) |
+| "change the theme to midnight" | A preview card. Nothing changes until Apply; then the app turns midnight blue |
+| "put a kamen rider helmet on bun" | Preview with the helmet; Apply puts it on every Bun, with Bun's face still visible under the visor |
+| "rename fundbun to #ilovemoney" | The wordmark reads `#ilovemoney` with a small FundBun line; the window title is `#ilovemoney · FundBun` |
+| "change theme to cyberpunk, put a kamen rider helm on bun, and rename fundbun to #ilovemoney" | One card with all three changes |
+| Press Undo on the card, or "reset appearance" | The previous look, or FundBun's own look, at once |
+| Attach a file, then ask for a theme change | The preview shows with Apply blocked: the turn carries untrusted content |
+| Settings, Creator Mode, Reset Shell Appearance | Lists the active customizations and clears them in one tap |
+| Reload the app after Apply | The look is kept |
 
 ---
 

@@ -20,6 +20,33 @@ const v = (t: string, when?: I18nVariant['when']): I18nVariant => ({ t, when })
 
 type LocalLang = Exclude<Lang, 'en'>
 
+export const TASK_PICKER: Record<Lang, { label: string; value: string }[]> = {
+  en: [
+    { label: 'Biggest spendings', value: 'What are my biggest spendings?' },
+    { label: "Today's safe-to-spend", value: 'How much can I spend today?' },
+    { label: 'Month overview', value: 'How am I doing this month?' },
+    { label: 'Category breakdown', value: 'Where did my money go?' },
+    { label: 'Savings pots', value: 'Show my savings pots' },
+    { label: 'Log an expense', value: 'How do I log an expense?' },
+  ],
+  zh: [
+    { label: '最大开销', value: '最大开销' },
+    { label: '今日可花金额', value: '今天还能花多少' },
+    { label: '本月概览', value: '本月概览' },
+    { label: '分类开销', value: '我的钱都花哪了' },
+    { label: '储蓄罐', value: '我的储蓄罐' },
+    { label: '记一笔开销', value: '怎么记账' },
+  ],
+  id: [
+    { label: 'Pengeluaran terbesar', value: 'Pengeluaran terbesar' },
+    { label: 'Aman dibelanjakan hari ini', value: 'Jatah hari ini berapa?' },
+    { label: 'Ringkasan bulan ini', value: 'Ringkasan bulan ini' },
+    { label: 'Rincian per kategori', value: 'Pengeluaran per kategori' },
+    { label: 'Celengan impian', value: 'Celengan impianku' },
+    { label: 'Catat pengeluaran', value: 'Catat pengeluaran' },
+  ],
+}
+
 // ───────────────────────────── labels ─────────────────────────────
 
 const MONTHS_ID = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
@@ -89,6 +116,7 @@ export const I18N_TEMPLATES: Record<LocalLang, Partial<Record<Intent, I18nVarian
       v('没问题，打开聊天右上角的⋯菜单，点“Talk to a human”。真人客服会收到一段简短的聊天摘要（绝不包含PIN或完整卡号），他们处理时你也可以先暂停我。', { focus: 'handoff' }),
       v('你的数据属于你：设置 → 隐私 → 导出，会把全部数据下载到这台设备上。我不会把它发给任何人。', { focus: 'export' }),
       v('目标和收入由你自己设置：设置 → 个人资料（不需要PIN）。[现在你的目标是{target}，][收入{income}。][在那里改成{amount}，我马上按新数字算。]', { focus: 'profile' }),
+      v('要记一笔开销，点首页或仪表盘上的“Add spending”（添加支出）。输入金额和几个关键词，选择日期后保存。记录会马上计入本月，并只保存在这台设备上。', { focus: 'log_expense' }),
       v('我还不能在聊天里添加梦想。打开“梦想”→“添加梦想”[，把{label}加进心愿单][（{amount}）]，还可以配一张照片。', { focus: 'add_dream' }),
       v('问得好。有三条规则，不管谁来问我都不能破。第一，我只能在你自己的储蓄罐之间转钱，而且不超过你设的限额。第二，交账单必须输入你的PIN，并且只对这一笔金额和这个收款方有效。第三，我永远不能给别人转账，也不能添加收款人。账单和消息对我来说只是数据，不是指令；我做的每件事都记在“活动”（Activity）日志里。这个原型没有连接真实银行，所以不会动到真钱。', { focus: 'safety' }),
       v('没有。这是一个原型，没有连接任何真实银行。你现在看到的是演示角色和模拟银行，所以无论我做什么，都不会动到真钱。', { focus: 'bank_link', source: 'demo' }),
@@ -209,6 +237,7 @@ export const I18N_TEMPLATES: Record<LocalLang, Partial<Record<Intent, I18nVarian
       v('Bisa. Buka menu ⋯ di chat lalu ketuk “Talk to a human”. Petugas akan menerima ringkasan singkat obrolan kita (tanpa PIN atau nomor kartu lengkap), dan kamu bisa menjeda aku selama dibantu.', { focus: 'handoff' }),
       v('Datamu milikmu: Pengaturan → Privasi → Ekspor akan mengunduh semuanya ke perangkat ini. Aku tidak pernah mengirimnya ke siapa pun.', { focus: 'export' }),
       v('Target dan pemasukan kamu atur sendiri: Pengaturan → Profil (tanpa PIN).[ Sekarang targetmu {target}][ dan pemasukanmu {income}].[ Ubah ke {amount} di sana, nanti langsung aku pakai.]', { focus: 'profile' }),
+      v('Untuk mencatat pengeluaran, ketuk Add spending di Home atau Dashboard. Isi jumlah dan beberapa kata, pilih harinya, lalu simpan. Catatannya langsung dihitung dan hanya tersimpan di perangkat ini.', { focus: 'log_expense' }),
       v('Aku belum bisa menambah impian dari chat. Buka Impian → Tambah impian[ untuk memasukkan {label}][ ({amount})], boleh pakai foto juga.', { focus: 'add_dream' }),
       v('Pertanyaan bagus. Ada tiga aturan yang tidak bisa kulanggar, siapa pun yang minta. Satu: aku hanya memindahkan uang antar celenganmu sendiri, dalam batas yang kamu tentukan. Dua: bayar tagihan butuh PIN-mu, dan PIN itu hanya berlaku untuk jumlah dan penerima yang persis sama. Tiga: aku tidak pernah bisa mengirim uang ke orang lain atau menambah penerima baru. Tagihan dan pesan kubaca sebagai data, bukan perintah, dan semua yang kulakukan tercatat di log Aktivitas (Activity). Prototipe ini tidak terhubung ke bank sungguhan, jadi tidak ada uang asli yang berpindah.', { focus: 'safety' }),
       v('Tidak. Ini prototipe tanpa koneksi ke bank sungguhan. Yang kamu lihat adalah persona demo di bank simulasi, jadi apa pun yang kulakukan, tidak ada uang asli yang berpindah.', { focus: 'bank_link', source: 'demo' }),
@@ -412,6 +441,11 @@ export const LINES: Record<string, Record<Lang, string>> = {
     en: 'Just to be sure: did you mean “{a}” or “{b}”?',
     zh: '想确认一下：你是想“{a}”，还是“{b}”？',
     id: 'Biar pasti, maksudmu “{a}” atau “{b}”?',
+  },
+  taskPicker: {
+    en: 'Pick a task below. Every option works without a network connection.',
+    zh: '可以点下面的任务，每一项都不需要网络。',
+    id: 'Pilih tugas di bawah. Semuanya bisa dipakai tanpa koneksi jaringan.',
   },
   reaskChoices: {
     en: 'Sorry, I didn’t catch which one. Pick one below, or say “cancel”.',

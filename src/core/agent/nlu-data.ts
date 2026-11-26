@@ -30,6 +30,8 @@ export const TRAINING: Record<Intent, string[]> = {
     'kamu bisa apa',
     'bisa bantu aku nggak',
     'i need a real human',
+    'how do i log an expense', 'add an expense', 'record a purchase', 'add spending',
+    'catat pengeluaran', 'cara mencatat pengeluaran', '记一笔消费', '怎么记账',
   ],
   thanks: [
     'thanks', 'thank you', 'thx', 'ty', 'thanks bun', 'thank you so much', 'cheers', 'appreciate it', 'great, thanks',
@@ -58,6 +60,8 @@ export const TRAINING: Record<Intent, string[]> = {
     'masih sisa berapa',
     'month status report',
     'what can i still spend',
+    "today's allowance", 'daily safe to spend', 'remaining budget', 'month overview', 'monthly summary',
+    '今天还能花多少', '今天额度', '本月概览', 'jatah hari ini', 'ringkasan bulan ini',
   ],
   breakdown: [
     'where did my money go', 'spending by category', 'break down my spending', 'show me my categories',
@@ -76,6 +80,8 @@ export const TRAINING: Record<Intent, string[]> = {
     'how much was transport last month',
     'what are my categories this month',
     '各类别花了多少',
+    'coffee spending breakdown', 'food expenses', 'transport spending', 'coffee stats',
+    'pengeluaran kopi', 'pengeluaran transportasi', '咖啡开销', '交通支出', '对比上个月', 'bandingin bulan lalu',
   ],
   search: [
     'show me my transactions', 'find my starbucks purchases', 'list payments over 500', 'show transactions from meituan',
@@ -97,6 +103,9 @@ export const TRAINING: Record<Intent, string[]> = {
     'show my transfers to my landlord',
     'list payments to zhang wei',
     'how much did i send my brother',
+    'what are my big spending', 'what are my biggest spendings', 'big purchases', 'largest spends', 'top expenses',
+    'most expensive things', 'where did most of my money go', 'biggest purchase', 'recent spending', 'latest purchases',
+    'pengeluaran terbesar', 'jajan paling mahal', 'pengeluaran terakhir', '最大开销', '大额消费', '花了最多钱', '最近消费',
   ],
   subscriptions: [
     'what subscriptions do i have', 'list my subscriptions', 'how much do i pay for subscriptions',
@@ -112,6 +121,7 @@ export const TRAINING: Record<Intent, string[]> = {
     'daftar subscription',
     '订阅一年多少钱',
     'my subs',
+    'recurring bills', 'monthly subscriptions', 'what renews every month', 'tagihan rutin', 'langganan bulanan', '每月订阅',
   ],
   bills: [
     '电费为什么涨了', '电费怎么这么贵', '这个月账单为什么变多了', 'why did my electricity bill go up', 'why is my bill so high',
@@ -174,6 +184,7 @@ export const TRAINING: Record<Intent, string[]> = {
     'how is the trip fund',
     'birkin progress',
     'how far along is my laptop goal',
+    'savings pots', 'my savings goals', 'show my pots', 'celengan impianku', 'progres celengan', '我的储蓄罐',
   ],
   save_to_goal: [
     'move 500 to my birkin pot', 'put 300 into the chengdu fund', 'save 200 for my macbook', 'stash ¥620 in my birkin',

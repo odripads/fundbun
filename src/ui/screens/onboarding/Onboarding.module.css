@@ -29,8 +29,8 @@
 .stuck {
   background: var(--surface-glass);
   box-shadow: 0 1px 0 var(--border);
-  backdrop-filter: blur(18px) saturate(1.4);
   -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  backdrop-filter: blur(18px) saturate(1.4);
 }
 
 .barRow {

@@ -13,8 +13,8 @@
   background: var(--surface-glass);
   color: var(--text-2);
   box-shadow: inset 0 0 0 1px var(--border-strong);
-  backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   font-size: var(--fs-xs);
   font-weight: 650;
   transition:

@@ -4,7 +4,7 @@
  * Everything in src/core is framework-free TypeScript (no DOM, no React) so the
  * same code runs in the browser app, the Node scenario runner, and the tests.
  *
- * Money is ALWAYS integer minor units (fen / cents) — type `Minor`.
+ * Money is ALWAYS integer minor units (fen / cents): type `Minor`.
  * On transactions, negative = money out, positive = money in.
  */
 
@@ -70,7 +70,7 @@ export interface Account {
   currency: Currency
   /** for pots: the DreamItem this pot saves toward */
   goalId?: string
-  /** e.g. "•••• 4821" — never a full number */
+  /** e.g. "•••• 4821": never a full number */
   maskedNumber?: string
   /** a goal pot whose dream was removed: kept for the ledger, but no standing order or new goal ever uses it again */
   closed?: boolean
@@ -93,7 +93,7 @@ export interface Transaction {
   merchant: string
   /** raw bank description */
   description: string
-  /** free-text memo from the counterparty — UNTRUSTED CONTENT */
+  /** free-text memo from the counterparty: UNTRUSTED CONTENT */
   memo?: string
   category: CategoryId
   categorySource: 'rule' | 'model' | 'user' | 'llm' | 'import'
@@ -118,7 +118,7 @@ export interface SpendingCandidate {
   date: ISODate
   time?: string
   category: CategoryId
-  /** raw counterparty description — UNTRUSTED CONTENT */
+  /** raw counterparty description: UNTRUSTED CONTENT */
   description: string
   source: 'email' | 'receipt' | 'manual'
 }
@@ -155,7 +155,7 @@ export interface Bill {
   scheduledFor?: ISODate
   paidTxnId?: string
   lineItems?: BillLineItem[]
-  /** raw bill text as received — UNTRUSTED CONTENT, may contain prompt injection */
+  /** raw bill text as received: UNTRUSTED CONTENT, may contain prompt injection */
   rawText?: string
   /** 'expected': predicted from the user's own repeating charges (no bank connected; finance/expected) */
   source: 'sandbox' | 'import' | 'xray' | 'expected'
@@ -179,7 +179,7 @@ export interface BankState {
   disputes: Dispute[]
   /** merchants whose recurring charges were cancelled (generator stops producing them) */
   cancelledMerchants: string[]
-  /** the sandbox clock — "today" for every computation */
+  /** the sandbox clock: "today" for every computation */
   today: ISODate
   /** seed used by the deterministic generator */
   seed: number
@@ -252,7 +252,7 @@ export interface BillFinding {
   billId?: string
   recurringId?: string
   suggestedAction?: SuggestedAction
-  /** the numbers that triggered this finding — shown under "Why?" */
+  /** the numbers that triggered this finding: shown under "Why?" */
   evidence: Record<string, number | string>
 }
 
@@ -314,7 +314,7 @@ export interface DreamEquivalent {
   itemId: string
   itemName: string
   image: string
-  /** amount / price — 0.38 means 38% of the item, 2 means two of them */
+  /** amount / price: 0.38 means 38% of the item, 2 means two of them */
   fraction: number
   /** human label: "38% of your Birkin" / "2× New sneakers" */
   label: string
@@ -325,7 +325,7 @@ export interface DreamEquivalent {
 export type Tone = 'cheeky' | 'gentle' | 'numbers'
 
 export interface Consent {
-  /** separate consent for processing financial (sensitive) personal information — PIPL Art. 29 */
+  /** separate consent for processing financial (sensitive) personal information: PIPL Art. 29 */
   financialData: boolean
   /** consent to send minimised, redacted context to an LLM provider */
   llmProcessing: boolean
@@ -496,11 +496,11 @@ export interface MirrorState {
   delta: Minor
   /** e.g. "You could've gotten a Birkin." */
   headline: string
-  /** e.g. "You're ¥3,450 over your ¥9,000 target — and your Birkin just moved 9 days further away." */
+  /** e.g. "You're ¥3,450 over your ¥9,000 target, and your Birkin just moved 9 days further away." */
   subline: string
   /** the dream item shown in the hero */
   item?: DreamItem
-  /** how many whole items the delta buys (>=1) — present when a whole item fits */
+  /** how many whole items the delta buys (>=1): present when a whole item fits */
   quantity?: number
   /** delta / item.price when less than one whole item */
   fraction?: number
@@ -519,7 +519,7 @@ export interface MirrorState {
   /** call-to-action the hero offers (over/pace_over: a rule such as a cap or tripwire; under: "Stash ¥X") */
   cta?: SuggestedAction
   /**
-   * over / pace_over: the hero's primary button opens a conversation instead of a one-tap rule —
+   * over / pace_over: the hero's primary button opens a conversation instead of a one-tap rule:
    * `prompt` is sent to Bun as the user's message (e.g. the "get back on track" task plan).
    */
   ctaPrompt?: { label: string; prompt: string }
@@ -559,9 +559,9 @@ export interface Tripwire {
 export interface TripwireEvent {
   id: string
   tripwireId: string
-  /** real (device) time the event was recorded — for the audit log */
+  /** real (device) time the event was recorded: for the audit log */
   firedAt: ISODateTime
-  /** the app's own day it fired on (bank.today: the sandbox clock for demo personas) — what screens should show */
+  /** the app's own day it fired on (bank.today: the sandbox clock for demo personas): what screens should show */
   firedOn?: ISODate
   /** month-level kinds (month_pct, category_pct, pace_over): the month the alert is about */
   month?: YearMonth
@@ -605,19 +605,19 @@ export interface AffordabilityResult {
 // ───────────────────────────── security / permissions ─────────────────────────────
 
 /**
- * T0 READ        — read data, compute insights. Always allowed (unless consent missing).
- * T1 ORGANIZE    — reversible, no money movement: budgets, tripwires, categories, reminders.
- * T2 MOVE_OWN    — move money between the user's OWN accounts (checking ↔ goal pots), within mandate caps.
- * T3 PAY         — pay a VERIFIED existing payee, cancel a subscription, open a dispute. Always needs confirmation + PIN.
- * T4 PROHIBITED  — new payees, external transfers, investments, credit, changing its own mandate. Agent can never do these.
+ * T0 READ       : read data, compute insights. Always allowed (unless consent missing).
+ * T1 ORGANIZE   : reversible, no money movement: budgets, tripwires, categories, reminders.
+ * T2 MOVE_OWN   : move money between the user's OWN accounts (checking ↔ goal pots), within mandate caps.
+ * T3 PAY        : pay a VERIFIED existing payee, cancel a subscription, open a dispute. Always needs confirmation + PIN.
+ * T4 PROHIBITED : new payees, external transfers, investments, credit, changing its own mandate. Agent can never do these.
  */
 export type Tier = 0 | 1 | 2 | 3 | 4
 
 /**
- * observe   — agent may only read and explain; it cannot propose actions.
- * suggest   — agent proposes T1–T3; every action needs the user's tap (T3 also PIN).
- * copilot   — T1 runs automatically; T2 needs a tap; T3 needs tap + PIN.
- * autopilot — T1 and T2 (within caps, untainted) run automatically; T3 needs tap + PIN.
+ * observe  : agent may only read and explain; it cannot propose actions.
+ * suggest  : agent proposes T1–T3; every action needs the user's tap (T3 also PIN).
+ * copilot  : T1 runs automatically; T2 needs a tap; T3 needs tap + PIN.
+ * autopilot: T1 and T2 (within caps, untainted) run automatically; T3 needs tap + PIN.
  */
 export type Autonomy = 'observe' | 'suggest' | 'copilot' | 'autopilot'
 
@@ -698,7 +698,7 @@ export interface PendingAction {
   /** until when the user can undo (reversible actions only) */
   undoUntil?: ISODateTime
   /**
-   * sha256(canonicalJSON({ id, tool, args, amount, to })) — what the user sees is exactly what executes
+   * sha256(canonicalJSON({ id, tool, args, amount, to })): what the user sees is exactly what executes
    * (AP2-style cart mandate / PSD2 dynamic linking). Re-checked at execution; PIN approval is bound to it.
    */
   bindingHash: string
@@ -849,12 +849,82 @@ export type ChatCard =
       code: string
       css: string
     }
-  | {
-      type: 'plugin_action'
-      pluginId: string
-      name: string
-      action: 'uninstall' | 'disable' | 'enable'
-    }
+  | PluginLifecycleCard
+  | PluginAppearanceCard
+
+/** Bun proposed removing or switching an installed widget: nothing changes until the user confirms. */
+export interface PluginLifecycleCard {
+  type: 'plugin_action'
+  pluginId: string
+  name: string
+  action: 'uninstall' | 'disable' | 'enable'
+}
+
+// ───────────────────────────── shell appearance plugins (Desktop Creator Mode) ─────────────────────────────
+
+/** Theme presets the shell can wear. `system` follows the device (FundBun's own look). */
+export type ShellThemeId = 'system' | 'light' | 'dark' | 'midnight' | 'sakura' | 'forest' | 'ocean' | 'amber' | 'cyberpunk' | 'contrast'
+
+/** What Bun can wear on its head. */
+export type MascotHat = 'none' | 'kamen_rider' | 'crown' | 'cap' | 'halo'
+
+/** The only design tokens a shell appearance plugin may override (colours, hex values only). */
+export type ShellTokenName =
+  | '--bg'
+  | '--bg-sunken'
+  | '--surface'
+  | '--surface-2'
+  | '--surface-glass'
+  | '--border'
+  | '--border-strong'
+  | '--text'
+  | '--text-2'
+  | '--text-3'
+  | '--accent'
+  | '--accent-strong'
+  | '--accent-soft'
+  | '--accent-text'
+  | '--text-on-accent'
+
+export type ShellTokenOverrides = Partial<Record<ShellTokenName, string>>
+
+/**
+ * A bounded, reversible change to the app shell. Only the fields present change; `reset` starts again from
+ * FundBun's own look first. Validated by src/core/plugins/appearance.ts before it is shown or applied.
+ */
+export interface ShellAppearancePatch {
+  reset?: boolean
+  theme?: ShellThemeId
+  tokens?: ShellTokenOverrides
+  mascotHat?: MascotHat
+  /** the name on the wordmark and window title; null puts "FundBun" back */
+  appName?: string | null
+}
+
+/** The shell's current look (kept in this browser's storage, never in the finance state). */
+export interface ShellAppearance {
+  theme: ShellThemeId
+  tokens: ShellTokenOverrides
+  mascotHat: MascotHat
+  appName: string | null
+}
+
+/**
+ * A shell appearance plugin proposed in chat: a preview with Apply and Undo. It rides on the plugin_action card
+ * (action 'appearance') so every place that lists plugin actions already shows it. Never applied without a tap.
+ */
+export interface PluginAppearanceCard {
+  type: 'plugin_action'
+  action: 'appearance'
+  pluginId: 'shell-appearance'
+  name: string
+  proposalId: string
+  patch: ShellAppearancePatch
+  /** typed by the user and read on this device, or proposed by a connected AI */
+  by: 'user' | 'ai'
+  /** set when the turn carried untrusted content or Bun is paused: the card shows, Apply stays off */
+  blocked?: string
+}
 
 // ───────────────────────────── task plans (multi-step, DAG) ─────────────────────────────
 
@@ -936,7 +1006,7 @@ export interface ChatMessage {
 
 // ───────────────────────────── finance context ─────────────────────────────
 
-/** Everything the finance engine needs. Pure data — no methods. */
+/** Everything the finance engine needs. Pure data: no methods. */
 export interface FinanceContext {
   profile: Profile
   bank: BankState

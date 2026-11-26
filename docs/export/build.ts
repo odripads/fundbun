@@ -34,6 +34,8 @@ const ROOT = resolve(DOCS, '..')
 const REPO_URL = 'https://github.com/odripads/fundbun'
 const SUBMISSION_DATE = '2026-10-20'
 const DATE_LONG = '20 October 2026'
+/** The documents were extended for the final round (section 06 of the Technical Document and its counterparts). */
+const REVISED_LONG = '26 November 2026'
 const TEAM = [
   'Team FundBun · Odri Prince Sembiring (team leader), Universitas Gadjah Mada',
   'Nadine Griselda, Universitas Airlangga',
@@ -302,7 +304,7 @@ function docxMarkdown(spec: DocSpec, headerTable: string, content: string): stri
     div('Cover Note', `*${spec.note}*`),
     weightTables(headerTable),
     div('Cover Meta', `**${TEAM[0]}**\\\n${TEAM.slice(1).join('\\\n')}`),
-    div('Cover Meta', `Source code: [github.com/odripads/fundbun](${REPO_URL}) · ${DATE_LONG}`),
+    div('Cover Meta', `Source code: [github.com/odripads/fundbun](${REPO_URL}) · ${DATE_LONG} · final-round update ${REVISED_LONG}`),
     PAGE_BREAK,
     TOC_MARKER,
     content,
@@ -324,7 +326,7 @@ function buildDocx(spec: DocSpec, md: string, tmp: string): string {
   ])
   run('python3', [
     join(EXPORT_DIR, 'docx_post.py'), raw, out,
-    '--title', `FundBun — ${spec.title}`,
+    '--title', `FundBun: ${spec.title}`,
     '--subject', 'FinTechathon 2026 · International AI Track · Topic A: Personal Finance Assistant',
     '--author', 'Odri Prince Sembiring; Nadine Griselda',
     '--date', SUBMISSION_DATE,
@@ -345,7 +347,7 @@ function buildHtml(spec: DocSpec, headerTable: string, content: string, tmp: str
   writeFileSync(src, content)
   writeFileSync(meta, [
     `title: ${yamlString(spec.title)}`,
-    `pagetitle: ${yamlString(`FundBun — ${spec.title}`)}`,
+    `pagetitle: ${yamlString(`FundBun: ${spec.title}`)}`,
     `footer-title: ${yamlString(spec.title)}`,
     `kicker: ${yamlString('2026 FinTechathon · Submission template')}`,
     `track: ${yamlString(spec.track)}`,
@@ -402,7 +404,7 @@ async function printPdf(browser: Browser, html: string, out: string): Promise<nu
       if (!pages) return 0
       const entries: string[] = await page.$$eval('nav.toc a', (as) => as.map((a) => (a.querySelector('.toc-label') ?? a).textContent ?? ''))
       // the first entry is a section heading, which always opens a page: the first page (after the contents page)
-      // that STARTS with it is where the body begins — a contents page spilling over never starts with entry 1
+      // that STARTS with it is where the body begins: a contents page spilling over never starts with entry 1
       const first = norm(entries[0] ?? '')
       let at = pages.findIndex((p, i) => i >= 2 && norm(p).startsWith(first))
       if (at < 0) at = 2

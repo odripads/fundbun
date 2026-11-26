@@ -25,3 +25,30 @@
 .bun {
   color: var(--accent);
 }
+
+/* a custom app name (Creator Mode): the chosen name, with a small FundBun line that always stays */
+.custom {
+  display: inline-grid;
+  gap: 0.12em;
+  min-width: 0;
+  font-size: calc(var(--logo-size, 32px) * 0.68);
+}
+
+.custom .word {
+  max-width: 14em;
+  overflow: hidden;
+  font-size: 0.86em;
+  text-overflow: ellipsis;
+  transform: none;
+}
+
+.kernel {
+  font-family: var(--font-ui);
+  font-size: max(9px, 0.4em);
+  font-weight: 650;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--text-3);
+  white-space: nowrap;
+}

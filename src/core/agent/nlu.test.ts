@@ -525,6 +525,94 @@ describe('understand · intents and slots', () => {
   })
 })
 
+describe('understand · casual everyday money phrasing', () => {
+  it.each([
+    'what are my big spending',
+    'what are my biggest spendings',
+    'big purchases',
+    'largest spends',
+    'top expenses',
+    'most expensive things',
+    'where did most of my money go',
+    'biggest purchase',
+    'biggest payments',
+    'pengeluaran terbesar',
+    'jajan paling mahal',
+    'belanja paling besar',
+    '最大开销',
+    '大额消费',
+    '花了最多钱',
+  ])('finds the largest transaction from casual wording: %s', (text) => {
+    const r = understand(text, MEI_CTX)
+    expect(r.intent).toBe('search')
+    expect(r.slots.focus).toBe('largest')
+    expect(r.rule).toBe('R-SEARCH-LARGEST')
+  })
+
+  it.each([
+    "today's allowance",
+    'today allowance',
+    'daily safe to spend',
+    'remaining budget',
+    'what is left in my budget',
+    '今天还能花多少',
+    '今天额度',
+    'jatah hari ini',
+  ])('reads a casual daily allowance question: %s', (text) => {
+    const r = understand(text, MEI_CTX)
+    expect(r.intent).toBe('overview')
+    expect(r.slots.focus).toBe('safe_to_spend')
+  })
+
+  it.each(['recent spending', 'latest purchases', '最近消费', 'pengeluaran terakhir'])(
+    'reads recent spending as a transaction search: %s',
+    (text) => {
+      expect(understand(text, MEI_CTX).intent).toBe('search')
+    },
+  )
+
+  it.each([
+    ['coffee breakdown', 'coffee_tea'],
+    ['coffee stats', 'coffee_tea'],
+    ['food expenses', undefined],
+    ['transport spending', 'transport'],
+    ['pengeluaran kopi', 'coffee_tea'],
+    ['交通支出', 'transport'],
+  ] as const)('keeps casual category questions in the breakdown: %s', (text, category) => {
+    const r = understand(text, MEI_CTX)
+    expect(r.intent).toBe('breakdown')
+    if (text === 'food expenses') expect(r.slots.group).toBe('food')
+    else expect(r.slots.category).toBe(category)
+  })
+
+  it.each([
+    ['compare last month', 'breakdown', 'compare'],
+    ['对比上个月', 'breakdown', 'compare'],
+    ['bandingin bulan lalu', 'breakdown', 'compare'],
+    ['recurring bills', 'subscriptions', undefined],
+    ['monthly subscriptions', 'subscriptions', undefined],
+    ['每月订阅', 'subscriptions', undefined],
+    ['savings pots', 'goals', undefined],
+    ['celengan impianku', 'goals', undefined],
+    ['我的储蓄罐', 'goals', undefined],
+    ['month overview', 'overview', undefined],
+    ['ringkasan bulan ini', 'overview', undefined],
+  ] as const)('resolves other everyday money queries: %s', (text, intent, focus) => {
+    const r = understand(text, MEI_CTX)
+    expect(r.intent).toBe(intent)
+    expect(r.slots.focus).toBe(focus)
+  })
+
+  it.each(['log an expense', 'add an expense', 'record a purchase', 'catat pengeluaran', '记一笔消费', '怎么记账'])(
+    'points casual expense logging to the working Add spending flow: %s',
+    (text) => {
+      const r = understand(text, MEI_CTX)
+      expect(r.intent).toBe('help')
+      expect(r.slots.focus).toBe('log_expense')
+    },
+  )
+})
+
 describe('understand · small talk and out of scope', () => {
   it.each([
     ['hi', 'greeting'], ['你好', 'greeting'], ['selamat pagi', 'greeting'],

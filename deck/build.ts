@@ -6,12 +6,13 @@
  *
  * 1. Serves the repo over a throw-away local HTTP server (fonts and images load by relative URL).
  * 2. System Chrome (Playwright, channel 'chrome') renders every <section class="slide"> to a 1920×1080 PNG at
- *    deviceScaleFactor 1.5 (2880×1620) — the PNGs stay in a scratch folder.
+ *    deviceScaleFactor 1.5 (2880×1620). The PNGs stay in a scratch folder.
  * 3. page.pdf() prints the same page as a vector PDF, one 1920×1080 px page per slide.
  * 4. pptxgenjs writes a 16:9 (LAYOUT_WIDE) PPTX: each slide = its PNG full-bleed, with the speaker notes and
  *    the slide title + key points as the image's alt text.
- * Layout checks run before export: anything poking outside its slide, clipped text, or a font that failed to load
- * stops the build.
+ * Layout checks run before export, twice: on the 1920×1080 canvas and again scaled to a 1280×720 projector
+ * (the room's likely resolution). Anything poking outside its slide, clipped text, text too small to read at
+ * 1280×720, or a font that failed to load stops the build.
  */
 import { createServer, type Server } from 'node:http'
 import { mkdirSync, readFileSync, rmSync, statSync, existsSync } from 'node:fs'
@@ -72,7 +73,7 @@ function serve(): Promise<{ server: Server; origin: string }> {
   }))
 }
 
-/** iCloud-synced output folder: never rewrite in place — remove, then write once. */
+/** iCloud-synced output folder: never rewrite in place. Remove, then write once. */
 function freshPath(file: string): string {
   if (existsSync(file)) rmSync(file)
   return file
@@ -97,46 +98,84 @@ try {
   })
 
   // ── layout checks ──────────────────────────────────────────────────────────
+  /** Everything that pokes out of its slide, clips its text or runs into the footer, at the page's current zoom. */
+  const layoutProblems = (zoom: number, label: string) =>
+    page.evaluate(
+      ({ zoom, label }) => {
+        const out: string[] = []
+        // getBoundingClientRect rounds differently once the page is zoomed: allow one more pixel there
+        const pad = zoom === 1 ? 0.5 : 1
+        const slides = [...document.querySelectorAll<HTMLElement>('section.slide')]
+        slides.forEach((s, i) => {
+          const box = s.getBoundingClientRect()
+          for (const el of s.querySelectorAll<HTMLElement>('*')) {
+            if (el.closest('.glow, .peek, svg, .phone .sb') || el.matches('.crop img')) continue
+            const r = el.getBoundingClientRect()
+            if (!r.width || !r.height) continue
+            // inside a mock-up screen, content is clipped by the screen on purpose (a card that peeks in)
+            const outside = r.left < box.left - pad || r.right > box.right + pad || r.top < box.top - pad || r.bottom > box.bottom + pad
+            if (outside && !el.closest('.mock .scr')) out.push(`${label} slide ${i + 1}: <${el.tagName.toLowerCase()} class="${el.className}"> leaves the slide`)
+            const cs = getComputedStyle(el)
+            if (el.scrollWidth > el.clientWidth + 1 && cs.overflow !== 'visible' && !el.matches('.crop, .glass, .scr'))
+              out.push(`${label} slide ${i + 1}: <${el.tagName.toLowerCase()} class="${el.className}"> clips its content horizontally`)
+            // readable from the back of the room: slide text stays at 9px or more once projected (mock-up screens are pictures)
+            const ownText = [...el.childNodes].some((n) => n.nodeType === Node.TEXT_NODE && (n.textContent ?? '').trim().length > 0)
+            if (ownText && !el.closest('.mock, .phone, svg, .dag, style, script') && parseFloat(cs.fontSize) * zoom < 9)
+              out.push(`${label} slide ${i + 1}: <${el.tagName.toLowerCase()} class="${el.className}"> text is only ${(parseFloat(cs.fontSize) * zoom).toFixed(1)}px`)
+          }
+          // text blocks that run into the footer
+          const foot = s.querySelector('.foot')?.getBoundingClientRect()
+          if (foot) for (const el of s.querySelectorAll<HTMLElement>('p, h2, h3, .cap, .chips, .stats, .grid, .rows, .fit, .road, .card, .phone, .cmd, .note, .items, .mock'))
+            if (!el.closest('.foot, .mock .scr') && el.getBoundingClientRect().bottom > foot.top - 8 * zoom) out.push(`${label} slide ${i + 1}: <${el.tagName.toLowerCase()} class="${el.className}"> runs into the footer`)
+        })
+        return out
+      },
+      { zoom, label },
+    )
+
   const report = await page.evaluate(() => {
     const out: string[] = []
     const fonts = [...document.fonts].filter((f) => f.status === 'loaded').map((f) => `${f.family} ${f.style}`)
     for (const need of ['Fraunces Variable normal', 'DM Sans Variable normal']) if (!fonts.includes(need)) out.push(`font not loaded: ${need}`)
     for (const img of document.images) if (!img.naturalWidth) out.push(`image failed: ${img.getAttribute('src')}`)
     const slides = [...document.querySelectorAll<HTMLElement>('section.slide')]
-    slides.forEach((s, i) => {
-      const box = s.getBoundingClientRect()
-      for (const el of s.querySelectorAll<HTMLElement>('*')) {
-        if (el.closest('.glow, .peek, svg, .phone .sb') || el.matches('.crop img')) continue
-        const r = el.getBoundingClientRect()
-        if (!r.width || !r.height) continue
-        const pad = 0.5
-        if (r.left < box.left - pad || r.right > box.right + pad || r.top < box.top - pad || r.bottom > box.bottom + pad)
-          out.push(`slide ${i + 1}: <${el.tagName.toLowerCase()} class="${el.className}"> leaves the slide`)
-        const cs = getComputedStyle(el)
-        if (el.scrollWidth > el.clientWidth + 1 && cs.overflow !== 'visible' && !el.matches('.crop, .glass, .scr'))
-          out.push(`slide ${i + 1}: <${el.tagName.toLowerCase()} class="${el.className}"> clips its content horizontally`)
-      }
-      // text blocks that run into the footer
-      const foot = s.querySelector('.foot')?.getBoundingClientRect()
-      if (foot) for (const el of s.querySelectorAll<HTMLElement>('p, h2, h3, .cap, .chips, .stats, .grid, .rows, .fit, .road, .card, .phone, .cmd, .note'))
-        if (!el.closest('.foot') && el.getBoundingClientRect().bottom > foot.top - 8) out.push(`slide ${i + 1}: <${el.tagName.toLowerCase()} class="${el.className}"> runs into the footer`)
-    })
-    // body copy budget: ≤ 40 words a slide (headline, kicker, footer, mock-ups and diagrams excluded)
+    // body copy budget: about 40 words a slide (headline, kicker, footer, mock-ups and diagrams excluded)
     const words = slides.map((s) => {
       const clone = s.cloneNode(true) as HTMLElement
-      clone.querySelectorAll('style, .kicker, .title, .display, .foot, .phone, .phone-label, .crop, .dag, .zoom, .mirror, .lockup, .meta, .team, .ch, .step > b, .cap > b').forEach((e) => e.remove())
+      clone.querySelectorAll('style, .kicker, .title, .display, .foot, .phone, .phone-label, .crop, .dag, .zoom, .mirror, .lockup, .meta, .team, .ch, .step > b, .cap > b, .mock, .tag, .cap1').forEach((e) => e.remove())
       return (clone.textContent ?? '').split(/\s+/).filter((w) => /[\p{L}\p{N}]/u.test(w)).length
+    })
+    // house rules for copy: no em dash on a slide, and the good state is never "under target" or "under budget"
+    slides.forEach((s, i) => {
+      const clone = s.cloneNode(true) as HTMLElement
+      clone.querySelectorAll('style').forEach((e) => e.remove())
+      const text = clone.textContent ?? ''
+      if (text.includes(String.fromCharCode(0x2014))) out.push(`slide ${i + 1}: contains an em dash`)
+      if (/\bunder\s+(target|budget)\b/i.test(text)) out.push(`slide ${i + 1}: says "under target" or "under budget"`)
     })
     return { out, count: slides.length, titles: slides.map((s) => s.dataset.title ?? ''), words }
   })
   problems.push(...report.out)
+  problems.push(...(await layoutProblems(1, '1920x1080')))
+  // the same slides on a 1280×720 projector: the whole page zoomed to two thirds, checked again
+  const PROJECTOR = { width: 1280, height: 720 }
+  const projectorZoom = PROJECTOR.width / 1920
+  await page.setViewportSize(PROJECTOR)
+  const zoomStyle = await page.addStyleTag({ content: `html { zoom: ${projectorZoom}; }` })
+  problems.push(...(await layoutProblems(projectorZoom, '1280x720')))
+  await zoomStyle.evaluate((el) => el.remove())
+  await page.setViewportSize({ width: 1920, height: 1080 })
   if (report.count !== notesFile.slides.length) problems.push(`slides.html has ${report.count} slides, notes.json ${notesFile.slides.length}`)
+  notesFile.slides.forEach((n, i) => {
+    if (n.id !== `s${String(i + 1).padStart(2, '0')}`) problems.push(`notes.json entry ${i + 1} has id ${n.id}`)
+    if (`${n.title} ${n.alt} ${n.notes}`.includes(String.fromCharCode(0x2014))) problems.push(`notes.json ${n.id}: contains an em dash`)
+  })
   if (problems.length) {
     console.error(problems.map((p) => `  ✗ ${p}`).join('\n'))
     throw new Error(`${problems.length} layout/asset problem(s)`)
   }
-  console.log(`✓ ${report.count} slides, fonts and images loaded, nothing overflows`)
-  console.log(`  body words per slide: ${report.words.map((w, i) => `${i + 1}:${w}${w > 40 && i !== 7 ? '!' : ''}`).join(' ')} (slide 8 = safety matrix, exempt)`)
+  console.log(`✓ ${report.count} slides, fonts and images loaded, 0 overflows at 1920×1080 and 0 overflows at 1280×720`)
+  console.log(`  body words per slide: ${report.words.map((w, i) => `${i + 1}:${w}`).join(' ')}`)
 
   // ── PNGs ───────────────────────────────────────────────────────────────────
   rmSync(pngDir, { recursive: true, force: true })
@@ -166,14 +205,14 @@ try {
   if (only === 'all' || only === 'pptx') {
     const pptx = new PptxGenJS()
     pptx.layout = 'LAYOUT_WIDE' // 13.333 × 7.5 in, 16:9
-    pptx.title = 'FundBun — You could’ve gotten a Birkin.'
-    pptx.subject = 'FinTechathon 2026 · International Track (AI) · Topic A Personal Finance Assistant'
+    pptx.title = 'FundBun: You could’ve gotten a Birkin.'
+    pptx.subject = '2026 FinTechathon Finalist · International AI Track · Topic A Personal Finance Assistant · final round'
     pptx.author = 'Odri Prince Sembiring · Nadine Griselda'
     pptx.company = 'Team FundBun · Universitas Gadjah Mada · Universitas Airlangga'
     notesFile.slides.forEach((n, i) => {
       const slide = pptx.addSlide()
       slide.background = { color: i === 0 || i === notesFile.slides.length - 1 ? '24180F' : 'FFFAF2' }
-      slide.addImage({ path: pngs[i], x: 0, y: 0, w: 13.333, h: 7.5, altText: `${n.title} — ${n.alt}` })
+      slide.addImage({ path: pngs[i], x: 0, y: 0, w: 13.333, h: 7.5, altText: `${n.title}. ${n.alt}` })
       slide.addNotes(n.notes)
     })
     const file = freshPath(join(outDir, `${baseName}.pptx`))

@@ -5,11 +5,11 @@
 
 | Field | Value |
 |---|---|
-| Team name | FundBun — Odri Prince Sembiring (leader, Universitas Gadjah Mada) · Nadine Griselda (Universitas Airlangga) |
-| Competition track | International AI Track — Topic A: Personal Finance Assistant |
+| Team name | FundBun: Odri Prince Sembiring (leader, Universitas Gadjah Mada) · Nadine Griselda (Universitas Airlangga) |
+| Competition track | International AI Track, Topic A: Personal Finance Assistant |
 | Submission date | 2026-10-20 |
 | Source code | [github.com/odripads/fundbun](https://github.com/odripads/fundbun) |
-| Live demo | [fundbun.vercel.app](https://fundbun.vercel.app/?demo=jing) · mirror [odripads.github.io/fundbun](https://odripads.github.io/fundbun/?demo=jing) — no install, demo PIN 2580 |
+| Live demo | [fundbun.vercel.app](https://fundbun.vercel.app/?demo=jing) · mirror [odripads.github.io/fundbun](https://odripads.github.io/fundbun/?demo=jing): no install, demo PIN 2580 |
 | Demo video | [youtu.be/Se5TD4KQ35A](https://youtu.be/Se5TD4KQ35A) (4:47, English subtitles) |
 
 *How to read this document.* Each technical claim names the file that implements it (paths are relative to the repository root). Results come from `evidence/latest/SUMMARY.md`, which `npm run evidence` regenerates byte for byte, and from a Vitest run on 2026-10-08 (`npx vitest run`). Anything not yet built is labelled **Roadmap**.
@@ -64,7 +64,7 @@ It can never add payees, pay other people, invest, borrow or change its own perm
 | Audit chain | 44/44 runs intact; deliberate tampering detected (C10, broken at entry #7) |
 | Reproducibility | Two evidence runs are byte-identical apart from the git-commit line |
 | On-device NLU, held-out | 213/216 = 98.6% (`src/core/agent/nlu.eval.test.ts`) |
-| Automated tests | **3,066** in 110 files: 3,065 passed, 1 skipped, 0 failed |
+| Automated tests | **4,245** in 169 files: 4,244 passed, 1 skipped, 0 failed (2026-11-26) |
 
 The scenario-by-scenario log is in the separate **Execution Evidence** document.
 
@@ -243,7 +243,7 @@ It may use at most 5 tool rounds of 30 s each. **Every `tool_use` goes through t
 
 | Step | Tool | Depends on | Purpose |
 |---|---|---|---|
-| s1 | `get_overview` | — | Check the month (branch on mirror status) |
+| s1 | `get_overview` | none | Check the month (branch on mirror status) |
 | s2 | `get_spending_breakdown` | s1 | Find what pushed you over |
 | s3 | `analyze_bills` | s1 | Look for bill and subscription leaks |
 | s4 | `get_insights` | s2 | Spot habits worth changing |
@@ -314,7 +314,7 @@ Executors (`agent/tools.ts`) return structured data, cards, an undo record for r
 - **Correction.** "…actually make it ¥150" rejects the previous pending action and sends a new call through the gate (B10). If the first action already ran, Bun asks the user to undo it first.
 - **Interrupt.** "Stop" cancels active plans: waiting steps are skipped, pending actions rejected (B11).
 - **Undo in chat.** "Undo that" acts on the latest action. A card still waiting is rejected. A reversible action that ran is undone through the same `undoPending()` path as the card's Undo button, if it is inside its 30-second window. A T3 action is final, so Bun suggests a dispute instead.
-- **Affirm never approves.** "Yes" in chat only points to the card ("I never approve things from chat — tap Approve on the card"), so look-alike text cannot approve.
+- **Affirm never approves.** "Yes" in chat only points to the card ("I never approve things from chat: tap Approve on the card"), so look-alike text cannot approve.
 - **Fallback.** An unknown intent gets chips for the likeliest runner-up intents. If the LLM fails, the on-device engine answers.
 
 #### Multilingual replies
@@ -414,7 +414,7 @@ Limits round to whole yuan, or to ¥10 at ¥500 and above, and the remainder goe
 - **Hero item.** The most expensive open dream item that delta fully covers (quantity = ⌊delta / price⌋). If none fits, the primary goal, shown as delta / price.
 - **Goal delay.** round(delta / monthly rate × 30.4) days. Monthly rate is the average net inflow to the goal's pot over the last 3 complete months, or 10% of income if there is no history. Every surface (hero, chat text, cards, "Why am I seeing this?") shows it on one unit convention (`finance/copy.durationText`): days under two weeks, then weeks, then months.
 - **Hours of work.** delta / (monthly income / work hours per month); work hours default to 174.
-- **Copy.** Over, cheeky: "You could've gotten a Weekend in Chengdu." Over, gentle: "This month's extra ¥X = [item]." Pace over: "Careful — at this pace you'll trade away [item]." Under: "¥X closer to your [goal] (N% there)."
+- **Copy.** Over, cheeky: "You could've gotten a Weekend in Chengdu." Over, gentle: "This month's extra ¥X = [item]." Pace over: "Careful: at this pace you'll trade away [item]." Under: "¥X closer to your [goal] (N% there)."
 - **Mood (the carrot and the stick).** One ladder, computed from the ledger in `finance/temper`: under → happy; on track → calm; heading over → worried; over → angry; 20% or more past the target → furious (bright red). Day by day it moves: a blowout (today alone is three times the day limit while the month is over or heading over) adds a step, and every two logged days in a row within the day limit take a step off, down to worried. A day with nothing logged is skipped, so going quiet never calms Bun. The gentle tone softens the angry faces one step. The day limit is the user's own daily tripwire, or an even share of the target after fixed costs. No data: sleepy.
 - **Call to action**, built by code:
   - over or pace over: an 80% tripwire on the biggest "want" category if it has a budget, otherwise a tighter cap;
@@ -596,8 +596,8 @@ The trip is audited, with a reason that names what was blocked. Only the user ca
 | Variable | Default | Purpose |
 |---|---|---|
 | `LLM_PROVIDER` | auto | `anthropic`, `openai_compat` or `mock`. If unset: Anthropic if its key is present, else OpenAI-compatible, else no LLM |
-| `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` | —, `claude-sonnet-5-5` | Anthropic provider |
-| `OPENAI_COMPAT_BASE_URL`, `_API_KEY`, `_MODEL` | DeepSeek, —, `deepseek-chat` | Any OpenAI-compatible endpoint (https, except on localhost) |
+| `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` | none, `claude-sonnet-5-5` | Anthropic provider |
+| `OPENAI_COMPAT_BASE_URL`, `_API_KEY`, `_MODEL` | DeepSeek, none, `deepseek-chat` | Any OpenAI-compatible endpoint (https, except on localhost) |
 | `FUNDBUN_API_PORT`, `FUNDBUN_RATE_LIMIT_RPM` | 8787, 30 | Gateway port; requests per minute per IP |
 | `FUNDBUN_API_HOST`, `_TRUST_PROXY`, `_ALLOWED_ORIGINS`, `_PROVIDER_TIMEOUT_MS`, `_ALLOW_MOCK`, `ANTHROPIC_EFFORT` | 127.0.0.1 (dev), 40,000 ms, `low` | Binding, proxy, origins, timeouts; mock refused in production unless allowed |
 
@@ -611,7 +611,7 @@ The trip is audited, with a reason that names what was blocked. Only the user ca
 
 **Continuous integration** (`.github/workflows/ci.yml`). Every push runs the type check, the full test suite, all 45 evidence scenarios and the production build.
 
-**Tests.** `npx vitest run` on 2026-10-08: **3,066 tests in 110 files**. 3,065 passed, 1 was skipped and none failed. The skipped test only runs while the real redactor is a stub.
+**Tests.** First-round submission baseline (`npx vitest run` on 2026-10-08): 3,066 tests in 110 files (3,065 passed, 1 skipped, 0 failed). Final-round suite (`npx vitest run` on 2026-11-26): **4,245 tests in 169 files (4,244 passed, 1 skipped, 0 failed)**. The skipped test only runs while the real redactor is a stub. Breakdown as of the first-round baseline below, plus the final-round suites listed in the Addendum:
 
 | Area | Files | Passed |
 |---|---|---|
@@ -649,3 +649,86 @@ The fixed seed, sandbox date, clock and seeded ids make two runs byte-identical 
 - **Off-device audit anchoring.** Send the head anchor (already stored and checked on the device) to the bank or the gateway.
 - **Cooldown.** A 24-hour wait before loosened limits take effect, modelled on Monzo's gambling block ([research 06](research/06-agent-ux-patterns.md) §2).
 - **Hosted demo.** Live on Vercel at [fundbun.vercel.app](https://fundbun.vercel.app/?demo=jing) and on GitHub Pages at [odripads.github.io/fundbun](https://odripads.github.io/fundbun/?demo=jing) (static build, on-device engine only); the Docker image serves the app plus the LLM gateway for deployments with a model key.
+
+---
+
+## 06 Final-Round Update (November 2026)
+
+This section records what was added after the first-round submission, for the final round on 29 November 2026. Sections 01 to 05 describe the core, which is unchanged in design: one TypeScript core, a deterministic policy gate, and an optional model that can only propose. Everything below was built around that core. The six kernel files (`security/policy.ts`, `pin.ts`, `binding.ts`, `audit.ts`, `agent/specs.ts`, `agent/tools.ts`) were frozen while the appearance plugins, the deck and this update were written.
+
+### Desktop app, mobile-ready web app and Dual Mode
+
+| Surface | Where | Notes |
+|---|---|---|
+| Desktop app (Mac) | `desktop/main.ts`, `scripts/desktop-build.mjs` | An Electron shell that starts the local server (`server/local.ts`) on `127.0.0.1:47600`. The window is sandboxed with no Node access. AI keys and the mail password are encrypted with Electron `safeStorage`, backed by the macOS Keychain. Only the Mac build is tested. |
+| Mobile-ready web app | `src/ui/`, `public/manifest.webmanifest` | The same core in the browser with the phone layout and a PWA manifest (add to Home Screen). There is no service worker and no native mobile app yet. |
+| Desk layout | `src/ui/components/desk/`, `src/ui/screens/dashboard/` | A wide window gets a dashboard, the chat as a side panel and the glass box. The user can switch back to the phone view. |
+
+**Dual Mode.** A profile is in one of two spending modes (`SpendMode`): **Daily tracking**, a simple count with no target and no Dream Mirror, or **Goal & Mirror**, the full experience with the monthly target, the Dream Mirror, the carrot and the stick. The switch is on Home and in Settings, keeps the saved target, and can be changed at any time.
+
+**Customizable layout.** In Customize mode every dashboard card can be reordered, resized to a two-column span, or hidden, the Daily check-in included. The layout is a user preference: it changes no finance data and needs no PIN.
+
+### Offline understanding: casual phrasing and a task picker
+
+The built-in engine (`agent/nlu.ts`, `agent/offline-engine.ts`) still uses rules plus the on-device TF-IDF classifier described in section 03. It calls no model. Two additions matter on stage:
+
+- **Casual phrasing.** More everyday wordings are understood in English, Chinese and Indonesian (`agent/nlu-data.ts`).
+- **A task picker instead of a dead end.** When a prompt is unknown or out of scope, Bun does not guess. It answers with a clarify card of ready-made tasks (`TASK_PICKER` in `agent/voice-i18n.ts`: biggest spendings, today's safe-to-spend, month overview, category breakdown, savings pots, log an expense). Each chip sends a prompt the engine is known to handle.
+
+### Bring your own AI, including providers reachable in mainland China
+
+Connections live on the user's computer (`server/ai/store.ts`, presets in `server/ai/presets.ts`). Two kinds exist:
+
+| Kind | Presets | How it connects |
+|---|---|---|
+| API key or local model | DeepSeek, Qwen (China and international), Kimi (Moonshot AI, `https://api.moonshot.cn/v1`), GLM, OpenAI, Claude (Anthropic), Gemini, Grok, OpenRouter, any OpenAI-compatible endpoint, Ollama, LM Studio | The local server calls the provider; the page only ever learns `hasKey`. |
+| Agent on this computer | Kimi Code, Claude Code, Codex, Qwen Code, Gemini CLI, OpenCode, Antigravity, a custom ACP command | One Agent Client Protocol child process per chat session. FundBun's tools reach it through a small MCP bridge and come back through the same policy gate. |
+
+Tested live so far: Kimi Code (agent, 12/12 checks via `scripts/verify-kimi-live.ts` against `kimi acp`), DeepSeek (API key) and Claude Code (agent). Note that Kimi Code CLI `2.5.2` sends the MCP tool name in `title` (`mcp__fundbun__...`) without a `name` field, so `fundbunToolOf()` in `server/agents/runtime.ts` fails closed and prompts once ("Approve for this session" during setup). The other presets connect through the same OpenAI-compatible or ACP path and should be described as "connects to", not "tested with". A failed AI call falls back to the built-in engine with a notice and a cool-down.
+
+### Creator Mode and Shell Appearance plugins
+
+Creator Mode (desktop app only, off until the user turns it on with the PIN) lets Bun draft **widgets**: sandboxed dashboard cards that receive a read-only, PII-minimised snapshot (`server/plugins/`, `src/core/plugins/snapshot.ts`). The final round adds a second plugin kind for the shell itself.
+
+**Shell Appearance plugins** (`src/core/plugins/appearance.ts`) are bounded, reversible changes to how the app looks. Exactly three things can change:
+
+| Part | Bounds |
+|---|---|
+| Theme | One of ten presets (`system`, `light`, `dark`, `midnight`, `sakura`, `forest`, `ocean`, `amber`, `cyberpunk`, `contrast`), plus optional overrides of 15 allow-listed colour tokens. Values must be hex colours. Body text must keep 4.5:1 contrast against the page and the cards, and button labels 3:1 against the accent, so a look cannot hide a card by painting text in the background colour. The danger, over and warning colours are not on the list. |
+| Mascot headwear | `none`, `kamen_rider`, `crown`, `cap` or `halo`, drawn in code in `BunMascot.tsx`. The helmet is worn visor-up, so Bun's own face and mood stay in view. |
+| App name | At most 28 printable characters with at least one letter or digit. Control and invisible characters, direction overrides and stacked marks are refused. The wordmark shows the name with a small "FundBun" line that always stays, and the window title becomes "name · FundBun". |
+
+How a change reaches the screen:
+
+1. **Two ways in, one validator.** A connected AI calls the `propose_shell_appearance` tool (offered only while Creator Mode is on). With or without an AI, a chat message such as "change theme to cyberpunk, put a kamen rider helm on bun, and rename fundbun to #ilovemoney" is read on the device by `parseShellAppearancePrompt()`, a deterministic reader with no model. Both paths go through `validateShellAppearancePatch()`.
+2. **A preview card, never an automatic change.** The runtime (`respondShellAppearance()` in `agent/creator-tools.ts`, called from `agent/runtime.ts`) answers with a card that shows the result. Nothing changes until the user presses **Apply**. **Undo** restores the look before it, and **Reset Shell Appearance** in Settings goes back to FundBun's own look and lists what is active.
+3. **The same taint and kill-switch rules as other Creator tools.** In a turn that carries untrusted content (a file, a bill, pasted text), the AI tool is denied with no card, and a typed request shows its preview with Apply blocked. The same holds while Bun is paused by the kill switch. Both cases are audited.
+4. **Applied in the browser only.** The look is stored in `localStorage` under `fundbun.shell-appearance.v1`, read back through the validator on every load, and written to the page as `data-theme`, `data-shell-theme`, the allow-listed CSS variables and `document.title`. It never enters the finance state.
+
+Card type note: the preview rides on the existing `plugin_action` chat card with `action: 'appearance'`, so the evidence formatter and every other listing of plugin actions show it without a change.
+
+### File and folder attachments in chat
+
+In the desktop chat the user can attach files or a whole folder (`src/core/agent/attachments.ts`). Each file is read on the device (PDF, images through OCR, Excel, Word, CSV, text) and only its text is kept: at most 20 files, 12,000 characters each, 60,000 per message. The text goes to the user's own AI wrapped as untrusted data. Any turn within nine user messages of an attachment is tainted, and with an agent every later turn of that session is. The built-in engine reads no files and says so.
+
+### Read-only email ingestion
+
+Settings, Data sources can connect the user's own mailbox to find receipts, invoices and bank alerts (`server/email/`, `src/core/email/`). The IMAP client is read-only by construction: it can send only `CAPABILITY`, `LOGIN`, `ID`, `EXAMINE`, `SEARCH`, `FETCH` with `BODY.PEEK` and `LOGOUT`, and the tests assert that exact command list against a fake IMAP server. Only senders on the allow-list are read, each message is scanned for instructions aimed at an AI, parsing is deterministic, and every spending found starts unticked and waits for the user. Details are in the Security Self-assessment.
+
+### Tests added for the final round
+
+| File | What it checks |
+|---|---|
+| `src/core/plugins/appearance.test.ts` | Prompt parsing (theme, Kamen Rider helmet, rename, combined, resets), validation bounds, preset legibility, the taint and kill-switch gate, and a full offline chat turn through the runtime |
+| `src/ui/components/plugins/plugins.dom.test.ts` | The helmet drawn on Bun, the wordmark showing a custom name, the card's Apply and Undo against the page, storage and `document.title`, blocked and tampered cases, and the Settings reset |
+
+The full suite on 26 November 2026 is 4,244 tests in 169 files.
+
+### Possible future development
+
+These are proposals. None of them is built, and nothing is agreed with any bank.
+
+- **FundBun Pro, proposed at US$25 a month.** Free stays "bring your own AI". Pro would unlock Creator Mode and include a hosted, multi-model AI so that an everyday user needs no API key. Bring your own AI would stay available, and the security kernel would be identical on both plans.
+- **FundBun inside a bank's app.** A proposal for WeBank or a similar bank: one tile in the bank's featured services opens FundBun inside the bank's own app with the Dream Mirror and PIN-gated Goal Pots. The bank hosts it, holds the money and executes; FundBun proposes and enforces the rules. The aims (daily opens, micro-saving, retention) would be tested in a consented pilot.
+- **Automatic expense capture on mobile.** The desktop already turns receipts, invoices and bank emails into proposed entries. The roadmap item is a push-notification listener on the phone for e-wallet, QRIS, WeChat Pay, Alipay and bank-app notifications, parsed on the device behind the same tap-to-log gate. Android first: iOS does not let an app read other apps' notifications.
+

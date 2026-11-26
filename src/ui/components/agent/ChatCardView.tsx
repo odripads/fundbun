@@ -6,7 +6,7 @@ import { ClarifyCard, NoticeCard, XrayCard } from './cards/SafetyCards'
 import { useSend, type ChatCardContext } from './cards/shared'
 import { BreakdownCard, BudgetCard, RecurringCard, TransactionsCard } from './cards/SpendingCards'
 import { PlanCard } from './PlanCard'
-import { PluginActionCard, PluginDraftCard } from '../plugins/PluginCards'
+import { PluginActionCard, PluginAppearanceCard, PluginDraftCard } from '../plugins/PluginCards'
 
 export type { ChatCardContext } from './cards/shared'
 
@@ -36,7 +36,8 @@ export function ChatCardView({ card, context = EMPTY }: ChatCardViewProps) {
     case 'clarify': return <ClarifyCard card={card} context={context} />
     case 'notice': return <NoticeCard card={card} context={context} />
     case 'plugin_draft': return <PluginDraftCard card={card} />
-    case 'plugin_action': return <PluginActionCard card={card} />
+    // a shell appearance plugin rides on the plugin_action card: its own preview with Apply and Undo
+    case 'plugin_action': return card.action === 'appearance' ? <PluginAppearanceCard card={card} /> : <PluginActionCard card={card} />
     default: return null
   }
 }

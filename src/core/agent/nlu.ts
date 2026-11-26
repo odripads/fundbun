@@ -106,6 +106,7 @@ export type NluFocus =
   | 'export'
   | 'profile'
   | 'add_dream'
+  | 'log_expense'
   | 'out_of_scope'
   | 'bare_amount'
   | 'recommend'
@@ -1504,8 +1505,9 @@ function recommendCancelRule(p: Parsed): RuleHit | null {
 
 /** Balance, safe-to-spend and savings-rate questions: overview, answering exactly that. */
 const BALANCE_RE = /\b(?:account|checking|bank|current|available)\s+balances?\b|\bbalances?\b(?!\s+(?:due|transfer|owed|outstanding))|\bhow much (?:money |cash )?(?:do i (?:have|got)|have i got|is (?:there )?(?:in|on) (?:my|the) (?:account|checking|bank|card|pots?|savings))\b|\bhow much (?:money|cash) (?:do )?i (?:have|got)\b|余额|(?:卡|账户|账号)里(?:还)?有多少|我(?:还)?有多少钱|\bsaldo\b|\buang(?:ku| saya| aku)? (?:ada|tinggal|tersisa|sisa) berapa\b|\bberapa uang(?:ku| saya| aku)\b/
-const SAFE_SPEND_RE = /\b(?:how much|what) (?:can|could|may) i (?:still |safely )?spend\b|\bcan i still spend\b|\bsafe(?:ly)? to spend\b|\bspend (?:per|a|each) day\b|\b(?:per|a|each) day (?:for|until|till) the (?:rest|end)\b|\b(?:left|remaining) to spend\b|\bhow much (?:is |do i have )?left (?:to spend|this month|for (?:the|this) month|in my budget)\b|\bdaily (?:allowance|spending budget)\b|还能花多少|还可以花多少|每天(?:能|可以|还能)花多少|\bsisa (?:budget|anggaran|uang)\b|\bmasih (?:bisa|boleh) (?:belanja|jajan|pakai|habiskan)\b/
+const SAFE_SPEND_RE = /\b(?:how much|what) (?:can|could|may) i (?:still |safely )?spend\b|\bcan i still spend\b|\bsafe(?:ly)? to spend\b|\bspend (?:per|a|each) day\b|\b(?:per|a|each) day (?:for|until|till) the (?:rest|end)\b|\b(?:left|remaining) to spend\b|\bhow much (?:is |do i have )?left (?:to spend|this month|for (?:the|this) month|in my budget)\b|\b(?:daily|today(?:'s)?)\s+(?:allowance|spending allowance|spending budget|safe[- ]to[- ]spend)\b|\ballowance for today\b|\bwhat(?:'s| is) left in my budget\b|\b(?:remaining|leftover) budget\b|\bbudget remaining\b|还能花多少|还可以花多少|今天(?:还能|可以|能)花多少|今天额度|每天(?:能|可以|还能)花多少|\bsisa (?:budget|anggaran|uang)\b|\bjatah (?:belanja |jajan )?hari ini\b|\bmasih (?:bisa|boleh) (?:belanja|jajan|pakai|habiskan)\b/
 const SAVINGS_RATE_RE = /\bsavings? rate\b|\brate of saving\b|\bhow much of my (?:income|salary|pay) (?:do|did|have) i (?:save|saved|keep|kept)\b|\bwhat (?:percent(?:age)?|share|portion) of my (?:income|salary|pay)\b[^.?!]{0,20}\bsav\w*|储蓄率|存钱比例|\b(?:tingkat|persentase) (?:tabungan|menabung)\b/
+const MONTH_OVERVIEW_RE = /^(?:month|monthly) (?:overview|summary|status|report)\??$|^how(?:'s| is) my month(?: going)?\??$|^本月(?:概览|总结|情况)|^这个月(?:概览|总结|情况)|\b(?:ringkasan|ikhtisar) bulan ini\b/
 
 /** "What's my budget?" — the monthly target and where the month stands. */
 const BUDGET_QUESTION_RE = /^(?:what(?:'s| is)|whats|how much is|show(?: me)?|tell me)\s+(?:my|the)\s+(?:monthly\s+|total\s+|overall\s+)?(?:budget|target|spending target|spending limit)\??$|^my (?:monthly )?(?:budget|target)\??$|^(?:我的)?(?:预算|目标)(?:是)?多少|^(?:budget|target)(?:ku| saya| aku)? berapa\??$/
@@ -1513,6 +1515,7 @@ const BUDGET_QUESTION_RE = /^(?:what(?:'s| is)|whats|how much is|show(?: me)?|te
 function overviewFocusRule(p: Parsed): RuleHit | null {
   const n = p.norm
   if (BUDGET_QUESTION_RE.test(n) && !p.category) return { intent: 'overview', rule: 'R-BUDGET-QUESTION', confidence: 0.92 }
+  if (MONTH_OVERVIEW_RE.test(n)) return { intent: 'overview', rule: 'R-MONTH-OVERVIEW', confidence: 0.94 }
   if (SAVINGS_RATE_RE.test(n)) return { intent: 'overview', rule: 'R-SAVINGS-RATE', confidence: 0.94, slots: { focus: 'savings_rate' } }
   if (SAFE_SPEND_RE.test(n)) return { intent: 'overview', rule: 'R-SAFE-SPEND', confidence: 0.94, slots: { focus: 'safe_to_spend' } }
   if (BALANCE_RE.test(n) && !IMPERATIVE_MOVE_RE.test(n)) return { intent: 'overview', rule: 'R-BALANCE', confidence: 0.94, slots: { focus: 'balance' } }
@@ -1523,10 +1526,12 @@ function overviewFocusRule(p: Parsed): RuleHit | null {
 const HANDOFF_RE = /\b(?:talk|speak|chat|connect me|put me through)\s+(?:to|with)\s+(?:a\s+|an\s+|the\s+|some\s+)?(?:real\s+|live\s+|actual\s+)?(?:human|person|people|agent|someone|somebody|representative|rep|staff|operator|customer (?:service|support)|support)\b|\b(?:human|live|real person) (?:agent|support|help)\b|\bcustomer (?:service|support|care)\b|\breal (?:person|human)\b|\bget me a (?:human|person)\b|人工(?:客服|服务)?|转人工|找客服|联系客服|\bbicara (?:dengan|sama) (?:manusia|orang|cs|petugas)\b|\bhubungi cs\b/
 const PROFILE_RE = /\b(?:change|set|update|raise|lower|increase|decrease|edit|adjust|bump|reduce|make)\b[^.?!]{0,20}\bmy\s+(?:monthly\s+)?(?:spending\s+)?(?:target|income|salary|pay ?day)\b|\bmy (?:monthly )?(?:income|salary|pay) is (?:now )?(?:[¥$]|\d)|\bi (?:now )?(?:earn|make) (?:[¥$]|\d)|\b(?:my )?new (?:income|salary|target) is\b|(?:改|修改|调整|提高|降低).{0,4}(?:目标|收入|工资|发薪日)|(?:目标|收入|工资)(?:改成|改为|调到)|\b(?:ubah|ganti|naikkan|turunkan) (?:target|gaji|pendapatan)\w*/
 const ADD_DREAM_RE = /^(?:(?:please|pls|can you|could you|i want to|i'd like to|help me|let'?s)\s+)*(?:add|create|make|start|set up)\s+(?:a\s+|an\s+|another\s+|one\s+more\s+)?(?:new\s+)?(?:dream|wish(?:list item)?|savings goal|goal|treat)\b(?!\s*(?:pot|fund|jar))|\b(?:add|put)\b[^.?!]{0,40}\bto (?:my )?(?:wish ?list|dreams|dream list)\b(?!\s*(?:pot|fund|jar))|(?:添加|新增|加一个|加个)(?:一个)?(?:新的?)?(?:梦想|心愿|目标)|\btambah(?:kan)?\s+(?:impian|target|keinginan)\s*(?:baru)?\b/
+const LOG_EXPENSE_RE = /\b(?:log|record|enter)\s+(?:an?\s+|my\s+)?(?:expenses?|purchases?|spending|transactions?)\b|\badd\s+(?:an?\s+|my\s+)?(?:expenses?|purchases?|spending)\b|\badd spending\b|\btrack\s+(?:an?\s+|my\s+)?(?:expenses?|purchases?)\b|\b(?:catat|mencatat|tambah(?:kan)?|masukkan)\s+(?:pengeluaran|pembelian|belanja|transaksi)\b|记一笔(?:消费|开销|支出)?|记录(?:消费|开销|支出)|怎么记账|添加(?:消费|开销|支出)/
 
 function routeRule(p: Parsed): RuleHit | null {
   const n = p.norm
   if (HANDOFF_RE.test(n)) return { intent: 'help', rule: 'R-HANDOFF', confidence: 0.95, slots: { focus: 'handoff' } }
+  if (LOG_EXPENSE_RE.test(n)) return { intent: 'help', rule: 'R-LOG-EXPENSE', confidence: 0.95, slots: { focus: 'log_expense' } }
   if (ADD_DREAM_RE.test(n)) {
     return { intent: 'help', rule: 'R-ADD-DREAM', confidence: 0.93, slots: { focus: 'add_dream' } }
   }
@@ -1535,8 +1540,8 @@ function routeRule(p: Parsed): RuleHit | null {
 }
 
 /** Month-on-month comparisons ("compare this month to last month", "did my coffee spending go up?"). */
-const COMPARE_RE = /\bcompare[ds]?\b|\bcompared (?:to|with)\b|\bvs\.?\b|\bversus\b|\b(?:go|gone|went|going) (?:up|down)\b|\b(?:more|less) than (?:last|previous|the previous|the last) month\b|\b(?:increase|decrease|rise|drop)[ds]?\b|\bup or down\b|\bhigher or lower\b|比上(?:个)?月|跟上(?:个)?月比|和上(?:个)?月比|涨了|增加了|减少了|\bdibanding(?:kan)?\b|\b(?:naik|turun)\b/
-const SPEND_CONTEXT_RE = /\bspen(?:d|t|ding)\b|\bexpenses?\b|\bthis month\b|\blast month\b|花|消费|开销|\bpengeluaran\b|\bbelanja\b/
+const COMPARE_RE = /\bcompare[ds]?\b|\bcompared (?:to|with)\b|\bvs\.?\b|\bversus\b|\b(?:go|gone|went|going) (?:up|down)\b|\b(?:more|less) than (?:last|previous|the previous|the last) month\b|\b(?:increase|decrease|rise|drop)[ds]?\b|\bup or down\b|\bhigher or lower\b|比上(?:个)?月|跟上(?:个)?月比|和上(?:个)?月比|对比上(?:个)?月|涨了|增加了|减少了|\bdibanding(?:kan)?\b|\bbanding(?:in|kan)?\b|\b(?:naik|turun)\b/
+const SPEND_CONTEXT_RE = /\bspen(?:d|t|ding)\b|\bexpenses?\b|\bthis month\b|\blast month\b|花|消费|开销|上个月|\bbulan lalu\b|\bpengeluaran\b|\bbelanja\b/
 
 /** "food delivery in the last 3 months": a category over a run of months. */
 function rangeRule(p: Parsed): RuleHit | null {
@@ -1555,16 +1560,29 @@ function compareRule(p: Parsed): RuleHit | null {
   return { intent: 'breakdown', rule: 'R-COMPARE', confidence: 0.92, slots: { focus: 'compare' } }
 }
 
-/** Transaction searches with a twist: late-night orders, the biggest purchase. */
+/** Transaction searches with a twist: late-night orders, recent spending, the biggest purchase. */
 const LATE_NIGHT_RE = /\blate[- ]?night\b|\bafter (?:11|midnight|23:00)\b|\bmidnight\b|深夜|半夜|夜宵|凌晨|\btengah malam\b/
-const LARGEST_RE = /\b(?:biggest|largest|most expensive|priciest)\s+(?:single\s+|one\s+)?(?:purchase|transaction|expense|spend|buy|charge|payment|order|thing i (?:bought|paid for))\b|\bwhat did i spend the most on in a single\b|最大(?:的)?一笔|最贵的|\b(?:terbesar|termahal)\b/
+const LARGEST_RE = /\b(?:biggest|largest|highest|priciest|most expensive|most pricey|top|big)\s+(?:single\s+|one\s+|individual\s+)?(?:purchases?|transactions?|expenses?|spendings?|spends?|buys?|charges?|payments?|orders?|things?(?: i (?:bought|paid for))?|stuff)\b|\bwhat did i spend the most on in a single\b|\bwhere did most of my money go\b|\b(?:pengeluaran|pembelian|belanja|jajan|transaksi|pembayaran)(?:\s+\w+){0,2}?\s+(?:terbesar|termahal|paling mahal|paling besar)\b|\b(?:terbesar|termahal|paling mahal|paling besar)\s+(?:pengeluaran|pembelian|belanja|jajan|transaksi|pembayaran)\b|最大(?:的)?(?:一笔|开销|支出|消费|花费|购买|交易)|大额消费|花了最多钱|花得最多|最贵的/
+const RECENT_SPEND_RE = /\b(?:recent|latest|last few)\s+(?:spending|expenses?|purchases?|transactions?)\b|\bwhat did i (?:buy|purchase) recently\b|最近(?:的)?(?:消费|支出|开销|交易|购买)|\b(?:pengeluaran|pembelian|transaksi|belanja) (?:terakhir|terbaru)\b/
+const SUBSCRIPTIONS_QUERY_RE = /\b(?:recurring (?:bills?|payments?|charges?)|monthly subscriptions?|my subs?|subscriptions?|memberships?|auto[- ]?renew(?:al)?)\b|\b(?:tagihan rutin|langganan(?:ku| bulanan)?)\b|订阅|自动续费|会员/
+const GOALS_QUERY_RE = /\b(?:savings?|dream|goal) pots?\b|\bmy (?:savings? )?(?:goals?|dreams?|pots?)\b|\bsavings (?:progress|goals?)\b|\bgoal progress\b|\bcelengan(?:ku| impian\w*)?\b|\bprogres (?:tabungan|impian)\b|储蓄罐|存钱罐|目标进度/
 
 function searchFocusRule(p: Parsed): RuleHit | null {
   const n = p.norm
   if (LATE_NIGHT_RE.test(n) && /\b(?:orders?|purchases?|transactions?|charges?|find|show|list|search|look up|pull up|see)\b|订单|外卖单|\bpesanan\b/.test(n) && !TRIPWIRE_RE.test(n)) {
     return { intent: 'search', rule: 'R-SEARCH-LATE-NIGHT', confidence: 0.92, slots: { focus: 'late_night' } }
   }
-  if (LARGEST_RE.test(n)) return { intent: 'search', rule: 'R-SEARCH-LARGEST', confidence: 0.92, slots: { focus: 'largest' } }
+  if (LARGEST_RE.test(n)) return { intent: 'search', rule: 'R-SEARCH-LARGEST', confidence: 0.96, slots: { focus: 'largest' } }
+  if (RECENT_SPEND_RE.test(n)) return { intent: 'search', rule: 'R-SEARCH-RECENT', confidence: 0.94 }
+  return null
+}
+
+function commonReadRule(p: Parsed): RuleHit | null {
+  const n = p.norm
+  if (SUBSCRIPTIONS_QUERY_RE.test(n)) return { intent: 'subscriptions', rule: 'R-SUBSCRIPTIONS-QUERY', confidence: 0.94 }
+  if (GOALS_QUERY_RE.test(n)) return { intent: 'goals', rule: 'R-GOALS-QUERY', confidence: 0.94 }
+  const spendQuery = /\b(?:spend|spending|spent|expenses?|breakdown|cost|how much|stats)\b|花|消费|开销|支出|\bpengeluaran\b|\bbelanja\b/.test(n)
+  if (p.category && spendQuery && !matchEntity(p.m.merchants, p.m.q, RECURRING_CONCEPTS)) return { intent: 'breakdown', rule: 'R-CATEGORY-SPEND', confidence: 0.94 }
   return null
 }
 
@@ -1654,6 +1672,7 @@ const RULES: ((p: Parsed) => RuleHit | null)[] = [
   compareRule,
   searchFocusRule,
   budgetRule,
+  commonReadRule,
   bareAmountRule,
   smallTalkRule,
 ]

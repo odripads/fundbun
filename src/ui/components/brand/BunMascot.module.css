@@ -1,4 +1,4 @@
-/* Bun — the FundBun mascot. Colour roles map onto tokens.css; every animation lives under .animated so
+/* Bun, the FundBun mascot. Colour roles map onto tokens.css; every animation lives under .animated so
  * animated={false}, prefers-reduced-motion and the in-app "Reduce motion" setting all leave a still, complete drawing. */
 
 .root {

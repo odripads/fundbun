@@ -33,7 +33,7 @@ import { TOOL_SPECS, isToolName } from './specs'
 import { categoryLabel, findBill, findDream, firstName, isAfter, money, moneyCopy, nluContextOf, shortDate, summarizeArgs } from './support'
 import { addCard, addNotice, addSource, taint, trace, type Turn } from './turn'
 import { composeReply, hasLocalCopy, line, refusal, suggestionsIn, type ActionStage } from './voice'
-import { categoryName, dateName, joinList, reasonIn, topicOf } from './voice-i18n'
+import { categoryName, dateName, joinList, reasonIn, TASK_PICKER, topicOf } from './voice-i18n'
 
 /**
  * The on-device "Bun Engine": dialogue acts → clarification answers → NLU intent → planner → policy-gated
@@ -246,6 +246,14 @@ function chatReply(host: AgentHost, turn: Turn, intent: Intent, focus: string | 
     }
   }
   if (focus && ABOUT_FOCUS.has(focus)) trace(turn, 'policy', `Question about Bun answered in plain words (${focus}): no tool, no action`, { rule: 'R-ABOUT' })
+  if (intent === 'help' && !focus) {
+    const lang = langOf(turn)
+    const reply = compose(host, turn, intent, facts)
+    const text = joinSentences([reply, line('taskPicker', lang)], lang)
+    const suggestions = addTaskPicker(turn, lang, text)
+    trace(turn, 'intent', 'Offline task picker offered for help prompt', { options: TASK_PICKER[lang].map((o) => o.value) })
+    return { text, intent, suggestions }
+  }
   return { text: compose(host, turn, intent, facts), intent, suggestions: chips(turn, intent) }
 }
 
@@ -283,7 +291,18 @@ function altChip(intent: Intent, lang: Lang): string | undefined {
   return lang === 'en' ? ALT_CHIPS[intent] : ALT_CHIPS_I18N[lang][intent] ?? ALT_CHIPS[intent]
 }
 
-/** Never a dead end: out-of-scope gets a plain "I only handle money", a bare amount gets "what is it for?". */
+function addTaskPicker(turn: Turn, lang: Lang, question: string, leading: { label: string; value: string }[] = []): string[] {
+  const seen = new Set<string>()
+  const options = [...leading, ...TASK_PICKER[lang]].filter((o) => {
+    if (seen.has(o.value)) return false
+    seen.add(o.value)
+    return true
+  })
+  addCard(turn, { type: 'clarify', question, options })
+  return options.map((o) => o.value)
+}
+
+/** Never a dead end: out-of-scope gets a plain answer and every fallback gets tappable offline tasks. */
 function fallbackReply(host: AgentHost, turn: Turn, nlu: NluResult | undefined, text: string): Reply {
   const lang = langOf(turn)
   const topic = topicOf(text, lang)
@@ -292,13 +311,15 @@ function fallbackReply(host: AgentHost, turn: Turn, nlu: NluResult | undefined, 
   if (focus === 'out_of_scope') {
     const facts: Facts = { focus }
     if (topic) facts.topic = topic
-    const safe = lang === 'zh' ? '还能花多少' : lang === 'id' ? 'Sisa budget bulan ini berapa' : 'How much can I still spend?'
-    return { text: compose(host, turn, 'unknown', facts), intent: 'unknown', suggestions: [safe, ...chips(turn, 'overview').slice(0, 2)] }
+    const reply = compose(host, turn, 'unknown', facts)
+    const suggestions = addTaskPicker(turn, lang, reply)
+    trace(turn, 'intent', 'Offline task picker offered after an out-of-scope prompt', { options: TASK_PICKER[lang].map((o) => o.value) })
+    return { text: reply, intent: 'unknown', suggestions }
   }
-  const guesses = (nlu?.alternatives ?? []).filter((a) => a.confidence >= 0.2).map((a) => altChip(a.intent, lang)).filter((c): c is string => !!c)
-  const suggestions = [...new Set([...guesses, ...chips(turn, 'unknown')])].slice(0, 4)
-  const tail = guesses.length ? (lang === 'zh' ? '也可以点下面的建议，我猜你可能想问其中一个。' : lang === 'id' ? 'Atau ketuk salah satu saran di bawah, mungkin itu yang kamu maksud.' : 'Or tap one of the suggestions below. I think you might mean one of those.') : ''
-  return { text: joinSentences([compose(host, turn, 'unknown', {}), tail], lang), intent: 'unknown', suggestions }
+  const reply = joinSentences([compose(host, turn, 'unknown', {}), line('taskPicker', lang)], lang)
+  const suggestions = addTaskPicker(turn, lang, reply)
+  trace(turn, 'intent', 'Offline task picker offered after an unknown prompt', { options: TASK_PICKER[lang].map((o) => o.value) })
+  return { text: reply, intent: 'unknown', suggestions }
 }
 
 function bareAmountReply(host: AgentHost, turn: Turn, amount: number): Reply {
@@ -330,7 +351,7 @@ function disambiguate(turn: Turn, nlu: NluResult, intent: Intent): Reply | null 
   const b = alt ? altChip(alt.intent, lang) : undefined
   if (!a || !b || a === b) return null
   const text = line('disambiguate', lang, { a, b })
-  addCard(turn, { type: 'clarify', question: text, options: [a, b].map((o) => ({ label: o, value: o })) })
+  addCard(turn, { type: 'clarify', question: text, options: [{ label: a, value: a }, { label: b, value: b }] })
   trace(turn, 'intent', `Low confidence (${Math.round(conf * 100)}%): asked instead of guessing`, { candidates: [intent, alt?.intent], confidence: conf })
   turn.dialogue.lastIntent = 'clarify'
   return { text, intent: 'unknown', suggestions: [a, b] }

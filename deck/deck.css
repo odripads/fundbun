@@ -1,4 +1,4 @@
-/* FundBun pitch deck — 1920×1080 slides, rendered by deck/build.ts (Chrome via Playwright).
+/* FundBun pitch deck: 1920×1080 slides, rendered by deck/build.ts (Chrome via Playwright).
  * Palette and type mirror src/ui/styles/tokens.css; fonts are the app's self-hosted variable fonts. */
 
 /* ── fonts (same files the app ships) ─────────────────────────────────────── */
@@ -557,4 +557,705 @@ p {
 }
 .dark .word span {
   color: var(--yuan);
+}
+
+/* ── final round additions: item lists, tags, tick lists, flows ───────────── */
+.items {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+.item {
+  display: flex;
+  gap: 22px;
+  align-items: flex-start;
+}
+.item h3 {
+  margin: 0;
+  font: 640 31px/1.12 var(--font-display);
+  font-variation-settings: var(--fv);
+  color: var(--text);
+}
+.item p {
+  margin-top: 6px;
+  font-size: 22px;
+  line-height: 1.36;
+  color: var(--text-2);
+}
+.tag {
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--gold-soft);
+  font: 700 15px/1 var(--font-ui);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold-text);
+  white-space: nowrap;
+}
+.tag.jade {
+  background: var(--jade-soft);
+  color: var(--under-text);
+}
+.tag.soy {
+  background: var(--soy-soft);
+  color: var(--soy-800);
+}
+.ticks {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.ticks li {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  font: 500 24px/1.32 var(--font-ui);
+  color: var(--text);
+}
+.ticks .ico {
+  width: 24px;
+  height: 24px;
+  margin-top: 4px;
+  color: var(--under-text);
+  stroke-width: 2.6;
+}
+.flow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.flow .st {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 48px;
+  padding: 0 14px;
+  border-radius: 14px;
+  background: var(--cream-100);
+  border: 1.5px solid var(--line-strong);
+  white-space: nowrap;
+}
+.flow .st b {
+  font: 650 17px/1 var(--font-ui);
+  color: var(--text);
+}
+.flow .st .ico {
+  width: 20px;
+  height: 20px;
+  color: var(--gold-text);
+}
+.flow .ar .ico {
+  width: 20px;
+  height: 20px;
+  color: var(--crust);
+  stroke-width: 2.6;
+}
+
+/* ── hand-built phone mock-ups (slide 13): a bank super-app home and FundBun inside it ── */
+.mock {
+  position: absolute;
+  width: 356px;
+  padding: 12px;
+  border-radius: 54px;
+  background: var(--soy);
+  box-shadow:
+    0 0 0 1.5px rgba(91, 70, 54, 0.55),
+    0 36px 60px -28px rgba(36, 24, 15, 0.42),
+    0 70px 120px -50px rgba(143, 98, 50, 0.38);
+}
+.mock .scr {
+  position: relative;
+  height: 676px;
+  overflow: hidden;
+  border-radius: 42px;
+  background: #f6f6f6;
+  font-family: var(--font-ui);
+  color: #151515;
+}
+.mock .m-sb {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 36px;
+  padding: 8px 26px 0;
+  font: 650 14px/1 var(--font-ui);
+}
+.mock .m-sb span {
+  display: inline-flex;
+  gap: 4px;
+}
+.mock .m-sb .ico {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2.4;
+}
+.wb-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 18px;
+}
+.wb-logo {
+  margin-right: auto;
+  font: 800 23px/1 var(--font-ui);
+  letter-spacing: -0.03em;
+  color: #ff7a1a;
+  border-bottom: 3px solid #35c9b8;
+}
+.wb-logo b {
+  color: #1b2a4a;
+}
+.wb-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 11px;
+  border-radius: 999px;
+  border: 1.5px solid #ffb66b;
+  background: #fff7dc;
+  font: 600 12px/1 var(--font-ui);
+}
+.wb-pill .ico,
+.wb-out .ico {
+  width: 13px;
+  height: 13px;
+}
+.wb-out {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1.5px solid #d9d9d9;
+  background: #fff;
+}
+.wb-hi {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 50px;
+  padding: 0 18px;
+}
+.wb-hi .av {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid #151515;
+}
+.wb-hi .av .ico {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2.6;
+}
+.wb-hi > b {
+  margin-right: auto;
+  font: 700 16px/1 var(--font-ui);
+}
+.wb-hi .mini {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  font: 500 9px/1 var(--font-ui);
+}
+.wb-hi .mini em {
+  font-style: normal;
+}
+.wb-hi .mini .ico {
+  width: 17px;
+  height: 17px;
+}
+.wb-hi .mini .dot {
+  position: absolute;
+  top: -2px;
+  right: 9px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ff7a1a;
+}
+.wb-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  height: 40px;
+  margin: 2px 16px 12px;
+  padding: 4px;
+  border-radius: 999px;
+  background: #fff;
+}
+.wb-tabs span {
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  font: 500 13px/1 var(--font-ui);
+}
+.wb-tabs .on {
+  background: #dff25a;
+  font-weight: 700;
+}
+.wb-body {
+  position: relative;
+  height: 494px;
+  padding: 4px 0 0;
+  background: #fff;
+}
+.wb-h {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  height: 34px;
+  padding: 10px 16px 0;
+}
+.wb-h b {
+  font: 700 14px/1 var(--font-ui);
+}
+.wb-h u {
+  font: 700 10.5px/1 var(--font-ui);
+  color: #ff7a1a;
+}
+.wb-cards {
+  display: flex;
+  gap: 5px;
+  height: 112px;
+  margin-top: 6px;
+  padding-left: 18px;
+}
+.wb-cards .teal {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 50px;
+  padding: 10px 6px;
+  border-radius: 9px;
+  background: linear-gradient(160deg, #9be6db 0%, #c6f1ea 100%);
+}
+.wb-cards .teal span {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+}
+.wb-cards .teal .ico {
+  width: 13px;
+  height: 13px;
+  stroke-width: 2.6;
+}
+.wb-cards .teal em {
+  font: 600 8.5px/1.2 var(--font-ui);
+  font-style: normal;
+}
+.wb-cards .orange {
+  position: relative;
+  flex: none;
+  width: 236px;
+  padding: 12px 13px;
+  border-radius: 9px;
+  background: radial-gradient(120% 150% at 110% 30%, #ffa566 0%, #ffa566 46%, #ff8a3d 46.5%);
+}
+.wb-cards .orange.next {
+  width: 60px;
+}
+.wb-cards .orange small {
+  display: block;
+  font: 500 9.5px/1 var(--font-ui);
+}
+.wb-cards .orange > b {
+  display: block;
+  margin-top: 5px;
+  font: 700 13.5px/1 var(--font-ui);
+}
+.wb-cards .orange .main {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #fff;
+  font: 600 9px/1 var(--font-ui);
+  font-style: normal;
+}
+.wb-cards .orange .bal {
+  margin-top: 34px;
+}
+.wb-cards .orange strong {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 5px;
+  font: 800 14px/1 var(--font-ui);
+}
+.wb-cards .orange strong .ico {
+  width: 13px;
+  height: 13px;
+}
+.wb-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  height: 20px;
+  padding-top: 10px;
+}
+.wb-dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #d9d9d9;
+}
+.wb-dots .on {
+  background: #151515;
+}
+.wb-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px 0;
+  margin-top: 8px;
+  padding: 0 12px;
+}
+.wb-grid .t {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 6px;
+  height: 84px;
+}
+.wb-grid .sq {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 15px;
+}
+.wb-grid .sq .ico {
+  width: 22px;
+  height: 22px;
+  stroke-width: 2.2;
+}
+.wb-grid .sq img {
+  width: 38px;
+  height: 38px;
+}
+.wb-grid em {
+  font: 600 9.5px/1.15 var(--font-ui);
+  font-style: normal;
+  text-align: center;
+}
+.wb-grid .c-teal .sq {
+  background: #6fd9cf;
+}
+.wb-grid .c-orange .sq {
+  background: #ff8a3d;
+  color: #fff;
+}
+.wb-grid .c-blue .sq {
+  background: #93a8ff;
+}
+.wb-grid .c-lilac .sq {
+  background: #bfa8e8;
+}
+.wb-grid .c-white .sq {
+  background: #fff;
+  box-shadow: inset 0 0 0 1.5px #d9d9d9;
+}
+.wb-grid .c-bun .sq {
+  background: linear-gradient(140deg, #6fd9cf 0%, #b9e8e0 42%, #ffb3cf 100%);
+  box-shadow: 0 6px 14px -6px rgba(255, 105, 160, 0.7);
+}
+.wb-body .ring {
+  position: absolute;
+  left: 90px;
+  top: 298px;
+  width: 90px;
+  height: 92px;
+  overflow: visible;
+  fill: none;
+  stroke: #5cc531;
+  stroke-width: 3.2;
+  stroke-linecap: round;
+}
+.wb-promo {
+  height: 96px;
+  margin: 8px 16px 0;
+  padding: 14px;
+  border-radius: 14px 14px 0 0;
+  background: linear-gradient(120deg, #ffd9bd 0%, #ffe9d6 60%, #cfe4ff 100%);
+}
+.wb-promo i {
+  display: inline-block;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #ffa566;
+  font: 600 9px/1 var(--font-ui);
+  font-style: normal;
+}
+.wb-promo b {
+  display: block;
+  margin-top: 8px;
+  font: 700 13px/1.2 var(--font-ui);
+}
+
+.mock .fbw {
+  background: var(--cream);
+  color: var(--soy);
+}
+.fb-bar {
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 14px;
+}
+.fb-bar .back {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  width: 92px;
+  font: 600 12px/1 var(--font-ui);
+  color: var(--text-2);
+}
+.fb-bar .back .ico {
+  width: 15px;
+  height: 15px;
+  transform: rotate(180deg);
+}
+.fb-bar .ttl {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 auto;
+  font: 700 17px/1 var(--font-display);
+  font-variation-settings: var(--fv);
+  letter-spacing: -0.02em;
+}
+.fb-bar .ttl img {
+  width: 22px;
+  height: 22px;
+}
+.fb-bar .ttl em {
+  font-style: normal;
+  color: var(--rim);
+}
+.fb-bar .caps {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+  width: 92px;
+}
+.fb-bar .caps i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--soy);
+}
+.fb-bar .caps b {
+  width: 15px;
+  height: 15px;
+  margin-left: 8px;
+  border-radius: 50%;
+  border: 2px solid var(--soy);
+}
+.fb-mirror {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 172px;
+  margin: 4px 14px 0;
+  padding: 0 16px;
+  border-radius: 22px;
+  background: linear-gradient(160deg, #3f241a 0%, #24180f 100%);
+}
+.fb-mirror .arch {
+  flex: none;
+  width: 104px;
+  height: 124px;
+  padding: 5px;
+  border-radius: 999px 999px 14px 14px;
+  background: linear-gradient(160deg, #f3c24d 0%, #e3a21a 38%, #efc254 62%, #c98a0b 100%);
+}
+.fb-mirror .gl {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 999px 999px 10px 10px;
+  background: linear-gradient(180deg, #3f241a 0%, #47231a 100%);
+}
+.fb-mirror .gl img {
+  width: 66%;
+}
+.fb-mirror .tx small {
+  display: block;
+  font: 650 8.5px/1 var(--font-ui);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--yuan);
+}
+.fb-mirror .tx b {
+  display: block;
+  margin-top: 7px;
+  font: 680 18px/1.08 var(--font-display);
+  font-variation-settings: var(--fv);
+  letter-spacing: -0.02em;
+  color: #fffaf2;
+}
+.fb-mirror .tx span {
+  display: block;
+  margin-top: 8px;
+  font: 500 10.5px/1.3 var(--font-ui);
+  color: #d8c3ad;
+}
+.fb-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 50px;
+  padding: 0 14px;
+}
+.fb-row .st {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: var(--gold-soft);
+  font: 700 11.5px/1 var(--font-ui);
+  color: var(--gold-text);
+}
+.fb-row .st .ico {
+  width: 13px;
+  height: 13px;
+}
+.fb-row .ck {
+  margin-left: auto;
+  padding: 9px 13px;
+  border-radius: 999px;
+  border: 1.5px solid var(--line-strong);
+  background: #fff;
+  font: 650 11.5px/1 var(--font-ui);
+}
+.fb-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 30px;
+  padding: 0 16px;
+}
+.fb-h b {
+  font: 700 15px/1 var(--font-display);
+  font-variation-settings: var(--fv);
+}
+.fb-h span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: 700 10px/1 var(--font-ui);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--over-text);
+}
+.fb-h .ico {
+  width: 11px;
+  height: 11px;
+  stroke-width: 2.6;
+}
+.fb-pot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 62px;
+  margin: 6px 14px 0;
+  padding: 0 12px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+.fb-pot img {
+  flex: none;
+  width: 34px;
+  height: 34px;
+}
+.fb-pot > div {
+  flex: 1;
+}
+.fb-pot b {
+  display: block;
+  font: 700 12.5px/1 var(--font-ui);
+}
+.fb-pot .bar {
+  display: block;
+  height: 6px;
+  margin-top: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--dough);
+}
+.fb-pot .bar i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--jade);
+}
+.fb-pot small {
+  display: block;
+  margin-top: 5px;
+  font: 500 9.5px/1 var(--font-ui);
+  color: var(--text-3);
+}
+.fb-pot > .ico {
+  width: 15px;
+  height: 15px;
+  color: var(--over-text);
+  stroke-width: 2.4;
+}
+.fb-cta {
+  display: grid;
+  place-items: center;
+  height: 44px;
+  margin: 12px 14px 0;
+  border-radius: 999px;
+  background: var(--rim);
+  font: 700 14px/1 var(--font-ui);
+  color: var(--soy);
+}
+.fb-fine {
+  margin-top: 7px;
+  font: 500 9.5px/1 var(--font-ui);
+  color: var(--text-3);
+  text-align: center;
+}
+.fb-tabs {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  height: 52px;
+  padding-bottom: 8px;
+  border-top: 1px solid var(--line);
+  background: #fff;
+}
+.fb-tabs span {
+  display: grid;
+  place-items: center;
+  font: 600 10.5px/1 var(--font-ui);
+  color: var(--text-3);
+}
+.fb-tabs .on {
+  color: var(--soy);
+  font-weight: 700;
 }

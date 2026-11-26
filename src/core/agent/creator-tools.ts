@@ -1,6 +1,15 @@
+import { uid } from '../ids'
+import {
+  SHELL_APPEARANCE_PLUGIN_ID,
+  describeShellAppearancePatch,
+  readShellAppearancePrompt,
+  shellAppearanceGate,
+  validateShellAppearancePatch,
+} from '../plugins/appearance'
 import { CREATOR_TOOL_NAMES, isCreatorTool, type CreatorToolName } from '../plugins/tools'
 import type { HostPluginResult } from '../plugins/client'
 import type { PluginIconId, PluginSlot } from '../plugins/types'
+import type { ShellAppearancePatch } from '../types'
 import type { AgentHost } from './host'
 import { addCard, addNotice, trace, type Turn } from './turn'
 
@@ -68,12 +77,12 @@ export async function runCreatorTool(
     )
   }
 
-  if ((name === 'plugin_draft' || name === 'plugin_remove') && turn.tainted) {
+  if ((name === 'plugin_draft' || name === 'plugin_remove' || name === 'propose_shell_appearance') && turn.tainted) {
     addNotice(
       turn,
       'block',
       'Creator action blocked',
-      'This turn included untrusted content (like a bill or pasted text), so drafting or changing plugins was blocked.',
+      'This turn included untrusted content (like a bill, a file or pasted text), so drafting or changing plugins and the look of the app was blocked.',
     )
     return deny(
       host,
@@ -203,6 +212,24 @@ export async function runCreatorTool(
     }
   }
 
+  if (name === 'propose_shell_appearance') {
+    trace(turn, 'tool_call', 'llm → propose_shell_appearance', { tool: name, fields: Object.keys(args).slice(0, 8) })
+    const checked = validateShellAppearancePatch(args)
+    if (!checked.ok) {
+      trace(turn, 'tool_result', 'propose_shell_appearance failed validation', { ok: false, issues: checked.issues })
+      return { content: JSON.stringify({ status: 'invalid', error: 'That look is outside what a shell appearance plugin may change.', issues: checked.issues }), is_error: true }
+    }
+    const proposalId = stageShellAppearance(host, turn, checked.patch, 'ai')
+    return {
+      content: JSON.stringify({
+        status: 'pending_apply',
+        proposalId,
+        changes: describeShellAppearancePatch(checked.patch).map((l) => `${l.label}: ${l.value}`),
+        message: 'A preview card is shown in chat. Nothing changes until the user presses Apply, and they can Undo or Reset at once.',
+      }),
+    }
+  }
+
   if (isCreatorTool(name)) {
     const id = typeof args.id === 'string' ? args.id.trim() : ''
     const actionRaw = typeof args.action === 'string' ? args.action.trim() : ''
@@ -240,4 +267,92 @@ export async function runCreatorTool(
   }
 
   return { content: JSON.stringify({ status: 'failed', error: 'Unknown creator tool.' }), is_error: true }
+}
+
+/**
+ * Puts a validated shell appearance patch in front of the user as a preview card. Nothing is applied here: the
+ * card's Apply button does that, in the browser, and Undo or Reset put the old look back.
+ */
+function stageShellAppearance(host: AgentHost, turn: Turn, patch: ShellAppearancePatch, by: 'user' | 'ai', blocked?: string): string {
+  const proposalId = uid('look')
+  const changes = describeShellAppearancePatch(patch).map((l) => `${l.label}: ${l.value}`)
+  addCard(turn, {
+    type: 'plugin_action',
+    action: 'appearance',
+    pluginId: SHELL_APPEARANCE_PLUGIN_ID,
+    name: 'Shell appearance',
+    proposalId,
+    patch,
+    by,
+    ...(blocked ? { blocked } : {}),
+  })
+  host.audit('agent', 'tool_call', blocked ? `Shell appearance preview shown with Apply blocked (${changes.join('; ')})` : `Proposed shell appearance (${changes.join('; ')})`, {
+    tool: 'propose_shell_appearance',
+    proposalId,
+    by,
+    fields: Object.keys(patch),
+    blocked: Boolean(blocked),
+  })
+  trace(turn, 'tool_result', blocked ? 'Preview shown, Apply blocked' : 'Preview card shown: waits for Apply', { ok: !blocked, proposalId, changes })
+  return proposalId
+}
+
+export interface ShellAppearanceReply {
+  text: string
+  intent: 'shell_appearance'
+  suggestions: string[]
+}
+
+/**
+ * The offline and direct path: a chat message such as "change the theme to midnight, put a kamen rider helmet on
+ * Bun and rename FundBun to #ilovemoney" is read on this device with no model and answered with a preview card.
+ *
+ * Returns null (so the usual engines answer) when the message is not about the look, or when this is not the
+ * desktop app. With Creator Mode off it says so and stages nothing. A turn that carries untrusted content, or a
+ * paused Bun, still shows the preview but with Apply blocked, under the same rules as the other Creator tools.
+ */
+export async function respondShellAppearance(host: AgentHost, turn: Turn, text: string): Promise<ShellAppearanceReply | null> {
+  const reading = readShellAppearancePrompt(text)
+  if (!reading) return null
+  const client = host.plugins
+  if (!client) return null
+  const st = await client.state(1500)
+  if (!st.local) return null
+
+  trace(turn, 'intent', 'Shell appearance request, read on this device (no model)', {
+    act: 'shell_appearance',
+    engine: 'offline',
+    fields: reading.patch ? Object.keys(reading.patch) : [],
+    issues: reading.issues,
+  })
+  if (!st.enabled) {
+    addNotice(turn, 'info', 'Creator Mode is off', 'Changing the theme, what Bun wears or the app name is part of Creator Mode. Turn it on in Settings (it asks for your PIN), then ask again.')
+    trace(turn, 'policy', 'DENY · propose_shell_appearance', { tool: 'propose_shell_appearance', decision: 'deny', ruleIds: ['P-CREATOR-OFF'], tainted: turn.tainted })
+    return { text: 'I can restyle the app once Creator Mode is on. Nothing changed.', intent: 'shell_appearance', suggestions: [] }
+  }
+  for (const issue of reading.issues) addNotice(turn, 'warn', 'Outside the limits', issue, `look:${issue}`)
+  if (!reading.patch) return { text: 'I could not use that as it is, so nothing changed.', intent: 'shell_appearance', suggestions: ['Change the theme to midnight', 'Reset appearance'] }
+
+  // a typed request passes through the same validator as a model's tool call
+  const checked = validateShellAppearancePatch(reading.patch)
+  if (!checked.ok) {
+    for (const issue of checked.issues) addNotice(turn, 'warn', 'Outside the limits', issue, `look:${issue}`)
+    return { text: 'I could not use that as it is, so nothing changed.', intent: 'shell_appearance', suggestions: [] }
+  }
+
+  const gate = shellAppearanceGate({ tainted: turn.tainted, frozen: host.state().mandate.frozen })
+  if (!gate.allowed) {
+    trace(turn, 'policy', 'DENY · propose_shell_appearance', { tool: 'propose_shell_appearance', decision: 'deny', reasons: [gate.reason], ruleIds: [gate.ruleId], tainted: turn.tainted })
+    host.audit('policy', 'policy_decision', `DENY propose_shell_appearance (${gate.ruleId})`, { tool: 'propose_shell_appearance', decision: 'deny', ruleIds: [gate.ruleId], tainted: turn.tainted })
+    addNotice(turn, 'block', 'Look change blocked', gate.reason)
+    stageShellAppearance(host, turn, checked.patch, 'user', gate.reason)
+    return { text: 'Here is what that would look like, but I cannot apply it right now.', intent: 'shell_appearance', suggestions: [] }
+  }
+
+  stageShellAppearance(host, turn, checked.patch, 'user')
+  return {
+    text: 'Here is a preview. Nothing changes until you press Apply, and you can undo it at once.',
+    intent: 'shell_appearance',
+    suggestions: checked.patch.reset ? [] : ['Reset appearance'],
+  }
 }

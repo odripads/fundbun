@@ -6,6 +6,7 @@ import { guardIntent } from './offline-engine'
 import { understand } from './nlu'
 import { createAgentEngine, maskPinInChat } from './runtime'
 import { nluContextOf } from './support'
+import { TASK_PICKER } from './voice-i18n'
 
 function setup(persona: 'mei' | 'arif' = 'mei') {
   const host = fakeHost({ persona })
@@ -42,6 +43,79 @@ describe('respond (offline Bun Engine)', () => {
     const msg = await engine.respond('what is the weather on mars')
     expect(msg.text.length).toBeGreaterThan(20)
     expect(msg.suggestions?.length).toBeGreaterThanOrEqual(3)
+  })
+
+  it.each([
+    ['en', 'asdf qwer zxcv'],
+    ['zh', '火星上的苹果香蕉'],
+    ['id', 'blorp nggak jelas banget'],
+  ] as const)('unknown input returns a localized tappable task picker: %s', async (lang, prompt) => {
+    const { engine } = setup()
+    const msg = await engine.respond(prompt)
+    const card = msg.cards?.find((c) => c.type === 'clarify')
+    expect(card).toMatchObject({ type: 'clarify', question: msg.text, options: TASK_PICKER[lang] })
+    expect(msg.suggestions).toEqual(TASK_PICKER[lang].map((o) => o.value))
+  })
+
+  it('every task-picker prompt resolves to a grounded offline answer', async () => {
+    const expected = ['search', 'overview', 'overview', 'breakdown', 'goals', 'help']
+    for (const lang of ['en', 'zh', 'id'] as const) {
+      for (const [index, option] of TASK_PICKER[lang].entries()) {
+        const { host, engine } = setup()
+        const msg = await engine.respond(option.value)
+        expect(host.state().dialogue.lastIntent, `${lang}: ${option.value}`).toBe(expected[index])
+        expect(msg.grounding?.ok, `${lang}: ${option.value}`).toBe(true)
+      }
+    }
+  })
+
+  it('tapping the biggest-spendings task runs the largest-transaction answer', async () => {
+    const { host, engine } = setup()
+    const fallback = await engine.respond('asdf qwer zxcv')
+    const card = fallback.cards?.find((c) => c.type === 'clarify')
+    const option = card?.type === 'clarify' ? card.options[0] : undefined
+    expect(option).toEqual(TASK_PICKER.en[0])
+    const msg = await engine.respond(option!.value)
+    expect(host.state().dialogue.lastIntent).toBe('search')
+    expect(msg.text).toMatch(/biggest purchase/i)
+    expect(msg.trace?.[0]).toMatchObject({ kind: 'intent', detail: { intent: 'search', slots: { focus: 'largest' } } })
+  })
+
+  it('an ambiguous query offers both likely meanings cleanly', async () => {
+    const { host, engine } = setup()
+    const msg = await engine.respond('spending update')
+    const card = msg.cards?.find((c) => c.type === 'clarify')
+    expect(host.state().dialogue.lastIntent).toBe('clarify')
+    expect(card?.type).toBe('clarify')
+    if (card?.type !== 'clarify') return
+    expect(card.options).toEqual([
+      { label: 'Where did my money go?', value: 'Where did my money go?' },
+      { label: 'How am I doing this month?', value: 'How am I doing this month?' },
+    ])
+  })
+
+  it('a generic help prompt offers the offline task picker', async () => {
+    const { engine } = setup()
+    const msg = await engine.respond('blorf xyzzy help me do something')
+    const card = msg.cards?.find((c) => c.type === 'clarify')
+    expect(card?.type).toBe('clarify')
+    if (card?.type !== 'clarify') return
+    expect(card.options).toEqual(TASK_PICKER.en)
+  })
+
+  it('a bare amount keeps its purpose-specific clarify choices', async () => {
+    const { engine } = setup()
+    const msg = await engine.respond('¥300')
+    const card = msg.cards?.find((c) => c.type === 'clarify')
+    expect(card?.type).toBe('clarify')
+    if (card?.type !== 'clarify') return
+    expect(card.options).toHaveLength(3)
+    expect(card.options.map((o) => o.value)).toEqual([
+      'Move ¥300 to my goal',
+      'Can I afford ¥300?',
+      'Alert me on purchases over ¥300',
+    ])
+    expect(card.options).not.toEqual(expect.arrayContaining(TASK_PICKER.en))
   })
 
   it('clarify → answer → correction → affirm (never approves by text)', async () => {

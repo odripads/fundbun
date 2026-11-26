@@ -9,6 +9,7 @@ import { isDeskModeNow, useDeskMode, useDeskViewport } from './components/desk/u
 import { DesktopViewButton } from './components/desk/ViewSwitch'
 import { AppFrame, EngineNotReady, ErrorBoundary, LockScreen, ShellActions, TabBar, TopBar } from './components/layout'
 import { useMotionPreference } from './hooks/useReducedMotion'
+import { useShellAppearanceOnDocument } from './components/plugins/shellAppearance'
 import { lazyScreen, whenIdle, type LazyScreen } from './lazyScreen'
 import { buildHash, navigate, parseHash, resolveRoute, ROUTE_META, setHash, showsGlassBox, useRoute, type Location, type RouteName } from './router'
 import { AppProvider, shallowEqual, syncClockOnVisible, useEngineStatus, useRetryEngine, useSnapshot, type EngineStatus } from './state'
@@ -142,6 +143,8 @@ export interface AppProps {
 }
 
 export function App({ status }: AppProps) {
+  // Creator Mode shell appearance: the stored theme, headwear and app name go on the page before the first paint
+  useShellAppearanceOnDocument()
   return (
     <AppProvider status={status}>
       <ToastProvider>
@@ -184,7 +187,7 @@ function selectShell(s: AppSnapshot) {
 }
 
 function ReadyShell({ app, loc }: { app: FundBunApp; loc: Location }) {
-  // hasProfile flips on onboarding, demo load, unlock and reset — the moments lock/onboarded status changes
+  // hasProfile flips on onboarding, demo load, unlock and reset: the moments lock/onboarded status changes
   const shell = useSnapshot(selectShell, shallowEqual)
   useMotionPreference(shell.reducedMotion)
   // a wide window gets the desk layout unless the user picked the phone view (never in jsdom: no matchMedia)
@@ -198,7 +201,7 @@ function ReadyShell({ app, loc }: { app: FundBunApp; loc: Location }) {
   }, [redirectTo, locked])
 
   // real-data users: a tab left open overnight catches up with the device's date when it comes back into view
-  // (demo personas keep their sandbox clock — the controller decides)
+  // (demo personas keep their sandbox clock: the controller decides)
   useEffect(() => syncClockOnVisible(app), [app])
 
   if (locked) {
