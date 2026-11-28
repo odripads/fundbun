@@ -2,11 +2,12 @@
 /**
  * Builds the FundBun desktop app.
  *   node scripts/desktop-build.mjs            → desktop/app (run it with `npx electron desktop/app`)
- *   node scripts/desktop-build.mjs --package  → also a packaged app for the computer it runs on, in desktop/release:
+ *   node scripts/desktop-build.mjs --package  → package for this computer in desktop/release:
  *     macOS   FundBun-darwin-<arch>/FundBun.app + FundBun-<version>-mac-<arch>.dmg
  *     Windows FundBun-win32-<arch>/ + FundBun-<version>-win-<arch>.zip
  *     Linux   FundBun-linux-<arch>/ + FundBun-<version>-linux-<arch>.tar.gz
- *   Each platform packages only for itself (the GitHub Actions workflow desktop-release.yml builds all three).
+ *   Add --platform=win32|linux and --arch=x64|arm64 to cross-package on any supported host.
+ *   macOS packaging still requires a Mac. The GitHub Actions workflow desktop-release.yml builds all three.
  * The app folder holds: main.mjs (Electron main + FundBun's server, one file), mcp-bridge.mjs, dist/ (the web app).
  */
 import { build } from 'esbuild'
@@ -49,10 +50,13 @@ writeFileSync(join(appDir, 'package.json'), JSON.stringify({ name: 'fundbun', pr
 console.log(`[desktop] app folder ready: ${appDir}`)
 
 if (process.argv.includes('--package')) {
-  const os = platform()
+  const os = option('platform') ?? platform()
+  const cpu = option('arch') ?? arch()
   if (!['darwin', 'win32', 'linux'].includes(os)) throw new Error(`Packaging is set up for macOS, Windows and Linux, not ${os}.`)
+  if (!['x64', 'arm64'].includes(cpu)) throw new Error(`Choose --arch=x64 or --arch=arm64, not ${cpu}.`)
+  if (os === 'darwin' && platform() !== 'darwin') throw new Error('macOS packaging requires a Mac.')
   const { packager } = await import('@electron/packager')
-  rmSync(releaseDir, { recursive: true, force: true })
+  mkdirSync(releaseDir, { recursive: true })
   const icon = os === 'darwin' ? makeIcns() : null
   const [out] = await packager({
     dir: appDir,
@@ -62,7 +66,7 @@ if (process.argv.includes('--package')) {
     appCategoryType: 'public.app-category.finance',
     appCopyright: 'MIT licensed. Kalcer Institute.',
     platform: os,
-    arch: arch(),
+    arch: cpu,
     // the agents run mcp-bridge.mjs as a plain file, so the app is not packed into an archive
     asar: false,
     overwrite: true,
@@ -70,9 +74,17 @@ if (process.argv.includes('--package')) {
     ...(icon ? { icon } : {}),
     ...(os === 'win32' ? { win32metadata: { CompanyName: 'Kalcer Institute', ProductName: 'FundBun', FileDescription: 'FundBun' } } : {}),
   })
-  if (os === 'darwin') packageMac(out)
-  else if (os === 'win32') packageWindows(out)
-  else packageLinux(out)
+  if (os === 'darwin') packageMac(out, cpu)
+  else if (os === 'win32') packageWindows(out, cpu)
+  else packageLinux(out, cpu)
+}
+
+function option(name) {
+  const prefix = `--${name}=`
+  const value = process.argv.find((arg) => arg.startsWith(prefix))?.slice(prefix.length)
+  if (value) return value
+  if (process.argv.includes(`--${name}`)) throw new Error(`Use --${name}=value.`)
+  return null
 }
 
 const LOCAL_MAC_CERT = 'FundBun Local Dev'
@@ -102,7 +114,7 @@ function resolveMacSignIdentity() {
   return { identity: '-', label: 'ad-hoc (-)' }
 }
 
-function packageMac(out) {
+function packageMac(out, cpu) {
   const bundle = join(out, 'FundBun.app')
   // Apple silicon runs only signed code. A persistent signing identity keeps macOS Keychain "Always Allow"
   // working across rebuilds; ad-hoc ('-') is the fallback when no certificate is installed.
@@ -110,28 +122,33 @@ function packageMac(out) {
   console.log(`[desktop] signing FundBun.app with ${label}`)
   run('codesign', ['--force', '--deep', '--sign', identity, bundle])
   const stage = join(releaseDir, 'dmg')
+  rmSync(stage, { recursive: true, force: true })
   mkdirSync(stage, { recursive: true })
   cpSync(bundle, join(stage, 'FundBun.app'), { recursive: true, verbatimSymlinks: true })
   symlinkSync('/Applications', join(stage, 'Applications'))
-  const dmg = join(releaseDir, `FundBun-${pkg.version}-mac-${arch()}.dmg`)
+  const dmg = join(releaseDir, `FundBun-${pkg.version}-mac-${cpu}.dmg`)
   run('hdiutil', ['create', '-volname', 'FundBun', '-srcfolder', stage, '-ov', '-format', 'UDZO', dmg])
   rmSync(stage, { recursive: true, force: true })
   console.log(`[desktop] ${bundle}\n[desktop] ${dmg}`)
 }
 
-function packageWindows(out) {
+function packageWindows(out, cpu) {
   // unsigned: Windows SmartScreen will ask "Run anyway" on first start
-  const zip = join(releaseDir, `FundBun-${pkg.version}-win-${arch()}.zip`)
+  const zip = join(releaseDir, `FundBun-${pkg.version}-win-${cpu}.zip`)
   rmSync(zip, { force: true })
   // the folder name stays inside the zip, so it unpacks to FundBun-win32-<arch>\FundBun.exe
-  run('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', 'Compress-Archive -LiteralPath $env:FUNDBUN_SRC -DestinationPath $env:FUNDBUN_DEST -Force'], {
-    env: { ...process.env, FUNDBUN_SRC: out, FUNDBUN_DEST: zip },
-  })
+  if (platform() === 'win32') {
+    run('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', 'Compress-Archive -LiteralPath $env:FUNDBUN_SRC -DestinationPath $env:FUNDBUN_DEST -Force'], {
+      env: { ...process.env, FUNDBUN_SRC: out, FUNDBUN_DEST: zip },
+    })
+  } else {
+    run('zip', ['-qry', zip, basename(out)], { cwd: releaseDir })
+  }
   console.log(`[desktop] ${join(out, 'FundBun.exe')}\n[desktop] ${zip}`)
 }
 
-function packageLinux(out) {
-  const tarball = join(releaseDir, `FundBun-${pkg.version}-linux-${arch()}.tar.gz`)
+function packageLinux(out, cpu) {
+  const tarball = join(releaseDir, `FundBun-${pkg.version}-linux-${cpu}.tar.gz`)
   run('tar', ['-czf', tarball, '-C', releaseDir, basename(out)])
   console.log(`[desktop] ${join(out, 'FundBun')}\n[desktop] ${tarball}`)
 }

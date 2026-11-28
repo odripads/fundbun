@@ -66,12 +66,17 @@ describe('web app manifest', () => {
   const manifest = JSON.parse(readFileSync(join(ROOT, 'public/manifest.webmanifest'), 'utf8')) as {
     name: string
     icons: { src: string; sizes: string; type: string; purpose: string }[]
+    id: string
     start_url: string
+    display: string
   }
 
-  it('names the app and uses base-relative URLs (works under /fundbun/ on Pages)', () => {
+  it('has a stable Android and iOS install identity with base-relative URLs', () => {
     expect(manifest.name).toBe('FundBun')
+    expect(manifest.id).toBe('./')
+    expect(manifest.start_url).toBe('./?play=1')
     expect(manifest.start_url.startsWith('/')).toBe(false)
+    expect(manifest.display).toBe('standalone')
   })
 
   it('points every icon at an existing file of the declared size', () => {

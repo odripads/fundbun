@@ -49,3 +49,12 @@ void start(root)
 // once the first screen is up, warm the other screens so tab switches never wait on the network
 if (document.readyState === 'complete') prefetchScreensWhenIdle()
 else window.addEventListener('load', () => prefetchScreensWhenIdle(), { once: true })
+
+// production installs keep the complete static app on the phone, including screens not opened yet
+if (import.meta.env.PROD && window.isSecureContext && 'serviceWorker' in navigator) {
+  const register = () => {
+    void navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`, { scope: import.meta.env.BASE_URL }).catch(() => undefined)
+  }
+  if (document.readyState === 'complete') register()
+  else window.addEventListener('load', register, { once: true })
+}

@@ -86,15 +86,50 @@ changed, nothing leaked. A small sandbox test, not a guarantee.
 > https://odripads.github.io/fundbun/?demo=jing), demo PIN **2580**. The hosted demo is the static build with the
 > on-device engine, so your data stays in your browser.
 
-### Download (macOS Apple Silicon preview)
+### Android and iPhone (installable web app)
 
-- Download `FundBun-1.0.0-mac-arm64.dmg` from the [v1.0.0-preview release](https://github.com/odripads/fundbun/releases/tag/v1.0.0-preview),
-  open the `.dmg`, and drag **FundBun.app** into **Applications**.
-- **First launch (unsigned preview):** macOS Gatekeeper will warn because the preview is ad-hoc signed rather than
-  notarised. Open it via **System Settings -> Privacy & Security -> Open Anyway**, or run
-  `xattr -cr /Applications/FundBun.app` in Terminal. On first open, click **Always Allow** on the macOS Keychain prompt
-  so saved AI keys can stay encrypted.
-- **Windows, Linux, or Intel Mac:** use the web app at https://fundbun.vercel.app or run from source below.
+FundBun's current source includes an installable web app (PWA) for Android and iPhone, not a native Play Store or App Store
+package. Both Vercel and GitHub Pages builds passed local installability and offline checks on 28 Nov. The current build must
+be deployed before those checks apply to the public site.
+
+Once deployed:
+
+1. Open **https://fundbun.vercel.app/?play=1** in Chrome on Android or Safari on iPhone.
+2. On Android, open the Chrome menu and choose **Add to Home screen**, then **Install**. On iPhone, tap **Share**, then **Add to Home Screen**.
+3. Open **FundBun** from the home screen. The first online load saves the complete app for offline use.
+
+The hosted phone app uses the built-in on-device engine. **Your AI**, local models, and CLI agents require the desktop app or
+`npm run local` on a computer. Data stays in that browser and does not sync between devices. Export an encrypted backup before
+clearing browser data or moving to another device.
+
+### Desktop apps (unsigned previews)
+
+The public `v1.0.0-preview` archives were built on 25 Nov and predate later final-round changes. Fresh 28 Nov archives are in
+`desktop/release/` with `SHA256SUMS.txt`; they have not been published. Windows and Linux have not had native-OS launch tests.
+
+- **macOS Apple Silicon:** download `FundBun-1.0.0-mac-arm64.dmg` from the
+  [v1.0.0-preview release](https://github.com/odripads/fundbun/releases/tag/v1.0.0-preview), open the `.dmg`, and drag
+  **FundBun.app** into **Applications**. macOS Gatekeeper will warn because the preview is ad-hoc signed rather than notarised.
+  Open it via **System Settings -> Privacy & Security -> Open Anyway**, or run `xattr -cr /Applications/FundBun.app` in Terminal.
+  On first open, click **Always Allow** on the macOS Keychain prompt so saved AI keys can stay encrypted.
+- **Windows x64:** unzip `FundBun-1.0.0-win-x64.zip` and open `FundBun.exe`. If SmartScreen appears, choose **More info**, then
+  **Run anyway**. No Node.js installation is needed.
+- **Linux x64:** extract `FundBun-1.0.0-linux-x64.tar.gz` and open the `FundBun` executable in the extracted folder. No Node.js
+  installation is needed.
+
+Build the Windows and Linux packages from a Mac, Windows, or Linux computer with Node.js 22:
+
+```bash
+npm install
+npm run desktop:build:windows   # desktop/release/FundBun-1.0.0-win-x64.zip
+npm run desktop:build:linux     # desktop/release/FundBun-1.0.0-linux-x64.tar.gz
+```
+
+Use `npm run desktop:build` to package for the computer running the command. Building the Windows archive on macOS or Linux
+requires the standard `zip` command. Saved AI keys use operating-system encryption where available; without it, the connections
+file remains local with owner-only permissions.
+
+### Run from source
 
 ```bash
 git clone https://github.com/odripads/fundbun.git
@@ -106,13 +141,14 @@ npm run dev            # web on http://localhost:5173 + LLM gateway on :8787
 Open **http://localhost:5173/?demo=jing** (over-budget story) or **?demo=arif** (on-target story). The demo PIN is
 **2580**. `?reset=1` wipes local data and starts onboarding ("Set up my own").
 
-- Desktop app (Electron + local server): `npm run desktop` (builds and opens the window) or `npm run desktop:build`
-  (packages `desktop/release/FundBun-darwin-arm64/FundBun.app` and a `.dmg` on macOS, ad-hoc signed, not notarised)
+- Desktop app (Electron + local server): `npm run desktop` builds and opens the window; `npm run desktop:build` packages it.
 - Local server in a browser (supports **Your AI**): `npm run local` → http://127.0.0.1:47600
 - Production (one process serving the app + gateway): `npm run build && npm start` → http://localhost:8787
 - Docker: `docker build -t fundbun . && docker run -p 8787:8787 --env-file .env fundbun`
 - Static, fully offline build (on-device engine only): `npm run build:vercel` (Vercel, site root; see `vercel.json`) or
   `npm run build:pages` (GitHub Pages, under `/fundbun/`)
+- Android installability and offline browser checks: `npm run verify:pwa` for Vercel and `npm run verify:pwa:pages` for the
+  `/fundbun/` GitHub Pages build. They use installed Google Chrome, with Playwright Chromium as a fallback.
 - Mock LLM mode without a key: `FUNDBUN_ALLOW_MOCK=1 LLM_PROVIDER=mock npm run dev`
 
 ### Plugging in your own AI (desktop app / `npm run local`)
@@ -126,7 +162,7 @@ plan where FundBun supplies the model is planned, with no price set and not buil
 3. Pick one of three options:
    - **Agents you are signed in to:** Claude Code, Codex, Antigravity, Qwen Code, Gemini CLI, OpenCode, Kimi Code, or any custom ACP command.
      No API key is needed: the agent uses its own CLI login on your computer. FundBun starts it in `~/.fundbun/workspace` and
-     switches it to ask-first mode. (Verified live with Claude Code and Antigravity; other listed agents connect over ACP.)
+     switches it to ask-first mode. (Verified live with Claude Code, Antigravity and Kimi Code; other listed agents connect over ACP.)
    - **With your own API key:** DeepSeek, Qwen (China or international), Kimi, GLM, OpenAI, Claude, Gemini, Grok, OpenRouter, or any
      OpenAI-compatible `/chat/completions` endpoint. Paste your key and pick a model from its list. Keys stay on your computer
      in `~/.fundbun/connections.json` (mode `0600`), encrypted with the macOS Keychain in the desktop app.
@@ -146,7 +182,7 @@ Settings → Freeze Bun · Activity → verify the audit chain.
 ## 5. Testing
 
 ```bash
-npm test               # 3,500+ unit, integration, UI and scenario tests (Vitest)
+npm test               # 28 Nov: 4,299 passed, 1 skipped, 0 failed across 170 files (Vitest)
 npx tsc -b --noEmit    # typecheck
 npm run evidence       # replays all scripted scenarios → evidence/latest (logs, transcripts, audit chains, metrics)
 ```

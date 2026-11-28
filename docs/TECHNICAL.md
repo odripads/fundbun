@@ -63,8 +63,8 @@ It can never add payees, pay other people, invest, borrow or change its own perm
 | Circuit-breaker trips | 2 (C4, C12) |
 | Audit chain | 44/44 runs intact; deliberate tampering detected (C10, broken at entry #7) |
 | Reproducibility | Two evidence runs are byte-identical apart from the git-commit line |
-| On-device NLU, held-out | 213/216 = 98.6% (`src/core/agent/nlu.eval.test.ts`) |
-| Automated tests | **4,288** in 169 files: 4,287 passed, 1 skipped, 0 failed (2026-11-26) |
+| On-device NLU, held-out | 212/216 = 98.1% (`src/core/agent/nlu.eval.test.ts`, 2026-11-28) |
+| Automated tests | **4,300** in 170 files: 4,299 passed, 1 skipped, 0 failed (2026-11-28) |
 
 The scenario-by-scenario log is in the separate **Execution Evidence** document.
 
@@ -448,7 +448,7 @@ It also reports hours of work, goal delay and dream equivalents. A7: the ¥1,299
 #### Evaluation approach
 
 1. **Unit tests** next to every module.
-2. **A held-out NLU set** (`agent/nlu.eval.test.ts`): 216 utterances, 8 per intent, none from training. It asserts ≥ 90% overall, ≥ 60% per intent, and that no refusal ever becomes an action. Measured on 2026-10-08: 213/216 (98.6%), 135 decided by rules and 81 by the classifier. Two misses were Chinese; the third read "i need money out of my goal" as a goals question rather than a withdrawal.
+2. **A held-out NLU set** (`agent/nlu.eval.test.ts`): 216 utterances, 8 per intent, none from training. It asserts ≥ 90% overall, ≥ 60% per intent, and that no refusal ever becomes an action. Measured on 2026-11-28: 212/216 (98.1%), 149 decided by rules and 67 by the classifier. Two of the four misses were Chinese. The English misses read a leftover-budget transfer as an overview and "i need money out of my goal" as a goals question rather than a withdrawal.
 3. **Scenario tests** (`tests/agent.test.ts`) run every A–D scenario against a fake host and against the real app.
 4. **The evidence runner**, scored on the `docs/SCENARIOS.md` metrics shown in the key results.
 
@@ -611,7 +611,7 @@ The trip is audited, with a reason that names what was blocked. Only the user ca
 
 **Continuous integration** (`.github/workflows/ci.yml`). Every push runs the type check, the full test suite, all 45 evidence scenarios and the production build.
 
-**Tests.** First-round submission baseline (`npx vitest run` on 2026-10-08): 3,066 tests in 110 files (3,065 passed, 1 skipped, 0 failed). Final-round suite (`npx vitest run` on 2026-11-26): **4,288 tests in 169 files (4,287 passed, 1 skipped, 0 failed)**. The skipped test only runs while the real redactor is a stub. Breakdown as of the first-round baseline below, plus the final-round suites listed in the Addendum:
+**Tests.** First-round submission baseline (`npx vitest run` on 2026-10-08): 3,066 tests in 110 files (3,065 passed, 1 skipped, 0 failed). Current suite (`npx vitest run` on 2026-11-28): **4,300 tests in 170 files (4,299 passed, 1 skipped, 0 failed)**. The skipped test only runs while the real redactor is a stub. Breakdown as of the first-round baseline below, plus the final-round suites listed in the Addendum:
 
 | Area | Files | Passed |
 |---|---|---|
@@ -633,8 +633,8 @@ The fixed seed, sandbox date, clock and seeded ids make two runs byte-identical 
 
 **Known limitations:**
 1. **Sandbox only.** All money moves inside `SandboxBank`, on synthetic personas. There is no real bank API, and we have not checked what licence a live service would need ([research 04](research/04-regulation-and-security.md) §6).
-2. **NLU coverage.** 27 intents and 751 training utterances, English first, with fewer Chinese and Indonesian phrasings. The held-out set was written by the team, not collected from users; two of its three misses were Chinese. Chinese and Indonesian replies cover the most-asked intents; the rest fall back to English. Sentences with several intents are not split.
-3. **The LLM is not live-tested.** The LLM path runs against a deterministic mock and a scripted adversarial model, and provider adapters are tested against fake SDK responses. We have not measured answer quality with a real model.
+2. **NLU coverage.** 27 intents and 751 training utterances, English first, with fewer Chinese and Indonesian phrasings. The held-out set was written by the team, not collected from users; two of its four misses in the 28 Nov run were Chinese. Chinese and Indonesian replies cover the most-asked intents; the rest fall back to English. Sentences with several intents are not split.
+3. **Provider and answer-quality coverage.** The LLM path runs against a deterministic mock and a scripted adversarial model, and provider adapters are tested against fake SDK responses. DeepSeek, Kimi Code, Claude Code and Antigravity have dated live checks, but most presets have not been live-tested and answer quality has not been benchmarked.
 4. **PIN entropy.** A 4–6 digit PIN has at most 10⁶ values. The lockout stops online guessing, but a copied storage blob could be brute-forced offline. The vault is only as strong as the PIN.
 5. **Browser storage.** Any script on the origin can read `localStorage`; CSP and the vault reduce this risk but do not remove it.
 6. **Integrity.** The audit chain is tamper-evident, not tamper-proof. Someone with full write access to the device's storage can rewrite both the log and its head anchor. The approval token is created and checked in the same process.
@@ -674,8 +674,8 @@ The final-round pitch states the product's scope in one line: **a monitor and a 
 
 | Surface | Where | Notes |
 |---|---|---|
-| Desktop app (Mac) | `desktop/main.ts`, `scripts/desktop-build.mjs` | An Electron shell that starts the local server (`server/local.ts`) on `127.0.0.1:47600`. The window is sandboxed with no Node access. AI keys and the mail password are encrypted with Electron `safeStorage`, backed by the macOS Keychain. Only the Mac build is tested. |
-| Mobile-ready web app | `src/ui/`, `public/manifest.webmanifest` | The same core in the browser with the phone layout and a PWA manifest (add to Home Screen). There is no service worker and no native mobile app yet. |
+| Desktop apps | `desktop/main.ts`, `scripts/desktop-build.mjs` | One Electron shell starts the local server (`server/local.ts`) on `127.0.0.1:47600`. The window is sandboxed with no Node access. AI keys and the mail password use Electron `safeStorage`, backed by the macOS Keychain on a Mac. Fresh Mac, Windows and Linux archives were built on 28 Nov. The Mac app passed launch, local-health and dashboard checks; Windows and Linux still need native-OS launch tests. |
+| Mobile-ready web app | `src/ui/`, `public/manifest.webmanifest`, `scripts/pwa-build.mjs` | The same core in the browser with the phone layout and an installable PWA. The production service worker precaches the complete static app for offline use. Both Vercel and Pages modes passed local Chrome installability and offline checks on 28 Nov, but the current build is not yet deployed or tested on a physical phone. There is no native mobile app. |
 | Desk layout | `src/ui/components/desk/`, `src/ui/screens/dashboard/` | A wide window gets a dashboard, the chat as a side panel and the glass box. The user can switch back to the phone view. |
 
 **Dual Mode.** A profile is in one of two spending modes (`SpendMode`): **Daily tracking**, a simple count with no target and no Dream Mirror, or **Goal & Mirror**, the full experience with the monthly target, the Dream Mirror, the carrot and the stick. The switch is on Home and in Settings, keeps the saved target, and can be changed at any time.
@@ -748,7 +748,7 @@ Settings, Data sources can connect the user's own mailbox to find receipts, invo
 | `src/core/plugins/appearance.test.ts` | Prompt parsing (theme, Kamen Rider helmet, rename, combined, resets), validation bounds, preset legibility, the taint and kill-switch gate, and a full offline chat turn through the runtime |
 | `src/ui/components/plugins/plugins.dom.test.ts` | The helmet drawn on Bun, the wordmark showing a custom name, the card's Apply and Undo against the page, storage and `document.title`, blocked and tampered cases, and the Settings reset |
 
-The full suite on 26 November 2026 is 4,287 passing tests across 169 files (1 skipped, 0 failed).
+The full suite on 28 November 2026 is 4,299 passing tests across 170 files (1 skipped, 0 failed).
 
 ### Possible future development
 
@@ -775,7 +775,7 @@ These are proposals. None of them is built, and nothing is agreed with any bank.
 | 09 | Adapts to whatever you prompt. | Four more prompts: accessibility, a custom theme and costume, two sandboxed widgets | Built; previews are mock-ups with example numbers |
 | 10 | Bring your paperwork | Files and folders in chat, read-only IMAP email | Built (desktop) |
 | 11 | Truly secure today. Ready for a bank tomorrow. | Four pillars: encrypted at rest, read-only and sandboxed, taint, the approval architecture | Built; the approval path is proven in the sandbox |
-| 12 | Measured. Reproducible. Nothing moved. | 45/45, 24/24, ¥0, 0/26, 4,287 tests, 36 live-model attacks, 12/12 Kimi checks, 87 viewport checks | Measured |
+| 12 | Measured. Reproducible. Nothing moved. | 45/45, 24/24, ¥0, 0/26, 4,299 tests, 36 live-model attacks, 12/12 Kimi checks, 87 viewport checks | Measured |
 | 13 | Where FundBun goes next. | Pro, mobile auto-capture, FundBun inside WeBank | Proposals, not built |
 | 14 | Thank you. 谢谢！ | Logo, `www.kalcerinstitute.com/fundbun`, `github.com/odripads/fundbun`, the team | n/a |
 

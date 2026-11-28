@@ -144,9 +144,10 @@ describe('static build modes (GitHub Pages and Vercel)', () => {
     expect(server.define?.__FUNDBUN_STATIC__).toBe('false')
   })
 
-  it('npm run build:vercel builds the vercel mode', () => {
+  it('npm run build:vercel builds the vercel mode and its offline worker', () => {
     const pkg = JSON.parse(readFileSync(resolve(process.cwd(), 'package.json'), 'utf8')) as { scripts: Record<string, string> }
-    expect(pkg.scripts['build:vercel']).toMatch(/vite build --mode vercel$/)
+    expect(pkg.scripts['build:vercel']).toContain('vite build --mode vercel')
+    expect(pkg.scripts['build:vercel']).toMatch(/&& node scripts\/pwa-build\.mjs$/)
   })
 
   it('ships no source maps unless asked for, and splits vendor code and the engine into named chunks', async () => {

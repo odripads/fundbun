@@ -1,8 +1,87 @@
 # AGENTS.md: FundBun handover (read this first, every session)
 
-> **25 to 26 Nov 2026: desktop app and bring-your-own-AI on branch `desktop`. Read `HANDOFF.md` first.** It has the
-> state, the tasks (`docs/handoff/T1` to `T4`), how to run the desktop app and the local AI server, and the rules.
+> **Current working copy: `~/fundbun-work` on branch `desktop`.** Read the verified current-state section below first.
+> `HANDOFF.md` is the historical 25 Nov task brief, not the current status. Never work in or commit from the stale
+> iCloud copy at `~/Desktop/STARTUP/fundbun`.
 
+## 0. Verified current state (28 Nov 2026 audit)
+
+This section records observed code and measured results. Do not turn packaging or a preset into a claim that the
+resulting app or integration was launched and tested.
+
+### Repository and release state
+
+- At the audit, `desktop` was at `5a1b1f9`, three commits ahead of `origin/desktop`, with uncommitted PWA and platform
+  work. `main` and `origin/main` were at `c188c78`. The Desktop checkout was stale at `16c1a9c` and had the known
+  broken-index symptom: hundreds of staged deletions plus untracked files. Do not commit there.
+- The public `v1.0.0-preview` release has Mac, Windows and Linux archives, but its assets were built on 25 Nov from
+  `9759aa0`, before Creator Mode and the final-round appearance work. Its notes name the still older `0d5cf27`.
+  Treat those public files as stale previews, not the current deck version.
+- The newer local Mac and Windows archives do not checksum-match the public assets. No current local Linux archive
+  existed at the audit. Rebuild all three from one verified source state before calling a release current.
+- The Kalcer product page at `https://kalcerinstitute.com/fundbun` loaded and was reviewed. It offered only the Mac
+  download and an outdated live-AI list. The Vercel app timed out from the audit network, so hosted app behaviour and
+  installation were not verified there.
+
+### Platform matrix
+
+| Platform | Code and packaging | Testing and availability limits |
+|---|---|---|
+| macOS | Electron shell, local `.app` and DMG, ad-hoc signing | The fresh local app passed signature, local-health and Jing dashboard checks on 28 Nov. Keychain storage was also recorded on 25 Nov. The public DMG is stale and not notarised. Apple silicon only for the named archive. |
+| Windows x64 | Electron packaging, local ZIP and public ZIP | Native GitHub Actions packaging passed on 25 Nov. No Windows launch or installer test was found. The ZIP contains a portable executable, not an installer. Current source is newer than the public ZIP. |
+| Linux x64 | Electron packaging and public `.tar.gz` | Native GitHub Actions packaging passed on 25 Nov. No Linux launch test was found. There was no current local archive. The archive is a portable executable, not a distro package. |
+| Android | Responsive web app, manifest, and uncommitted offline-PWA implementation | No native Android project, APK, AAB or Play Store release. Both local Vercel and GitHub Pages PWA checks passed on 28 Nov, caching 91 files and reopening Home and Settings offline in Pixel 7 emulation. This is not a physical-device test. The current build must be deployed before it is publicly installable. |
+| Web | React + Vite responsive app and static deployment configuration | The Kalcer page was reachable; Vercel was not reachable from the audit network. Keep the existing phone and desktop layouts working. |
+
+An installable PWA is a website saved to the Android home screen, with a service worker for offline use. It is not a
+native Android app. It cannot use Android's notification-listener API. Automatic capture of WeChat Pay, Alipay, QRIS
+or bank notifications remains a roadmap item; no `NotificationListenerService` implementation exists.
+
+### 28 Nov follow-up results
+
+- Fresh local archives now exist for all three desktop platforms in `desktop/release/`, with measured hashes in
+  `desktop/release/SHA256SUMS.txt`. These are local artefacts, not a new public release.
+- The fresh packaged Mac app launched with an isolated `FUNDBUN_HOME` and local test port 47601. Its local health
+  endpoint answered and Jing's full desktop dashboard rendered. The app's ad-hoc signature passed `codesign --verify`.
+  This is a fresh launch test, not Apple notarisation.
+- The Windows ZIP and Linux tarball passed archive-integrity checks. Neither app was launched on its native OS, so do
+  not call either a tested release. Windows is a portable ZIP and Linux is a portable tarball, not installers.
+- `npm run verify:pwa` and `npm run verify:pwa:pages` both passed. Each cached 91 files, reported no installability
+  errors in Chrome's Pixel 7 emulation, reopened Home and Settings offline, and passed the stale-HTML update check.
+- The scenario runner passed again: 45/45 scenarios and 233/233 assertions. Its temporary output was not copied over
+  the checked-in evidence.
+- The deck source now says 4,299 passing tests across 170 files and distinguishes Mac launch testing from Windows and
+  Linux packaging. A rebuilt PPTX and PDF passed all 14-slide layout checks at 1920x1080 and 1280x720. The generated
+  files are under `/tmp/fundbun-deck-2026-11-28/` until Odri chooses where to store or publish them.
+- The local Kalcer website source has Windows and Linux archive links, Android PWA instructions in English and Chinese,
+  and corrected Kimi/Antigravity live-test labels. Its build, one existing test and targeted lint passed. The changed
+  files also passed 412px and 1280px no-overflow checks. The site has not been pushed or published.
+
+### Features and integrations
+
+- Implemented in the current source: the finance and sandbox features below, daily tracking and Goal & Mirror modes,
+  customisable dashboard blocks, file/receipt reading (photos, PDF, Excel, Word, CSV and text), encrypted backup and
+  vault, the full desktop layout, local AI connections and agents, Creator Mode widgets and shell appearance, chat
+  files/folders, and strict read-only IMAP email.
+- The deck's Pro price, hosted model, bank integration, WeBank screens and mobile notification listener are proposals,
+  not shipped features. No real bank or user data exists in the repository.
+- Live-test records are inconsistent across documents. `HANDOFF.md` records DeepSeek and Claude Code. The technical
+  document records Kimi Code at 12/12 checks and provides `scripts/verify-kimi-live.ts`; no saved JSON report was found
+  during the audit. The README records Claude Code and Antigravity but omits Kimi. Describe every other preset as
+  "connects to", not "tested with", until a dated live result exists.
+
+### Measured evidence
+
+- Fresh audit run on this Mac: **4,299 passed, 1 skipped, 0 failed, 170 test files**. `npx tsc --noEmit -p .` passed.
+  This supersedes the deck's older 4,287-passing figure for the current working tree.
+- Fresh NLU evaluation in that run: **212/216 (98.1%)**, superseding older 213/216 documentation.
+- Existing scenario evidence: 45/45 scenarios, 233/233 assertions, 24/24 scripted attacks blocked, ¥0 moved, 0/26
+  false refusals, and 44/44 intact audit chains with deliberate tampering detected. These are deterministic sandbox
+  results, not user research or a real-bank guarantee.
+- Existing live DeepSeek evidence from 18 Nov: 24 attacks stopped by rules before the model, 12 evasive attacks reached
+  the model and were refused, ¥0 moved, no permissions changed and nothing leaked. Say "with a real model switched on".
+- The saved 26 Nov viewport report contains 87 checks across desktop, iPhone-sized and Android-sized browser viewports.
+  It is not evidence of native apps, physical-device testing or PWA installability.
 
 You are helping **Odri** (Odri Prince Sembiring, UGM, Indonesia) finish and present **FundBun** at the
 **2026 Shenzhen International FinTechathon** (Shenzhen University × WeBank, 8th edition), International
@@ -87,14 +166,18 @@ https://odripads.github.io/fundbun/?demo=jing · demo video https://youtu.be/Se5
 ```
 npm install            # never `npm ci` (it deletes node_modules and its iCloud-ignore flag)
 npm run dev            # web (vite) + API together; the terminal prints the address to open
-npm test               # vitest, ~4,000+ tests (includes agent lint suite); must stay green
+npm test               # vitest; 4,299 passed + 1 skipped in the 28 Nov audit; must stay green
 npx tsx scripts/lint-agents.ts   # anti-slop + Factory-style AST & architecture linter across src/ and server/
 npm run typecheck
 npm run evidence       # scripted scenarios → evidence/
 npm run local          # build + start local server on 127.0.0.1:47600 (supports Your AI)
-npm run desktop        # build + open the Electron desktop app
-npm run desktop:build  # package desktop/release/FundBun-darwin-arm64/FundBun.app and .dmg
-npm start              # production server on port 8787 (needed if the demo should call a real AI model)
+npm run desktop              # build + open the Electron desktop app
+npm run desktop:build        # package for this computer (macOS .app + .dmg, Windows .zip, Linux .tar.gz)
+npm run desktop:build:windows  # cross-package Windows x64 .zip
+npm run desktop:build:linux    # cross-package Linux x64 .tar.gz
+npm run verify:pwa           # verify Android installability + offline screens in the Vercel build
+npm run verify:pwa:pages     # the same checks for GitHub Pages under /fundbun/
+npm start                    # production server on port 8787 (needed if the demo should call a real AI model)
 npm run build && npm start   # ALWAYS build first: `npm start` serves whatever is in dist/
 npx tsx scripts/live-attack-test.ts --save   # 36 attacks against the real model → evidence/live/
 ```

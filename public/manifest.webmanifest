@@ -1,8 +1,9 @@
 {
   "name": "FundBun",
   "short_name": "FundBun",
+  "id": "./",
   "description": "The AI money buddy that shows you the dream you could've had.",
-  "start_url": "./",
+  "start_url": "./?play=1",
   "scope": "./",
   "display": "standalone",
   "background_color": "#FFFAF2",
