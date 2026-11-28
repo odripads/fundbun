@@ -39,8 +39,9 @@ or bank notifications remains a roadmap item; no `NotificationListenerService` i
 
 ### 28 Nov follow-up results
 
-- Fresh local archives now exist for all three desktop platforms in `desktop/release/`, with measured hashes in
-  `desktop/release/SHA256SUMS.txt`. These are local artefacts, not a new public release.
+- Fresh archives exist for all three desktop platforms in `desktop/release/`, with measured hashes in
+  `desktop/release/SHA256SUMS.txt`. On 28 Nov they were uploaded to the public `v1.0.0-preview` release from commit
+  `96c99ae`; the GitHub API digests match the local files. The release notes now cover all three platforms and their limits.
 - The fresh packaged Mac app launched with an isolated `FUNDBUN_HOME` and local test port 47601. Its local health
   endpoint answered and Jing's full desktop dashboard rendered. The app's ad-hoc signature passed `codesign --verify`.
   This is a fresh launch test, not Apple notarisation.
@@ -55,7 +56,8 @@ or bank notifications remains a roadmap item; no `NotificationListenerService` i
   files are under `/tmp/fundbun-deck-2026-11-28/` until Odri chooses where to store or publish them.
 - The local Kalcer website source has Windows and Linux archive links, Android PWA instructions in English and Chinese,
   and corrected Kimi/Antigravity live-test labels. Its build, one existing test and targeted lint passed. The changed
-  files also passed 412px and 1280px no-overflow checks. The site has not been pushed or published.
+  files also passed 412px and 1280px no-overflow checks. The website source was pushed to `main` as `dfd8f46`. The live
+  Kalcer page still served the old content afterward. Lovable opened a login page, so its final Publish step remains undone.
 
 ### Features and integrations
 

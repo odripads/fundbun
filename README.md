@@ -104,8 +104,9 @@ clearing browser data or moving to another device.
 
 ### Desktop apps (unsigned previews)
 
-The public `v1.0.0-preview` archives were built on 25 Nov and predate later final-round changes. Fresh 28 Nov archives are in
-`desktop/release/` with `SHA256SUMS.txt`; they have not been published. Windows and Linux have not had native-OS launch tests.
+The public `v1.0.0-preview` archives were refreshed on 28 Nov from commit `96c99ae`. The Mac archive passed launch and UI
+checks. Windows and Linux passed archive-integrity checks but have not had native-OS launch tests. `SHA256SUMS.txt` contains
+the published hashes.
 
 - **macOS Apple Silicon:** download `FundBun-1.0.0-mac-arm64.dmg` from the
   [v1.0.0-preview release](https://github.com/odripads/fundbun/releases/tag/v1.0.0-preview), open the `.dmg`, and drag
