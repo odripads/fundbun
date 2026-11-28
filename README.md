@@ -89,12 +89,12 @@ changed, nothing leaked. A small sandbox test, not a guarantee.
 ### Android and iPhone (installable web app)
 
 FundBun's current source includes an installable web app (PWA) for Android and iPhone, not a native Play Store or App Store
-package. Both Vercel and GitHub Pages builds passed local installability and offline checks on 28 Nov. The current build must
+package. Vercel, GitHub Pages and Kalcer builds passed local installability and offline checks on 28 Nov. The current build must
 be deployed before those checks apply to the public site.
 
 Once deployed:
 
-1. Open **https://fundbun.vercel.app/?play=1** in Chrome on Android or Safari on iPhone.
+1. Open **https://kalcerinstitute.com/fundbun/app/?play=1** in Chrome on Android or Safari on iPhone.
 2. On Android, open the Chrome menu and choose **Add to Home screen**, then **Install**. On iPhone, tap **Share**, then **Add to Home Screen**.
 3. Open **FundBun** from the home screen. The first online load saves the complete app for offline use.
 
@@ -146,10 +146,10 @@ Open **http://localhost:5173/?demo=jing** (over-budget story) or **?demo=arif** 
 - Local server in a browser (supports **Your AI**): `npm run local` → http://127.0.0.1:47600
 - Production (one process serving the app + gateway): `npm run build && npm start` → http://localhost:8787
 - Docker: `docker build -t fundbun . && docker run -p 8787:8787 --env-file .env fundbun`
-- Static, fully offline build (on-device engine only): `npm run build:vercel` (Vercel, site root; see `vercel.json`) or
-  `npm run build:pages` (GitHub Pages, under `/fundbun/`)
-- Android installability and offline browser checks: `npm run verify:pwa` for Vercel and `npm run verify:pwa:pages` for the
-  `/fundbun/` GitHub Pages build. They use installed Google Chrome, with Playwright Chromium as a fallback.
+- Static, fully offline build (on-device engine only): `npm run build:vercel` (Vercel, site root; see `vercel.json`),
+  `npm run build:pages` (GitHub Pages, under `/fundbun/`), or `npm run build:kalcer` (Kalcer, under `/fundbun/app/`)
+- Android installability and offline browser checks: `npm run verify:pwa` for Vercel, `npm run verify:pwa:pages` for GitHub
+  Pages, and `npm run verify:pwa:kalcer` for Kalcer. They use installed Google Chrome, with Playwright Chromium as a fallback.
 - Mock LLM mode without a key: `FUNDBUN_ALLOW_MOCK=1 LLM_PROVIDER=mock npm run dev`
 
 ### Plugging in your own AI (desktop app / `npm run local`)

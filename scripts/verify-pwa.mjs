@@ -15,8 +15,8 @@ import { renderServiceWorker } from './pwa-build.mjs'
 const root = fileURLToPath(new URL('../', import.meta.url))
 const vite = join(root, 'node_modules', 'vite', 'bin', 'vite.js')
 const mode = process.argv.find((arg) => arg.startsWith('--mode='))?.slice('--mode='.length) ?? 'production'
-if (!['production', 'vercel', 'pages'].includes(mode)) throw new Error(`Unknown preview mode: ${mode}`)
-const basePath = mode === 'pages' ? '/fundbun/' : '/'
+if (!['production', 'vercel', 'pages', 'kalcer'].includes(mode)) throw new Error(`Unknown preview mode: ${mode}`)
+const basePath = mode === 'pages' ? '/fundbun/' : mode === 'kalcer' ? '/fundbun/app/' : '/'
 const port = await availablePort()
 const origin = `http://127.0.0.1:${port}`
 const server = spawn(process.execPath, [vite, 'preview', '--mode', mode, '--host', '127.0.0.1', '--port', String(port), '--strictPort'], {

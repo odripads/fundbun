@@ -126,13 +126,15 @@ function runIndexHtmlHook(plugin: ReturnType<typeof fontPreloadPlugin>, bundle: 
   return hook.handler('<html><head></head><body></body></html>', { bundle })
 }
 
-describe('static build modes (GitHub Pages and Vercel)', () => {
-  it('both are static (no gateway: llmBaseUrl null); only Pages lives under /fundbun/', async () => {
+describe('static build modes (GitHub Pages, Vercel and Kalcer)', () => {
+  it('all are static and use their public base paths', async () => {
     expect(isStaticMode('pages')).toBe(true)
     expect(isStaticMode('vercel')).toBe(true)
+    expect(isStaticMode('kalcer')).toBe(true)
     expect(isStaticMode('production')).toBe(false)
     expect(baseFor('pages')).toBe('/fundbun/')
     expect(baseFor('vercel')).toBe('/')
+    expect(baseFor('kalcer')).toBe('/fundbun/app/')
     expect(baseFor('production')).toBe('/')
     const vercel = await resolveConfig('vercel')
     expect(vercel.base).toBe('/')
@@ -140,14 +142,20 @@ describe('static build modes (GitHub Pages and Vercel)', () => {
     const pages = await resolveConfig('pages')
     expect(pages.base).toBe('/fundbun/')
     expect(pages.define?.__FUNDBUN_STATIC__).toBe('true')
+    const kalcer = await resolveConfig('kalcer')
+    expect(kalcer.base).toBe('/fundbun/app/')
+    expect(kalcer.define?.__FUNDBUN_STATIC__).toBe('true')
     const server = await resolveConfig('production')
     expect(server.define?.__FUNDBUN_STATIC__).toBe('false')
   })
 
-  it('npm run build:vercel builds the vercel mode and its offline worker', () => {
+  it('npm static builds select their mode and generate the offline worker', () => {
     const pkg = JSON.parse(readFileSync(resolve(process.cwd(), 'package.json'), 'utf8')) as { scripts: Record<string, string> }
     expect(pkg.scripts['build:vercel']).toContain('vite build --mode vercel')
     expect(pkg.scripts['build:vercel']).toMatch(/&& node scripts\/pwa-build\.mjs$/)
+    expect(pkg.scripts['build:kalcer']).toContain('vite build --mode kalcer')
+    expect(pkg.scripts['build:kalcer']).toMatch(/&& node scripts\/pwa-build\.mjs$/)
+    expect(pkg.scripts['verify:pwa:kalcer']).toContain('node scripts/verify-pwa.mjs --mode=kalcer')
   })
 
   it('ships no source maps unless asked for, and splits vendor code and the engine into named chunks', async () => {
@@ -218,6 +226,7 @@ describe('static build modes (GitHub Pages and Vercel)', () => {
 describe('share-card meta (static builds)', () => {
   it('knows each static build’s public URL', () => {
     expect(siteUrlFor('pages', {})).toBe('https://odripads.github.io/fundbun/')
+    expect(siteUrlFor('kalcer', {})).toBe('https://kalcerinstitute.com/fundbun/app/')
     expect(siteUrlFor('vercel', { VERCEL_PROJECT_PRODUCTION_URL: 'fundbun.vercel.app' })).toBe('https://fundbun.vercel.app/')
     expect(siteUrlFor('vercel', {})).toBeNull()
     expect(siteUrlFor('production', {})).toBeNull()

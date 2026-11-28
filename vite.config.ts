@@ -10,16 +10,19 @@ const API_PORT = Number(process.env.FUNDBUN_API_PORT ?? 8787)
  * Build modes that ship the static app (on-device engine only, no LLM gateway):
  *   pages  : GitHub Pages under /fundbun/      (npm run build:pages)
  *   vercel : Vercel at the domain root          (npm run build:vercel, see vercel.json)
+ *   kalcer : Kalcer hosting under /fundbun/app/ (npm run build:kalcer)
  */
-export const STATIC_MODES = ['pages', 'vercel'] as const
+export const STATIC_MODES = ['pages', 'vercel', 'kalcer'] as const
 
 export function isStaticMode(mode: string): boolean {
   return (STATIC_MODES as readonly string[]).includes(mode)
 }
 
-/** Public base path per mode: GitHub Pages serves the project under /fundbun/, everything else at the root. */
+/** Public base path per mode: static hosts may serve the same app below a product page. */
 export function baseFor(mode: string): string {
-  return mode === 'pages' ? '/fundbun/' : '/'
+  if (mode === 'pages') return '/fundbun/'
+  if (mode === 'kalcer') return '/fundbun/app/'
+  return '/'
 }
 
 /**
@@ -80,12 +83,13 @@ export function answerGatewayOffline(req: Pick<IncomingMessage, 'url'>, res: Ser
 
 /**
  * The public URL of a static build, for absolute share-card links: Vercel exposes the production domain to
- * builds as VERCEL_PROJECT_PRODUCTION_URL; FUNDBUN_SITE_URL overrides; GitHub Pages has a fixed address.
+ * builds as VERCEL_PROJECT_PRODUCTION_URL; FUNDBUN_SITE_URL overrides; GitHub Pages and Kalcer have fixed addresses.
  */
 export function siteUrlFor(mode: string, env: Record<string, string | undefined> = process.env): string | null {
   const explicit = env.FUNDBUN_SITE_URL
   if (explicit) return explicit.endsWith('/') ? explicit : `${explicit}/`
   if (mode === 'pages') return 'https://odripads.github.io/fundbun/'
+  if (mode === 'kalcer') return 'https://kalcerinstitute.com/fundbun/app/'
   if (mode === 'vercel' && env.VERCEL_PROJECT_PRODUCTION_URL) return `https://${env.VERCEL_PROJECT_PRODUCTION_URL}/`
   return null
 }

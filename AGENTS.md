@@ -57,7 +57,11 @@ or bank notifications remains a roadmap item; no `NotificationListenerService` i
 - The local Kalcer website source has Windows and Linux archive links, Android PWA instructions in English and Chinese,
   and corrected Kimi/Antigravity live-test labels. Its build, one existing test and targeted lint passed. The changed
   files also passed 412px and 1280px no-overflow checks. The website source was pushed to `main` as `dfd8f46`. The live
-  Kalcer page still served the old content afterward. Lovable opened a login page, so its final Publish step remains undone.
+  Kalcer page still served the old content afterward. Odri then published that version. A later update adds visible Windows,
+  Linux, Android and iPhone buttons and hosts the PWA itself under `/fundbun/app/`; this later update is not yet live.
+- `npm run verify:pwa:kalcer` also passed at `/fundbun/app/`. The Kalcer website's `npm run sync:fundbun` command builds and
+  copies that static app into `public/fundbun/app/`. Pixel 7 and iPhone 14 emulation both passed the product links, layout,
+  Jing demo and offline reload. Android installability passed in Chrome; Safari installation and physical devices remain untested.
 
 ### Features and integrations
 
@@ -177,8 +181,10 @@ npm run desktop              # build + open the Electron desktop app
 npm run desktop:build        # package for this computer (macOS .app + .dmg, Windows .zip, Linux .tar.gz)
 npm run desktop:build:windows  # cross-package Windows x64 .zip
 npm run desktop:build:linux    # cross-package Linux x64 .tar.gz
+npm run build:kalcer         # static PWA under /fundbun/app/ for the Kalcer website
 npm run verify:pwa           # verify Android installability + offline screens in the Vercel build
 npm run verify:pwa:pages     # the same checks for GitHub Pages under /fundbun/
+npm run verify:pwa:kalcer    # the same checks for Kalcer under /fundbun/app/
 npm start                    # production server on port 8787 (needed if the demo should call a real AI model)
 npm run build && npm start   # ALWAYS build first: `npm start` serves whatever is in dist/
 npx tsx scripts/live-attack-test.ts --save   # 36 attacks against the real model → evidence/live/
